@@ -1,0 +1,32 @@
+# Node
+node_modules/
+dist/
+*.tsbuildinfo
+npm-debug.log*
+
+# Swift / Xcode
+apps/macos/.build/
+apps/macos/.swiftpm/
+*.xcodeproj/xcuserdata/
+DerivedData/
+
+# Go
+cli/invoke/invoke
+cli/invoke/cli
+cli/invoke/bin/
+
+# Rust
+packages/core-rs/target/
+
+# Editor / OS
+.DS_Store
+.vscode/
+.idea/
+
+# Claude Code (local machine config)
+.claude/settings.local.json
+
+# Secrets (never commit)
+.env
+.env.*
+*.pem

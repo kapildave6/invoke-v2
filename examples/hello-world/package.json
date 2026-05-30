@@ -1,0 +1,23 @@
+{
+  "name": "hello-world",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "title": "Hello World",
+  "description": "Sample Invoke extension — drives the Phase 0 demo and seeds the conformance corpus.",
+  "icon": "icon.png",
+  "author": "your-handle",
+  "categories": ["Fun"],
+  "platforms": ["macOS"],
+  "preferences": [],
+  "commands": [
+    { "name": "list", "title": "Search Fruit", "description": "Browse and pin fruit", "mode": "view" }
+  ],
+  "dependencies": {
+    "@invoke/api": "*",
+    "@invoke/utils": "*"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  }
+}

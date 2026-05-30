@@ -1,0 +1,17 @@
+{
+  "name": "@raycast/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Clean-room compatibility shim: re-exports Invoke's OWN implementations under the @raycast/api import paths so existing extensions port mechanically. Ships NO Raycast code (PLAN.md §5.0, §10).",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./utils": "./src/utils.ts"
+  },
+  "dependencies": {
+    "@invoke/api": "*",
+    "@invoke/utils": "*"
+  }
+}

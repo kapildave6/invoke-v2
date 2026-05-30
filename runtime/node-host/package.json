@@ -1,0 +1,21 @@
+{
+  "name": "@invoke/node-host",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Extension runtime host: forks one process per extension, streams render mutations over framed IPC, applies them to a view-model tree. PLAN.md §4.4 / §4.6.",
+  "main": "./src/supervisor.ts",
+  "exports": {
+    ".": "./src/supervisor.ts",
+    "./child": "./src/child.ts"
+  },
+  "dependencies": {
+    "@invoke/api": "*",
+    "@invoke/reconciler": "*",
+    "@invoke/schema": "*",
+    "@invoke/utils": "*"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  }
+}

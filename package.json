@@ -1,0 +1,30 @@
+{
+  "name": "invoke-monorepo",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Invoke — a keyboard-first command palette + extensible plugin platform (Raycast-style). See PLAN.md.",
+  "type": "module",
+  "workspaces": [
+    "schema",
+    "packages/api",
+    "packages/utils",
+    "packages/compat-raycast",
+    "runtime/reconciler",
+    "runtime/node-host",
+    "examples/hello-world"
+  ],
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "demo": "tsx runtime/node-host/src/demo.ts",
+    "redteam": "tsx runtime/node-host/src/redteam.ts",
+    "typecheck": "tsc -p tsconfig.json",
+    "clean": "rm -rf node_modules **/node_modules **/dist **/*.tsbuildinfo"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-reconciler": "^0.28.9",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
