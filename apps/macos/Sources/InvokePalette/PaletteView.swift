@@ -167,7 +167,9 @@ public final class PaletteView: NSView {
         row.translatesAutoresizingMaskIntoConstraints = false
         row.wantsLayer = true
         row.layer?.cornerRadius = 7
-        row.layer?.backgroundColor = selected ? NSColor.controlAccentColor.withAlphaComponent(0.9).cgColor : NSColor.clear.cgColor
+        // Subtle translucent highlight (not saturated accent), text colors unchanged — matches the
+        // Raycast row selection.
+        row.layer?.backgroundColor = selected ? NSColor.white.withAlphaComponent(0.13).cgColor : NSColor.clear.cgColor
 
         let h = NSStackView()
         h.orientation = .horizontal
@@ -179,7 +181,7 @@ public final class PaletteView: NSView {
 
         let title = NSTextField(labelWithString: node.title ?? "")
         title.font = .systemFont(ofSize: 14)
-        title.textColor = selected ? .white : .labelColor
+        title.textColor = .labelColor
         title.lineBreakMode = .byTruncatingTail
         title.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
         h.addArrangedSubview(title)
@@ -187,7 +189,7 @@ public final class PaletteView: NSView {
         if let sub = node.props["subtitle"]?.stringValue, !sub.isEmpty {
             let s = NSTextField(labelWithString: sub)
             s.font = .systemFont(ofSize: 13)
-            s.textColor = selected ? NSColor.white.withAlphaComponent(0.75) : .secondaryLabelColor
+            s.textColor = .secondaryLabelColor
             s.lineBreakMode = .byTruncatingTail
             h.addArrangedSubview(s)
         }
@@ -197,7 +199,18 @@ public final class PaletteView: NSView {
         spacer.setContentHuggingPriority(.init(1), for: .horizontal)
         h.addArrangedSubview(spacer)
 
-        for text in accessoryTexts(node) { h.addArrangedSubview(chip(text)) }
+        // Accessories: { text } → plain right-aligned type label (Raycast style); { tag } → chip.
+        for acc in accessories(node) {
+            switch acc {
+            case .text(let t):
+                let l = NSTextField(labelWithString: t)
+                l.font = .systemFont(ofSize: 13)
+                l.textColor = .tertiaryLabelColor
+                h.addArrangedSubview(l)
+            case .tag(let t):
+                h.addArrangedSubview(chip(t))
+            }
+        }
 
         row.addSubview(h)
         stack.addArrangedSubview(row)
@@ -233,13 +246,15 @@ public final class PaletteView: NSView {
         return bg
     }
 
-    private func accessoryTexts(_ node: ViewNode) -> [String] {
+    private enum Accessory { case text(String); case tag(String) }
+
+    private func accessories(_ node: ViewNode) -> [Accessory] {
         guard let acc = node.props["accessories"], case .array(let arr) = acc else { return [] }
-        var out: [String] = []
+        var out: [Accessory] = []
         for item in arr {
             guard case .object(let o) = item else { continue }
-            if let tag = o["tag"]?.stringValue { out.append(tag) }
-            else if let text = o["text"]?.stringValue { out.append(text) }
+            if let tag = o["tag"]?.stringValue { out.append(.tag(tag)) }
+            else if let text = o["text"]?.stringValue { out.append(.text(text)) }
         }
         return out
     }

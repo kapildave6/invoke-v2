@@ -198,8 +198,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
         for e in entries {
             section.children.append(ViewNode(id: id, type: "list-item", props: [
                 "title": .string(e.name),
-                "subtitle": .string("Application"),
                 "appPath": .string(e.path),
+                "accessories": .array([.object(["text": .string("Application")])]), // right-aligned type
             ]))
             id += 1
         }

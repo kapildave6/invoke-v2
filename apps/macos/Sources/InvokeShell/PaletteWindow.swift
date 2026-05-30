@@ -69,7 +69,7 @@ public final class PaletteWindow: NSObject {
         blur.layer?.cornerRadius = 12
         blur.layer?.masksToBounds = true
 
-        searchField.placeholderString = "Search…"
+        searchField.placeholderString = "Search for apps and commands…"
         searchField.font = NSFont.systemFont(ofSize: 20, weight: .light)
         searchField.isBordered = false
         searchField.drawsBackground = false
