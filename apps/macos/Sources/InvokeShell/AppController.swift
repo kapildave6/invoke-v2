@@ -4,36 +4,44 @@ import InvokeIPC
 import InvokeRenderer
 import InvokeServices
 
-/// App lifecycle + summon + root search (PLAN.md §4.3). Owns the warm palette window, the keyboard
-/// selection model, the ⌥Space summon hotkey (§3.2), and the root ranker that routes a query to
-/// either native Applications results or the running Calculator extension's card.
-///
-/// `rootTree` set → the host is showing a NATIVE result tree (apps / message); nil → it's showing
-/// the running extension's tree (the calculator). `activeTree` is whichever is on screen.
+/// App lifecycle + summon + the root ranker (PLAN.md §4.3). Composes ONE result tree from several
+/// sources — Applications (native index), built-in Commands (registry), and the resident Calculator
+/// extension's card — ranked by frecency, and rendered through the shared PaletteView. Owns the
+/// keyboard selection model and the ⌥Space summon hotkey (§3.2).
 public final class AppController: NSObject, NSApplicationDelegate {
     private let palette = PaletteWindow()
     private let host = ExtensionHost()
     private let hotkey = GlobalHotkey()
     private let appIndex = AppIndexService()
+    private let frecency = Frecency()
+    private lazy var commands: [RootCommand] = Self.makeCommands()
+
     private var selectedIndex = 0
     private var rootTree: ViewTree?
-
+    private var lastQuery = ""
     private var activeTree: ViewTree { rootTree ?? host.tree }
+
+    /// A built-in command in the root registry.
+    private struct RootCommand {
+        let id: String
+        let title: String
+        let subtitle: String
+        let runTitle: String
+        let icon: String       // SF Symbol
+        let keywords: [String]
+        let run: () -> Void
+    }
 
     public override init() { super.init() }
 
     public func applicationDidFinishLaunching(_ notification: Notification) {
-        // Standard editing shortcuts (⌘A/⌘C/⌘V/⌘X/⌘Z) reach the search field only via the main
-        // menu's key-equivalents; a menu-less .accessory app has none, so install a minimal one.
         NSApp.mainMenu = Self.makeMainMenu()
 
         host.onLog = { message in print("[invoke:host] \(message)") }
-        // Only render the calculator's commits while it owns the screen (calc mode).
         host.onCommit = { [weak self] _ in
-            guard let self, self.rootTree == nil else { return }
-            self.rerender()
+            guard let self, Self.looksLikeCalculation(self.lastQuery) else { return }
+            self.renderRoot(calcCard: self.extractCalcCard())
         }
-        // Extension-initiated feedback (showToast / showHUD via the @invoke/api RPC) → toast capsule.
         host.onRpc = { [weak self] method, params in
             guard let self, method == "toast.show" || method == "hud.show" else { return }
             let title = Self.objString(params, "title") ?? ""
@@ -53,20 +61,19 @@ public final class AppController: NSObject, NSApplicationDelegate {
             ?? FileManager.default.currentDirectoryPath
         print("[invoke:host] repo root: \(root)")
 
-        // The Calculator runs as a resident extension; root search forwards calc-like queries to it.
         let entry = ProcessInfo.processInfo.environment["INVOKE_EXT_ENTRY"] ?? "examples/calculator/src/calculate.tsx"
         let command = ProcessInfo.processInfo.environment["INVOKE_EXT_COMMAND"] ?? "calculate"
         host.launch(repoRoot: root, entryRelPath: entry, command: command)
 
         appIndex.build()
-        print("[invoke:host] app index: \(appIndex.count) applications")
+        print("[invoke:host] app index: \(appIndex.count) applications · \(commands.count) commands")
 
         hotkey.register(keyCode: UInt32(kVK_Space), modifiers: UInt32(optionKey)) { [weak self] in
             self?.palette.toggle()
         }
         print("[invoke:host] global hotkey registered: ⌥Space")
 
-        renderApps(query: "") // initial root state
+        renderRoot(calcCard: nil) // initial: Suggestions
         palette.show()
     }
 
@@ -75,32 +82,97 @@ public final class AppController: NSObject, NSApplicationDelegate {
         host.terminate()
     }
 
-    // MARK: - Root routing
+    // MARK: - Root routing / composition
 
     private func onSearch(_ text: String) {
+        lastQuery = text
         selectedIndex = 0
-        if Self.looksLikeCalculation(text) {
-            rootTree = nil               // hand the screen to the calculator extension
-            host.setSearchText(text)     // its commit renders via onCommit
-        } else {
-            renderApps(query: text)      // native, instant
-        }
+        if Self.looksLikeCalculation(text) { host.setSearchText(text) } // card arrives via onCommit
+        renderRoot(calcCard: nil)
     }
 
-    private func renderApps(query: String) {
-        let q = query.trimmingCharacters(in: .whitespaces)
-        if q.isEmpty {
-            rootTree = ViewTree() // empty → compact window, just the search bar
-        } else {
-            let entries = appIndex.search(q)
-            rootTree = entries.isEmpty ? Self.messageTree("No matching apps") : Self.appsTree(entries)
-        }
-        selectedIndex = 0
+    private func renderRoot(calcCard: ViewNode?) {
+        rootTree = buildRoot(query: lastQuery, calcCard: calcCard)
+        let count = items().count
+        if selectedIndex >= count { selectedIndex = max(0, count - 1) }
         palette.render(activeTree, selectedIndex: selectedIndex)
         updateActionBar()
     }
 
-    // MARK: - Selection model
+    /// Compose one tree: [Calculator card] + (empty query → Suggestions; else Applications + Commands).
+    private func buildRoot(query: String, calcCard: ViewNode?) -> ViewTree {
+        let tree = ViewTree()
+        let list = ViewNode(id: 1, type: "list")
+        var nid = 10
+        let nextId: () -> Int = { nid += 1; return nid }
+        func sectionNode(_ title: String, _ children: [ViewNode]) -> ViewNode {
+            let s = ViewNode(id: nextId(), type: "list-section", props: ["title": .string(title)])
+            s.children = children
+            return s
+        }
+
+        var sections: [ViewNode] = []
+        let q = query.trimmingCharacters(in: .whitespaces)
+
+        if let calcCard { sections.append(sectionNode("Calculator", [calcCard])) }
+
+        if q.isEmpty {
+            let items = suggestionItems(nextId: nextId)
+            if !items.isEmpty { sections.append(sectionNode("Suggestions", items)) }
+        } else {
+            let apps = appIndex.search(q).map {
+                itemNode(id: nextId(), title: $0.name, subtitle: nil, kind: "Application", appPath: $0.path, icon: nil, commandId: nil)
+            }
+            if !apps.isEmpty { sections.append(sectionNode("Applications", apps)) }
+
+            let cmds = matchCommands(q).map {
+                itemNode(id: nextId(), title: $0.title, subtitle: $0.subtitle, kind: "Command", appPath: nil, icon: $0.icon, commandId: $0.id)
+            }
+            if !cmds.isEmpty { sections.append(sectionNode("Commands", cmds)) }
+        }
+
+        list.children = sections
+        tree.root.children = [list]
+        return tree
+    }
+
+    /// Empty-root suggestions: top-frecency items, or the command registry before any usage data.
+    private func suggestionItems(nextId: () -> Int) -> [ViewNode] {
+        let ids = frecency.hasData ? frecency.topIds(limit: 7) : commands.map { "cmd:\($0.id)" }
+        var out: [ViewNode] = []
+        for id in ids {
+            if id.hasPrefix("cmd:"), let c = commands.first(where: { "cmd:\($0.id)" == id }) {
+                out.append(itemNode(id: nextId(), title: c.title, subtitle: c.subtitle, kind: "Command", appPath: nil, icon: c.icon, commandId: c.id))
+            } else if id.hasPrefix("app:") {
+                let path = String(id.dropFirst(4))
+                guard FileManager.default.fileExists(atPath: path) else { continue }
+                let name = ((path as NSString).lastPathComponent as NSString).deletingPathExtension
+                out.append(itemNode(id: nextId(), title: name, subtitle: nil, kind: "Application", appPath: path, icon: nil, commandId: nil))
+            }
+        }
+        return out
+    }
+
+    private func matchCommands(_ q: String) -> [RootCommand] {
+        let ql = q.lowercased()
+        return commands
+            .filter { $0.title.lowercased().contains(ql) || $0.keywords.contains { $0.contains(ql) } }
+            .sorted { frecency.score("cmd:\($0.id)") > frecency.score("cmd:\($1.id)") }
+    }
+
+    private func itemNode(id: Int, title: String, subtitle: String?, kind: String, appPath: String?, icon: String?, commandId: String?) -> ViewNode {
+        var props: [String: JSONValue] = [
+            "title": .string(title),
+            "accessories": .array([.object(["text": .string(kind)])]),
+        ]
+        if let subtitle, !subtitle.isEmpty { props["subtitle"] = .string(subtitle) }
+        if let appPath { props["appPath"] = .string(appPath) }
+        if let icon { props["icon"] = .string(icon) }
+        if let commandId { props["commandId"] = .string(commandId) }
+        return ViewNode(id: id, type: "list-item", props: props)
+    }
+
+    // MARK: - Selection / activation
 
     private func rerender() {
         palette.dismissMenu()
@@ -125,37 +197,44 @@ public final class AppController: NSObject, NSApplicationDelegate {
     }
 
     private func updateActionBar() {
-        let title = rootTree == nil ? "Calculator" : "Invoke"
-        palette.setActionBar(command: title, primary: currentActions().first?.title)
+        palette.setActionBar(command: "Invoke", primary: currentActions().first?.title)
     }
 
-    /// Actions for the selected result — an "Open" launch for app rows, else the extension's actions.
+    /// Actions for the selected row: launch an app, run a command (both bump frecency), or the
+    /// extension's own actions (the calculator card's Copy).
     private func currentActions() -> [PaletteAction] {
         let rows = items()
         guard selectedIndex < rows.count else { return [] }
-        let item = rows[selectedIndex]
-        if let path = item.props["appPath"]?.stringValue {
-            let name = item.props["title"]?.stringValue ?? "App"
-            return [PaletteAction(title: "Open", shortcut: "↵") { [weak self] in self?.launchApp(path, name: name) }]
+        let node = rows[selectedIndex]
+
+        if let path = node.props["appPath"]?.stringValue {
+            return [PaletteAction(title: "Open", shortcut: "↵") { [weak self] in
+                self?.frecency.bump("app:\(path)")
+                NSWorkspace.shared.open(URL(fileURLWithPath: path))
+                self?.afterLaunch()
+            }]
         }
-        return actions(under: item).enumerated().map { index, node in
-            PaletteAction(
-                title: title(for: node),
-                shortcut: index == 0 ? "↵" : (index == 1 ? "⌘↵" : nil)
-            ) { [weak self] in self?.perform(node) }
+        if let cid = node.props["commandId"]?.stringValue, let cmd = commands.first(where: { $0.id == cid }) {
+            return [PaletteAction(title: cmd.runTitle, shortcut: "↵") { [weak self] in
+                self?.frecency.bump("cmd:\(cid)")
+                cmd.run()
+                self?.afterLaunch()
+            }]
+        }
+        return actions(under: node).enumerated().map { index, n in
+            PaletteAction(title: title(for: n), shortcut: index == 0 ? "↵" : (index == 1 ? "⌘↵" : nil)) { [weak self] in self?.perform(n) }
         }
     }
 
-    private func launchApp(_ path: String, name: String) {
-        NSWorkspace.shared.open(URL(fileURLWithPath: path))
-        palette.hide()           // launching closes the palette (standard launcher behavior)
+    /// Launching/running closes the palette and resets the root for next summon.
+    private func afterLaunch() {
+        palette.hide()
         palette.clearSearch()
-        rootTree = ViewTree()
+        lastQuery = ""
         selectedIndex = 0
-        palette.render(activeTree, selectedIndex: 0)
+        renderRoot(calcCard: nil)
     }
 
-    /// Run an extension action node: invoke its handler over IPC, or perform a native action (copy).
     private func perform(_ action: ViewNode) {
         if let handler = action.props["onAction"]?.handlerRef {
             host.invoke(handler: handler)
@@ -168,7 +247,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         }
     }
 
-    // MARK: - Tree walking / native tree builders
+    // MARK: - Tree walking
 
     private func items() -> [ViewNode] {
         var out: [ViewNode] = []
@@ -190,29 +269,13 @@ public final class AppController: NSObject, NSApplicationDelegate {
         return out
     }
 
-    private static func appsTree(_ entries: [AppEntry]) -> ViewTree {
-        let tree = ViewTree()
-        let list = ViewNode(id: 1, type: "list")
-        let section = ViewNode(id: 2, type: "list-section", props: ["title": .string("Applications")])
-        var id = 100
-        for e in entries {
-            section.children.append(ViewNode(id: id, type: "list-item", props: [
-                "title": .string(e.name),
-                "appPath": .string(e.path),
-                "accessories": .array([.object(["text": .string("Application")])]), // right-aligned type
-            ]))
-            id += 1
+    private func extractCalcCard() -> ViewNode? {
+        func find(_ n: ViewNode) -> ViewNode? {
+            if n.type == "list-item", n.props["display"]?.stringValue == "card" { return n }
+            for c in n.children { if let f = find(c) { return f } }
+            return nil
         }
-        list.children.append(section)
-        tree.root.children = [list]
-        return tree
-    }
-
-    /// A non-selectable message (rendered as a section header).
-    private static func messageTree(_ message: String) -> ViewTree {
-        let tree = ViewTree()
-        tree.root.children = [ViewNode(id: 1, type: "list-section", props: ["title": .string(message)])]
-        return tree
+        return find(host.tree.root)
     }
 
     private func title(for action: ViewNode) -> String {
@@ -226,19 +289,32 @@ public final class AppController: NSObject, NSApplicationDelegate {
         }
     }
 
+    // MARK: - Commands
+
+    private static func makeCommands() -> [RootCommand] {
+        func openPath(_ p: String) -> () -> Void {
+            let url = URL(fileURLWithPath: (p as NSString).expandingTildeInPath)
+            return { NSWorkspace.shared.open(url) }
+        }
+        return [
+            RootCommand(id: "folder.home", title: "Open Home Folder", subtitle: "Navigation", runTitle: "Open", icon: "house", keywords: ["home", "folder", "finder"], run: openPath("~")),
+            RootCommand(id: "folder.downloads", title: "Open Downloads", subtitle: "Navigation", runTitle: "Open", icon: "arrow.down.circle", keywords: ["downloads", "folder", "finder"], run: openPath("~/Downloads")),
+            RootCommand(id: "folder.documents", title: "Open Documents", subtitle: "Navigation", runTitle: "Open", icon: "doc", keywords: ["documents", "docs", "folder"], run: openPath("~/Documents")),
+            RootCommand(id: "folder.desktop", title: "Open Desktop", subtitle: "Navigation", runTitle: "Open", icon: "menubar.dock.rectangle", keywords: ["desktop", "folder"], run: openPath("~/Desktop")),
+            RootCommand(id: "folder.applications", title: "Open Applications", subtitle: "Navigation", runTitle: "Open", icon: "square.grid.2x2", keywords: ["applications", "apps", "folder"], run: openPath("/Applications")),
+        ]
+    }
+
     // MARK: - Helpers
 
-    /// Heuristic: does the query look like a calculation (→ Calculator) vs an app search?
     private static func looksLikeCalculation(_ q: String) -> Bool {
         let t = q.trimmingCharacters(in: .whitespaces)
         if t.isEmpty { return false }
-        if t.contains("(") { return true } // sqrt(16), (3+4)*5
-        if t.range(of: "^[-+]?[0-9.,]+$", options: .regularExpression) != nil { return true } // pure number
+        if t.contains("(") { return true }
+        if t.range(of: "^[-+]?[0-9.,]+$", options: .regularExpression) != nil { return true }
         let hasDigit = t.range(of: "[0-9]", options: .regularExpression) != nil
-        if hasDigit, t.range(of: "[-+*/^%]", options: .regularExpression) != nil { return true } // 2+2, 50% of …
-        if t.range(of: "(?i)^[0-9.,]+\\s*[a-z°]+\\s+(in|to|as)\\s+[a-z°]+$", options: .regularExpression) != nil {
-            return true // 10 km in mi, 100 usd in eur
-        }
+        if hasDigit, t.range(of: "[-+*/^%]", options: .regularExpression) != nil { return true }
+        if t.range(of: "(?i)^[0-9.,]+\\s*[a-z°]+\\s+(in|to|as)\\s+[a-z°]+$", options: .regularExpression) != nil { return true }
         return false
     }
 
@@ -249,7 +325,6 @@ public final class AppController: NSObject, NSApplicationDelegate {
 
     private static func makeMainMenu() -> NSMenu {
         let main = NSMenu()
-
         let appItem = NSMenuItem()
         main.addItem(appItem)
         let appMenu = NSMenu()

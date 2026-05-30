@@ -78,8 +78,8 @@ public final class PaletteView: NSView {
         NSLayoutConstraint.activate([
             row.widthAnchor.constraint(equalTo: stack.widthAnchor),
             label.leadingAnchor.constraint(equalTo: row.leadingAnchor, constant: 10),
-            label.topAnchor.constraint(equalTo: row.topAnchor, constant: 8),
-            label.bottomAnchor.constraint(equalTo: row.bottomAnchor, constant: 4),
+            label.topAnchor.constraint(equalTo: row.topAnchor, constant: 12),
+            label.bottomAnchor.constraint(equalTo: row.bottomAnchor, constant: -8), // breathing room before the list
         ])
     }
 
@@ -268,9 +268,10 @@ public final class PaletteView: NSView {
             iv.heightAnchor.constraint(equalToConstant: 20).isActive = true
             return iv
         }
-        // Otherwise a tinted SF Symbol from the Icon enum.
+        // Otherwise a tinted SF Symbol: try the name directly (e.g. "house"), else map the Icon enum.
         guard let name = node.props["icon"]?.stringValue,
-              let img = NSImage(systemSymbolName: sfSymbol(for: name), accessibilityDescription: nil) else { return nil }
+              let img = NSImage(systemSymbolName: name, accessibilityDescription: nil)
+                ?? NSImage(systemSymbolName: sfSymbol(for: name), accessibilityDescription: nil) else { return nil }
         let iv = NSImageView(image: img)
         iv.contentTintColor = selected ? .white : .secondaryLabelColor
         iv.translatesAutoresizingMaskIntoConstraints = false
