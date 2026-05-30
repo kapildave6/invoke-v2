@@ -1,5 +1,7 @@
 import AppKit
+import ApplicationServices
 import Carbon.HIToolbox
+import CoreGraphics
 import InvokeIPC
 import InvokeRenderer
 import InvokeServices
@@ -20,6 +22,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private enum Mode { case root, clipboard }
     private var mode: Mode = .root
     private var clipKind = "All Types" // clipboard type filter
+    private var pasteTarget: NSRunningApplication? // app to paste back into
     private var selectedIndex = 0
     private var rootTree: ViewTree?
     private var lastQuery = ""
@@ -113,13 +116,20 @@ public final class AppController: NSObject, NSApplicationDelegate {
 
     /// ⌥Space: toggle the palette, always resetting to the root when summoning.
     private func summonToggle() {
-        if palette.isVisible { palette.hide() } else { exitToRoot(); palette.show() }
+        if palette.isVisible { palette.hide() } else { captureTarget(); exitToRoot(); palette.show() }
     }
 
     /// ⌘⇧V: summon straight into Clipboard History.
     private func openClipboardHotkey() {
+        captureTarget()
         palette.show()
         enterClipboard()
+    }
+
+    /// Remember the app that had focus when summoned, so we can paste back into it.
+    private func captureTarget() {
+        let front = NSWorkspace.shared.frontmostApplication
+        if front?.processIdentifier != ProcessInfo.processInfo.processIdentifier { pasteTarget = front }
     }
 
     private func enterClipboard() {
@@ -332,20 +342,17 @@ public final class AppController: NSObject, NSApplicationDelegate {
             }]
         }
         if let path = node.props["clipFile"]?.stringValue {
-            return [PaletteAction(title: "Copy File", shortcut: "↵") { [weak self] in
-                let pb = NSPasteboard.general
-                pb.clearContents()
-                pb.writeObjects([URL(fileURLWithPath: path) as NSURL])
-                self?.palette.showToast("Copied File")
-            }]
+            let url = URL(fileURLWithPath: path)
+            return [
+                PaletteAction(title: pasteTitle(), shortcut: "↵") { [weak self] in self?.pasteOrCopy(text: nil, fileURL: url) },
+                PaletteAction(title: "Copy File", shortcut: "⌘↵") { [weak self] in self?.copyOnly(text: nil, fileURL: url) },
+            ]
         }
         if let clip = node.props["clipText"]?.stringValue {
-            return [PaletteAction(title: "Copy to Clipboard", shortcut: "↵") { [weak self] in
-                let pb = NSPasteboard.general
-                pb.clearContents()
-                pb.setString(clip, forType: .string)
-                self?.palette.showToast("Copied to Clipboard")
-            }]
+            return [
+                PaletteAction(title: pasteTitle(), shortcut: "↵") { [weak self] in self?.pasteOrCopy(text: clip, fileURL: nil) },
+                PaletteAction(title: "Copy to Clipboard", shortcut: "⌘↵") { [weak self] in self?.copyOnly(text: clip, fileURL: nil) },
+            ]
         }
         if let cid = node.props["commandId"]?.stringValue, let cmd = commands.first(where: { $0.id == cid }) {
             return [PaletteAction(title: cmd.runTitle, shortcut: "↵") { [weak self] in
@@ -366,6 +373,53 @@ public final class AppController: NSObject, NSApplicationDelegate {
         lastQuery = ""
         selectedIndex = 0
         renderRoot(calcCard: nil)
+    }
+
+    private func pasteTitle() -> String {
+        pasteTarget?.localizedName.map { "Paste to \($0)" } ?? "Paste"
+    }
+
+    private func setPasteboard(text: String?, fileURL: URL?) {
+        let pb = NSPasteboard.general
+        pb.clearContents()
+        if let fileURL { pb.writeObjects([fileURL as NSURL]) }
+        else if let text { pb.setString(text, forType: .string) }
+    }
+
+    private func copyOnly(text: String?, fileURL: URL?) {
+        setPasteboard(text: text, fileURL: fileURL)
+        palette.showToast(fileURL != nil ? "Copied File" : "Copied to Clipboard")
+    }
+
+    /// Set the clipboard, then (if Accessibility is granted) close the palette, refocus the target
+    /// app, and synthesize ⌘V — otherwise fall back to copy-only and prompt for the grant.
+    private func pasteOrCopy(text: String?, fileURL: URL?) {
+        setPasteboard(text: text, fileURL: fileURL)
+        guard AXIsProcessTrusted() else {
+            Self.promptAccessibility()
+            palette.showToast("Enable Accessibility for Invoke to paste — copied instead")
+            return
+        }
+        let target = pasteTarget
+        palette.hide()
+        target?.activate()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) { Self.synthesizePaste() }
+    }
+
+    private static func promptAccessibility() {
+        let opts = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
+        _ = AXIsProcessTrustedWithOptions(opts)
+    }
+
+    private static func synthesizePaste() {
+        let src = CGEventSource(stateID: .combinedSessionState)
+        let v: CGKeyCode = 9 // kVK_ANSI_V
+        let down = CGEvent(keyboardEventSource: src, virtualKey: v, keyDown: true)
+        down?.flags = .maskCommand
+        let up = CGEvent(keyboardEventSource: src, virtualKey: v, keyDown: false)
+        up?.flags = .maskCommand
+        down?.post(tap: .cghidEventTap)
+        up?.post(tap: .cghidEventTap)
     }
 
     private func perform(_ action: ViewNode) {

@@ -86,9 +86,11 @@ public final class PaletteWindow: NSObject {
         paletteView.translatesAutoresizingMaskIntoConstraints = false
 
         filterButton.translatesAutoresizingMaskIntoConstraints = false
-        filterButton.bezelStyle = .rounded
+        filterButton.isBordered = false // borderless, subtle — fits the translucent theme
         filterButton.controlSize = .small
         filterButton.font = .systemFont(ofSize: 12)
+        filterButton.contentTintColor = .secondaryLabelColor
+        (filterButton.cell as? NSPopUpButtonCell)?.arrowPosition = .arrowAtBottom
         filterButton.target = self
         filterButton.action = #selector(filterChanged)
         filterButton.isHidden = true
