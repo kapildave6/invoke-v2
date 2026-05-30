@@ -41,7 +41,183 @@ public final class PaletteView: NSView {
     public func render(_ tree: ViewTree, selectedIndex: Int) {
         stack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         itemCounter = 0
-        appendRows(for: tree.root, selectedIndex: selectedIndex)
+        if let list = tree.root.children.first(where: { $0.type == "list" }),
+           case .bool(true)? = list.props["showDetail"] {
+            renderSplit(list: list, selectedIndex: selectedIndex) // master–detail (e.g. Clipboard History)
+        } else {
+            appendRows(for: tree.root, selectedIndex: selectedIndex)
+        }
+    }
+
+    // MARK: - Master–detail (list + detail pane)
+
+    private func renderSplit(list: ViewNode, selectedIndex: Int) {
+        var rows: [ViewNode] = []
+        func collect(_ n: ViewNode) { if n.type == "list-item" { rows.append(n) }; n.children.forEach(collect) }
+        collect(list)
+        let sel = rows.isEmpty ? -1 : max(0, min(selectedIndex, rows.count - 1))
+
+        // Left: scrollable compact list.
+        let leftStack = NSStackView()
+        leftStack.orientation = .vertical
+        leftStack.alignment = .leading
+        leftStack.spacing = 2
+        leftStack.translatesAutoresizingMaskIntoConstraints = false
+        if let section = list.children.first(where: { $0.type == "list-section" }), let t = section.title, !t.isEmpty {
+            leftStack.addArrangedSubview(sectionLabel(t, width: 300))
+        }
+        for (i, node) in rows.enumerated() {
+            leftStack.addArrangedSubview(compactRow(node, selected: i == sel, width: 300))
+        }
+        let doc = NSView()
+        doc.translatesAutoresizingMaskIntoConstraints = false
+        doc.addSubview(leftStack)
+        let leftScroll = NSScrollView()
+        leftScroll.translatesAutoresizingMaskIntoConstraints = false
+        leftScroll.drawsBackground = false
+        leftScroll.hasVerticalScroller = true
+        leftScroll.scrollerStyle = .overlay
+        leftScroll.documentView = doc
+
+        let divider = NSBox()
+        divider.boxType = .separator
+        divider.translatesAutoresizingMaskIntoConstraints = false
+
+        let detail = detailPane(sel >= 0 ? rows[sel] : nil)
+
+        let h = NSStackView()
+        h.orientation = .horizontal
+        h.alignment = .top
+        h.spacing = 0
+        h.translatesAutoresizingMaskIntoConstraints = false
+        h.addArrangedSubview(leftScroll)
+        h.addArrangedSubview(divider)
+        h.addArrangedSubview(detail)
+
+        stack.addArrangedSubview(h)
+        NSLayoutConstraint.activate([
+            h.widthAnchor.constraint(equalTo: stack.widthAnchor),
+            h.heightAnchor.constraint(equalToConstant: 360),
+            leftScroll.widthAnchor.constraint(equalToConstant: 300),
+            leftStack.topAnchor.constraint(equalTo: doc.topAnchor, constant: 2),
+            leftStack.leadingAnchor.constraint(equalTo: doc.leadingAnchor),
+            leftStack.trailingAnchor.constraint(equalTo: doc.trailingAnchor),
+            leftStack.bottomAnchor.constraint(equalTo: doc.bottomAnchor),
+            doc.widthAnchor.constraint(equalToConstant: 300),
+        ])
+    }
+
+    private func sectionLabel(_ text: String, width: CGFloat) -> NSView {
+        let label = NSTextField(labelWithString: text)
+        label.font = .systemFont(ofSize: 12, weight: .semibold)
+        label.textColor = .secondaryLabelColor
+        label.translatesAutoresizingMaskIntoConstraints = false
+        let v = NSView()
+        v.translatesAutoresizingMaskIntoConstraints = false
+        v.addSubview(label)
+        NSLayoutConstraint.activate([
+            v.widthAnchor.constraint(equalToConstant: width),
+            label.leadingAnchor.constraint(equalTo: v.leadingAnchor, constant: 8),
+            label.topAnchor.constraint(equalTo: v.topAnchor, constant: 10),
+            label.bottomAnchor.constraint(equalTo: v.bottomAnchor, constant: -6),
+        ])
+        return v
+    }
+
+    private func compactRow(_ node: ViewNode, selected: Bool, width: CGFloat) -> NSView {
+        let row = NSView()
+        row.translatesAutoresizingMaskIntoConstraints = false
+        row.wantsLayer = true
+        row.layer?.cornerRadius = 6
+        row.layer?.backgroundColor = selected ? NSColor.white.withAlphaComponent(0.13).cgColor : NSColor.clear.cgColor
+        let h = NSStackView()
+        h.orientation = .horizontal
+        h.alignment = .centerY
+        h.spacing = 8
+        h.translatesAutoresizingMaskIntoConstraints = false
+        if let icon = iconView(for: node, selected: selected) { h.addArrangedSubview(icon) }
+        let title = NSTextField(labelWithString: node.title ?? "")
+        title.font = .systemFont(ofSize: 13)
+        title.textColor = .labelColor
+        title.lineBreakMode = .byTruncatingTail
+        h.addArrangedSubview(title)
+        row.addSubview(h)
+        NSLayoutConstraint.activate([
+            row.widthAnchor.constraint(equalToConstant: width),
+            row.heightAnchor.constraint(greaterThanOrEqualToConstant: 32),
+            h.leadingAnchor.constraint(equalTo: row.leadingAnchor, constant: 8),
+            h.trailingAnchor.constraint(lessThanOrEqualTo: row.trailingAnchor, constant: -8),
+            h.centerYAnchor.constraint(equalTo: row.centerYAnchor),
+        ])
+        return row
+    }
+
+    private func detailPane(_ node: ViewNode?) -> NSView {
+        let pane = NSView()
+        pane.translatesAutoresizingMaskIntoConstraints = false
+        guard let node else { return pane }
+
+        let content = NSTextField(wrappingLabelWithString: node.props["detailText"]?.stringValue ?? (node.title ?? ""))
+        content.font = .systemFont(ofSize: 13)
+        content.textColor = .labelColor
+        content.isSelectable = true
+        content.maximumNumberOfLines = 12
+        content.translatesAutoresizingMaskIntoConstraints = false
+        pane.addSubview(content)
+
+        let info = NSStackView()
+        info.orientation = .vertical
+        info.alignment = .width // rows fill the pane width so values right-align
+        info.distribution = .fill
+        info.spacing = 7
+        info.translatesAutoresizingMaskIntoConstraints = false
+        let header = NSTextField(labelWithString: "Information")
+        header.font = .systemFont(ofSize: 11, weight: .semibold)
+        header.textColor = .tertiaryLabelColor
+        info.addArrangedSubview(header)
+        if let md = node.props["metadata"], case .array(let mdRows) = md {
+            for r in mdRows {
+                guard case .object(let o) = r, let label = o["label"]?.stringValue, let value = o["value"]?.stringValue else { continue }
+                info.addArrangedSubview(metadataRow(label: label, value: value))
+            }
+        }
+        pane.addSubview(info)
+
+        NSLayoutConstraint.activate([
+            content.topAnchor.constraint(equalTo: pane.topAnchor, constant: 8),
+            content.leadingAnchor.constraint(equalTo: pane.leadingAnchor, constant: 16),
+            content.trailingAnchor.constraint(equalTo: pane.trailingAnchor, constant: -16),
+            info.leadingAnchor.constraint(equalTo: pane.leadingAnchor, constant: 16),
+            info.trailingAnchor.constraint(equalTo: pane.trailingAnchor, constant: -16),
+            info.bottomAnchor.constraint(equalTo: pane.bottomAnchor, constant: -14),
+        ])
+        return pane
+    }
+
+    private func metadataRow(label: String, value: String) -> NSView {
+        let l = NSTextField(labelWithString: label)
+        l.font = .systemFont(ofSize: 12)
+        l.textColor = .secondaryLabelColor
+        l.translatesAutoresizingMaskIntoConstraints = false
+        let v = NSTextField(labelWithString: value)
+        v.font = .systemFont(ofSize: 12)
+        v.textColor = .labelColor
+        v.alignment = .right
+        v.lineBreakMode = .byTruncatingTail
+        v.translatesAutoresizingMaskIntoConstraints = false
+        let row = NSView()
+        row.translatesAutoresizingMaskIntoConstraints = false
+        row.addSubview(l)
+        row.addSubview(v)
+        NSLayoutConstraint.activate([
+            row.heightAnchor.constraint(equalToConstant: 18),
+            l.leadingAnchor.constraint(equalTo: row.leadingAnchor),
+            l.centerYAnchor.constraint(equalTo: row.centerYAnchor),
+            v.trailingAnchor.constraint(equalTo: row.trailingAnchor),
+            v.centerYAnchor.constraint(equalTo: row.centerYAnchor),
+            v.leadingAnchor.constraint(greaterThanOrEqualTo: l.trailingAnchor, constant: 12),
+        ])
+        return row
     }
 
     private func appendRows(for node: ViewNode, selectedIndex: Int) {

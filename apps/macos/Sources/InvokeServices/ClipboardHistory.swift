@@ -9,6 +9,8 @@ public final class ClipboardHistory {
         public let text: String
         public let kind: String // "Text" | "Link"
         public let date: Date
+        public let timesCopied: Int
+        public let source: String? // app that had focus when copied
     }
 
     private var clips: [Clip] = []
@@ -36,9 +38,12 @@ public final class ClipboardHistory {
         if pb.types?.contains(NSPasteboard.PasteboardType("org.nspasteboard.ConcealedType")) == true { return }
         guard let s = pb.string(forType: .string), !s.isEmpty else { return }
 
-        clips.removeAll { $0.text == s } // re-copying an existing clip moves it to the top (no dupes)
+        // Re-copying an existing clip moves it to the top and bumps its times-copied count.
+        let priorTimes = clips.first(where: { $0.text == s })?.timesCopied ?? 0
+        clips.removeAll { $0.text == s }
         let isLink = s.hasPrefix("http://") || s.hasPrefix("https://")
-        clips.insert(Clip(text: s, kind: isLink ? "Link" : "Text", date: Date()), at: 0)
+        let source = NSWorkspace.shared.frontmostApplication?.localizedName
+        clips.insert(Clip(text: s, kind: isLink ? "Link" : "Text", date: Date(), timesCopied: priorTimes + 1, source: source), at: 0)
         if clips.count > cap { clips.removeLast(clips.count - cap) }
     }
 

@@ -149,22 +149,38 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 : "No matching clips"
             list.children = [ViewNode(id: 2, type: "list-section", props: ["title": .string(msg)])]
         } else {
-            let section = ViewNode(id: 2, type: "list-section", props: ["title": .string("Clipboard History")])
+            list.props["showDetail"] = .bool(true) // master–detail layout
+            let section = ViewNode(id: 2, type: "list-section", props: ["title": .string("Today")])
             var nid = 10
             for clip in entries {
                 nid += 1
                 section.children.append(ViewNode(id: nid, type: "list-item", props: [
                     "title": .string(Self.preview(clip.text)),
-                    "subtitle": .string(Self.relativeTime(clip.date)),
-                    "accessories": .array([.object(["text": .string(clip.kind)])]),
                     "icon": .string(clip.kind == "Link" ? "link" : "doc.on.clipboard"),
                     "clipText": .string(clip.text),
+                    "detailText": .string(clip.text),
+                    "metadata": Self.clipMetadata(clip),
                 ]))
             }
             list.children = [section]
         }
         tree.root.children = [list]
         return tree
+    }
+
+    /// "Information" rows for a clip's detail pane.
+    private static func clipMetadata(_ clip: ClipboardHistory.Clip) -> JSONValue {
+        let chars = clip.text.count
+        let words = clip.text.split(whereSeparator: { $0 == " " || $0.isNewline }).filter { !$0.isEmpty }.count
+        var rows: [JSONValue] = [
+            .object(["label": .string("Content type"), "value": .string(clip.kind)]),
+            .object(["label": .string("Characters"), "value": .string("\(chars)")]),
+            .object(["label": .string("Words"), "value": .string("\(words)")]),
+            .object(["label": .string("Times copied"), "value": .string("\(clip.timesCopied)")]),
+        ]
+        if let src = clip.source { rows.append(.object(["label": .string("Source"), "value": .string(src)])) }
+        rows.append(.object(["label": .string("Last copied"), "value": .string(relativeTime(clip.date))]))
+        return .array(rows)
     }
 
     private func renderRoot(calcCard: ViewNode?) {
