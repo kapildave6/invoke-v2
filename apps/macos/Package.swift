@@ -25,7 +25,9 @@ let package = Package(
         .target(name: "InvokePalette", dependencies: ["InvokeRenderer"]),
         .target(
             name: "InvokeShell",
-            dependencies: ["InvokePalette", "InvokeIPC", "InvokeRenderer", "InvokeServices", "InvokePersistence"]
+            dependencies: ["InvokePalette", "InvokeIPC", "InvokeRenderer", "InvokeServices", "InvokePersistence"],
+            // Carbon: RegisterEventHotKey for the global summon hotkey (§3.2).
+            linkerSettings: [.linkedFramework("Carbon")]
         ),
         .executableTarget(name: "InvokeApp", dependencies: ["InvokeShell"]),
         .testTarget(name: "InvokeIPCTests", dependencies: ["InvokeIPC", "InvokeRenderer"]),

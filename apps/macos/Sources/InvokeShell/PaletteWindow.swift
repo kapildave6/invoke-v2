@@ -20,6 +20,12 @@ public final class PaletteWindow: NSObject {
 
     /// Fired when the user edits the search field — the shell forwards it to the extension.
     public var onSearchChange: ((String) -> Void)?
+    /// Move selection by ±1 (arrow keys), with the search field keeping focus.
+    public var onMove: ((Int) -> Void)?
+    /// Activate the selected row's action (Enter = primary; Cmd+Enter = secondary).
+    public var onActivate: ((_ secondary: Bool) -> Void)?
+    /// Esc pressed.
+    public var onCancel: (() -> Void)?
 
     public override init() {
         let width: CGFloat = 750
@@ -73,8 +79,8 @@ public final class PaletteWindow: NSObject {
         panel.contentView = blur
     }
 
-    public func render(_ tree: ViewTree) {
-        paletteView.render(tree)
+    public func render(_ tree: ViewTree, selectedIndex: Int) {
+        paletteView.render(tree, selectedIndex: selectedIndex)
     }
 
     /// Show + focus the palette (centered, key window, search field first responder).
@@ -97,5 +103,23 @@ public final class PaletteWindow: NSObject {
 extension PaletteWindow: NSTextFieldDelegate {
     public func controlTextDidChange(_ obj: Notification) {
         onSearchChange?(searchField.stringValue)
+    }
+
+    /// Route list-navigation keys while the search field keeps focus (Raycast-style): arrows move
+    /// the selection, Enter/⌘Enter activate the primary/secondary action, Esc cancels.
+    public func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
+        switch commandSelector {
+        case #selector(NSResponder.moveDown(_:)):
+            onMove?(1); return true
+        case #selector(NSResponder.moveUp(_:)):
+            onMove?(-1); return true
+        case #selector(NSResponder.insertNewline(_:)):
+            let secondary = NSApp.currentEvent?.modifierFlags.contains(.command) ?? false
+            onActivate?(secondary); return true
+        case #selector(NSResponder.cancelOperation(_:)):
+            onCancel?(); return true
+        default:
+            return false
+        }
     }
 }

@@ -122,6 +122,12 @@ public final class ExtensionHost {
         write(FrameCodec.encode(data))
     }
 
+    /// Host → child: invoke an action handler the child exposed via a serialized `onAction` prop.
+    public func invoke(handler: String) {
+        guard let data = try? jsonEncoder.encode(ChildBound.invoke(handler)) else { return }
+        write(FrameCodec.encode(data))
+    }
+
     private func replyRPC(id: Int) {
         let obj: [String: JSONValue] = ["kind": .string("rpcResult"), "id": .number(Double(id)), "result": .null]
         guard let data = try? jsonEncoder.encode(JSONValue.object(obj)) else { return }

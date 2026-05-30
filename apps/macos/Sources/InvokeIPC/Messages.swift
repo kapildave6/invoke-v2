@@ -28,7 +28,13 @@ public struct ChildBound: Codable {
     public let kind: String
     public var text: String?
     public var handler: String?
+    public var args: [JSONValue]?
 
-    public static func searchText(_ t: String) -> ChildBound { ChildBound(kind: "searchText", text: t, handler: nil) }
-    public static func invoke(_ h: String) -> ChildBound { ChildBound(kind: "invoke", text: nil, handler: h) }
+    public static func searchText(_ t: String) -> ChildBound {
+        ChildBound(kind: "searchText", text: t, handler: nil, args: nil)
+    }
+    /// `args` defaults to `[]` so the child's `fn(...args)` spread never throws on undefined.
+    public static func invoke(_ h: String, _ args: [JSONValue] = []) -> ChildBound {
+        ChildBound(kind: "invoke", text: nil, handler: h, args: args)
+    }
 }
