@@ -8,18 +8,19 @@ import { useFetch } from "@invoke/utils";
 import { useState } from "react";
 import { calculate, usdRatesFrom } from "./engine.ts";
 
-interface FrankfurterResponse {
-  base?: string;
-  rates: Record<string, number>;
+interface RatesResponse {
+  base_code?: string;
+  rates?: Record<string, number>;
 }
 
 export default function Command() {
   const [query, setQuery] = useState("");
 
-  // Live ECB rates (free, no key). usdRatesFrom() normalizes to a USD base and MERGES the static
-  // table underneath, so currencies the ECB feed omits (e.g. AED) still convert.
-  const { data } = useFetch<FrankfurterResponse>("https://api.frankfurter.app/latest?base=USD");
-  const rates = usdRatesFrom(data);
+  // Live rates with broad coverage (~160 currencies incl. AED and the rest of the GCC), free + no
+  // key, daily updates. usdRatesFrom() normalizes to a USD base and merges the static table only as
+  // an OFFLINE fallback — so in normal use every rate is live, not hard-coded.
+  const { data } = useFetch<RatesResponse>("https://open.er-api.com/v6/latest/USD");
+  const rates = usdRatesFrom({ base: data?.base_code, rates: data?.rates });
 
   const result = calculate(query, rates);
 

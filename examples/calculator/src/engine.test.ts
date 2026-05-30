@@ -106,8 +106,16 @@ function rateEq(label: string, got: number | undefined, expected: number, eps = 
   rateEq("EUR-base GBP", r.GBP, 0.85 / 1.1);
   rateEq("EUR-base AED(static)", r.AED, STATIC_RATES.AED);
 }
-// No response → static table.
+// Broad live feed (open.er-api shape: USD base, includes AED) → live AED overrides the static one.
+{
+  const r = usdRatesFrom({ base: "USD", rates: { USD: 1, AED: 3.6725, EUR: 0.93, KWD: 0.307 } });
+  rateEq("live AED (overrides static)", r.AED, 3.6725);
+  rateEq("live KWD (not in static)", r.KWD, 0.307);
+  rateEq("live EUR", r.EUR, 0.93);
+}
+// No response / no rates → static table (offline fallback).
 rateEq("no-response AED", usdRatesFrom(undefined).AED, STATIC_RATES.AED);
+rateEq("no-rates AED", usdRatesFrom({ base: "USD" }).AED, STATIC_RATES.AED);
 
 console.log(`\ncalc engine: ${pass} passed, ${fail} failed`);
 if (fail > 0) process.exit(1);
