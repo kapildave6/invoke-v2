@@ -10,7 +10,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private let host = ExtensionHost()
     private let hotkey = GlobalHotkey()
     private var selectedIndex = 0
-    private let commandTitle = "Hello World"
+    private var commandTitle = "Calculator"
 
     public override init() { super.init() }
 
@@ -33,7 +33,10 @@ public final class AppController: NSObject, NSApplicationDelegate {
             ?? FileManager.default.currentDirectoryPath
         print("[invoke:host] repo root: \(root)")
 
-        host.launch(repoRoot: root, entryRelPath: "examples/hello-world/src/list.tsx", command: "list")
+        // Launch the Calculator by default; override via env to run another extension.
+        let entry = ProcessInfo.processInfo.environment["INVOKE_EXT_ENTRY"] ?? "examples/calculator/src/calculate.tsx"
+        let command = ProcessInfo.processInfo.environment["INVOKE_EXT_COMMAND"] ?? "calculate"
+        host.launch(repoRoot: root, entryRelPath: entry, command: command)
 
         // Global summon: ⌥Space toggles the palette (§3.2 Carbon fast path — no Accessibility grant).
         hotkey.register(keyCode: UInt32(kVK_Space), modifiers: UInt32(optionKey)) { [weak self] in
