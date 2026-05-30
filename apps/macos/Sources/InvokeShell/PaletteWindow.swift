@@ -240,6 +240,8 @@ public final class PaletteWindow: NSObject {
         panel.orderOut(nil)
     }
 
+    public var isVisible: Bool { panel.isVisible }
+
     public func toggle() {
         if panel.isVisible { hide() } else { show() }
     }

@@ -62,7 +62,7 @@ _Last updated: 2026-05-31_
 |---|---|---|
 | **Calculator** (math · units · live currency) | ✅ | bundled extension, 55 engine tests |
 | Applications launcher | ✅ | see Root search |
-| Clipboard history | ⬜ | next candidates ↓ |
+| Clipboard history | ✅ | in-memory (encryption pending §3.4); ⌘⇧V opens it; search + copy-back |
 | Window management (maximize/halves) | ⬜ | needs Accessibility |
 | Snippets / text expansion | ⬜ | |
 | Quicklinks | ⬜ | |

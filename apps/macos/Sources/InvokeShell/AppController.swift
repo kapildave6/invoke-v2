@@ -14,8 +14,11 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private let hotkey = GlobalHotkey()
     private let appIndex = AppIndexService()
     private let frecency = Frecency()
-    private lazy var commands: [RootCommand] = Self.makeCommands()
+    private let clipboard = ClipboardHistory()
+    private lazy var commands: [RootCommand] = makeCommands()
 
+    private enum Mode { case root, clipboard }
+    private var mode: Mode = .root
     private var selectedIndex = 0
     private var rootTree: ViewTree?
     private var lastQuery = ""
@@ -29,6 +32,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         let runTitle: String
         let icon: String       // SF Symbol
         let keywords: [String]
+        let closesPalette: Bool // folder-opens close; "navigating" commands (clipboard) keep it open
         let run: () -> Void
     }
 
@@ -53,7 +57,10 @@ public final class AppController: NSObject, NSApplicationDelegate {
         palette.onSearchChange = { [weak self] text in self?.onSearch(text) }
         palette.onMove = { [weak self] delta in self?.moveSelection(delta) }
         palette.onActivate = { [weak self] secondary in self?.activateSelection(secondary: secondary) }
-        palette.onCancel = { [weak self] in self?.palette.hide() }
+        palette.onCancel = { [weak self] in
+            guard let self else { return }
+            if self.mode == .clipboard { self.exitToRoot() } else { self.palette.hide() }
+        }
         palette.actionsProvider = { [weak self] in self?.currentActions() ?? [] }
 
         let root = ProcessInfo.processInfo.environment["INVOKE_REPO_ROOT"]
@@ -66,12 +73,17 @@ public final class AppController: NSObject, NSApplicationDelegate {
         host.launch(repoRoot: root, entryRelPath: entry, command: command)
 
         appIndex.build()
+        clipboard.start()
         print("[invoke:host] app index: \(appIndex.count) applications · \(commands.count) commands")
 
-        hotkey.register(keyCode: UInt32(kVK_Space), modifiers: UInt32(optionKey)) { [weak self] in
-            self?.palette.toggle()
+        // ⌥Space summons the root; ⌘⇧V opens Clipboard History directly (Raycast parity).
+        hotkey.register(id: 1, keyCode: UInt32(kVK_Space), modifiers: UInt32(optionKey)) { [weak self] in
+            self?.summonToggle()
         }
-        print("[invoke:host] global hotkey registered: ⌥Space")
+        hotkey.register(id: 2, keyCode: UInt32(kVK_ANSI_V), modifiers: UInt32(cmdKey | shiftKey)) { [weak self] in
+            self?.openClipboardHotkey()
+        }
+        print("[invoke:host] global hotkeys: ⌥Space (summon) · ⌘⇧V (clipboard)")
 
         renderRoot(calcCard: nil) // initial: Suggestions
         palette.show()
@@ -87,8 +99,72 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private func onSearch(_ text: String) {
         lastQuery = text
         selectedIndex = 0
+        if mode == .clipboard { renderClipboard(query: text); return }
         if Self.looksLikeCalculation(text) { host.setSearchText(text) } // card arrives via onCommit
         renderRoot(calcCard: nil)
+    }
+
+    /// ⌥Space: toggle the palette, always resetting to the root when summoning.
+    private func summonToggle() {
+        if palette.isVisible { palette.hide() } else { exitToRoot(); palette.show() }
+    }
+
+    /// ⌘⇧V: summon straight into Clipboard History.
+    private func openClipboardHotkey() {
+        palette.show()
+        enterClipboard()
+    }
+
+    private func enterClipboard() {
+        mode = .clipboard
+        lastQuery = ""
+        palette.clearSearch()
+        selectedIndex = 0
+        renderClipboard(query: "")
+    }
+
+    private func exitToRoot() {
+        mode = .root
+        lastQuery = ""
+        palette.clearSearch()
+        selectedIndex = 0
+        renderRoot(calcCard: nil)
+    }
+
+    private func renderClipboard(query: String) {
+        rootTree = buildClipboard(query: query)
+        let count = items().count
+        if selectedIndex >= count { selectedIndex = max(0, count - 1) }
+        palette.render(activeTree, selectedIndex: selectedIndex)
+        updateActionBar()
+    }
+
+    private func buildClipboard(query: String) -> ViewTree {
+        let tree = ViewTree()
+        let list = ViewNode(id: 1, type: "list")
+        let entries = clipboard.entries(matching: query)
+        if entries.isEmpty {
+            let msg = query.trimmingCharacters(in: .whitespaces).isEmpty
+                ? "Clipboard history is empty — copy something"
+                : "No matching clips"
+            list.children = [ViewNode(id: 2, type: "list-section", props: ["title": .string(msg)])]
+        } else {
+            let section = ViewNode(id: 2, type: "list-section", props: ["title": .string("Clipboard History")])
+            var nid = 10
+            for clip in entries {
+                nid += 1
+                section.children.append(ViewNode(id: nid, type: "list-item", props: [
+                    "title": .string(Self.preview(clip.text)),
+                    "subtitle": .string(Self.relativeTime(clip.date)),
+                    "accessories": .array([.object(["text": .string(clip.kind)])]),
+                    "icon": .string(clip.kind == "Link" ? "link" : "doc.on.clipboard"),
+                    "clipText": .string(clip.text),
+                ]))
+            }
+            list.children = [section]
+        }
+        tree.root.children = [list]
+        return tree
     }
 
     private func renderRoot(calcCard: ViewNode?) {
@@ -197,7 +273,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
     }
 
     private func updateActionBar() {
-        palette.setActionBar(command: "Invoke", primary: currentActions().first?.title)
+        palette.setActionBar(command: mode == .clipboard ? "Clipboard History" : "Invoke",
+                             primary: currentActions().first?.title)
     }
 
     /// Actions for the selected row: launch an app, run a command (both bump frecency), or the
@@ -214,11 +291,19 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 self?.afterLaunch()
             }]
         }
+        if let clip = node.props["clipText"]?.stringValue {
+            return [PaletteAction(title: "Copy to Clipboard", shortcut: "↵") { [weak self] in
+                let pb = NSPasteboard.general
+                pb.clearContents()
+                pb.setString(clip, forType: .string)
+                self?.palette.showToast("Copied to Clipboard")
+            }]
+        }
         if let cid = node.props["commandId"]?.stringValue, let cmd = commands.first(where: { $0.id == cid }) {
             return [PaletteAction(title: cmd.runTitle, shortcut: "↵") { [weak self] in
                 self?.frecency.bump("cmd:\(cid)")
                 cmd.run()
-                self?.afterLaunch()
+                if cmd.closesPalette { self?.afterLaunch() }
             }]
         }
         return actions(under: node).enumerated().map { index, n in
@@ -291,17 +376,18 @@ public final class AppController: NSObject, NSApplicationDelegate {
 
     // MARK: - Commands
 
-    private static func makeCommands() -> [RootCommand] {
+    private func makeCommands() -> [RootCommand] {
         func openPath(_ p: String) -> () -> Void {
             let url = URL(fileURLWithPath: (p as NSString).expandingTildeInPath)
             return { NSWorkspace.shared.open(url) }
         }
         return [
-            RootCommand(id: "folder.home", title: "Open Home Folder", subtitle: "Navigation", runTitle: "Open", icon: "house", keywords: ["home", "folder", "finder"], run: openPath("~")),
-            RootCommand(id: "folder.downloads", title: "Open Downloads", subtitle: "Navigation", runTitle: "Open", icon: "arrow.down.circle", keywords: ["downloads", "folder", "finder"], run: openPath("~/Downloads")),
-            RootCommand(id: "folder.documents", title: "Open Documents", subtitle: "Navigation", runTitle: "Open", icon: "doc", keywords: ["documents", "docs", "folder"], run: openPath("~/Documents")),
-            RootCommand(id: "folder.desktop", title: "Open Desktop", subtitle: "Navigation", runTitle: "Open", icon: "menubar.dock.rectangle", keywords: ["desktop", "folder"], run: openPath("~/Desktop")),
-            RootCommand(id: "folder.applications", title: "Open Applications", subtitle: "Navigation", runTitle: "Open", icon: "square.grid.2x2", keywords: ["applications", "apps", "folder"], run: openPath("/Applications")),
+            RootCommand(id: "clipboard.history", title: "Clipboard History", subtitle: "System", runTitle: "Open", icon: "doc.on.clipboard", keywords: ["clipboard", "history", "paste", "copy"], closesPalette: false) { [weak self] in self?.enterClipboard() },
+            RootCommand(id: "folder.home", title: "Open Home Folder", subtitle: "Navigation", runTitle: "Open", icon: "house", keywords: ["home", "folder", "finder"], closesPalette: true, run: openPath("~")),
+            RootCommand(id: "folder.downloads", title: "Open Downloads", subtitle: "Navigation", runTitle: "Open", icon: "arrow.down.circle", keywords: ["downloads", "folder", "finder"], closesPalette: true, run: openPath("~/Downloads")),
+            RootCommand(id: "folder.documents", title: "Open Documents", subtitle: "Navigation", runTitle: "Open", icon: "doc", keywords: ["documents", "docs", "folder"], closesPalette: true, run: openPath("~/Documents")),
+            RootCommand(id: "folder.desktop", title: "Open Desktop", subtitle: "Navigation", runTitle: "Open", icon: "menubar.dock.rectangle", keywords: ["desktop", "folder"], closesPalette: true, run: openPath("~/Desktop")),
+            RootCommand(id: "folder.applications", title: "Open Applications", subtitle: "Navigation", runTitle: "Open", icon: "square.grid.2x2", keywords: ["applications", "apps", "folder"], closesPalette: true, run: openPath("/Applications")),
         ]
     }
 
@@ -321,6 +407,21 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private static func objString(_ v: JSONValue?, _ key: String) -> String? {
         if case .object(let o)? = v { return o[key]?.stringValue }
         return nil
+    }
+
+    /// First line of a clip, trimmed and truncated for the row title.
+    private static func preview(_ s: String) -> String {
+        let line = s.split(whereSeparator: \.isNewline).first.map(String.init) ?? s
+        let t = line.trimmingCharacters(in: .whitespaces)
+        return t.count > 80 ? String(t.prefix(80)) + "…" : t
+    }
+
+    private static func relativeTime(_ d: Date) -> String {
+        let s = Int(Date().timeIntervalSince(d))
+        if s < 5 { return "just now" }
+        if s < 60 { return "\(s)s ago" }
+        if s < 3600 { return "\(s / 60)m ago" }
+        return "\(s / 3600)h ago"
     }
 
     private static func makeMainMenu() -> NSMenu {
