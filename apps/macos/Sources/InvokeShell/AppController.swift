@@ -17,6 +17,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private let appIndex = AppIndexService()
     private let frecency = Frecency()
     private let clipboard = ClipboardHistory()
+    private let windowManager = WindowManager()
     private lazy var commands: [RootCommand] = makeCommands()
 
     private enum Mode { case root, clipboard }
@@ -93,7 +94,18 @@ public final class AppController: NSObject, NSApplicationDelegate {
         hotkey.register(id: 2, keyCode: UInt32(kVK_ANSI_V), modifiers: UInt32(cmdKey | shiftKey)) { [weak self] in
             self?.openClipboardHotkey()
         }
-        print("[invoke:host] global hotkeys: ⌥Space (summon) · ⌘⇧V (clipboard)")
+        // Window management on the current frontmost app: ⌃⌥← / → / ↑.
+        let winMods = UInt32(controlKey | optionKey)
+        hotkey.register(id: 3, keyCode: UInt32(kVK_LeftArrow), modifiers: winMods) { [weak self] in
+            self?.applyWindow(.leftHalf, pid: NSWorkspace.shared.frontmostApplication?.processIdentifier)
+        }
+        hotkey.register(id: 4, keyCode: UInt32(kVK_RightArrow), modifiers: winMods) { [weak self] in
+            self?.applyWindow(.rightHalf, pid: NSWorkspace.shared.frontmostApplication?.processIdentifier)
+        }
+        hotkey.register(id: 5, keyCode: UInt32(kVK_UpArrow), modifiers: winMods) { [weak self] in
+            self?.applyWindow(.maximize, pid: NSWorkspace.shared.frontmostApplication?.processIdentifier)
+        }
+        print("[invoke:host] global hotkeys: ⌥Space · ⌘⇧V · ⌃⌥←/→/↑ (windows)")
 
         renderRoot(calcCard: nil) // initial: Suggestions
         palette.show()
@@ -124,6 +136,17 @@ public final class AppController: NSObject, NSApplicationDelegate {
         captureTarget()
         palette.show()
         enterClipboard()
+    }
+
+    /// Move/resize a window via Accessibility (target = palette's previous app, or the frontmost
+    /// app for the global hotkeys). Prompts for the grant if missing.
+    private func applyWindow(_ action: WindowManager.Action, pid: pid_t?) {
+        guard AXIsProcessTrusted() else {
+            Self.promptAccessibility()
+            palette.showToast("Enable Accessibility for Invoke to manage windows")
+            return
+        }
+        if let pid { windowManager.apply(action, pid: pid) }
     }
 
     /// Remember the app that had focus when summoned, so we can paste back into it.
@@ -516,8 +539,23 @@ public final class AppController: NSObject, NSApplicationDelegate {
             let url = URL(fileURLWithPath: (p as NSString).expandingTildeInPath)
             return { NSWorkspace.shared.open(url) }
         }
+        func windowCommand(_ id: String, _ title: String, _ icon: String, _ kw: [String], _ action: WindowManager.Action) -> RootCommand {
+            RootCommand(id: id, title: title, subtitle: "Window Management", runTitle: title, icon: icon, keywords: ["window"] + kw, closesPalette: true) { [weak self] in
+                self?.applyWindow(action, pid: self?.pasteTarget?.processIdentifier)
+            }
+        }
         return [
             RootCommand(id: "clipboard.history", title: "Clipboard History", subtitle: "System", runTitle: "Open", icon: "doc.on.clipboard", keywords: ["clipboard", "history", "paste", "copy"], closesPalette: false) { [weak self] in self?.enterClipboard() },
+            windowCommand("window.maximize", "Maximize", "macwindow", ["maximize", "full", "fill"], .maximize),
+            windowCommand("window.leftHalf", "Left Half", "rectangle.lefthalf.filled", ["left", "half"], .leftHalf),
+            windowCommand("window.rightHalf", "Right Half", "rectangle.righthalf.filled", ["right", "half"], .rightHalf),
+            windowCommand("window.topHalf", "Top Half", "rectangle.tophalf.filled", ["top", "half"], .topHalf),
+            windowCommand("window.bottomHalf", "Bottom Half", "rectangle.bottomhalf.filled", ["bottom", "half"], .bottomHalf),
+            windowCommand("window.center", "Center", "rectangle.center.inset.filled", ["center", "centre"], .center),
+            windowCommand("window.topLeft", "Top Left Quarter", "rectangle.inset.filled", ["top", "left", "quarter"], .topLeft),
+            windowCommand("window.topRight", "Top Right Quarter", "rectangle.inset.filled", ["top", "right", "quarter"], .topRight),
+            windowCommand("window.bottomLeft", "Bottom Left Quarter", "rectangle.inset.filled", ["bottom", "left", "quarter"], .bottomLeft),
+            windowCommand("window.bottomRight", "Bottom Right Quarter", "rectangle.inset.filled", ["bottom", "right", "quarter"], .bottomRight),
             RootCommand(id: "folder.home", title: "Open Home Folder", subtitle: "Navigation", runTitle: "Open", icon: "house", keywords: ["home", "folder", "finder"], closesPalette: true, run: openPath("~")),
             RootCommand(id: "folder.downloads", title: "Open Downloads", subtitle: "Navigation", runTitle: "Open", icon: "arrow.down.circle", keywords: ["downloads", "folder", "finder"], closesPalette: true, run: openPath("~/Downloads")),
             RootCommand(id: "folder.documents", title: "Open Documents", subtitle: "Navigation", runTitle: "Open", icon: "doc", keywords: ["documents", "docs", "folder"], closesPalette: true, run: openPath("~/Documents")),

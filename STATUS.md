@@ -63,7 +63,7 @@ _Last updated: 2026-05-31_
 | **Calculator** (math · units · live currency) | ✅ | bundled extension, 55 engine tests |
 | Applications launcher | ✅ | see Root search |
 | Clipboard history | ✅ | text/link/file/image; master–detail view + metadata; ⌘⇧V; type filter; paste-to-app (⌘V, needs Accessibility). In-memory (encryption pending §3.4) |
-| Window management (maximize/halves) | ⬜ | needs Accessibility |
+| Window management (maximize/halves) | ✅ | AX move/resize: maximize, halves, quarters, center; root commands + ⌃⌥←/→/↑ hotkeys (needs Accessibility) |
 | Snippets / text expansion | ⬜ | |
 | Quicklinks | ⬜ | |
 | Emoji & symbols picker | ⬜ | |
