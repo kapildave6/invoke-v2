@@ -3,7 +3,7 @@
  * (wired as `npm run test:calc`). Compares the raw numeric result within a tolerance so formatting
  * choices don't make tests brittle; exits non-zero on any failure (CI gate).
  */
-import { calculate, STATIC_RATES } from "./engine.ts";
+import { calculate, usdRatesFrom, STATIC_RATES } from "./engine.ts";
 
 let pass = 0;
 let fail = 0;
@@ -73,6 +73,8 @@ approx("60 mph in kph", 96.56064, 1e-2);
 approx("100 usd in eur", 92);
 approx("100 eur in usd", 108.69565, 1e-3);
 approx("10 usd in inr", 833);
+approx("100 usd in aed", 367); // AED is pegged; static fallback (not in the ECB feed)
+approx("367 aed in usd", 100, 1e-3);
 kind("100 usd in eur", "currency");
 kind("10 km in mi", "unit");
 kind("2+2", "math");
@@ -83,6 +85,29 @@ isNull("hello world");
 isNull("5 xyz in abc");
 isNull("10 km in kg"); // category mismatch
 isNull("2 +"); // incomplete
+
+// ── usdRatesFrom: live-rate normalization + static merge (the AED bug fix) ──
+function rateEq(label: string, got: number | undefined, expected: number, eps = 1e-4): void {
+  if (got != null && Math.abs(got - expected) <= eps * Math.max(1, Math.abs(expected))) pass++;
+  else { fail++; console.error(`FAIL rate ${label} → ${got}, expected ≈ ${expected}`); }
+}
+// USD-based response (AED absent from feed) must keep AED from the static fallback.
+{
+  const r = usdRatesFrom({ base: "USD", rates: { EUR: 0.9, INR: 84 } });
+  rateEq("USD-base USD", r.USD, 1);
+  rateEq("USD-base EUR", r.EUR, 0.9);
+  rateEq("USD-base AED(static)", r.AED, STATIC_RATES.AED);
+}
+// EUR-based response must be normalized to a USD base.
+{
+  const r = usdRatesFrom({ base: "EUR", rates: { USD: 1.1, GBP: 0.85 } });
+  rateEq("EUR-base USD", r.USD, 1);
+  rateEq("EUR-base EUR", r.EUR, 1 / 1.1);
+  rateEq("EUR-base GBP", r.GBP, 0.85 / 1.1);
+  rateEq("EUR-base AED(static)", r.AED, STATIC_RATES.AED);
+}
+// No response → static table.
+rateEq("no-response AED", usdRatesFrom(undefined).AED, STATIC_RATES.AED);
 
 console.log(`\ncalc engine: ${pass} passed, ${fail} failed`);
 if (fail > 0) process.exit(1);

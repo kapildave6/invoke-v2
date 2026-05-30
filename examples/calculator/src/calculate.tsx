@@ -6,18 +6,20 @@
 import { List, ActionPanel, Action } from "@invoke/api";
 import { useFetch } from "@invoke/utils";
 import { useState } from "react";
-import { calculate, STATIC_RATES } from "./engine.ts";
+import { calculate, usdRatesFrom } from "./engine.ts";
 
 interface FrankfurterResponse {
+  base?: string;
   rates: Record<string, number>;
 }
 
 export default function Command() {
   const [query, setQuery] = useState("");
 
-  // Live ECB rates (free, no key); falls back to the static table offline / on error.
+  // Live ECB rates (free, no key). usdRatesFrom() normalizes to a USD base and MERGES the static
+  // table underneath, so currencies the ECB feed omits (e.g. AED) still convert.
   const { data } = useFetch<FrankfurterResponse>("https://api.frankfurter.app/latest?base=USD");
-  const rates = data?.rates ? { USD: 1, ...data.rates } : STATIC_RATES;
+  const rates = usdRatesFrom(data);
 
   const result = calculate(query, rates);
 

@@ -228,6 +228,28 @@ export const STATIC_RATES: Record<string, number> = {
   CHF: 0.89, CNY: 7.24, AED: 3.67, SGD: 1.35, HKD: 7.81, NZD: 1.64,
 };
 
+/**
+ * Build a USD-based rate table ("units per 1 USD") from a Frankfurter-style response, normalizing
+ * whatever base the API returns, and MERGING over the static table so currencies the live feed
+ * omits (the ECB set has no AED, etc.) keep a fallback rather than vanishing.
+ */
+export function usdRatesFrom(resp: { base?: string; rates?: Record<string, number> } | undefined): Record<string, number> {
+  const live = resp?.rates;
+  if (!live) return { ...STATIC_RATES };
+
+  const base = (resp?.base ?? "USD").toUpperCase();
+  const perBase = { ...live, [base]: 1 }; // values are "X per 1 base"; the base itself is 1
+  const usdPerBase = perBase["USD"];
+  if (!usdPerBase) {
+    // No USD anchor to normalize against — best effort: trust the values, keep static fallbacks.
+    return { ...STATIC_RATES, ...perBase, USD: 1 };
+  }
+  const usd: Record<string, number> = {};
+  for (const code in perBase) usd[code] = perBase[code] / usdPerBase; // (X per base)/(USD per base) = X per USD
+  usd["USD"] = 1;
+  return { ...STATIC_RATES, ...usd }; // live overrides static where present; static fills the gaps (AED…)
+}
+
 function convertCurrency(
   amount: number,
   from: string,
