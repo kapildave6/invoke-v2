@@ -176,13 +176,24 @@ public final class PaletteView: NSView {
         pane.translatesAutoresizingMaskIntoConstraints = false
         guard let node else { return pane }
 
-        let content = NSTextField(wrappingLabelWithString: node.props["detailText"]?.stringValue ?? (node.title ?? ""))
-        content.font = .systemFont(ofSize: 13)
-        content.textColor = .labelColor
-        content.isSelectable = true
-        content.maximumNumberOfLines = 12
-        content.translatesAutoresizingMaskIntoConstraints = false
-        pane.addSubview(content)
+        let contentView: NSView
+        if let b64 = node.props["thumb"]?.stringValue,
+           let data = Data(base64Encoded: b64), let img = NSImage(data: data) {
+            let iv = NSImageView(image: img)
+            iv.imageScaling = .scaleProportionallyUpOrDown
+            iv.imageAlignment = .alignTopLeft
+            iv.heightAnchor.constraint(lessThanOrEqualToConstant: 220).isActive = true
+            contentView = iv
+        } else {
+            let label = NSTextField(wrappingLabelWithString: node.props["detailText"]?.stringValue ?? (node.title ?? ""))
+            label.font = .systemFont(ofSize: 13)
+            label.textColor = .labelColor
+            label.isSelectable = true
+            label.maximumNumberOfLines = 12
+            contentView = label
+        }
+        contentView.translatesAutoresizingMaskIntoConstraints = false
+        pane.addSubview(contentView)
 
         let info = NSStackView()
         info.orientation = .vertical
@@ -203,9 +214,9 @@ public final class PaletteView: NSView {
         pane.addSubview(info)
 
         NSLayoutConstraint.activate([
-            content.topAnchor.constraint(equalTo: pane.topAnchor, constant: 8),
-            content.leadingAnchor.constraint(equalTo: pane.leadingAnchor, constant: 16),
-            content.trailingAnchor.constraint(equalTo: pane.trailingAnchor, constant: -16),
+            contentView.topAnchor.constraint(equalTo: pane.topAnchor, constant: 8),
+            contentView.leadingAnchor.constraint(equalTo: pane.leadingAnchor, constant: 16),
+            contentView.trailingAnchor.constraint(equalTo: pane.trailingAnchor, constant: -16),
             info.leadingAnchor.constraint(equalTo: pane.leadingAnchor, constant: 16),
             info.trailingAnchor.constraint(equalTo: pane.trailingAnchor, constant: -16),
             info.bottomAnchor.constraint(equalTo: pane.bottomAnchor, constant: -14),

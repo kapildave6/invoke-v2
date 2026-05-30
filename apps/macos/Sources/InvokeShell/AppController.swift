@@ -151,15 +151,15 @@ public final class AppController: NSObject, NSApplicationDelegate {
     }
 
     private func renderClipboard(query: String) {
-        rootTree = buildClipboard(query: query)
-        let count = items().count
+        let count = clipboard.entries(matching: query, kind: clipKind).count
         if selectedIndex >= count { selectedIndex = max(0, count - 1) }
+        rootTree = buildClipboard(query: query, selectedIndex: selectedIndex)
         palette.render(activeTree, selectedIndex: selectedIndex)
         palette.setFilter(options: clipboard.availableKinds(), selected: clipKind)
         updateActionBar()
     }
 
-    private func buildClipboard(query: String) -> ViewTree {
+    private func buildClipboard(query: String, selectedIndex: Int) -> ViewTree {
         let tree = ViewTree()
         let list = ViewNode(id: 1, type: "list")
         let entries = clipboard.entries(matching: query, kind: clipKind)
@@ -172,20 +172,28 @@ public final class AppController: NSObject, NSApplicationDelegate {
             list.props["showDetail"] = .bool(true) // master–detail layout
             let section = ViewNode(id: 2, type: "list-section", props: ["title": .string("Today")])
             var nid = 10
-            for clip in entries {
+            for (i, clip) in entries.enumerated() {
                 nid += 1
                 var props: [String: JSONValue] = [
-                    "detailText": .string(clip.text),
+                    "clipKey": .string(clip.key), // actions look the real clip up by key
                     "metadata": Self.clipMetadata(clip),
                 ]
-                if clip.kind == "File", let path = clip.filePath {
-                    props["title"] = .string((path as NSString).lastPathComponent)
-                    props["fileIcon"] = .string(path)   // real file icon
-                    props["clipFile"] = .string(path)   // Enter copies the file (URL)
-                } else {
+                switch clip.kind {
+                case "File":
+                    props["title"] = .string((clip.filePath.map { ($0 as NSString).lastPathComponent }) ?? "File")
+                    if let p = clip.filePath { props["fileIcon"] = .string(p) }
+                    props["detailText"] = .string(clip.text)
+                case "Image":
+                    let dims = clip.imageW.map { "\($0)×\(clip.imageH ?? 0)" } ?? ""
+                    props["title"] = .string("Image \(dims)")
+                    props["icon"] = .string("photo")
+                    if i == selectedIndex, let data = clip.imageData { // thumbnail only for the shown item
+                        props["thumb"] = .string(Self.thumbBase64(data))
+                    }
+                default: // Text / Link
                     props["title"] = .string(Self.preview(clip.text))
                     props["icon"] = .string(clip.kind == "Link" ? "link" : "doc.on.clipboard")
-                    props["clipText"] = .string(clip.text)
+                    props["detailText"] = .string(clip.text)
                 }
                 section.children.append(ViewNode(id: nid, type: "list-item", props: props))
             }
@@ -195,17 +203,41 @@ public final class AppController: NSObject, NSApplicationDelegate {
         return tree
     }
 
+    /// Downscaled base64 PNG thumbnail for the detail pane (the full image stays in ClipboardHistory).
+    private static func thumbBase64(_ data: Data, maxDim: CGFloat = 360) -> String {
+        guard let img = NSImage(data: data) else { return data.base64EncodedString() }
+        let size = img.size
+        let scale = min(1, maxDim / max(size.width, size.height))
+        guard scale < 1 else { return data.base64EncodedString() }
+        let target = NSSize(width: size.width * scale, height: size.height * scale)
+        let thumb = NSImage(size: target)
+        thumb.lockFocus()
+        img.draw(in: NSRect(origin: .zero, size: target))
+        thumb.unlockFocus()
+        guard let tiff = thumb.tiffRepresentation, let rep = NSBitmapImageRep(data: tiff),
+              let png = rep.representation(using: .png, properties: [:]) else { return data.base64EncodedString() }
+        return png.base64EncodedString()
+    }
+
     /// "Information" rows for a clip's detail pane.
     private static func clipMetadata(_ clip: ClipboardHistory.Clip) -> JSONValue {
         var rows: [JSONValue] = [.object(["label": .string("Content type"), "value": .string(clip.kind)])]
-        if clip.kind == "File" {
+        switch clip.kind {
+        case "File":
             if let p = clip.filePath {
                 rows.append(.object(["label": .string("Path"), "value": .string((p as NSString).abbreviatingWithTildeInPath)]))
             }
             if let sz = clip.fileSize {
                 rows.append(.object(["label": .string("File size"), "value": .string(ByteCountFormatter.string(fromByteCount: Int64(sz), countStyle: .file))]))
             }
-        } else {
+        case "Image":
+            if let w = clip.imageW, let h = clip.imageH {
+                rows.append(.object(["label": .string("Dimensions"), "value": .string("\(w) × \(h)")]))
+            }
+            if let sz = clip.fileSize {
+                rows.append(.object(["label": .string("Size"), "value": .string(ByteCountFormatter.string(fromByteCount: Int64(sz), countStyle: .file))]))
+            }
+        default:
             let chars = clip.text.count
             let words = clip.text.split(whereSeparator: { $0 == " " || $0.isNewline }).filter { !$0.isEmpty }.count
             rows.append(.object(["label": .string("Characters"), "value": .string("\(chars)")]))
@@ -312,8 +344,12 @@ public final class AppController: NSObject, NSApplicationDelegate {
         let count = items().count
         guard count > 0 else { return }
         selectedIndex = min(max(0, selectedIndex + delta), count - 1)
-        palette.render(activeTree, selectedIndex: selectedIndex)
-        updateActionBar()
+        if mode == .clipboard {
+            renderClipboard(query: lastQuery) // rebuild so the detail thumbnail follows selection
+        } else {
+            palette.render(activeTree, selectedIndex: selectedIndex)
+            updateActionBar()
+        }
     }
 
     private func activateSelection(secondary: Bool) {
@@ -341,17 +377,11 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 self?.afterLaunch()
             }]
         }
-        if let path = node.props["clipFile"]?.stringValue {
-            let url = URL(fileURLWithPath: path)
+        if let key = node.props["clipKey"]?.stringValue, let clip = clipboard.clip(forKey: key) {
+            let copyTitle = clip.kind == "File" ? "Copy File" : (clip.kind == "Image" ? "Copy Image" : "Copy to Clipboard")
             return [
-                PaletteAction(title: pasteTitle(), shortcut: "↵") { [weak self] in self?.pasteOrCopy(text: nil, fileURL: url) },
-                PaletteAction(title: "Copy File", shortcut: "⌘↵") { [weak self] in self?.copyOnly(text: nil, fileURL: url) },
-            ]
-        }
-        if let clip = node.props["clipText"]?.stringValue {
-            return [
-                PaletteAction(title: pasteTitle(), shortcut: "↵") { [weak self] in self?.pasteOrCopy(text: clip, fileURL: nil) },
-                PaletteAction(title: "Copy to Clipboard", shortcut: "⌘↵") { [weak self] in self?.copyOnly(text: clip, fileURL: nil) },
+                PaletteAction(title: pasteTitle(), shortcut: "↵") { [weak self] in self?.pasteOrCopyClip(clip) },
+                PaletteAction(title: copyTitle, shortcut: "⌘↵") { [weak self] in self?.copyClip(clip) },
             ]
         }
         if let cid = node.props["commandId"]?.stringValue, let cmd = commands.first(where: { $0.id == cid }) {
@@ -379,22 +409,25 @@ public final class AppController: NSObject, NSApplicationDelegate {
         pasteTarget?.localizedName.map { "Paste to \($0)" } ?? "Paste"
     }
 
-    private func setPasteboard(text: String?, fileURL: URL?) {
+    private func setPasteboard(_ clip: ClipboardHistory.Clip) {
         let pb = NSPasteboard.general
         pb.clearContents()
-        if let fileURL { pb.writeObjects([fileURL as NSURL]) }
-        else if let text { pb.setString(text, forType: .string) }
+        switch clip.kind {
+        case "File": if let p = clip.filePath { pb.writeObjects([URL(fileURLWithPath: p) as NSURL]) }
+        case "Image": if let d = clip.imageData, let img = NSImage(data: d) { pb.writeObjects([img]) }
+        default: pb.setString(clip.text, forType: .string)
+        }
     }
 
-    private func copyOnly(text: String?, fileURL: URL?) {
-        setPasteboard(text: text, fileURL: fileURL)
-        palette.showToast(fileURL != nil ? "Copied File" : "Copied to Clipboard")
+    private func copyClip(_ clip: ClipboardHistory.Clip) {
+        setPasteboard(clip)
+        palette.showToast(clip.kind == "Image" ? "Copied Image" : (clip.kind == "File" ? "Copied File" : "Copied to Clipboard"))
     }
 
     /// Set the clipboard, then (if Accessibility is granted) close the palette, refocus the target
     /// app, and synthesize ⌘V — otherwise fall back to copy-only and prompt for the grant.
-    private func pasteOrCopy(text: String?, fileURL: URL?) {
-        setPasteboard(text: text, fileURL: fileURL)
+    private func pasteOrCopyClip(_ clip: ClipboardHistory.Clip) {
+        setPasteboard(clip)
         guard AXIsProcessTrusted() else {
             Self.promptAccessibility()
             palette.showToast("Enable Accessibility for Invoke to paste — copied instead")
