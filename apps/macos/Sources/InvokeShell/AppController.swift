@@ -10,6 +10,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private let host = ExtensionHost()
     private let hotkey = GlobalHotkey()
     private var selectedIndex = 0
+    private let commandTitle = "Hello World"
 
     public override init() { super.init() }
 
@@ -24,6 +25,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
         palette.onMove = { [weak self] delta in self?.moveSelection(delta) }
         palette.onActivate = { [weak self] secondary in self?.activateSelection(secondary: secondary) }
         palette.onCancel = { [weak self] in self?.palette.toggle() }
+        palette.actionsProvider = { [weak self] in self?.currentActions() ?? [] }
+        palette.setActionBar(command: commandTitle, primary: nil)
 
         let root = ProcessInfo.processInfo.environment["INVOKE_REPO_ROOT"]
             ?? Self.findRepoRoot()
@@ -48,11 +51,13 @@ public final class AppController: NSObject, NSApplicationDelegate {
 
     // MARK: - Selection model
 
-    /// Re-render, clamping the selection to the current item count.
+    /// Re-render, clamping the selection to the current item count, and refresh the action bar.
     private func rerender() {
+        palette.dismissMenu() // close any open Action Panel so it can't act on a stale tree
         let count = items().count
         if selectedIndex >= count { selectedIndex = max(0, count - 1) }
         palette.render(host.tree, selectedIndex: selectedIndex)
+        updateActionBar()
     }
 
     private func moveSelection(_ delta: Int) {
@@ -60,15 +65,35 @@ public final class AppController: NSObject, NSApplicationDelegate {
         guard count > 0 else { return }
         selectedIndex = min(max(0, selectedIndex + delta), count - 1)
         palette.render(host.tree, selectedIndex: selectedIndex)
+        updateActionBar()
     }
 
+    /// Enter = primary action, ⌘Enter = secondary.
     private func activateSelection(secondary: Bool) {
-        let rows = items()
-        guard selectedIndex < rows.count else { return }
-        let actions = self.actions(under: rows[selectedIndex])
-        guard !actions.isEmpty else { return }
-        let action = (secondary && actions.count > 1) ? actions[1] : actions[0]
+        let acts = currentActions()
+        guard !acts.isEmpty else { return }
+        (secondary && acts.count > 1 ? acts[1] : acts[0]).run()
+    }
 
+    private func updateActionBar() {
+        palette.setActionBar(command: commandTitle, primary: currentActions().first?.title)
+    }
+
+    /// Build the runnable actions for the selected result (primary first).
+    private func currentActions() -> [PaletteAction] {
+        let rows = items()
+        guard selectedIndex < rows.count else { return [] }
+        let nodes = actions(under: rows[selectedIndex])
+        return nodes.enumerated().map { index, node in
+            PaletteAction(
+                title: title(for: node),
+                shortcut: index == 0 ? "↵" : (index == 1 ? "⌘↵" : nil)
+            ) { [weak self] in self?.perform(node) }
+        }
+    }
+
+    /// Run a single action node: invoke its handler over IPC, or perform a native action (copy).
+    private func perform(_ action: ViewNode) {
         if let handler = action.props["onAction"]?.handlerRef {
             host.invoke(handler: handler) // e.g. Pin → setState in the extension → re-render
         } else if action.props["variant"]?.stringValue == "copy",
@@ -77,6 +102,18 @@ public final class AppController: NSObject, NSApplicationDelegate {
             pb.clearContents()
             pb.setString(content, forType: .string)
             print("[invoke:host] copied to clipboard: \(content)")
+        }
+    }
+
+    /// Display title for an action node (explicit title, else a default for the variant).
+    private func title(for action: ViewNode) -> String {
+        if let explicit = action.props["title"]?.stringValue { return explicit }
+        switch action.props["variant"]?.stringValue {
+        case "copy": return "Copy to Clipboard"
+        case "paste": return "Paste"
+        case "open-in-browser": return "Open in Browser"
+        case "open", "push": return "Open"
+        default: return "Run Action"
         }
     }
 
