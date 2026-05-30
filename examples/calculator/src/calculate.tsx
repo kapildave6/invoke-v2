@@ -31,16 +31,26 @@ export default function Command() {
       filtering={false}
     >
       {result ? (
-        <List.Item
-          title={result.value}
-          subtitle={result.detail}
-          accessories={[{ tag: result.kind }]}
-          actions={
-            <ActionPanel>
-              <Action.CopyToClipboard content={result.value} />
-            </ActionPanel>
-          }
-        />
+        <List.Section title="Calculator">
+          <List.Item
+            title={result.value}
+            subtitle={result.detail}
+            display="card"
+            card={{
+              left: result.left,
+              right: result.right,
+              leftLabel: result.leftLabel ?? "",
+              rightLabel: result.rightLabel ?? "",
+              kind: result.kind,
+              note: result.kind === "currency" ? "Live rate" : "",
+            }}
+            actions={
+              <ActionPanel>
+                <Action.CopyToClipboard content={result.value} />
+              </ActionPanel>
+            }
+          />
+        </List.Section>
       ) : (
         <List.Item
           title={query.trim() ? "No result" : "Type a calculation"}

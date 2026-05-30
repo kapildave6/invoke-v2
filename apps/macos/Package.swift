@@ -22,7 +22,7 @@ let package = Package(
         .target(name: "InvokeServices"),
         .target(name: "InvokePersistence"),
         // AppKit UI.
-        .target(name: "InvokePalette", dependencies: ["InvokeRenderer"]),
+        .target(name: "InvokePalette", dependencies: ["InvokeRenderer", "InvokeIPC"]),
         .target(
             name: "InvokeShell",
             dependencies: ["InvokePalette", "InvokeIPC", "InvokeRenderer", "InvokeServices", "InvokePersistence"],

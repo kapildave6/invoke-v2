@@ -19,6 +19,14 @@ export interface CalcResult {
   kind: CalcKind;
   /** The raw numeric result (for tests / further use). */
   raw: number;
+  /** Card display: big left value (e.g. "1 AED", "2+2", "10 km"). */
+  left: string;
+  /** Card display: big right value (e.g. "₹ 25.87", "4", "6.21 mi"). */
+  right: string;
+  /** Card chip under the left value (e.g. "UAE Dirham", "Length"). */
+  leftLabel?: string;
+  /** Card chip under the right value (e.g. "Indian Rupee", "Length"). */
+  rightLabel?: string;
 }
 
 /* ------------------------------------------------------------------ formatting */
@@ -27,6 +35,33 @@ function formatNumber(n: number, maxFractionDigits = 6): string {
   if (!isFinite(n)) return String(n);
   const rounded = Number(n.toFixed(maxFractionDigits));
   return rounded.toLocaleString("en-US", { maximumFractionDigits: maxFractionDigits });
+}
+
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  USD: "$", EUR: "€", GBP: "£", INR: "₹", JPY: "¥", CNY: "¥", AUD: "A$", CAD: "C$",
+  CHF: "CHF", HKD: "HK$", SGD: "S$", NZD: "NZ$", AED: "د.إ", SAR: "﷼", KWD: "KD",
+  BHD: "BD", QAR: "ر.ق", KRW: "₩", BRL: "R$", ZAR: "R", RUB: "₽", TRY: "₺", THB: "฿",
+};
+const CURRENCY_NAMES: Record<string, string> = {
+  USD: "US Dollar", EUR: "Euro", GBP: "British Pound", INR: "Indian Rupee", JPY: "Japanese Yen",
+  CNY: "Chinese Yuan", AUD: "Australian Dollar", CAD: "Canadian Dollar", CHF: "Swiss Franc",
+  HKD: "Hong Kong Dollar", SGD: "Singapore Dollar", NZD: "New Zealand Dollar", AED: "UAE Dirham",
+  SAR: "Saudi Riyal", KWD: "Kuwaiti Dinar", BHD: "Bahraini Dinar", QAR: "Qatari Riyal",
+  KRW: "South Korean Won", BRL: "Brazilian Real", ZAR: "South African Rand", RUB: "Russian Ruble",
+  TRY: "Turkish Lira", THB: "Thai Baht",
+};
+const UNIT_CATEGORY_LABEL: Record<string, string> = {
+  length: "Length", mass: "Mass", data: "Data", time: "Time", speed: "Speed", temperature: "Temperature",
+};
+
+function currencyName(code: string): string {
+  return CURRENCY_NAMES[code] ?? code;
+}
+/** Format a currency amount with its symbol where known, e.g. "₹ 25.87" / "25.87 KWD". */
+function currencyDisplay(amount: number, code: string): string {
+  const sym = CURRENCY_SYMBOLS[code];
+  const num = formatNumber(amount, 2);
+  return sym ? `${sym} ${num}` : `${num} ${code}`;
 }
 
 /* ------------------------------------------------------------------ math evaluator */
@@ -281,12 +316,34 @@ export function calculate(input: string, rates: Record<string, number> = STATIC_
       if (from.length === 3 && to.length === 3 && rates[from.toUpperCase()] != null && rates[to.toUpperCase()] != null) {
         const c = convertCurrency(amount, from, to, rates);
         if (c != null) {
-          return { value: `${formatNumber(c, 2)} ${to.toUpperCase()}`, detail: `${formatNumber(amount, 2)} ${from.toUpperCase()} → ${to.toUpperCase()}`, kind: "currency", raw: c };
+          const FROM = from.toUpperCase();
+          const TO = to.toUpperCase();
+          return {
+            value: `${formatNumber(c, 2)} ${TO}`,
+            detail: `${formatNumber(amount, 2)} ${FROM} → ${TO}`,
+            kind: "currency",
+            raw: c,
+            left: `${formatNumber(amount, 2)} ${FROM}`,
+            right: currencyDisplay(c, TO),
+            leftLabel: currencyName(FROM),
+            rightLabel: currencyName(TO),
+          };
         }
       }
       const u = convertUnit(amount, from, to);
       if (u != null) {
-        return { value: `${formatNumber(u.value)} ${to}`, detail: `${formatNumber(amount)} ${from} → ${to}`, kind: "unit", raw: u.value };
+        const cat = TEMP_UNITS.has(from.toLowerCase()) ? "temperature" : (LINEAR_UNITS[from.toLowerCase()]?.[0] ?? "");
+        const catLabel = UNIT_CATEGORY_LABEL[cat] ?? cat;
+        return {
+          value: `${formatNumber(u.value)} ${to}`,
+          detail: `${formatNumber(amount)} ${from} → ${to}`,
+          kind: "unit",
+          raw: u.value,
+          left: `${formatNumber(amount)} ${from}`,
+          right: `${formatNumber(u.value)} ${to}`,
+          leftLabel: catLabel || undefined,
+          rightLabel: catLabel || undefined,
+        };
       }
       return null; // looked like a conversion but units/codes unknown
     }
@@ -294,7 +351,7 @@ export function calculate(input: string, rates: Record<string, number> = STATIC_
 
   const m = evalMath(trimmed);
   if (m != null) {
-    return { value: formatNumber(m), detail: trimmed, kind: "math", raw: m };
+    return { value: formatNumber(m), detail: trimmed, kind: "math", raw: m, left: trimmed, right: formatNumber(m) };
   }
   return null;
 }
