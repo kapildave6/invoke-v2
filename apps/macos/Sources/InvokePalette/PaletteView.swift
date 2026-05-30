@@ -30,6 +30,12 @@ public final class PaletteView: NSView {
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError("not used") }
 
+    /// Height the rendered content wants — drives the window's compact sizing (no empty space).
+    public func fittingHeight() -> CGFloat {
+        layoutSubtreeIfNeeded()
+        return stack.fittingSize.height
+    }
+
     /// Re-render rows from the current view-model tree, highlighting the item at `selectedIndex`
     /// (item indices are assigned in pre-order, matching the host's selection model).
     public func render(_ tree: ViewTree, selectedIndex: Int) {
@@ -61,9 +67,9 @@ public final class PaletteView: NSView {
     // MARK: - Section header
 
     private func addSectionHeader(_ title: String) {
-        let label = NSTextField(labelWithString: title.uppercased())
-        label.font = .systemFont(ofSize: 11, weight: .semibold)
-        label.textColor = .tertiaryLabelColor
+        let label = NSTextField(labelWithString: title)
+        label.font = .systemFont(ofSize: 12, weight: .semibold)
+        label.textColor = .secondaryLabelColor
         let row = NSView()
         row.translatesAutoresizingMaskIntoConstraints = false
         label.translatesAutoresizingMaskIntoConstraints = false

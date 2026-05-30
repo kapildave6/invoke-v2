@@ -43,7 +43,7 @@ public final class PaletteWindow: NSObject {
 
     public override init() {
         let width: CGFloat = 750
-        let rect = NSRect(x: 0, y: 0, width: width, height: 460)
+        let rect = NSRect(x: 0, y: 0, width: width, height: 200) // grows/shrinks to fit content
         panel = KeyablePanel(
             contentRect: rect,
             styleMask: [.borderless, .nonactivatingPanel, .fullSizeContentView],
@@ -172,6 +172,21 @@ public final class PaletteWindow: NSObject {
 
     public func render(_ tree: ViewTree, selectedIndex: Int) {
         paletteView.render(tree, selectedIndex: selectedIndex)
+        resizeToFit()
+    }
+
+    /// Compact Mode (PLAN.md §4.3): size the window to its content — search bar + results + action
+    /// bar — so there's no dead space, growing/shrinking as results change (capped, then it scrolls).
+    private func resizeToFit() {
+        let searchH = searchField.fittingSize.height
+        let contentH = paletteView.fittingHeight()
+        let target = min(max(14 + searchH + 10 + 8 + contentH + 12 + 38, 96), 540)
+        var frame = panel.frame
+        let dy = target - frame.height
+        if abs(dy) < 0.5 { return }
+        frame.origin.y -= dy // keep the top edge fixed; grow/shrink downward
+        frame.size.height = target
+        panel.setFrame(frame, display: true)
     }
 
     /// Briefly show a feedback capsule (e.g. "Copied to Clipboard"), then fade it out.
@@ -197,9 +212,9 @@ public final class PaletteWindow: NSObject {
     public func setActionBar(command: String, primary: String?) {
         commandLabel.stringValue = command
         if let primary {
-            actionHintLabel.stringValue = "\(primary)   ↵      Actions  ⌘K"
+            actionHintLabel.stringValue = "\(primary)   ↵        |        Actions   ⌘K"
         } else {
-            actionHintLabel.stringValue = "Actions  ⌘K"
+            actionHintLabel.stringValue = "Actions   ⌘K"
         }
     }
 
