@@ -1,5 +1,6 @@
 import AppKit
 import Carbon.HIToolbox
+import InvokeIPC
 import InvokeRenderer
 
 /// App lifecycle + summon (PLAN.md §4.3). Owns the warm palette window and the extension host that
@@ -15,12 +16,26 @@ public final class AppController: NSObject, NSApplicationDelegate {
     public override init() { super.init() }
 
     public func applicationDidFinishLaunching(_ notification: Notification) {
+        // Standard editing shortcuts (⌘A/⌘C/⌘V/⌘X/⌘Z) reach the search field only via the main
+        // menu's key-equivalents; a menu-less .accessory app has none, so install a minimal one.
+        // The menu bar stays hidden for an accessory app — only the key-equivalents matter.
+        NSApp.mainMenu = Self.makeMainMenu()
+
         host.onLog = { message in print("[invoke:host] \(message)") }
         host.onCommit = { [weak self] _ in self?.rerender() }
 
         palette.onSearchChange = { [weak self] text in
             self?.selectedIndex = 0
             self?.host.setSearchText(text)
+        }
+
+        // Extension-initiated feedback (showToast / showHUD via the @invoke/api RPC) → toast capsule.
+        host.onRpc = { [weak self] method, params in
+            guard let self, method == "toast.show" || method == "hud.show" else { return }
+            let title = Self.objString(params, "title") ?? ""
+            let message = Self.objString(params, "message")
+            let text = message.map { "\(title) — \($0)" } ?? title
+            if !text.isEmpty { self.palette.showToast(text) }
         }
         palette.onMove = { [weak self] delta in self?.moveSelection(delta) }
         palette.onActivate = { [weak self] secondary in self?.activateSelection(secondary: secondary) }
@@ -104,8 +119,41 @@ public final class AppController: NSObject, NSApplicationDelegate {
             let pb = NSPasteboard.general
             pb.clearContents()
             pb.setString(content, forType: .string)
+            palette.showToast("Copied to Clipboard")
             print("[invoke:host] copied to clipboard: \(content)")
         }
+    }
+
+    /// Pull a string field out of a JSONValue object (RPC params helper).
+    private static func objString(_ v: JSONValue?, _ key: String) -> String? {
+        if case .object(let o)? = v { return o[key]?.stringValue }
+        return nil
+    }
+
+    /// Minimal main menu so standard editing key-equivalents (⌘A/⌘C/⌘V/⌘X/⌘Z) reach the search
+    /// field, plus ⌘Q to quit. The bar stays hidden for an .accessory app; only the shortcuts matter.
+    private static func makeMainMenu() -> NSMenu {
+        let main = NSMenu()
+
+        let appItem = NSMenuItem()
+        main.addItem(appItem)
+        let appMenu = NSMenu()
+        appItem.submenu = appMenu
+        appMenu.addItem(withTitle: "Quit Invoke", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+
+        let editItem = NSMenuItem()
+        main.addItem(editItem)
+        let editMenu = NSMenu(title: "Edit")
+        editItem.submenu = editMenu
+        editMenu.addItem(withTitle: "Undo", action: Selector(("undo:")), keyEquivalent: "z")
+        let redo = editMenu.addItem(withTitle: "Redo", action: Selector(("redo:")), keyEquivalent: "z")
+        redo.keyEquivalentModifierMask = [.command, .shift]
+        editMenu.addItem(.separator())
+        editMenu.addItem(withTitle: "Cut", action: #selector(NSText.cut(_:)), keyEquivalent: "x")
+        editMenu.addItem(withTitle: "Copy", action: #selector(NSText.copy(_:)), keyEquivalent: "c")
+        editMenu.addItem(withTitle: "Paste", action: #selector(NSText.paste(_:)), keyEquivalent: "v")
+        editMenu.addItem(withTitle: "Select All", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
+        return main
     }
 
     /// Display title for an action node (explicit title, else a default for the variant).

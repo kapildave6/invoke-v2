@@ -25,6 +25,11 @@ public final class PaletteWindow: NSObject {
     private var keyMonitor: Any?
     private var actionMenu: NSMenu?
 
+    // Toast capsule (action feedback, e.g. "Copied to Clipboard").
+    private let toastLabel = NSTextField(labelWithString: "")
+    private var toastContainer: NSView?
+    private var toastHideWork: DispatchWorkItem?
+
     /// Fired when the user edits the search field — the shell forwards it to the extension.
     public var onSearchChange: ((String) -> Void)?
     /// Move selection by ±1 (arrow keys), with the search field keeping focus.
@@ -94,6 +99,33 @@ public final class PaletteWindow: NSObject {
             actionBar.bottomAnchor.constraint(equalTo: blur.bottomAnchor),
             actionBar.heightAnchor.constraint(equalToConstant: 38),
         ])
+
+        // Toast capsule — hidden until showToast(), floats just above the action bar.
+        toastLabel.font = .systemFont(ofSize: 12, weight: .medium)
+        toastLabel.textColor = .labelColor
+        toastLabel.alignment = .center
+        toastLabel.translatesAutoresizingMaskIntoConstraints = false
+        let toastBg = NSVisualEffectView()
+        toastBg.material = .hudWindow
+        toastBg.blendingMode = .withinWindow
+        toastBg.state = .active
+        toastBg.wantsLayer = true
+        toastBg.layer?.cornerRadius = 10
+        toastBg.layer?.masksToBounds = true
+        toastBg.alphaValue = 0
+        toastBg.translatesAutoresizingMaskIntoConstraints = false
+        toastBg.addSubview(toastLabel)
+        blur.addSubview(toastBg)
+        toastContainer = toastBg
+        NSLayoutConstraint.activate([
+            toastLabel.leadingAnchor.constraint(equalTo: toastBg.leadingAnchor, constant: 16),
+            toastLabel.trailingAnchor.constraint(equalTo: toastBg.trailingAnchor, constant: -16),
+            toastLabel.topAnchor.constraint(equalTo: toastBg.topAnchor, constant: 8),
+            toastLabel.bottomAnchor.constraint(equalTo: toastBg.bottomAnchor, constant: -8),
+            toastBg.centerXAnchor.constraint(equalTo: blur.centerXAnchor),
+            toastBg.bottomAnchor.constraint(equalTo: blur.bottomAnchor, constant: -52),
+        ])
+
         panel.contentView = blur
     }
 
@@ -140,6 +172,25 @@ public final class PaletteWindow: NSObject {
 
     public func render(_ tree: ViewTree, selectedIndex: Int) {
         paletteView.render(tree, selectedIndex: selectedIndex)
+    }
+
+    /// Briefly show a feedback capsule (e.g. "Copied to Clipboard"), then fade it out.
+    public func showToast(_ message: String) {
+        guard let container = toastContainer else { return }
+        toastLabel.stringValue = message
+        toastHideWork?.cancel()
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = 0.12
+            container.animator().alphaValue = 1
+        }
+        let work = DispatchWorkItem { [weak container] in
+            NSAnimationContext.runAnimationGroup { ctx in
+                ctx.duration = 0.25
+                container?.animator().alphaValue = 0
+            }
+        }
+        toastHideWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.3, execute: work)
     }
 
     /// Update the bottom bar: the command name (left) and the primary action + ⌘K hint (right).

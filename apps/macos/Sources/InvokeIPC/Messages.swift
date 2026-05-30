@@ -21,6 +21,7 @@ public struct HostBound: Codable {
     public let ops: [Mutation]?
     public let id: Int?
     public let method: String?
+    public let params: JSONValue?
 }
 
 /// host → child envelope.

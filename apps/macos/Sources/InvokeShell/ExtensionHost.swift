@@ -22,6 +22,8 @@ public final class ExtensionHost {
 
     /// Fired on the MAIN queue after each commit is applied (arg: commit sequence number).
     public var onCommit: ((Int) -> Void)?
+    /// Fired on the MAIN queue when the extension calls a host API (method, params) — e.g. showToast.
+    public var onRpc: ((String, JSONValue?) -> Void)?
     /// Diagnostic log sink (main queue).
     public var onLog: ((String) -> Void)?
 
@@ -111,6 +113,10 @@ public final class ExtensionHost {
             // The capability allowlist is enforced in the Node supervisor; from the native host we
             // just acknowledge so the extension's awaited host call resolves (no capability granted).
             if let id = msg.id { replyRPC(id: id) }
+            if let method = msg.method {
+                let params = msg.params
+                DispatchQueue.main.async { self.onRpc?(method, params) }
+            }
         default:
             break
         }
