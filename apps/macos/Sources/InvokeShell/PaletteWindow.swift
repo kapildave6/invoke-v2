@@ -189,6 +189,11 @@ public final class PaletteWindow: NSObject {
         panel.setFrame(frame, display: true)
     }
 
+    /// Clear the search field (e.g. after launching an app), without firing onSearchChange.
+    public func clearSearch() {
+        searchField.stringValue = ""
+    }
+
     /// Briefly show a feedback capsule (e.g. "Copied to Clipboard"), then fade it out.
     public func showToast(_ message: String) {
         guard let container = toastContainer else { return }

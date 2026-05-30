@@ -245,6 +245,15 @@ public final class PaletteView: NSView {
     }
 
     private func iconView(for node: ViewNode, selected: Bool) -> NSImageView? {
+        // Real app icon (full color) for application rows.
+        if let path = node.props["appPath"]?.stringValue {
+            let iv = NSImageView(image: NSWorkspace.shared.icon(forFile: path))
+            iv.translatesAutoresizingMaskIntoConstraints = false
+            iv.widthAnchor.constraint(equalToConstant: 20).isActive = true
+            iv.heightAnchor.constraint(equalToConstant: 20).isActive = true
+            return iv
+        }
+        // Otherwise a tinted SF Symbol from the Icon enum.
         guard let name = node.props["icon"]?.stringValue,
               let img = NSImage(systemSymbolName: sfSymbol(for: name), accessibilityDescription: nil) else { return nil }
         let iv = NSImageView(image: img)
