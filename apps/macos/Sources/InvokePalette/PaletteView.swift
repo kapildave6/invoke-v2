@@ -2,6 +2,11 @@ import AppKit
 import InvokeIPC
 import InvokeRenderer
 
+/// Flipped so an NSScrollView lays its document out top-down (AppKit default is bottom-up).
+private final class FlippedDocView: NSView {
+    override var isFlipped: Bool { true }
+}
+
 /// The results list (PLAN.md §4.3/§6). Renders the view-model tree into:
 ///   • section headers,
 ///   • a rich result **card** (a `list-item` with `display: "card"` — used by the Calculator's
@@ -66,10 +71,13 @@ public final class PaletteView: NSView {
         if let section = list.children.first(where: { $0.type == "list-section" }), let t = section.title, !t.isEmpty {
             leftStack.addArrangedSubview(sectionLabel(t, width: 300))
         }
+        var selectedRow: NSView?
         for (i, node) in rows.enumerated() {
-            leftStack.addArrangedSubview(compactRow(node, selected: i == sel, width: 300))
+            let r = compactRow(node, selected: i == sel, width: 300)
+            if i == sel { selectedRow = r }
+            leftStack.addArrangedSubview(r)
         }
-        let doc = NSView()
+        let doc = FlippedDocView()
         doc.translatesAutoresizingMaskIntoConstraints = false
         doc.addSubview(leftStack)
         let leftScroll = NSScrollView()
@@ -84,10 +92,12 @@ public final class PaletteView: NSView {
         divider.translatesAutoresizingMaskIntoConstraints = false
 
         let detail = detailPane(sel >= 0 ? rows[sel] : nil)
+        detail.setContentHuggingPriority(.init(1), for: .horizontal) // fill the remaining width
 
         let h = NSStackView()
         h.orientation = .horizontal
         h.alignment = .top
+        h.distribution = .fill
         h.spacing = 0
         h.translatesAutoresizingMaskIntoConstraints = false
         h.addArrangedSubview(leftScroll)
@@ -98,6 +108,7 @@ public final class PaletteView: NSView {
         NSLayoutConstraint.activate([
             h.widthAnchor.constraint(equalTo: stack.widthAnchor),
             h.heightAnchor.constraint(equalToConstant: 360),
+            divider.widthAnchor.constraint(equalToConstant: 1),
             leftScroll.widthAnchor.constraint(equalToConstant: 300),
             leftStack.topAnchor.constraint(equalTo: doc.topAnchor, constant: 2),
             leftStack.leadingAnchor.constraint(equalTo: doc.leadingAnchor),
@@ -105,6 +116,14 @@ public final class PaletteView: NSView {
             leftStack.bottomAnchor.constraint(equalTo: doc.bottomAnchor),
             doc.widthAnchor.constraint(equalToConstant: 300),
         ])
+
+        // Keep the selected clip visible as you arrow through a long list.
+        if let selectedRow {
+            DispatchQueue.main.async {
+                self.layoutSubtreeIfNeeded()
+                selectedRow.scrollToVisible(selectedRow.bounds)
+            }
+        }
     }
 
     private func sectionLabel(_ text: String, width: CGFloat) -> NSView {
@@ -436,8 +455,8 @@ public final class PaletteView: NSView {
     }
 
     private func iconView(for node: ViewNode, selected: Bool) -> NSImageView? {
-        // Real app icon (full color) for application rows.
-        if let path = node.props["appPath"]?.stringValue {
+        // Real app/file icon (full color) for application and file rows.
+        if let path = node.props["appPath"]?.stringValue ?? node.props["fileIcon"]?.stringValue {
             let iv = NSImageView(image: NSWorkspace.shared.icon(forFile: path))
             iv.translatesAutoresizingMaskIntoConstraints = false
             iv.widthAnchor.constraint(equalToConstant: 20).isActive = true

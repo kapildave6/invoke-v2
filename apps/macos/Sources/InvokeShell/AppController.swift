@@ -19,6 +19,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
 
     private enum Mode { case root, clipboard }
     private var mode: Mode = .root
+    private var clipKind = "All Types" // clipboard type filter
     private var selectedIndex = 0
     private var rootTree: ViewTree?
     private var lastQuery = ""
@@ -62,6 +63,12 @@ public final class AppController: NSObject, NSApplicationDelegate {
             if self.mode == .clipboard { self.exitToRoot() } else { self.palette.hide() }
         }
         palette.actionsProvider = { [weak self] in self?.currentActions() ?? [] }
+        palette.onFilterChange = { [weak self] kind in
+            guard let self else { return }
+            self.clipKind = kind
+            self.selectedIndex = 0
+            self.renderClipboard(query: self.lastQuery)
+        }
 
         let root = ProcessInfo.processInfo.environment["INVOKE_REPO_ROOT"]
             ?? Self.findRepoRoot()
@@ -117,6 +124,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
 
     private func enterClipboard() {
         mode = .clipboard
+        clipKind = "All Types"
         lastQuery = ""
         palette.clearSearch()
         selectedIndex = 0
@@ -125,6 +133,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
 
     private func exitToRoot() {
         mode = .root
+        palette.hideFilter()
         lastQuery = ""
         palette.clearSearch()
         selectedIndex = 0
@@ -136,13 +145,14 @@ public final class AppController: NSObject, NSApplicationDelegate {
         let count = items().count
         if selectedIndex >= count { selectedIndex = max(0, count - 1) }
         palette.render(activeTree, selectedIndex: selectedIndex)
+        palette.setFilter(options: clipboard.availableKinds(), selected: clipKind)
         updateActionBar()
     }
 
     private func buildClipboard(query: String) -> ViewTree {
         let tree = ViewTree()
         let list = ViewNode(id: 1, type: "list")
-        let entries = clipboard.entries(matching: query)
+        let entries = clipboard.entries(matching: query, kind: clipKind)
         if entries.isEmpty {
             let msg = query.trimmingCharacters(in: .whitespaces).isEmpty
                 ? "Clipboard history is empty — copy something"
@@ -154,13 +164,20 @@ public final class AppController: NSObject, NSApplicationDelegate {
             var nid = 10
             for clip in entries {
                 nid += 1
-                section.children.append(ViewNode(id: nid, type: "list-item", props: [
-                    "title": .string(Self.preview(clip.text)),
-                    "icon": .string(clip.kind == "Link" ? "link" : "doc.on.clipboard"),
-                    "clipText": .string(clip.text),
+                var props: [String: JSONValue] = [
                     "detailText": .string(clip.text),
                     "metadata": Self.clipMetadata(clip),
-                ]))
+                ]
+                if clip.kind == "File", let path = clip.filePath {
+                    props["title"] = .string((path as NSString).lastPathComponent)
+                    props["fileIcon"] = .string(path)   // real file icon
+                    props["clipFile"] = .string(path)   // Enter copies the file (URL)
+                } else {
+                    props["title"] = .string(Self.preview(clip.text))
+                    props["icon"] = .string(clip.kind == "Link" ? "link" : "doc.on.clipboard")
+                    props["clipText"] = .string(clip.text)
+                }
+                section.children.append(ViewNode(id: nid, type: "list-item", props: props))
             }
             list.children = [section]
         }
@@ -170,14 +187,21 @@ public final class AppController: NSObject, NSApplicationDelegate {
 
     /// "Information" rows for a clip's detail pane.
     private static func clipMetadata(_ clip: ClipboardHistory.Clip) -> JSONValue {
-        let chars = clip.text.count
-        let words = clip.text.split(whereSeparator: { $0 == " " || $0.isNewline }).filter { !$0.isEmpty }.count
-        var rows: [JSONValue] = [
-            .object(["label": .string("Content type"), "value": .string(clip.kind)]),
-            .object(["label": .string("Characters"), "value": .string("\(chars)")]),
-            .object(["label": .string("Words"), "value": .string("\(words)")]),
-            .object(["label": .string("Times copied"), "value": .string("\(clip.timesCopied)")]),
-        ]
+        var rows: [JSONValue] = [.object(["label": .string("Content type"), "value": .string(clip.kind)])]
+        if clip.kind == "File" {
+            if let p = clip.filePath {
+                rows.append(.object(["label": .string("Path"), "value": .string((p as NSString).abbreviatingWithTildeInPath)]))
+            }
+            if let sz = clip.fileSize {
+                rows.append(.object(["label": .string("File size"), "value": .string(ByteCountFormatter.string(fromByteCount: Int64(sz), countStyle: .file))]))
+            }
+        } else {
+            let chars = clip.text.count
+            let words = clip.text.split(whereSeparator: { $0 == " " || $0.isNewline }).filter { !$0.isEmpty }.count
+            rows.append(.object(["label": .string("Characters"), "value": .string("\(chars)")]))
+            rows.append(.object(["label": .string("Words"), "value": .string("\(words)")]))
+        }
+        rows.append(.object(["label": .string("Times copied"), "value": .string("\(clip.timesCopied)")]))
         if let src = clip.source { rows.append(.object(["label": .string("Source"), "value": .string(src)])) }
         rows.append(.object(["label": .string("Last copied"), "value": .string(relativeTime(clip.date))]))
         return .array(rows)
@@ -305,6 +329,14 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 self?.frecency.bump("app:\(path)")
                 NSWorkspace.shared.open(URL(fileURLWithPath: path))
                 self?.afterLaunch()
+            }]
+        }
+        if let path = node.props["clipFile"]?.stringValue {
+            return [PaletteAction(title: "Copy File", shortcut: "↵") { [weak self] in
+                let pb = NSPasteboard.general
+                pb.clearContents()
+                pb.writeObjects([URL(fileURLWithPath: path) as NSURL])
+                self?.palette.showToast("Copied File")
             }]
         }
         if let clip = node.props["clipText"]?.stringValue {

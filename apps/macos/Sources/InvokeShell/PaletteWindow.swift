@@ -40,6 +40,12 @@ public final class PaletteWindow: NSObject {
     public var onCancel: (() -> Void)?
     /// Supplies the actions for the currently-selected result (for the ⌘K Action Panel).
     public var actionsProvider: (() -> [PaletteAction])?
+    /// Fired when the type-filter dropdown changes (clipboard mode).
+    public var onFilterChange: ((String) -> Void)?
+
+    private let filterButton = NSPopUpButton(frame: .zero, pullsDown: false)
+    private var searchTrailingDefault: NSLayoutConstraint!
+    private var searchTrailingWithFilter: NSLayoutConstraint!
 
     public override init() {
         let width: CGFloat = 750
@@ -79,15 +85,31 @@ public final class PaletteWindow: NSObject {
 
         paletteView.translatesAutoresizingMaskIntoConstraints = false
 
+        filterButton.translatesAutoresizingMaskIntoConstraints = false
+        filterButton.bezelStyle = .rounded
+        filterButton.controlSize = .small
+        filterButton.font = .systemFont(ofSize: 12)
+        filterButton.target = self
+        filterButton.action = #selector(filterChanged)
+        filterButton.isHidden = true
+
         let actionBar = makeActionBar()
 
         blur.addSubview(searchField)
+        blur.addSubview(filterButton)
         blur.addSubview(paletteView)
         blur.addSubview(actionBar)
+
+        searchTrailingDefault = searchField.trailingAnchor.constraint(equalTo: blur.trailingAnchor, constant: -16)
+        searchTrailingWithFilter = searchField.trailingAnchor.constraint(equalTo: filterButton.leadingAnchor, constant: -10)
+        searchTrailingDefault.isActive = true
+
         NSLayoutConstraint.activate([
             searchField.leadingAnchor.constraint(equalTo: blur.leadingAnchor, constant: 16),
-            searchField.trailingAnchor.constraint(equalTo: blur.trailingAnchor, constant: -16),
             searchField.topAnchor.constraint(equalTo: blur.topAnchor, constant: 14),
+
+            filterButton.trailingAnchor.constraint(equalTo: blur.trailingAnchor, constant: -14),
+            filterButton.centerYAnchor.constraint(equalTo: searchField.centerYAnchor),
 
             paletteView.leadingAnchor.constraint(equalTo: blur.leadingAnchor),
             paletteView.trailingAnchor.constraint(equalTo: blur.trailingAnchor),
@@ -192,6 +214,27 @@ public final class PaletteWindow: NSObject {
     /// Clear the search field (e.g. after launching an app), without firing onSearchChange.
     public func clearSearch() {
         searchField.stringValue = ""
+    }
+
+    /// Show the type-filter dropdown (clipboard mode) with the given options/selection.
+    public func setFilter(options: [String], selected: String) {
+        filterButton.removeAllItems()
+        filterButton.addItems(withTitles: options)
+        filterButton.selectItem(withTitle: selected)
+        filterButton.isHidden = false
+        searchTrailingDefault.isActive = false
+        searchTrailingWithFilter.isActive = true
+    }
+
+    public func hideFilter() {
+        guard !filterButton.isHidden else { return }
+        filterButton.isHidden = true
+        searchTrailingWithFilter.isActive = false
+        searchTrailingDefault.isActive = true
+    }
+
+    @objc private func filterChanged() {
+        if let title = filterButton.titleOfSelectedItem { onFilterChange?(title) }
     }
 
     /// Briefly show a feedback capsule (e.g. "Copied to Clipboard"), then fade it out.
