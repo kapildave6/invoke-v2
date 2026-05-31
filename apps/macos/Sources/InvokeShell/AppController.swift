@@ -1258,34 +1258,36 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private func extStorageRemove(_ key: String) { var d = extStorageAll(); d[key] = nil; UserDefaults.standard.set(d, forKey: extStorageDefaultsKey()) }
     private func extStorageClear() { UserDefaults.standard.removeObject(forKey: extStorageDefaultsKey()) }
 
-    /// Scan `examples/*` for extension manifests and surface their `view` commands in the root
-    /// (the calculator is excluded — it's the resident card provider). Dev discovery; a real install
-    /// dir + the store come later.
+    /// Scan the bundled `examples/*` and `invoke import`-ed `imported/*` for extension manifests and
+    /// surface their `view` commands in the root (the calculator is excluded — it's the resident card
+    /// provider). A user-writable install dir + a store come later.
     private func discoverExtensionCommands() -> [RootCommand] {
         let fm = FileManager.default
-        let examplesDir = repoRoot + "/examples"
-        guard let names = try? fm.contentsOfDirectory(atPath: examplesDir) else { return [] }
         var out: [RootCommand] = []
-        for name in names.sorted() where name != "calculator" {
-            let extDir = examplesDir + "/" + name
-            guard let data = fm.contents(atPath: extDir + "/package.json"),
-                  let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
-                  let title = json["title"] as? String,
-                  let cmds = json["commands"] as? [[String: Any]] else { continue }
-            let prefsJSON = Self.manifestPreferencesJSON(json)
-            for c in cmds {
-                guard let cname = c["name"] as? String,
-                      ((c["mode"] as? String) ?? "view") == "view" else { continue }
-                let ctitle = (c["title"] as? String) ?? cname
-                guard let rel = ["tsx", "ts", "jsx", "js"].lazy
-                    .map({ "examples/\(name)/src/\(cname).\($0)" })
-                    .first(where: { fm.fileExists(atPath: repoRoot + "/" + $0) }) else { continue }
-                let cmdId = "ext.\(name).\(cname)"
-                out.append(RootCommand(id: cmdId, title: ctitle, subtitle: title, runTitle: "Open",
-                                       icon: "puzzlepiece.extension.fill", keywords: [name, cname, title.lowercased()],
-                                       closesPalette: false) { [weak self] in
-                    self?.launchExtension(id: cmdId, title: ctitle, entryRelPath: rel, command: cname, preferences: prefsJSON)
-                })
+        for root in ["examples", "imported"] {
+            let rootDir = repoRoot + "/" + root
+            guard let names = try? fm.contentsOfDirectory(atPath: rootDir) else { continue }
+            for name in names.sorted() where !(root == "examples" && name == "calculator") {
+                let extDir = rootDir + "/" + name
+                guard let data = fm.contents(atPath: extDir + "/package.json"),
+                      let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+                      let title = json["title"] as? String,
+                      let cmds = json["commands"] as? [[String: Any]] else { continue }
+                let prefsJSON = Self.manifestPreferencesJSON(json)
+                for c in cmds {
+                    guard let cname = c["name"] as? String,
+                          ((c["mode"] as? String) ?? "view") == "view" else { continue }
+                    let ctitle = (c["title"] as? String) ?? cname
+                    guard let rel = ["tsx", "ts", "jsx", "js"].lazy
+                        .map({ "\(root)/\(name)/src/\(cname).\($0)" })
+                        .first(where: { fm.fileExists(atPath: repoRoot + "/" + $0) }) else { continue }
+                    let cmdId = "ext.\(name).\(cname)"
+                    out.append(RootCommand(id: cmdId, title: ctitle, subtitle: title, runTitle: "Open",
+                                           icon: "puzzlepiece.extension.fill", keywords: [name, cname, title.lowercased()],
+                                           closesPalette: false) { [weak self] in
+                        self?.launchExtension(id: cmdId, title: ctitle, entryRelPath: rel, command: cname, preferences: prefsJSON)
+                    })
+                }
             }
         }
         return out

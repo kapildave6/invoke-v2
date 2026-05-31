@@ -253,4 +253,40 @@ export function getPreferenceValues<T = Record<string, unknown>>(): T {
   }
 }
 
+/* --------------------------------------------- stubs for not-yet-implemented APIs (PLAN.md §5/§10)
+ * Exported so an extension that merely IMPORTS these still LOADS (an unknown named ESM import would
+ * otherwise fail the whole module at load time). They throw a clear error only if actually CALLED;
+ * `invoke import` reports which of these an extension touches. */
+function unsupported(name: string): never {
+  throw new Error(`@invoke/api: ${name} is not supported in Invoke yet`);
+}
+
+export class Cache {
+  get(_key: string): string | undefined { return undefined; }
+  set(_key: string, _value: string): void { unsupported("Cache.set"); }
+  has(_key: string): boolean { return false; }
+  remove(_key: string): boolean { return false; }
+  clear(): void {}
+}
+export const AI = { ask: (_prompt: string, _opts?: unknown): Promise<string> => unsupported("AI.ask") };
+export const OAuth = { PKCEClient: class { constructor(_opts?: unknown) { unsupported("OAuth.PKCEClient"); } } };
+export async function getSelectedText(): Promise<string> { return unsupported("getSelectedText"); }
+export async function getApplications(_path?: string): Promise<unknown[]> { return unsupported("getApplications"); }
+export async function getFrontmostApplication(): Promise<unknown> { return unsupported("getFrontmostApplication"); }
+export async function getDefaultApplication(_path: string): Promise<unknown> { return unsupported("getDefaultApplication"); }
+export async function trash(_paths: string | string[]): Promise<void> { return unsupported("trash"); }
+export async function showInFinder(_path: string): Promise<void> { return unsupported("showInFinder"); }
+export async function popToRoot(_opts?: unknown): Promise<void> { await closeMainWindow(); }
+export async function openExtensionPreferences(): Promise<void> {}
+export async function openCommandPreferences(): Promise<void> {}
+export async function confirmAlert(_opts: unknown): Promise<boolean> { return false; }
+export function captureException(_error: unknown): void {}
+/** Declarative `Action.Push` is host-handled; programmatic push/pop is not wired yet (no-op). */
+export function useNavigation(): { push: (view: ReactNode) => void; pop: () => void } {
+  return { push: () => {}, pop: () => {} };
+}
+export const Alert = { ActionStyle: { Default: "default", Destructive: "destructive", Cancel: "cancel" } as const };
+export const Keyboard = { Shortcut: {} as Record<string, unknown> };
+export const Image = { Mask: { Circle: "circle", RoundedRectangle: "roundedRectangle" } as const };
+
 export type { ReactNode };

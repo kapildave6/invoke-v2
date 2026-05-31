@@ -20,6 +20,7 @@
   "scripts": {
     "demo": "tsx runtime/node-host/src/demo.ts",
     "dev:ext": "tsx runtime/node-host/src/run.ts",
+    "import:ext": "tsx runtime/node-host/src/import.ts",
     "redteam": "tsx runtime/node-host/src/redteam.ts",
     "test:calc": "tsx examples/calculator/src/engine.test.ts",
     "typecheck": "tsc -p tsconfig.json",

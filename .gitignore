@@ -4,6 +4,9 @@ dist/
 *.tsbuildinfo
 npm-debug.log*
 
+# Imported extensions (user-installed via `invoke import`, not committed)
+imported/
+
 # Swift / Xcode
 apps/macos/.build/
 apps/macos/.swiftpm/
