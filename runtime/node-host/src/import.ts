@@ -59,11 +59,15 @@ function sourceFiles(dir: string): string[] {
 /** Named imports of `module` across the code (handles `import { A, B as C, type D }`). */
 function importedSymbols(code: string, module: string): Set<string> {
   const out = new Set<string>();
-  const re = new RegExp(`import\\s+(?:type\\s+)?\\{([^}]*)\\}\\s+from\\s+["']${module}["']`, "g");
+  // optional default import (`Foo,`), optional `type` keyword, then the named braces
+  const re = new RegExp(`import\\s+(?:[\\w$]+\\s*,\\s*)?(type\\s+)?\\{([^}]*)\\}\\s+from\\s+["']${module}["']`, "g");
   let m: RegExpExecArray | null;
   while ((m = re.exec(code))) {
-    for (const raw of m[1].split(",")) {
-      const name = raw.trim().replace(/^type\s+/, "").split(/\s+as\s+/)[0].trim();
+    if (m[1]) continue; // `import type { … }` — all type-only, erased at runtime (not fatal)
+    for (const raw of m[2].split(",")) {
+      const t = raw.trim();
+      if (/^type\s/.test(t)) continue; // inline `type X` — a type-only specifier, erased
+      const name = t.split(/\s+as\s+/)[0].trim();
       if (name) out.add(name);
     }
   }
@@ -83,9 +87,12 @@ function specifiers(code: string): Set<string> {
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
-  const positional = args.filter((a) => !a.startsWith("--"));
   const checkOnly = args.includes("--check");
-  const nameFlag = args.find((a) => a.startsWith("--name="))?.split("=")[1];
+  const jsonOut = args.includes("--json");
+  const nameIdx = args.indexOf("--name");
+  const nameFlag = args.find((a) => a.startsWith("--name="))?.split("=")[1] ?? (nameIdx >= 0 ? args[nameIdx + 1] : undefined);
+  const nameValueIdx = nameIdx >= 0 ? nameIdx + 1 : -1; // -1 → don't exclude anything
+  const positional = args.filter((a, i) => !a.startsWith("--") && i !== nameValueIdx); // exclude --name's value
   const src = path.resolve(positional[0] ?? die("usage: import <sourceDir> [--name <id>] [--check]"));
 
   const manifest = readManifest(src);
@@ -115,55 +122,86 @@ async function main(): Promise<void> {
     }
   }
 
+  const commandInfo = commands.map((c) => {
+    const mode = c.mode ?? "view";
+    const entry = [".tsx", ".ts", ".jsx", ".js"].map((e) => `src/${c.name}${e}`).find((rel) => fs.existsSync(path.join(src, rel)));
+    if (!entry) unresolvedEntries++;
+    return { name: c.name, title: c.title ?? c.name, mode, entryFound: !!entry };
+  });
+
+  const blocking = missingApi.size > 0 || unresolvedEntries > 0;
+  const verdict = blocking ? "needs-work" : deniedBuiltins.size > 0 ? "degraded" : "runnable";
+
+  // Install (unless --check): copy the source into imported/<id>/ (resolves @raycast/api from the
+  // repo node_modules), with a per-file automatic-JSX pragma codemod so it needn't `import React`.
+  let installed = false;
+  let destRel = "";
+  if (!checkOnly) {
+    const dest = path.join(ROOT, "imported", id);
+    fs.rmSync(dest, { recursive: true, force: true });
+    fs.mkdirSync(dest, { recursive: true });
+    for (const entry of ["package.json", "src", "assets", "icon.png"]) {
+      const from = path.join(src, entry);
+      if (fs.existsSync(from)) fs.cpSync(from, path.join(dest, entry), { recursive: true });
+    }
+    const PRAGMA = "/** @jsxRuntime automatic @jsxImportSource react */\n";
+    const codemod = (d: string) => {
+      for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+        const p = path.join(d, e.name);
+        if (e.isDirectory()) codemod(p);
+        else if (/\.(tsx|jsx)$/.test(e.name)) {
+          const code = fs.readFileSync(p, "utf8");
+          if (code.includes("@jsxImportSource")) continue;
+          if (code.startsWith("#!")) {
+            const nl = code.indexOf("\n") + 1; // a shebang must stay on line 1 — insert after it
+            fs.writeFileSync(p, code.slice(0, nl) + PRAGMA + code.slice(nl));
+          } else {
+            fs.writeFileSync(p, PRAGMA + code);
+          }
+        }
+      }
+    };
+    if (fs.existsSync(path.join(dest, "src"))) codemod(path.join(dest, "src"));
+    installed = true;
+    destRel = path.relative(ROOT, dest);
+  }
+
+  if (jsonOut) {
+    // Structured report for the in-app Import UI (the only thing on stdout, so it parses cleanly).
+    console.log(JSON.stringify({
+      id,
+      title: manifest.title ?? id,
+      commands: commandInfo,
+      missingApi: [...missingApi],
+      missingUtils: [...missingUtils],
+      deniedBuiltins: [...deniedBuiltins],
+      blocking,
+      verdict,
+      installed,
+      dest: destRel,
+    }));
+    return;
+  }
+
   console.log(`\n▸ ${manifest.title ?? id}  (${id})`);
   console.log(`  source: ${path.relative(process.cwd(), src)}`);
   console.log(`  commands:`);
-  for (const c of commands) {
-    const mode = c.mode ?? "view";
-    const entry = [".tsx", ".ts", ".jsx", ".js"].map((e) => `src/${c.name}${e}`).find((rel) => fs.existsSync(path.join(src, rel)));
-    const note = entry ? (mode === "view" ? "✓ renders" : `${mode} (limited)`) : "✗ entry not found";
-    if (!entry) unresolvedEntries++;
-    console.log(`    • ${c.name} — ${c.title ?? c.name} [${mode}] ${note}`);
+  for (const c of commandInfo) {
+    const note = c.entryFound ? (c.mode === "view" ? "✓ renders" : `${c.mode} (limited)`) : "✗ entry not found";
+    console.log(`    • ${c.name} — ${c.title} [${c.mode}] ${note}`);
   }
-
-  const blocking = missingApi.size > 0 || unresolvedEntries > 0;
   console.log(`\n  compatibility:`);
   console.log(`    @raycast/api    : ${missingApi.size === 0 ? "all imports supported ✓" : "MISSING (fatal — fails module load): " + [...missingApi].join(", ")}`);
   console.log(`    @raycast/utils  : ${missingUtils.size === 0 ? "ok ✓" : "MISSING: " + [...missingUtils].join(", ")}`);
   console.log(`    sandbox         : ${deniedBuiltins.size === 0 ? "no denied builtins ✓" : "uses denied builtins (need a host capability): " + [...deniedBuiltins].join(", ")}`);
-  console.log(`    verdict         : ${blocking ? "⚠️  needs work before it runs" : deniedBuiltins.size ? "loads; degraded where it touches denied builtins" : "👍 looks runnable"}`);
-
-  if (checkOnly) {
+  console.log(`    verdict         : ${verdict === "needs-work" ? "⚠️  needs work before it runs" : verdict === "degraded" ? "loads; degraded where it touches denied builtins" : "👍 looks runnable"}`);
+  if (installed) {
+    console.log(`\n✓ installed to ${destRel}`);
+    console.log(`  run headless:  npm run dev:ext imported/${id}` + (commands[0] ? ` -- --command=${commands[0].name}` : ""));
+    console.log(`  in the app:    relaunch — it appears in the Extensions group\n`);
+  } else {
     console.log(`\n(check only — not installed)\n`);
-    return;
   }
-
-  // Install: copy the source into imported/<name>/ (resolves @raycast/api from the repo node_modules).
-  const dest = path.join(ROOT, "imported", id);
-  fs.rmSync(dest, { recursive: true, force: true });
-  fs.mkdirSync(dest, { recursive: true });
-  for (const entry of ["package.json", "src", "assets", "icon.png"]) {
-    const from = path.join(src, entry);
-    if (fs.existsSync(from)) fs.cpSync(from, path.join(dest, entry), { recursive: true });
-  }
-  // Codemod: prepend an automatic-JSX pragma to each source file so it needn't `import React` (like a
-  // real extension). esbuild/tsx honor the pragma per-file, independent of which tsconfig covers
-  // imported/ (the root tsconfig's `include` does not, so it'd otherwise fall back to classic JSX).
-  const PRAGMA = "/** @jsxRuntime automatic @jsxImportSource react */\n";
-  const codemod = (d: string) => {
-    for (const e of fs.readdirSync(d, { withFileTypes: true })) {
-      const p = path.join(d, e.name);
-      if (e.isDirectory()) codemod(p);
-      else if (/\.(tsx|jsx)$/.test(e.name)) {
-        const code = fs.readFileSync(p, "utf8");
-        if (!code.includes("@jsxImportSource")) fs.writeFileSync(p, PRAGMA + code);
-      }
-    }
-  };
-  if (fs.existsSync(path.join(dest, "src"))) codemod(path.join(dest, "src"));
-  console.log(`\n✓ installed to ${path.relative(process.cwd(), dest)}`);
-  console.log(`  run headless:  npm run dev:ext imported/${id}` + (commands[0] ? ` -- --command=${commands[0].name}` : ""));
-  console.log(`  in the app:    relaunch — it appears in the Extensions group\n`);
 }
 
 main().catch((e: unknown) => die(String(e)));

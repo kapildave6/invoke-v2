@@ -1267,13 +1267,16 @@ public final class AppController: NSObject, NSApplicationDelegate {
         for root in ["examples", "imported"] {
             let rootDir = repoRoot + "/" + root
             guard let names = try? fm.contentsOfDirectory(atPath: rootDir) else { continue }
-            for name in names.sorted() where !(root == "examples" && name == "calculator") {
+            for name in names.sorted() where name != "calculator" {
                 let extDir = rootDir + "/" + name
                 guard let data = fm.contents(atPath: extDir + "/package.json"),
                       let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
                       let title = json["title"] as? String,
                       let cmds = json["commands"] as? [[String: Any]] else { continue }
                 let prefsJSON = Self.manifestPreferencesJSON(json)
+                // Namespace the extension key by root so an imported ext can't collide ids (frecency/
+                // alias/hotkey/grouping) with a bundled example of the same name.
+                let extKey = root == "imported" ? "imported-\(name)" : name
                 for c in cmds {
                     guard let cname = c["name"] as? String,
                           ((c["mode"] as? String) ?? "view") == "view" else { continue }
@@ -1281,7 +1284,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
                     guard let rel = ["tsx", "ts", "jsx", "js"].lazy
                         .map({ "\(root)/\(name)/src/\(cname).\($0)" })
                         .first(where: { fm.fileExists(atPath: repoRoot + "/" + $0) }) else { continue }
-                    let cmdId = "ext.\(name).\(cname)"
+                    let cmdId = "ext.\(extKey).\(cname)"
                     out.append(RootCommand(id: cmdId, title: ctitle, subtitle: title, runTitle: "Open",
                                            icon: "puzzlepiece.extension.fill", keywords: [name, cname, title.lowercased()],
                                            closesPalette: false) { [weak self] in
