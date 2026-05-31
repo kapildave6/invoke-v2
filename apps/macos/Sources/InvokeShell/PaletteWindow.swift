@@ -92,6 +92,7 @@ public final class PaletteWindow: NSObject {
         paletteView.translatesAutoresizingMaskIntoConstraints = false
         paletteView.onSelect = { [weak self] i in self?.onSelectRow?(i) }
         paletteView.onActivate = { [weak self] i in self?.onActivateRow?(i) }
+        paletteView.onSubmit = { [weak self] in self?.onActivate?(false) } // Return in a Form field → submit
 
         filterButton.translatesAutoresizingMaskIntoConstraints = false
         filterButton.isBordered = false // borderless, subtle — fits the translucent theme

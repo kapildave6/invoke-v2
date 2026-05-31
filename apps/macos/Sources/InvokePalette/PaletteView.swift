@@ -32,6 +32,9 @@ public final class PaletteView: NSView {
     /// Single-click a row → select that item index. Double-click → activate it.
     public var onSelect: ((Int) -> Void)?
     public var onActivate: ((Int) -> Void)?
+    /// Return pressed inside a Form field → submit the form (run the primary action).
+    public var onSubmit: (() -> Void)?
+    @objc private func formFieldEnter() { onSubmit?() }
 
     private func wireClick(_ row: ClickableRow, index: Int) {
         row.onClick = { [weak self] count in
@@ -436,6 +439,7 @@ public final class PaletteView: NSView {
             v.topAnchor.constraint(equalTo: wrap.topAnchor, constant: 14),
             v.leadingAnchor.constraint(equalTo: wrap.leadingAnchor, constant: 14),
             v.trailingAnchor.constraint(equalTo: wrap.trailingAnchor, constant: -14),
+            v.bottomAnchor.constraint(lessThanOrEqualTo: wrap.bottomAnchor, constant: -14), // define wrap's height
         ])
         return wrap
     }
@@ -581,6 +585,8 @@ public final class PaletteView: NSView {
             let tf = NSTextField(string: f.props["value"]?.stringValue ?? f.props["defaultValue"]?.stringValue ?? "")
             tf.placeholderString = f.props["placeholder"]?.stringValue
             tf.translatesAutoresizingMaskIntoConstraints = false
+            tf.target = self
+            tf.action = #selector(formFieldEnter) // Return in a single-line field submits the form
             row.addArrangedSubview(tf)
             NSLayoutConstraint.activate([tf.widthAnchor.constraint(equalTo: row.widthAnchor)])
             formControls.append((id, { [weak tf] in tf?.stringValue ?? "" }))
@@ -589,6 +595,14 @@ public final class PaletteView: NSView {
             tv.string = f.props["value"]?.stringValue ?? f.props["defaultValue"]?.stringValue ?? ""
             tv.isEditable = true
             tv.font = .systemFont(ofSize: 13)
+            // Standard document-view-in-scrollview wiring so text wraps + scrolls correctly.
+            tv.isVerticallyResizable = true
+            tv.isHorizontallyResizable = false
+            tv.autoresizingMask = [.width]
+            tv.minSize = NSSize(width: 0, height: 0)
+            tv.maxSize = NSSize(width: .greatestFiniteMagnitude, height: .greatestFiniteMagnitude)
+            tv.textContainerInset = NSSize(width: 4, height: 6)
+            tv.textContainer?.widthTracksTextView = true
             let s = NSScrollView()
             s.borderType = .lineBorder
             s.hasVerticalScroller = true
@@ -599,7 +613,7 @@ public final class PaletteView: NSView {
             formControls.append((id, { [weak tv] in tv?.string ?? "" }))
         case "form-checkbox":
             let cb = NSButton(checkboxWithTitle: f.props["label"]?.stringValue ?? "", target: nil, action: nil)
-            if case .bool(true)? = f.props["value"] { cb.state = .on }
+            if case .bool(true)? = (f.props["value"] ?? f.props["defaultValue"]) { cb.state = .on } // honor defaultValue
             cb.translatesAutoresizingMaskIntoConstraints = false
             row.addArrangedSubview(cb)
             formControls.append((id, { [weak cb] in cb?.state == .on ? "true" : "false" }))
