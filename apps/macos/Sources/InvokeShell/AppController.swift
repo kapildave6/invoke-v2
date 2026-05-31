@@ -1367,7 +1367,16 @@ public final class AppController: NSObject, NSApplicationDelegate {
         var metas: [String: ExtensionMeta] = [:]
         var kids: [String: [CommandInfo]] = [:]
         for c in commands {
-            let m = Self.extensionMeta(for: c.id)
+            // Each installed extension is its OWN group in Settings (named by its title, like Raycast),
+            // rather than lumping every third-party command under one generic "Extensions" group.
+            let m: ExtensionMeta
+            if c.id.hasPrefix("ext.") {
+                let parts = c.id.split(separator: ".")
+                let key = parts.count >= 2 ? "ext.\(parts[1])" : "extensions"
+                m = ExtensionMeta(id: key, name: c.subtitle.isEmpty ? "Extension" : c.subtitle, icon: "puzzlepiece.extension.fill")
+            } else {
+                m = Self.extensionMeta(for: c.id)
+            }
             if metas[m.id] == nil { metas[m.id] = m; order.append(m.id) }
             kids[m.id, default: []].append(CommandInfo(id: c.id, title: c.title, subtitle: "", icon: c.icon))
         }

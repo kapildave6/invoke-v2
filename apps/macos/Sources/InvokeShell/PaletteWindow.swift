@@ -208,14 +208,23 @@ public final class PaletteWindow: NSObject {
     /// Compact Mode (PLAN.md §4.3): size the window to its content — search bar + results + action
     /// bar — so there's no dead space, growing/shrinking as results change (capped, then it scrolls).
     private func resizeToFit() {
+        let vf = activeScreen()?.visibleFrame
+        let maxH = min(540, (vf?.height ?? 540) - 40)
         let searchH = searchField.fittingSize.height
         let contentH = paletteView.fittingHeight()
-        let target = min(max(14 + searchH + 10 + 8 + contentH + 12 + 38, 96), 540)
+        let target = min(max(14 + searchH + 10 + 8 + contentH + 12 + 38, 96), maxH)
         var frame = panel.frame
         let dy = target - frame.height
         if abs(dy) < 0.5 { return }
         frame.origin.y -= dy // keep the top edge fixed; grow/shrink downward
         frame.size.height = target
+        // Never let growth push the window off the active display.
+        if let vf {
+            if frame.maxX > vf.maxX { frame.origin.x = vf.maxX - frame.width }
+            if frame.minX < vf.minX { frame.origin.x = vf.minX }
+            if frame.maxY > vf.maxY { frame.origin.y = vf.maxY - frame.height }
+            if frame.minY < vf.minY { frame.origin.y = vf.minY }
+        }
         panel.setFrame(frame, display: true)
     }
 
@@ -286,9 +295,26 @@ public final class PaletteWindow: NSObject {
     public func show() {
         installKeyMonitor() // armed only while visible (no global keystroke overhead when hidden)
         NSApp.activate(ignoringOtherApps: true)
-        panel.center()
+        repositionToActiveScreen() // summon on the display under the cursor (multi-monitor correct)
         panel.makeKeyAndOrderFront(nil)
         panel.makeFirstResponder(searchField)
+    }
+
+    /// The screen under the mouse cursor (where the user is working), falling back to the main screen.
+    private func activeScreen() -> NSScreen? {
+        let mouse = NSEvent.mouseLocation
+        return NSScreen.screens.first { NSMouseInRect(mouse, $0.frame, false) } ?? NSScreen.main
+    }
+
+    /// Spotlight/Raycast-style placement: horizontally centered, anchored in the upper portion of the
+    /// active screen, with width/height clamped to the display so it can never run off a monitor.
+    private func repositionToActiveScreen() {
+        guard let vf = activeScreen()?.visibleFrame else { panel.center(); return }
+        let width = min(panel.frame.width, vf.width - 40)
+        let height = min(panel.frame.height, vf.height - 40)
+        let x = vf.midX - width / 2
+        let y = vf.maxY - min(160, (vf.height - height) * 0.22) - height
+        panel.setFrame(NSRect(x: x, y: y, width: width, height: height), display: false)
     }
 
     public func hide() {

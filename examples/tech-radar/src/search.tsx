@@ -1,13 +1,14 @@
 /**
  * Tech Radar — "give me the best things to read about X, and the latest news."
  *
- * Fans a single query across keyless, engineering-grade sources and merges them: Hacker News
- * (relevance + by-date), Stack Overflow, Dev.to, and GitHub. A "Latest" section surfaces the freshest
- * items (news); per-source sections surface the best reading. Written against @raycast/api (compat
- * proof). Sources are public + keyless; a slow/blocked one degrades gracefully (Promise.allSettled).
- *
- * Note: the query is debounced in JS — Invoke doesn't yet honor the List `throttle` prop natively,
- * so without this every keystroke would fire fetches and trip rate limits (GitHub 10/min, etc.).
+ * Fans a single query across keyless, engineering-grade sources and merges them:
+ *   • Hacker News (relevance + by-date)   • Stack Overflow   • Dev.to (by tag)
+ *   • GitHub repos                        • arXiv papers     • curated engineering-blog RSS feeds
+ * A "Latest" section surfaces the freshest dated items (news); per-source sections surface the best
+ * reading. Written against @raycast/api (compat proof). All sources are public + keyless; a
+ * slow/blocked one degrades gracefully (Promise.allSettled). The query is debounced in JS because
+ * Invoke doesn't yet honor the List `throttle` prop natively. RSS feeds are fetched once and cached,
+ * then re-filtered per query, so changing topics doesn't re-download megabytes of feeds.
  */
 import { List, ActionPanel, Action, getPreferenceValues } from "@raycast/api";
 import { usePromise } from "@raycast/utils";
@@ -35,21 +36,33 @@ async function getJSON(url: string, headers?: Record<string, string>): Promise<a
   return res.json();
 }
 
-/** Decode the handful of HTML entities Stack Overflow puts in titles. */
+async function getText(url: string): Promise<string> {
+  const res = await fetch(url, { headers: UA });
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  return res.text();
+}
+
+/** Decode the handful of HTML/XML entities sources put in titles, and strip stray tags. */
 function decode(s: string): string {
   return s
+    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
+    .replace(/<[^>]+>/g, " ")
     .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
     .replace(/&#(?:39|x27);/g, "'")
-    .replace(/&#x2F;/g, "/");
+    .replace(/&apos;/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 /** Dev.to filters by single-word tag — derive one from the topic ("kafka partitioning" -> "kafka"). */
 function tagFrom(q: string): string {
   return (q.toLowerCase().match(/[a-z0-9]+/g) ?? [])[0] ?? "";
 }
+
+// ---- JSON sources -------------------------------------------------------------------------------
 
 async function hackerNews(q: string, byDate = false): Promise<Item[]> {
   const ep = byDate ? "search_by_date" : "search";
@@ -114,6 +127,110 @@ async function github(q: string): Promise<Item[]> {
   }));
 }
 
+// ---- XML sources (arXiv + engineering-blog RSS/Atom) --------------------------------------------
+
+function firstTag(block: string, name: string): string | undefined {
+  const m = block.match(new RegExp(`<${name}[^>]*>([\\s\\S]*?)</${name}>`, "i"));
+  return m ? m[1] : undefined;
+}
+
+function toUnix(dateStr?: string): number | undefined {
+  if (!dateStr) return undefined;
+  const t = new Date(dateStr.trim()).getTime();
+  return Number.isFinite(t) ? Math.floor(t / 1000) : undefined;
+}
+
+interface FeedEntry {
+  title: string;
+  url: string;
+  date?: number;
+  summary: string;
+}
+
+/** Tolerant RSS (<item>) + Atom (<entry>) parser — no DOMParser in the Node child. */
+function parseFeed(xml: string): FeedEntry[] {
+  const isAtom = /<feed[\s>]/i.test(xml) && !/<rss[\s>]/i.test(xml);
+  const blocks = xml.split(isAtom ? /<entry[\s>]/i : /<item[\s>]/i).slice(1);
+  const out: FeedEntry[] = [];
+  for (const b of blocks) {
+    const title = decode(firstTag(b, "title") ?? "");
+    let url: string | undefined;
+    if (isAtom) {
+      const link =
+        b.match(/<link[^>]*rel="alternate"[^>]*href="([^"]+)"/i) ||
+        b.match(/<link[^>]*href="([^"]+)"[^>]*rel="alternate"/i) ||
+        b.match(/<link[^>]*href="([^"]+)"/i);
+      url = link?.[1];
+    } else {
+      url = (firstTag(b, "link") ?? "").trim() || undefined;
+    }
+    const date = toUnix(firstTag(b, "pubDate") ?? firstTag(b, "published") ?? firstTag(b, "updated") ?? firstTag(b, "dc:date"));
+    const summary = decode((firstTag(b, "description") ?? firstTag(b, "summary") ?? "").slice(0, 500));
+    if (title && url) out.push({ title, url, date, summary });
+  }
+  return out;
+}
+
+async function arxiv(q: string): Promise<Item[]> {
+  const xml = await getText(`https://export.arxiv.org/api/query?search_query=all:${encodeURIComponent(q)}&start=0&max_results=5&sortBy=relevance`);
+  const blocks = xml.split(/<entry[\s>]/i).slice(1);
+  return blocks
+    .map((b) => {
+      const id = (firstTag(b, "id") ?? "").trim();
+      const author = b.match(/<author>\s*<name>([\s\S]*?)<\/name>/i)?.[1]?.trim();
+      return {
+        id: `arxiv-${id}`,
+        title: decode(firstTag(b, "title") ?? ""),
+        url: id,
+        source: "arXiv",
+        subtitle: author ? `by ${author}` : undefined,
+        date: toUnix(firstTag(b, "published")),
+      } as Item;
+    })
+    .filter((it) => it.title && it.url)
+    .slice(0, 5);
+}
+
+// Curated, keyless engineering-blog feeds (probe-verified). Fetched once + cached, re-filtered per query.
+const FEEDS: Array<{ name: string; url: string }> = [
+  { name: "InfoQ", url: "https://feed.infoq.com/" },
+  { name: "Martin Fowler", url: "https://martinfowler.com/feed.atom" },
+  { name: "Cloudflare", url: "https://blog.cloudflare.com/rss/" },
+  { name: "Netflix Tech", url: "https://netflixtechblog.com/feed" },
+  { name: "AWS Big Data", url: "https://aws.amazon.com/blogs/big-data/feed/" },
+];
+
+const feedCache = new Map<string, { text: string; at: number }>();
+async function cachedFeed(url: string): Promise<string> {
+  const c = feedCache.get(url);
+  if (c && Date.now() - c.at < 10 * 60 * 1000) return c.text;
+  const text = await getText(url);
+  feedCache.set(url, { text, at: Date.now() });
+  return text;
+}
+
+async function engineeringBlogs(q: string): Promise<Item[]> {
+  const words = q.toLowerCase().match(/[a-z0-9]{4,}/g) ?? [];
+  if (words.length === 0) return [];
+  const perFeed = await Promise.allSettled(
+    FEEDS.map(async (f) => {
+      const entries = parseFeed(await cachedFeed(f.url));
+      return entries
+        .filter((e) => {
+          const hay = `${e.title} ${e.summary}`.toLowerCase();
+          return words.some((w) => hay.includes(w));
+        })
+        .map((e) => ({ id: `blog-${f.name}-${e.url}`, title: e.title, url: e.url, source: f.name, date: e.date } as Item));
+    }),
+  );
+  return perFeed
+    .flatMap((r) => (r.status === "fulfilled" ? r.value : []))
+    .sort((a, b) => (b.date ?? 0) - (a.date ?? 0))
+    .slice(0, 8);
+}
+
+// ---- glue ---------------------------------------------------------------------------------------
+
 function settled(r: PromiseSettledResult<Item[]>): Item[] {
   return r.status === "fulfilled" ? r.value : [];
 }
@@ -146,7 +263,9 @@ interface Groups {
   latest: Item[];
   hn: Item[];
   stack: Item[];
+  blogs: Item[];
   devto: Item[];
+  papers: Item[];
   github: Item[];
 }
 
@@ -184,18 +303,28 @@ export default function Command() {
 
   const { data, isLoading } = usePromise(async (): Promise<Groups | null> => {
     if (!q) return null;
-    const [hn, hnLatest, stack, dev, gh] = await Promise.allSettled([
+    const [hn, hnLatest, stack, dev, gh, papers, blogs] = await Promise.allSettled([
       hackerNews(q),
       hackerNews(q, true),
       stackOverflow(q),
       devto(tagFrom(q)),
       github(q),
+      arxiv(q),
+      engineeringBlogs(q),
     ]);
-    const latest = [...settled(hnLatest), ...settled(stack), ...settled(dev)]
+    const latest = [...settled(hnLatest), ...settled(stack), ...settled(dev), ...settled(blogs), ...settled(papers)]
       .filter((i) => i.date)
       .sort((a, b) => (b.date ?? 0) - (a.date ?? 0))
       .slice(0, 6);
-    return { latest, hn: settled(hn), stack: settled(stack), devto: settled(dev), github: settled(gh) };
+    return {
+      latest,
+      hn: settled(hn),
+      stack: settled(stack),
+      blogs: settled(blogs),
+      devto: settled(dev),
+      papers: settled(papers),
+      github: settled(gh),
+    };
   }, [q]);
 
   const busy = isLoading || query.trim() !== q;
@@ -208,13 +337,15 @@ export default function Command() {
       throttle
     >
       {!q ? (
-        <List.Section title="Type a topic to read about — searches Hacker News · Stack Overflow · Dev.to · GitHub" />
+        <List.Section title="Type a topic to read about — HN · Stack Overflow · engineering blogs · Dev.to · arXiv · GitHub" />
       ) : (
         [
           section("📰 Latest", data?.latest ?? [], true),
           section("💬 Hacker News", data?.hn ?? [], true),
           section("❓ Stack Overflow", data?.stack ?? [], true),
+          section("📚 Engineering Blogs", data?.blogs ?? [], true),
           section(`📝 Dev.to (#${tagFrom(q)})`, data?.devto ?? [], true),
+          section("📄 arXiv Papers", data?.papers ?? [], true),
           section("🛠 GitHub Repos", data?.github ?? [], false),
         ]
       )}
