@@ -485,6 +485,10 @@ public final class PaletteView: NSView {
             s.font = .systemFont(ofSize: 13)
             s.textColor = .secondaryLabelColor
             s.lineBreakMode = .byTruncatingTail
+            // Truncate the subtitle FIRST (lower than the title) so a long description (e.g. a verbose
+            // GitHub repo blurb) shrinks instead of stretching the row past the window edge.
+            s.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+            s.setContentHuggingPriority(.init(10), for: .horizontal)
             h.addArrangedSubview(s)
         }
 

@@ -50,8 +50,11 @@ public final class PaletteWindow: NSObject {
     private var searchTrailingDefault: NSLayoutConstraint!
     private var searchTrailingWithFilter: NSLayoutConstraint!
 
+    /// Fixed palette width (Raycast-style); clamped to the display on small screens.
+    private static let paletteWidth: CGFloat = 750
+
     public override init() {
-        let width: CGFloat = 750
+        let width = Self.paletteWidth
         let rect = NSRect(x: 0, y: 0, width: width, height: 200) // grows/shrinks to fit content
         panel = KeyablePanel(
             contentRect: rect,
@@ -212,12 +215,15 @@ public final class PaletteWindow: NSObject {
         let maxH = min(540, (vf?.height ?? 540) - 40)
         let searchH = searchField.fittingSize.height
         let contentH = paletteView.fittingHeight()
-        let target = min(max(14 + searchH + 10 + 8 + contentH + 12 + 38, 96), maxH)
+        let targetH = min(max(14 + searchH + 10 + 8 + contentH + 12 + 38, 96), maxH)
+        // Width is FIXED (clamped on tiny screens) and re-pinned every render — a long row must
+        // truncate within it, never widen the window.
+        let targetW = min(Self.paletteWidth, (vf?.width ?? Self.paletteWidth + 40) - 40)
         var frame = panel.frame
-        let dy = target - frame.height
-        if abs(dy) < 0.5 { return }
-        frame.origin.y -= dy // keep the top edge fixed; grow/shrink downward
-        frame.size.height = target
+        if abs(targetH - frame.height) < 0.5 && abs(targetW - frame.width) < 0.5 { return }
+        frame.origin.y -= (targetH - frame.height) // keep the top edge fixed; grow/shrink downward
+        frame.size.height = targetH
+        frame.size.width = targetW
         // Never let growth push the window off the active display.
         if let vf {
             if frame.maxX > vf.maxX { frame.origin.x = vf.maxX - frame.width }

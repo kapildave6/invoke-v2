@@ -12,7 +12,6 @@
     "packages/compat-raycast-utils",
     "runtime/reconciler",
     "runtime/node-host",
-    "examples/hello-world",
     "examples/hacker-news",
     "examples/tech-radar"
   ],

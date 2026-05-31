@@ -16,8 +16,9 @@ import path from "node:path";
 import { ExtensionProcess } from "./supervisor.ts";
 import { findNode, renderTree, type ViewTree } from "./viewmodel.ts";
 
-const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
-const EXT_ENTRY = path.join(ROOT_DIR, "examples/hello-world/src/list.tsx");
+const SRC_DIR = path.dirname(fileURLToPath(import.meta.url));
+const ROOT_DIR = path.resolve(SRC_DIR, "../../..");
+const EXT_ENTRY = path.join(SRC_DIR, "fixtures/sample-list.tsx"); // deterministic, network-free spine fixture
 
 const rule = (label: string) => console.log(`\n${"─".repeat(8)} ${label} ${"─".repeat(Math.max(0, 40 - label.length))}`);
 
