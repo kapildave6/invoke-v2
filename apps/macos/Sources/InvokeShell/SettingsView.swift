@@ -14,10 +14,9 @@ public struct CommandInfo: Identifiable {
     }
 }
 
-private let paneSize = CGSize(width: 580, height: 420)
-
 /// Settings panes (PLAN.md §6). Hosted individually by SettingsWindow inside an NSTabViewController
 /// with the native `.toolbar` tab style (icon + label, like macOS System Settings / Raycast).
+/// Panes FILL the window (the window sets the size) — pinning a fixed width clipped the content.
 
 struct GeneralPane: View {
     @ObservedObject var settings = AppSettings.shared
@@ -31,7 +30,7 @@ struct GeneralPane: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: paneSize.width, height: paneSize.height)
+        .frame(minWidth: 540, maxWidth: .infinity, minHeight: 380, maxHeight: .infinity)
     }
 }
 
@@ -55,7 +54,7 @@ struct CommandsPane: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: paneSize.width, height: paneSize.height)
+        .frame(minWidth: 540, maxWidth: .infinity, minHeight: 380, maxHeight: .infinity)
     }
 }
 
@@ -78,7 +77,7 @@ struct ClipboardPane: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: paneSize.width, height: paneSize.height)
+        .frame(minWidth: 540, maxWidth: .infinity, minHeight: 380, maxHeight: .infinity)
     }
 }
 
@@ -118,7 +117,7 @@ struct AdvancedPane: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: paneSize.width, height: paneSize.height)
+        .frame(minWidth: 540, maxWidth: .infinity, minHeight: 380, maxHeight: .infinity)
     }
 }
 
@@ -136,6 +135,6 @@ struct AboutPane: View {
             }
             .padding(.top, 4)
         }
-        .frame(width: paneSize.width, height: paneSize.height)
+        .frame(minWidth: 540, maxWidth: .infinity, minHeight: 380, maxHeight: .infinity)
     }
 }

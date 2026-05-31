@@ -21,20 +21,30 @@ public final class SettingsWindow {
                 return item
             }
 
-            tabs.addTabViewItem(tab("General", "gearshape", NSHostingController(rootView: GeneralPane())))
-            tabs.addTabViewItem(tab("Commands", "command", NSHostingController(rootView: CommandsPane(commands: commands))))
-            tabs.addTabViewItem(tab("Clipboard", "doc.on.clipboard", NSHostingController(rootView: ClipboardPane(onClear: onClearClipboard))))
-            tabs.addTabViewItem(tab("Advanced", "wrench.and.screwdriver", NSHostingController(rootView: AdvancedPane())))
-            tabs.addTabViewItem(tab("About", "info.circle", NSHostingController(rootView: AboutPane())))
+            func hosted<V: View>(_ view: V) -> NSHostingController<V> {
+                let c = NSHostingController(rootView: view)
+                // Drive the window size from the panes so NSTabViewController doesn't size to a
+                // narrow fitting width (which clipped the form content on the left edge).
+                c.preferredContentSize = NSSize(width: 600, height: 470)
+                return c
+            }
+
+            tabs.addTabViewItem(tab("General", "gearshape", hosted(GeneralPane())))
+            tabs.addTabViewItem(tab("Commands", "command", hosted(CommandsPane(commands: commands))))
+            tabs.addTabViewItem(tab("Clipboard", "doc.on.clipboard", hosted(ClipboardPane(onClear: onClearClipboard))))
+            tabs.addTabViewItem(tab("Advanced", "wrench.and.screwdriver", hosted(AdvancedPane())))
+            tabs.addTabViewItem(tab("About", "info.circle", hosted(AboutPane())))
 
             let w = NSWindow(contentViewController: tabs)
-            w.title = "Invoke Settings"
             w.styleMask = [.titled, .closable, .miniaturizable]
             w.isReleasedWhenClosed = false
+            w.setContentSize(NSSize(width: 600, height: 470))
             w.center()
             window = w
         }
         NSApp.activate(ignoringOtherApps: true)
         window?.makeKeyAndOrderFront(nil)
+        // NSTabViewController(.toolbar) resets the title to "Untitled"; force it after it's shown.
+        window?.title = "Invoke Settings"
     }
 }
