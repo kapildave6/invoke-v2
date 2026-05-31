@@ -66,8 +66,9 @@ public final class ExtensionHost {
         defer { posix_spawn_file_actions_destroy(&actions) }
 
         // sh -c sets cwd (so `tsx` + workspace packages resolve from node_modules) then execs node,
-        // inheriting our stdout/stderr so the extension's logs surface in the host's console.
-        let script = "cd '\(repoRoot)' && exec node --import tsx runtime/node-host/src/child.ts '\(entryRelPath)' '\(command)'"
+        // inheriting our stdout/stderr so the extension's logs surface in the host's console. Every
+        // interpolated value is shell-quoted — a dir/command with an apostrophe must not inject shell.
+        let script = "cd \(Self.shellQuote(repoRoot)) && exec node --import tsx runtime/node-host/src/child.ts \(Self.shellQuote(entryRelPath)) \(Self.shellQuote(command))"
         let argv = ["/bin/sh", "-c", script]
         var env = ProcessInfo.processInfo.environment
         env["INVOKE_COMMAND"] = command
@@ -183,8 +184,15 @@ public final class ExtensionHost {
     }
 
     public func terminate() {
-        if pid > 0 { kill(pid, SIGTERM) }
-        if sockFD >= 0 { close(sockFD); sockFD = -1 }
+        if pid > 0 { kill(pid, SIGTERM); pid = -1 }
+        let fd = sockFD
+        sockFD = -1 // new writes see -1 and skip
+        if fd >= 0 { writeQueue.async { close(fd) } } // ordered AFTER any pending writes (FIFO)
+    }
+
+    /// POSIX single-quote a value for safe interpolation into an `sh -c` string.
+    private static func shellQuote(_ s: String) -> String {
+        "'" + s.replacingOccurrences(of: "'", with: "'\\''") + "'"
     }
 
     private func log(_ message: String) {

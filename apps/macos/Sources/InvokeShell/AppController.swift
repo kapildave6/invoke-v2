@@ -1166,9 +1166,19 @@ public final class AppController: NSObject, NSApplicationDelegate {
         palette.clearSearch()
         palette.setPlaceholder("Search \(title)…")
         selectedIndex = 0
-        palette.show()
+        if !palette.isVisible { palette.show() } // launched from an open palette → don't re-center it
+        renderExtensionLoading() // placeholder until the first commit (avoids an empty collapse-flash)
         h.launch(repoRoot: repoRoot, entryRelPath: entryRelPath, command: command, preferences: preferences)
-        renderExtension() // initial (empty) paint; content arrives via onCommit
+    }
+
+    /// A one-row "Loading…" surface shown between launch and the extension's first render commit.
+    private func renderExtensionLoading() {
+        let tree = ViewTree()
+        let list = ViewNode(id: 1, type: "list")
+        list.children = [ViewNode(id: 2, type: "list-section", props: ["title": .string("Loading \(currentExtTitle)…")])]
+        tree.root.children = [list]
+        palette.render(tree, selectedIndex: 0)
+        updateActionBar()
     }
 
     private func teardownExtension() {
@@ -1214,7 +1224,16 @@ public final class AppController: NSObject, NSApplicationDelegate {
             palette.showToast("Copied to Clipboard")
             afterLaunch()
         case "paste":
-            pasteText(n.props["content"]?.stringValue ?? "")
+            setStringPasteboard(n.props["content"]?.stringValue ?? "")
+            if AXIsProcessTrusted() {
+                let target = pasteTarget
+                target?.activate()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) { Self.synthesizePaste() }
+            } else {
+                Self.promptAccessibility()
+                palette.showToast("Enable Accessibility to paste — copied instead")
+            }
+            afterLaunch() // tear down on BOTH paths (unlike pasteText's no-AX early return)
         default:
             afterLaunch()
         }
