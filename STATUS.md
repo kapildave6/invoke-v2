@@ -58,7 +58,8 @@ _Last updated: 2026-05-31_
 | `@invoke/api` components (List/Grid/Detail/Form/ActionPanel) | 🟡 | **List path complete end-to-end**; +`open()`, `LocalStorage`. Grid/Detail/Form emit valid nodes but aren't rendered natively yet (Track 1.3) |
 | `@invoke/utils` hooks | 🟡 | useFetch/usePromise/useCachedState |
 | `@raycast/api` compat shim | 🟡 | **`@raycast/api` + `@raycast/utils` shims; a real `@raycast/api` List extension runs end-to-end** (`examples/hacker-news`: useFetch + getPreferenceValues + OpenInBrowser + LocalStorage). No codemod yet (Track 1.4) |
-| Host capabilities (allowlisted RPC) | 🟡 | injectable fulfilment (Swift native / Node dev); open · clipboard · toast · hud · window.close · preferences · localStorage. Red-team gated |
+| Host capabilities (allowlisted RPC) | ✅ | **fulfilled natively in Swift** (open=NSWorkspace · clipboard=NSPasteboard+⌘V · toast/hud · window.close · localStorage=UserDefaults · preferences) and in Node (dev runner). Allowlist enforced host-side both places. Red-team gated |
+| **Run extensions in the macOS app** | ✅ | extensions in `examples/*` are discovered (manifest), surfaced in root as an "Extensions" group, and launched as a `.extension` palette mode — their `List` renders, search routes to the child, actions (onAction / OpenInBrowser / Copy) fire. Verified live with Hacker News |
 | `invoke` CLI (dev/build/import/publish) | 🟡 | Go CLI still stubs; **Node manifest runner works** — `npm run dev:ext <dir>` reads the manifest, resolves the command, launches it, and fulfils host capabilities |
 | In-app store + registry | ⬜ | |
 

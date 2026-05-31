@@ -22,10 +22,20 @@ public final class ExtensionHost {
 
     /// Fired on the MAIN queue after each commit is applied (arg: commit sequence number).
     public var onCommit: ((Int) -> Void)?
-    /// Fired on the MAIN queue when the extension calls a host API (method, params) — e.g. showToast.
-    public var onRpc: ((String, JSONValue?) -> Void)?
+    /// Fired on the MAIN queue when the extension invokes an allowlisted host capability; the returned
+    /// JSONValue is sent back to the child as the RPC result (open/clipboard/localStorage/…).
+    public var onCapability: ((_ method: String, _ params: JSONValue?) -> JSONValue)?
     /// Diagnostic log sink (main queue).
     public var onLog: ((String) -> Void)?
+
+    /// The capability allowlist — mirrors the Node supervisor's ALLOWED_RPC. Denial is enforced HERE
+    /// in the host, so even a child crafting a raw RPC frame gets nothing it isn't granted (PLAN §4.4).
+    private static let allowedRPC: Set<String> = [
+        "clipboard.copy", "clipboard.paste", "clipboard.readText",
+        "toast.show", "hud.show", "window.close", "preferences.get",
+        "open", "localStorage.getItem", "localStorage.setItem",
+        "localStorage.removeItem", "localStorage.clear", "localStorage.allItems",
+    ]
 
     private var pid: pid_t = -1
     private var sockFD: Int32 = -1
@@ -38,7 +48,8 @@ public final class ExtensionHost {
     public init() {}
 
     /// Launch `<repoRoot>/<entryRelPath>` as a `view` command and start streaming its mutations.
-    public func launch(repoRoot: String, entryRelPath: String, command: String) {
+    /// `preferences` is the JSON the extension reads via getPreferenceValues() (INVOKE_PREFERENCES).
+    public func launch(repoRoot: String, entryRelPath: String, command: String, preferences: String = "{}") {
         var fds: [Int32] = [0, 0]
         guard socketpair(AF_UNIX, SOCK_STREAM, 0, &fds) == 0 else {
             log("socketpair failed: \(String(cString: strerror(errno)))")
@@ -58,7 +69,10 @@ public final class ExtensionHost {
         // inheriting our stdout/stderr so the extension's logs surface in the host's console.
         let script = "cd '\(repoRoot)' && exec node --import tsx runtime/node-host/src/child.ts '\(entryRelPath)' '\(command)'"
         let argv = ["/bin/sh", "-c", script]
-        let envp = ProcessInfo.processInfo.environment.map { "\($0.key)=\($0.value)" }
+        var env = ProcessInfo.processInfo.environment
+        env["INVOKE_COMMAND"] = command
+        env["INVOKE_PREFERENCES"] = preferences
+        let envp = env.map { "\($0.key)=\($0.value)" }
 
         var childPid: pid_t = 0
         let rc = withCStringArray(argv) { cArgv in
@@ -110,12 +124,18 @@ public final class ExtensionHost {
         case "log":
             log("[ext log]")
         case "rpc":
-            // The capability allowlist is enforced in the Node supervisor; from the native host we
-            // just acknowledge so the extension's awaited host call resolves (no capability granted).
-            if let id = msg.id { replyRPC(id: id) }
-            if let method = msg.method {
-                let params = msg.params
-                DispatchQueue.main.async { self.onRpc?(method, params) }
+            guard let id = msg.id, let method = msg.method else { break }
+            let params = msg.params
+            // Enforce the allowlist in the host (denial by the host, not by SDK convention, §4.4).
+            guard Self.allowedRPC.contains(method) else {
+                replyRPC(id: id, error: "host method not allowed: \(method)")
+                log("[rpc DENIED] \(method)")
+                break
+            }
+            // Fulfil on the main queue (AppKit), then reply with the result to the child.
+            DispatchQueue.main.async {
+                let result = self.onCapability?(method, params) ?? .null
+                self.replyRPC(id: id, result: result)
             }
         default:
             break
@@ -134,8 +154,14 @@ public final class ExtensionHost {
         write(FrameCodec.encode(data))
     }
 
-    private func replyRPC(id: Int) {
-        let obj: [String: JSONValue] = ["kind": .string("rpcResult"), "id": .number(Double(id)), "result": .null]
+    private func replyRPC(id: Int, result: JSONValue) {
+        let obj: [String: JSONValue] = ["kind": .string("rpcResult"), "id": .number(Double(id)), "result": result]
+        guard let data = try? jsonEncoder.encode(JSONValue.object(obj)) else { return }
+        write(FrameCodec.encode(data))
+    }
+
+    private func replyRPC(id: Int, error: String) {
+        let obj: [String: JSONValue] = ["kind": .string("rpcResult"), "id": .number(Double(id)), "error": .string(error)]
         guard let data = try? jsonEncoder.encode(JSONValue.object(obj)) else { return }
         write(FrameCodec.encode(data))
     }

@@ -24,16 +24,26 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private let settingsWindow = SettingsWindow()
     private lazy var commands: [RootCommand] = makeCommands()
 
-    private enum Mode { case root, clipboard, emoji, screenshots, snippets, quicklinks }
+    private enum Mode { case root, clipboard, emoji, screenshots, snippets, quicklinks, extensionView }
     private var mode: Mode = .root
     private var clipKind = "All Types" // clipboard type filter
     private var pendingQuicklink: Quicklink? // quicklink awaiting its {query} argument (input sub-mode)
     private var pasteTarget: NSRunningApplication? // app to paste back into
     private static let defaultPlaceholder = "Search for apps and commands…"
+
+    // A third-party extension running as a full palette surface (separate from the resident
+    // calculator `host`). Launched on demand from a discovered `ext.*` command; rendered in .extension.
+    private var extHost: ExtensionHost?
+    private var currentExtId = ""
+    private var currentExtTitle = ""
+    private var repoRoot = ""
     private var selectedIndex = 0
     private var rootTree: ViewTree?
     private var lastQuery = ""
-    private var activeTree: ViewTree { rootTree ?? host.tree }
+    private var activeTree: ViewTree {
+        if mode == .extensionView, let extHost { return extHost.tree }
+        return rootTree ?? host.tree
+    }
 
     /// A built-in command in the root registry.
     private struct RootCommand {
@@ -60,13 +70,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
             guard let self, self.mode == .root, Self.looksLikeCalculation(self.lastQuery) else { return }
             self.renderRoot(calcCard: self.extractCalcCard())
         }
-        host.onRpc = { [weak self] method, params in
-            guard let self, method == "toast.show" || method == "hud.show" else { return }
-            let title = Self.objString(params, "title") ?? ""
-            let message = Self.objString(params, "message")
-            let text = message.map { "\(title) — \($0)" } ?? title
-            if !text.isEmpty { self.palette.showToast(text) }
-        }
+        host.onCapability = { [weak self] method, params in self?.handleCapability(method, params) ?? .null }
 
         palette.onSearchChange = { [weak self] text in self?.onSearch(text) }
         palette.onMove = { [weak self] delta in self?.moveSelection(delta) }
@@ -94,6 +98,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         let root = ProcessInfo.processInfo.environment["INVOKE_REPO_ROOT"]
             ?? Self.findRepoRoot()
             ?? FileManager.default.currentDirectoryPath
+        repoRoot = root // discovered extensions are resolved relative to this
         print("[invoke:host] repo root: \(root)")
 
         let entry = ProcessInfo.processInfo.environment["INVOKE_EXT_ENTRY"] ?? "examples/calculator/src/calculate.tsx"
@@ -143,6 +148,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     public func applicationWillTerminate(_ notification: Notification) {
         hotkey.unregister()
         host.terminate()
+        extHost?.terminate()
     }
 
     // MARK: - Root routing / composition
@@ -158,6 +164,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
             if pendingQuicklink != nil { renderQuicklinkPrompt() } else { renderQuicklinks(query: text) }
             return
         }
+        if mode == .extensionView { extHost?.setSearchText(text); return } // re-render arrives via onCommit
         if Self.looksLikeCalculation(text) { host.setSearchText(text) } // card arrives via onCommit
         renderRoot(calcCard: nil)
     }
@@ -260,6 +267,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     }
 
     private func exitToRoot() {
+        teardownExtension()
         mode = .root
         pendingQuicklink = nil
         palette.hideFilter()
@@ -777,6 +785,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         case .screenshots: label = "Screenshots"
         case .snippets: label = "Snippets"
         case .quicklinks: label = pendingQuicklink?.name ?? "Quicklinks"
+        case .extensionView: label = currentExtTitle
         case .root: label = "Invoke"
         }
         let primary = pendingQuicklink != nil ? "Open" : currentActions().first?.title
@@ -789,6 +798,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
         let rows = items()
         guard selectedIndex < rows.count else { return [] }
         let node = rows[selectedIndex]
+
+        if mode == .extensionView { return extensionActions(under: node) }
 
         if let path = node.props["appPath"]?.stringValue {
             return [PaletteAction(title: "Open", shortcut: "↵") { [weak self] in
@@ -850,6 +861,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     /// mode (so opening a quicklink / running a snippet doesn't leave us stuck in that mode).
     private func afterLaunch() {
         palette.hide()
+        teardownExtension()
         mode = .root
         pendingQuicklink = nil
         palette.hideFilter()
@@ -1014,6 +1026,200 @@ public final class AppController: NSObject, NSApplicationDelegate {
         }
     }
 
+    // MARK: - Extensions (third-party surfaces, PLAN §5)
+
+    /// Native fulfilment of the allowlisted host capabilities — the Swift counterpart of the dev
+    /// runner's Node `devCapabilities`. Shared by the resident calculator and any running extension.
+    private func handleCapability(_ method: String, _ params: JSONValue?) -> JSONValue {
+        func arg(_ key: String) -> JSONValue? {
+            if case .object(let o)? = params { return o[key] }
+            return nil
+        }
+        switch method {
+        case "toast.show", "hud.show":
+            let title = arg("title")?.stringValue ?? ""
+            let message = arg("message")?.stringValue
+            let text = message.map { "\(title) — \($0)" } ?? title
+            if !text.isEmpty { palette.showToast(text) }
+            return .null
+        case "open":
+            if let target = arg("target")?.stringValue { openTarget(target) }
+            return .null
+        case "clipboard.copy":
+            setStringPasteboard(arg("content")?.stringValue ?? "")
+            return .null
+        case "clipboard.paste":
+            setStringPasteboard(arg("content")?.stringValue ?? "")
+            if AXIsProcessTrusted() {
+                pasteTarget?.activate()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) { Self.synthesizePaste() }
+            }
+            return .null
+        case "clipboard.readText":
+            return .string(NSPasteboard.general.string(forType: .string) ?? "")
+        case "window.close":
+            palette.hide()
+            return .null
+        case "preferences.get":
+            return .object([:]) // preferences are delivered via INVOKE_PREFERENCES (env), read synchronously
+        case "localStorage.getItem":
+            return extStorageGet(arg("key")?.stringValue ?? "").map { JSONValue.string($0) } ?? .null
+        case "localStorage.setItem":
+            extStorageSet(arg("key")?.stringValue ?? "", value: arg("value").map(Self.jsonScalarString) ?? "")
+            return .null
+        case "localStorage.removeItem":
+            extStorageRemove(arg("key")?.stringValue ?? "")
+            return .null
+        case "localStorage.clear":
+            extStorageClear()
+            return .null
+        case "localStorage.allItems":
+            return .object(extStorageAll().mapValues { JSONValue.string($0) })
+        default:
+            return .null
+        }
+    }
+
+    private func setStringPasteboard(_ s: String) {
+        let pb = NSPasteboard.general
+        pb.clearContents()
+        pb.setString(s, forType: .string)
+    }
+
+    private func openTarget(_ target: String) {
+        if let url = URL(string: target), url.scheme != nil { NSWorkspace.shared.open(url) }
+        else { NSWorkspace.shared.open(URL(fileURLWithPath: (target as NSString).expandingTildeInPath)) }
+    }
+
+    private static func jsonScalarString(_ v: JSONValue) -> String {
+        switch v {
+        case .string(let s): return s
+        case .number(let n): return n == n.rounded() ? String(Int(n)) : String(n)
+        case .bool(let b): return b ? "true" : "false"
+        default: return ""
+        }
+    }
+
+    // Per-extension LocalStorage, namespaced by extension id in UserDefaults.
+    private func extStorageDefaultsKey() -> String { "invoke.ext.ls.\(currentExtId)" }
+    private func extStorageAll() -> [String: String] { (UserDefaults.standard.dictionary(forKey: extStorageDefaultsKey()) as? [String: String]) ?? [:] }
+    private func extStorageGet(_ key: String) -> String? { extStorageAll()[key] }
+    private func extStorageSet(_ key: String, value: String) { var d = extStorageAll(); d[key] = value; UserDefaults.standard.set(d, forKey: extStorageDefaultsKey()) }
+    private func extStorageRemove(_ key: String) { var d = extStorageAll(); d[key] = nil; UserDefaults.standard.set(d, forKey: extStorageDefaultsKey()) }
+    private func extStorageClear() { UserDefaults.standard.removeObject(forKey: extStorageDefaultsKey()) }
+
+    /// Scan `examples/*` for extension manifests and surface their `view` commands in the root
+    /// (the calculator is excluded — it's the resident card provider). Dev discovery; a real install
+    /// dir + the store come later.
+    private func discoverExtensionCommands() -> [RootCommand] {
+        let fm = FileManager.default
+        let examplesDir = repoRoot + "/examples"
+        guard let names = try? fm.contentsOfDirectory(atPath: examplesDir) else { return [] }
+        var out: [RootCommand] = []
+        for name in names.sorted() where name != "calculator" {
+            let extDir = examplesDir + "/" + name
+            guard let data = fm.contents(atPath: extDir + "/package.json"),
+                  let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+                  let title = json["title"] as? String,
+                  let cmds = json["commands"] as? [[String: Any]] else { continue }
+            let prefsJSON = Self.manifestPreferencesJSON(json)
+            for c in cmds {
+                guard let cname = c["name"] as? String,
+                      ((c["mode"] as? String) ?? "view") == "view" else { continue }
+                let ctitle = (c["title"] as? String) ?? cname
+                guard let rel = ["tsx", "ts", "jsx", "js"].lazy
+                    .map({ "examples/\(name)/src/\(cname).\($0)" })
+                    .first(where: { fm.fileExists(atPath: repoRoot + "/" + $0) }) else { continue }
+                let cmdId = "ext.\(name).\(cname)"
+                out.append(RootCommand(id: cmdId, title: ctitle, subtitle: title, runTitle: "Open",
+                                       icon: "puzzlepiece.extension.fill", keywords: [name, cname, title.lowercased()],
+                                       closesPalette: false) { [weak self] in
+                    self?.launchExtension(id: cmdId, title: ctitle, entryRelPath: rel, command: cname, preferences: prefsJSON)
+                })
+            }
+        }
+        return out
+    }
+
+    private static func manifestPreferencesJSON(_ json: [String: Any]) -> String {
+        guard let prefs = json["preferences"] as? [[String: Any]] else { return "{}" }
+        var dict: [String: Any] = [:]
+        for p in prefs { if let n = p["name"] as? String, let def = p["default"] { dict[n] = def } }
+        guard let data = try? JSONSerialization.data(withJSONObject: dict),
+              let s = String(data: data, encoding: .utf8) else { return "{}" }
+        return s
+    }
+
+    /// Launch a discovered extension into a full palette surface (.extension mode), in its own process.
+    private func launchExtension(id: String, title: String, entryRelPath: String, command: String, preferences: String) {
+        teardownExtension()
+        let h = ExtensionHost()
+        h.onLog = { msg in print("[invoke:ext] \(msg)") }
+        h.onCommit = { [weak self] _ in self?.onExtensionCommit() }
+        h.onCapability = { [weak self] m, p in self?.handleCapability(m, p) ?? .null }
+        extHost = h
+        currentExtId = id
+        currentExtTitle = title
+        captureTarget()
+        mode = .extensionView
+        lastQuery = ""
+        palette.clearSearch()
+        palette.setPlaceholder("Search \(title)…")
+        selectedIndex = 0
+        palette.show()
+        h.launch(repoRoot: repoRoot, entryRelPath: entryRelPath, command: command, preferences: preferences)
+        renderExtension() // initial (empty) paint; content arrives via onCommit
+    }
+
+    private func teardownExtension() {
+        extHost?.terminate()
+        extHost = nil
+        currentExtId = ""
+        currentExtTitle = ""
+    }
+
+    private func onExtensionCommit() {
+        guard mode == .extensionView else { return }
+        renderExtension()
+    }
+
+    private func renderExtension() {
+        let count = items().count
+        if selectedIndex >= count { selectedIndex = max(0, count - 1) }
+        palette.render(activeTree, selectedIndex: selectedIndex)
+        updateActionBar()
+    }
+
+    /// Actions for the selected extension row. Extension-driven actions (onAction) re-enter the child;
+    /// declarative ones (open-in-browser/copy/paste) are fulfilled natively.
+    private func extensionActions(under node: ViewNode) -> [PaletteAction] {
+        actions(under: node).enumerated().map { i, n in
+            PaletteAction(title: title(for: n), shortcut: i == 0 ? "↵" : (i == 1 ? "⌘↵" : nil)) { [weak self] in
+                self?.runExtensionAction(n)
+            }
+        }
+    }
+
+    private func runExtensionAction(_ n: ViewNode) {
+        if let handler = n.props["onAction"]?.handlerRef {
+            extHost?.invoke(handler: handler) // stays open; re-renders on the next commit
+            return
+        }
+        switch n.props["variant"]?.stringValue {
+        case "open-in-browser":
+            if let url = n.props["url"]?.stringValue { openTarget(url) }
+            afterLaunch()
+        case "copy":
+            setStringPasteboard(n.props["content"]?.stringValue ?? "")
+            palette.showToast("Copied to Clipboard")
+            afterLaunch()
+        case "paste":
+            pasteText(n.props["content"]?.stringValue ?? "")
+        default:
+            afterLaunch()
+        }
+    }
+
     // MARK: - Commands
 
     private func makeCommands() -> [RootCommand] {
@@ -1071,7 +1277,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
             RootCommand(id: "folder.documents", title: "Open Documents", subtitle: "Navigation", runTitle: "Open", icon: "doc", keywords: ["documents", "docs", "folder"], closesPalette: true, run: openPath("~/Documents")),
             RootCommand(id: "folder.desktop", title: "Open Desktop", subtitle: "Navigation", runTitle: "Open", icon: "menubar.dock.rectangle", keywords: ["desktop", "folder"], closesPalette: true, run: openPath("~/Desktop")),
             RootCommand(id: "folder.applications", title: "Open Applications", subtitle: "Navigation", runTitle: "Open", icon: "square.grid.2x2", keywords: ["applications", "apps", "folder"], closesPalette: true, run: openPath("/Applications")),
-        ]
+        ] + discoverExtensionCommands()
     }
 
     // MARK: - Helpers
@@ -1085,11 +1291,6 @@ public final class AppController: NSObject, NSApplicationDelegate {
         if hasDigit, t.range(of: "[-+*/^%]", options: .regularExpression) != nil { return true }
         if t.range(of: "(?i)^[0-9.,]+\\s*[a-z°]+\\s+(in|to|as)\\s+[a-z°]+$", options: .regularExpression) != nil { return true }
         return false
-    }
-
-    private static func objString(_ v: JSONValue?, _ key: String) -> String? {
-        if case .object(let o)? = v { return o[key]?.stringValue }
-        return nil
     }
 
     /// First line of a clip, trimmed and truncated for the row title.
@@ -1130,6 +1331,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         if commandId.hasPrefix("system.") { return ExtensionMeta(id: "system", name: "System", icon: "gearshape.2") }
         if commandId.hasPrefix("snippet.") { return ExtensionMeta(id: "snippets", name: "Snippets", icon: "text.quote") }
         if commandId.hasPrefix("quicklink.") { return ExtensionMeta(id: "quicklinks", name: "Quicklinks", icon: "link") }
+        if commandId.hasPrefix("ext.") { return ExtensionMeta(id: "extensions", name: "Extensions", icon: "puzzlepiece.extension") }
         switch commandId {
         case "clipboard.history": return ExtensionMeta(id: "clipboard-history", name: "Clipboard History", icon: "doc.on.clipboard")
         case "emoji.picker": return ExtensionMeta(id: "emoji", name: "Emoji & Symbols", icon: "face.smiling")

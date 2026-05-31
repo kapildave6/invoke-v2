@@ -18,8 +18,9 @@ interface Hit {
   title: string | null;
   url: string | null;
   author: string;
-  points: number;
-  num_comments: number;
+  points: number | null;
+  num_comments: number | null;
+  created_at_i: number;
 }
 
 interface SearchResponse {
@@ -27,6 +28,20 @@ interface SearchResponse {
 }
 
 const LAST_QUERY_KEY = "lastQuery";
+
+/** Compact relative age, e.g. "3m", "5h", "2d". */
+function relativeTime(unixSeconds: number): string {
+  const s = Math.max(0, Math.floor(Date.now() / 1000) - unixSeconds);
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h`;
+  const d = Math.floor(h / 24);
+  if (d < 30) return `${d}d`;
+  const mo = Math.floor(d / 30);
+  return mo < 12 ? `${mo}mo` : `${Math.floor(mo / 12)}y`;
+}
 
 export default function Command() {
   const prefs = getPreferenceValues<Preferences>();
@@ -37,7 +52,8 @@ export default function Command() {
     if (query) void LocalStorage.setItem(LAST_QUERY_KEY, query);
   }, [query]);
 
-  const endpoint = `https://hn.algolia.com/api/v1/search?tags=story&hitsPerPage=20&query=${encodeURIComponent(query)}`;
+  // search_by_date sorts newest-first (always latest), vs. /search which ranks by popularity.
+  const endpoint = `https://hn.algolia.com/api/v1/search_by_date?tags=story&hitsPerPage=20&query=${encodeURIComponent(query)}`;
   const { data, isLoading, error } = useFetch<SearchResponse>(endpoint);
 
   useEffect(() => {
@@ -48,7 +64,7 @@ export default function Command() {
 
   return (
     <List searchBarPlaceholder="Search Hacker News…" onSearchTextChange={setQuery} isLoading={isLoading} throttle>
-      <List.Section title={query ? `Results for "${query}"` : "Front Page"} subtitle={`${hits.length}`}>
+      <List.Section title={query ? `Latest for "${query}"` : "Latest Stories"} subtitle={`${hits.length}`}>
         {hits.map((hit) => {
           const hnUrl = `https://news.ycombinator.com/item?id=${hit.objectID}`;
           return (
@@ -56,7 +72,11 @@ export default function Command() {
               key={hit.objectID}
               title={hit.title ?? "(untitled)"}
               subtitle={hit.author}
-              accessories={[{ text: `▲ ${hit.points}` }, { tag: `${hit.num_comments} comments` }]}
+              accessories={[
+                { text: relativeTime(hit.created_at_i) },
+                { text: `▲ ${hit.points ?? 0}` },
+                { tag: `${hit.num_comments ?? 0} comments` },
+              ]}
               actions={
                 <ActionPanel>
                   {hit.url ? <Action.OpenInBrowser url={hit.url} /> : null}
