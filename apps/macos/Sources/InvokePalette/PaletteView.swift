@@ -16,7 +16,12 @@ private final class FlippedDocView: NSView {
 /// establishes the reusable row/card patterns every feature renders through.
 public final class PaletteView: NSView {
     private let stack = NSStackView()
+    private let scrollView = NSScrollView()
     private var itemCounter = 0
+    private var selectedRowView: NSView?
+
+    /// Max content height before the list scrolls (window caps near this + chrome).
+    private let maxContentHeight: CGFloat = 460
 
     public override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -24,21 +29,43 @@ public final class PaletteView: NSView {
         stack.alignment = .leading
         stack.spacing = 3
         stack.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(stack)
+
+        let doc = FlippedDocView()
+        doc.translatesAutoresizingMaskIntoConstraints = false
+        doc.addSubview(stack)
+
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.drawsBackground = false
+        scrollView.hasVerticalScroller = true
+        scrollView.scrollerStyle = .overlay
+        scrollView.documentView = doc
+        addSubview(scrollView)
+
         NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
-            stack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
-            stack.topAnchor.constraint(equalTo: topAnchor, constant: 8),
+            scrollView.topAnchor.constraint(equalTo: topAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: bottomAnchor),
+
+            doc.topAnchor.constraint(equalTo: scrollView.contentView.topAnchor),
+            doc.leadingAnchor.constraint(equalTo: scrollView.contentView.leadingAnchor),
+            doc.trailingAnchor.constraint(equalTo: scrollView.contentView.trailingAnchor),
+            doc.widthAnchor.constraint(equalTo: scrollView.contentView.widthAnchor),
+
+            stack.topAnchor.constraint(equalTo: doc.topAnchor, constant: 8),
+            stack.leadingAnchor.constraint(equalTo: doc.leadingAnchor, constant: 12),
+            stack.trailingAnchor.constraint(equalTo: doc.trailingAnchor, constant: -12),
+            stack.bottomAnchor.constraint(equalTo: doc.bottomAnchor, constant: -8),
         ])
     }
 
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError("not used") }
 
-    /// Height the rendered content wants — drives the window's compact sizing (no empty space).
+    /// Height the rendered content wants (capped — beyond it the list scrolls). Drives the window.
     public func fittingHeight() -> CGFloat {
         layoutSubtreeIfNeeded()
-        return stack.fittingSize.height
+        return min(stack.fittingSize.height + 16, maxContentHeight)
     }
 
     /// Re-render rows from the current view-model tree, highlighting the item at `selectedIndex`
@@ -46,11 +73,21 @@ public final class PaletteView: NSView {
     public func render(_ tree: ViewTree, selectedIndex: Int) {
         stack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         itemCounter = 0
+        selectedRowView = nil
         if let list = tree.root.children.first(where: { $0.type == "list" }),
            case .bool(true)? = list.props["showDetail"] {
             renderSplit(list: list, selectedIndex: selectedIndex) // master–detail (e.g. Clipboard History)
         } else {
             appendRows(for: tree.root, selectedIndex: selectedIndex)
+            scrollSelectedIntoView()
+        }
+    }
+
+    private func scrollSelectedIntoView() {
+        guard let row = selectedRowView else { return }
+        DispatchQueue.main.async { [weak self, weak row] in
+            self?.layoutSubtreeIfNeeded()
+            if let row { row.scrollToVisible(row.bounds) }
         }
     }
 
@@ -260,7 +297,7 @@ public final class PaletteView: NSView {
             itemCounter += 1
             if let cardVal = node.props["card"], case .object(let card) = cardVal,
                node.props["display"]?.stringValue == "card" {
-                addCard(card)
+                addCard(card, selected: selected)
             } else {
                 addItemRow(node, selected: selected)
             }
@@ -291,7 +328,7 @@ public final class PaletteView: NSView {
 
     // MARK: - Result card
 
-    private func addCard(_ card: [String: JSONValue]) {
+    private func addCard(_ card: [String: JSONValue], selected: Bool) {
         let left = card["left"]?.stringValue ?? ""
         let right = card["right"]?.stringValue ?? ""
         let leftLabel = card["leftLabel"]?.stringValue ?? ""
@@ -320,6 +357,7 @@ public final class PaletteView: NSView {
         cardView.addSubview(h)
 
         stack.addArrangedSubview(cardView)
+        if selected { selectedRowView = cardView }
         NSLayoutConstraint.activate([
             cardView.widthAnchor.constraint(equalTo: stack.widthAnchor),
             h.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 16),
@@ -383,7 +421,14 @@ public final class PaletteView: NSView {
         h.spacing = 8
         h.translatesAutoresizingMaskIntoConstraints = false
 
-        if let icon = iconView(for: node, selected: selected) { h.addArrangedSubview(icon) }
+        if let glyph = node.props["glyph"]?.stringValue {
+            let g = NSTextField(labelWithString: glyph) // emoji
+            g.font = .systemFont(ofSize: 18)
+            g.translatesAutoresizingMaskIntoConstraints = false
+            h.addArrangedSubview(g)
+        } else if let icon = iconView(for: node, selected: selected) {
+            h.addArrangedSubview(icon)
+        }
 
         let title = NSTextField(labelWithString: node.title ?? "")
         title.font = .systemFont(ofSize: 14)
@@ -420,6 +465,7 @@ public final class PaletteView: NSView {
 
         row.addSubview(h)
         stack.addArrangedSubview(row)
+        if selected { selectedRowView = row }
         NSLayoutConstraint.activate([
             row.widthAnchor.constraint(equalTo: stack.widthAnchor),
             row.heightAnchor.constraint(greaterThanOrEqualToConstant: 38),

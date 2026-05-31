@@ -42,7 +42,7 @@ _Last updated: 2026-05-31_
 | Item | Status | Notes |
 |---|---|---|
 | Native **Applications** index + fuzzy launch | ✅ | `AppIndexService` |
-| **Command registry** (built-in commands) | 🟡 | folder/navigation commands; more to come |
+| **Command registry** (built-in commands) | 🟡 | 22 commands (folders/system/window/clipboard/emoji); always-listed + scrollable root |
 | **Frecency ranking** + Suggestions default | ✅ | `Frecency`, persisted |
 | **Composed sections** (apps + commands + calc card, one tree) | ✅ | |
 | Aliases / hotkeys per command / fallbacks | ⬜ | |
@@ -66,8 +66,8 @@ _Last updated: 2026-05-31_
 | Window management (maximize/halves) | ✅ | AX move/resize: maximize, halves, quarters, center; root commands + ⌃⌥←/→/↑ hotkeys (needs Accessibility) |
 | Snippets / text expansion | ⬜ | |
 | Quicklinks | ⬜ | |
-| Emoji & symbols picker | ⬜ | |
-| System commands | 🟡 | folder-open commands only |
+| Emoji & symbols picker | ✅ | curated set, search, recents (frecency), paste-on-Enter |
+| System commands | 🟡 | folders, sleep, volume, mute, quit-frontmost (more to add) |
 | Calendar / My Schedule | ⬜ | |
 | AI in root + AI Commands ("improve writing") | ⬜ | |
 

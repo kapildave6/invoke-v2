@@ -20,7 +20,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private let windowManager = WindowManager()
     private lazy var commands: [RootCommand] = makeCommands()
 
-    private enum Mode { case root, clipboard }
+    private enum Mode { case root, clipboard, emoji }
     private var mode: Mode = .root
     private var clipKind = "All Types" // clipboard type filter
     private var pasteTarget: NSRunningApplication? // app to paste back into
@@ -64,7 +64,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         palette.onActivate = { [weak self] secondary in self?.activateSelection(secondary: secondary) }
         palette.onCancel = { [weak self] in
             guard let self else { return }
-            if self.mode == .clipboard { self.exitToRoot() } else { self.palette.hide() }
+            if self.mode != .root { self.exitToRoot() } else { self.palette.hide() }
         }
         palette.actionsProvider = { [weak self] in self?.currentActions() ?? [] }
         palette.onFilterChange = { [weak self] kind in
@@ -122,8 +122,64 @@ public final class AppController: NSObject, NSApplicationDelegate {
         lastQuery = text
         selectedIndex = 0
         if mode == .clipboard { renderClipboard(query: text); return }
+        if mode == .emoji { renderEmoji(query: text); return }
         if Self.looksLikeCalculation(text) { host.setSearchText(text) } // card arrives via onCommit
         renderRoot(calcCard: nil)
+    }
+
+    private func enterEmoji() {
+        mode = .emoji
+        lastQuery = ""
+        palette.clearSearch()
+        selectedIndex = 0
+        renderEmoji(query: "")
+    }
+
+    private func renderEmoji(query: String) {
+        rootTree = buildEmoji(query: query)
+        let count = items().count
+        if selectedIndex >= count { selectedIndex = max(0, count - 1) }
+        palette.hideFilter()
+        palette.render(activeTree, selectedIndex: selectedIndex)
+        updateActionBar()
+    }
+
+    private func buildEmoji(query: String) -> ViewTree {
+        let tree = ViewTree()
+        let list = ViewNode(id: 1, type: "list")
+        var nid = 10
+        func item(_ em: EmojiData.Emoji) -> ViewNode {
+            nid += 1
+            return ViewNode(id: nid, type: "list-item", props: [
+                "title": .string(em.name.capitalized),
+                "glyph": .string(em.char),
+                "insertText": .string(em.char),
+                "frecencyKey": .string("emoji:\(em.char)"),
+            ])
+        }
+        func section(_ title: String, _ children: [ViewNode]) -> ViewNode {
+            nid += 1
+            let s = ViewNode(id: nid, type: "list-section", props: ["title": .string(title)])
+            s.children = children
+            return s
+        }
+        let q = query.trimmingCharacters(in: .whitespaces)
+        var sections: [ViewNode] = []
+        if q.isEmpty {
+            let recents = frecency.topIds(limit: 8)
+                .filter { $0.hasPrefix("emoji:") }
+                .compactMap { EmojiData.emoji(forChar: String($0.dropFirst(6))) }
+            if !recents.isEmpty { sections.append(section("Recently Used", recents.map(item))) }
+            sections.append(section("Emoji", EmojiData.all.map(item)))
+        } else {
+            let results = EmojiData.search(q)
+            sections = results.isEmpty
+                ? [section("No emoji found", [])]
+                : [section("Emoji", results.map(item))]
+        }
+        list.children = sections
+        tree.root.children = [list]
+        return tree
     }
 
     /// ⌥Space: toggle the palette, always resetting to the root when summoning.
@@ -298,8 +354,13 @@ public final class AppController: NSObject, NSApplicationDelegate {
         if let calcCard { sections.append(sectionNode("Calculator", [calcCard])) }
 
         if q.isEmpty {
-            let items = suggestionItems(nextId: nextId)
-            if !items.isEmpty { sections.append(sectionNode("Suggestions", items)) }
+            let suggestions = suggestionItems(nextId: nextId)
+            if !suggestions.isEmpty { sections.append(sectionNode("Suggestions", suggestions)) }
+            // Always list every command (Raycast-style), scrollable.
+            let cmds = commands.map {
+                itemNode(id: nextId(), title: $0.title, subtitle: $0.subtitle, kind: "Command", appPath: nil, icon: $0.icon, commandId: $0.id)
+            }
+            sections.append(sectionNode("Commands", cmds))
         } else {
             let apps = appIndex.search(q).map {
                 itemNode(id: nextId(), title: $0.name, subtitle: nil, kind: "Application", appPath: $0.path, icon: nil, commandId: nil)
@@ -382,8 +443,13 @@ public final class AppController: NSObject, NSApplicationDelegate {
     }
 
     private func updateActionBar() {
-        palette.setActionBar(command: mode == .clipboard ? "Clipboard History" : "Invoke",
-                             primary: currentActions().first?.title)
+        let label: String
+        switch mode {
+        case .clipboard: label = "Clipboard History"
+        case .emoji: label = "Emoji & Symbols"
+        case .root: label = "Invoke"
+        }
+        palette.setActionBar(command: label, primary: currentActions().first?.title)
     }
 
     /// Actions for the selected row: launch an app, run a command (both bump frecency), or the
@@ -399,6 +465,19 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 NSWorkspace.shared.open(URL(fileURLWithPath: path))
                 self?.afterLaunch()
             }]
+        }
+        if let text = node.props["insertText"]?.stringValue {
+            let key = node.props["frecencyKey"]?.stringValue
+            return [
+                PaletteAction(title: pasteTitle(), shortcut: "↵") { [weak self] in
+                    if let key { self?.frecency.bump(key) }
+                    self?.pasteText(text)
+                },
+                PaletteAction(title: "Copy", shortcut: "⌘↵") { [weak self] in
+                    if let key { self?.frecency.bump(key) }
+                    self?.copyText(text)
+                },
+            ]
         }
         if let key = node.props["clipKey"]?.stringValue, let clip = clipboard.clip(forKey: key) {
             let copyTitle = clip.kind == "File" ? "Copy File" : (clip.kind == "Image" ? "Copy Image" : "Copy to Clipboard")
@@ -445,6 +524,28 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private func copyClip(_ clip: ClipboardHistory.Clip) {
         setPasteboard(clip)
         palette.showToast(clip.kind == "Image" ? "Copied Image" : (clip.kind == "File" ? "Copied File" : "Copied to Clipboard"))
+    }
+
+    private func pasteText(_ text: String) {
+        let pb = NSPasteboard.general
+        pb.clearContents()
+        pb.setString(text, forType: .string)
+        guard AXIsProcessTrusted() else {
+            Self.promptAccessibility()
+            palette.showToast("Enable Accessibility for Invoke to paste — copied instead")
+            return
+        }
+        let target = pasteTarget
+        palette.hide()
+        target?.activate()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) { Self.synthesizePaste() }
+    }
+
+    private func copyText(_ text: String) {
+        let pb = NSPasteboard.general
+        pb.clearContents()
+        pb.setString(text, forType: .string)
+        palette.showToast("Copied")
     }
 
     /// Set the clipboard, then (if Accessibility is granted) close the palette, refocus the target
@@ -544,8 +645,22 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 self?.applyWindow(action, pid: self?.pasteTarget?.processIdentifier)
             }
         }
+        func shell(_ tool: String, _ args: [String]) -> () -> Void {
+            return {
+                let p = Process()
+                p.executableURL = URL(fileURLWithPath: tool)
+                p.arguments = args
+                try? p.run()
+            }
+        }
         return [
             RootCommand(id: "clipboard.history", title: "Clipboard History", subtitle: "System", runTitle: "Open", icon: "doc.on.clipboard", keywords: ["clipboard", "history", "paste", "copy"], closesPalette: false) { [weak self] in self?.enterClipboard() },
+            RootCommand(id: "emoji.picker", title: "Search Emoji & Symbols", subtitle: "System", runTitle: "Open", icon: "face.smiling", keywords: ["emoji", "symbol", "face", "smiley"], closesPalette: false) { [weak self] in self?.enterEmoji() },
+            RootCommand(id: "system.sleep", title: "Sleep", subtitle: "System", runTitle: "Sleep", icon: "moon.fill", keywords: ["sleep", "suspend"], closesPalette: true, run: shell("/usr/bin/pmset", ["sleepnow"])),
+            RootCommand(id: "system.volumeUp", title: "Turn Volume Up", subtitle: "System", runTitle: "Run", icon: "speaker.wave.3.fill", keywords: ["volume", "up", "sound", "louder"], closesPalette: true, run: shell("/usr/bin/osascript", ["-e", "set volume output volume (output volume of (get volume settings) + 10)"])),
+            RootCommand(id: "system.volumeDown", title: "Turn Volume Down", subtitle: "System", runTitle: "Run", icon: "speaker.wave.1.fill", keywords: ["volume", "down", "sound", "quieter"], closesPalette: true, run: shell("/usr/bin/osascript", ["-e", "set volume output volume (output volume of (get volume settings) - 10)"])),
+            RootCommand(id: "system.mute", title: "Mute Volume", subtitle: "System", runTitle: "Run", icon: "speaker.slash.fill", keywords: ["mute", "silence", "volume"], closesPalette: true, run: shell("/usr/bin/osascript", ["-e", "set volume output muted true"])),
+            RootCommand(id: "system.quitFront", title: "Quit Frontmost App", subtitle: "System", runTitle: "Quit", icon: "xmark.circle.fill", keywords: ["quit", "close", "app"], closesPalette: true) { [weak self] in self?.pasteTarget?.terminate() },
             windowCommand("window.maximize", "Maximize", "macwindow", ["maximize", "full", "fill"], .maximize),
             windowCommand("window.leftHalf", "Left Half", "rectangle.lefthalf.filled", ["left", "half"], .leftHalf),
             windowCommand("window.rightHalf", "Right Half", "rectangle.righthalf.filled", ["right", "half"], .rightHalf),
