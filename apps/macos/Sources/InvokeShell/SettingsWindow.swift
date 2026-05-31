@@ -9,7 +9,7 @@ public final class SettingsWindow {
 
     public init() {}
 
-    public func show(commands: [CommandInfo], onClearClipboard: @escaping () -> Void) {
+    public func show(groups: [ExtensionGroup], onClearClipboard: @escaping () -> Void, onBindingsChanged: @escaping () -> Void) {
         if window == nil {
             let tabs = NSTabViewController()
             tabs.tabStyle = .toolbar
@@ -30,7 +30,7 @@ public final class SettingsWindow {
             }
 
             tabs.addTabViewItem(tab("General", "gearshape", hosted(GeneralPane())))
-            tabs.addTabViewItem(tab("Commands", "command", hosted(CommandsPane(commands: commands))))
+            tabs.addTabViewItem(tab("Commands", "command", hosted(CommandsPane(groups: groups, onBindingsChanged: onBindingsChanged))))
             tabs.addTabViewItem(tab("Clipboard", "doc.on.clipboard", hosted(ClipboardPane(onClear: onClearClipboard))))
             tabs.addTabViewItem(tab("Advanced", "wrench.and.screwdriver", hosted(AdvancedPane())))
             tabs.addTabViewItem(tab("About", "info.circle", hosted(AboutPane())))

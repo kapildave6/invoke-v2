@@ -10,18 +10,26 @@ public final class GlobalHotkey {
     private static var eventHandlerInstalled = false
     private static var eventHandlerRef: EventHandlerRef?
 
-    private var refs: [EventHotKeyRef?] = []
+    private var refs: [UInt32: EventHotKeyRef] = [:]
 
     public init() {}
 
     /// Bind `keyCode` + Carbon `modifiers` to `onFire`. `id` distinguishes bindings in the handler.
+    /// Re-registering the same `id` replaces the previous binding (used when a command's hotkey changes).
     public func register(id: UInt32, keyCode: UInt32, modifiers: UInt32, onFire: @escaping () -> Void) {
+        unregister(id: id) // replace any existing binding for this id
         GlobalHotkey.handlers[id] = onFire
         GlobalHotkey.installHandlerIfNeeded()
         var ref: EventHotKeyRef?
         let hotKeyID = EventHotKeyID(signature: OSType(0x494E564B), id: id) // 'INVK'
-        RegisterEventHotKey(keyCode, modifiers, hotKeyID, GetApplicationEventTarget(), 0, &ref)
-        refs.append(ref)
+        let status = RegisterEventHotKey(keyCode, modifiers, hotKeyID, GetApplicationEventTarget(), 0, &ref)
+        if status == noErr, let ref { refs[id] = ref } else { GlobalHotkey.handlers[id] = nil }
+    }
+
+    /// Remove a single binding (e.g. the user cleared a command's hotkey).
+    public func unregister(id: UInt32) {
+        if let ref = refs[id] { UnregisterEventHotKey(ref); refs[id] = nil }
+        GlobalHotkey.handlers[id] = nil
     }
 
     private static func installHandlerIfNeeded() {
@@ -44,7 +52,8 @@ public final class GlobalHotkey {
     }
 
     public func unregister() {
-        for ref in refs where ref != nil { UnregisterEventHotKey(ref) }
+        for (_, ref) in refs { UnregisterEventHotKey(ref) }
         refs.removeAll()
+        GlobalHotkey.handlers.removeAll()
     }
 }

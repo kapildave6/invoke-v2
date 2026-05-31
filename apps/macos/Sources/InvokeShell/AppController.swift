@@ -109,6 +109,17 @@ public final class AppController: NSObject, NSApplicationDelegate {
             self?.applyWindow(.maximize, pid: NSWorkspace.shared.frontmostApplication?.processIdentifier)
         }
         print("[invoke:host] global hotkeys: ⌥Space · ⌘⇧V · ⌃⌥←/→/↑ (windows)")
+        // Reserve the fixed combos so the recorder won't let a command shadow them (Carbon would
+        // drop the duplicate registration silently).
+        AppSettings.reservedCombos = [
+            AppSettings.comboKey(keyCode: UInt32(kVK_Space), modifiers: UInt32(optionKey)),
+            AppSettings.comboKey(keyCode: UInt32(kVK_ANSI_V), modifiers: UInt32(cmdKey | shiftKey)),
+            AppSettings.comboKey(keyCode: UInt32(kVK_LeftArrow), modifiers: winMods),
+            AppSettings.comboKey(keyCode: UInt32(kVK_RightArrow), modifiers: winMods),
+            AppSettings.comboKey(keyCode: UInt32(kVK_UpArrow), modifiers: winMods),
+        ]
+        AppSettings.shared.reconcileLaunchAtLogin() // didSet is skipped for the in-init assignment
+        reloadCommandHotkeys() // user-assigned per-command hotkeys from Settings
 
         renderRoot(calcCard: nil) // initial: Suggestions
         palette.show()
@@ -434,14 +445,14 @@ public final class AppController: NSObject, NSApplicationDelegate {
         var sections: [ViewNode] = []
         let q = query.trimmingCharacters(in: .whitespaces)
 
-        if let calcCard { sections.append(sectionNode("Calculator", [calcCard])) }
+        if let calcCard, AppSettings.shared.isEnabled("calculator") { sections.append(sectionNode("Calculator", [calcCard])) }
 
         if q.isEmpty {
             let suggestions = suggestionItems(nextId: nextId)
             if !suggestions.isEmpty { sections.append(sectionNode("Suggestions", suggestions)) }
             // Always list every enabled command (Raycast-style), scrollable.
             let cmds = commands.filter { AppSettings.shared.isEnabled($0.id) }.map {
-                itemNode(id: nextId(), title: $0.title, subtitle: $0.subtitle, kind: "Command", appPath: nil, icon: $0.icon, commandId: $0.id)
+                itemNode(id: nextId(), title: $0.title, subtitle: $0.subtitle, kind: "Command", appPath: nil, icon: $0.icon, commandId: $0.id, alias: AppSettings.shared.alias(for: $0.id))
             }
             sections.append(sectionNode("Commands", cmds))
         } else {
@@ -451,7 +462,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
             if !apps.isEmpty { sections.append(sectionNode("Applications", apps)) }
 
             let cmds = matchCommands(q).map {
-                itemNode(id: nextId(), title: $0.title, subtitle: $0.subtitle, kind: "Command", appPath: nil, icon: $0.icon, commandId: $0.id)
+                itemNode(id: nextId(), title: $0.title, subtitle: $0.subtitle, kind: "Command", appPath: nil, icon: $0.icon, commandId: $0.id, alias: AppSettings.shared.alias(for: $0.id))
             }
             if !cmds.isEmpty { sections.append(sectionNode("Commands", cmds)) }
         }
@@ -463,11 +474,11 @@ public final class AppController: NSObject, NSApplicationDelegate {
 
     /// Empty-root suggestions: top-frecency items, or the command registry before any usage data.
     private func suggestionItems(nextId: () -> Int) -> [ViewNode] {
-        let ids = frecency.hasData ? frecency.topIds(limit: 7) : commands.map { "cmd:\($0.id)" }
+        let ids = frecency.hasData ? frecency.topIds(limit: 7) : commands.filter { AppSettings.shared.isEnabled($0.id) }.map { "cmd:\($0.id)" }
         var out: [ViewNode] = []
         for id in ids {
             if id.hasPrefix("cmd:"), let c = commands.first(where: { "cmd:\($0.id)" == id }) {
-                out.append(itemNode(id: nextId(), title: c.title, subtitle: c.subtitle, kind: "Command", appPath: nil, icon: c.icon, commandId: c.id))
+                out.append(itemNode(id: nextId(), title: c.title, subtitle: c.subtitle, kind: "Command", appPath: nil, icon: c.icon, commandId: c.id, alias: AppSettings.shared.alias(for: c.id)))
             } else if id.hasPrefix("app:") {
                 let path = String(id.dropFirst(4))
                 guard FileManager.default.fileExists(atPath: path) else { continue }
@@ -480,15 +491,29 @@ public final class AppController: NSObject, NSApplicationDelegate {
 
     private func matchCommands(_ q: String) -> [RootCommand] {
         let ql = q.lowercased()
-        return commands
-            .filter { AppSettings.shared.isEnabled($0.id) && ($0.title.lowercased().contains(ql) || $0.keywords.contains { $0.contains(ql) }) }
+        let settings = AppSettings.shared
+        let enabled = commands.filter { settings.isEnabled($0.id) }
+        func aliasOf(_ c: RootCommand) -> String? { settings.alias(for: c.id) }
+        // An exact alias match wins outright (typing "wm" jumps straight to that command).
+        let exact = enabled.filter { aliasOf($0) == ql }
+        let rest = enabled
+            .filter { c in
+                aliasOf(c) != ql &&
+                (c.title.lowercased().contains(ql)
+                    || c.keywords.contains { $0.contains(ql) }
+                    || (aliasOf(c).map { $0.contains(ql) } ?? false))
+            }
             .sorted { frecency.score("cmd:\($0.id)") > frecency.score("cmd:\($1.id)") }
+        return exact + rest
     }
 
-    private func itemNode(id: Int, title: String, subtitle: String?, kind: String, appPath: String?, icon: String?, commandId: String?) -> ViewNode {
+    private func itemNode(id: Int, title: String, subtitle: String?, kind: String, appPath: String?, icon: String?, commandId: String?, alias: String? = nil) -> ViewNode {
+        var accessories: [JSONValue] = []
+        if let alias, !alias.isEmpty { accessories.append(.object(["tag": .string(alias)])) }
+        accessories.append(.object(["text": .string(kind)]))
         var props: [String: JSONValue] = [
             "title": .string(title),
-            "accessories": .array([.object(["text": .string(kind)])]),
+            "accessories": .array(accessories),
         ]
         if let subtitle, !subtitle.isEmpty { props["subtitle"] = .string(subtitle) }
         if let appPath { props["appPath"] = .string(appPath) }
@@ -781,8 +806,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
             }
         }
         return [
-            RootCommand(id: "clipboard.history", title: "Clipboard History", subtitle: "System", runTitle: "Open", icon: "doc.on.clipboard", keywords: ["clipboard", "history", "paste", "copy"], closesPalette: false) { [weak self] in self?.enterClipboard() },
-            RootCommand(id: "emoji.picker", title: "Search Emoji & Symbols", subtitle: "System", runTitle: "Open", icon: "face.smiling", keywords: ["emoji", "symbol", "face", "smiley"], closesPalette: false) { [weak self] in self?.enterEmoji() },
+            RootCommand(id: "clipboard.history", title: "Clipboard History", subtitle: "Clipboard History", runTitle: "Open", icon: "doc.on.clipboard", keywords: ["clipboard", "history", "paste", "copy"], closesPalette: false) { [weak self] in self?.enterClipboard() },
+            RootCommand(id: "emoji.picker", title: "Search Emoji & Symbols", subtitle: "Emoji & Symbols", runTitle: "Open", icon: "face.smiling", keywords: ["emoji", "symbol", "face", "smiley"], closesPalette: false) { [weak self] in self?.enterEmoji() },
             RootCommand(id: "screenshots.search", title: "Search Screenshots", subtitle: "Screenshots", runTitle: "Open", icon: "camera.viewfinder", keywords: ["screenshot", "screen", "capture", "recording", "image"], closesPalette: false) { [weak self] in self?.enterScreenshots() },
             RootCommand(id: "system.sleep", title: "Sleep", subtitle: "System", runTitle: "Sleep", icon: "moon.fill", keywords: ["sleep", "suspend"], closesPalette: true, run: shell("/usr/bin/pmset", ["sleepnow"])),
             RootCommand(id: "system.volumeUp", title: "Turn Volume Up", subtitle: "System", runTitle: "Run", icon: "speaker.wave.3.fill", keywords: ["volume", "up", "sound", "louder"], closesPalette: true, run: shell("/usr/bin/osascript", ["-e", "set volume output volume (output volume of (get volume settings) + 10)"])),
@@ -845,8 +870,80 @@ public final class AppController: NSObject, NSApplicationDelegate {
 
     private func openSettings() {
         palette.hide()
-        let meta = commands.map { CommandInfo(id: $0.id, title: $0.title, subtitle: $0.subtitle) }
-        settingsWindow.show(commands: meta, onClearClipboard: { [weak self] in self?.clipboard.clear() })
+        settingsWindow.show(
+            groups: extensionGroups(),
+            onClearClipboard: { [weak self] in self?.clipboard.clear() },
+            onBindingsChanged: { [weak self] in self?.reloadCommandHotkeys() }
+        )
+    }
+
+    /// The extension a command belongs to, for the grouped Commands settings (Raycast parity).
+    private struct ExtensionMeta { let id: String; let name: String; let icon: String }
+    private static func extensionMeta(for commandId: String) -> ExtensionMeta {
+        if commandId.hasPrefix("window.") { return ExtensionMeta(id: "window-management", name: "Window Management", icon: "macwindow") }
+        if commandId.hasPrefix("folder.") { return ExtensionMeta(id: "navigation", name: "Navigation", icon: "folder") }
+        if commandId.hasPrefix("system.") { return ExtensionMeta(id: "system", name: "System", icon: "gearshape.2") }
+        switch commandId {
+        case "clipboard.history": return ExtensionMeta(id: "clipboard-history", name: "Clipboard History", icon: "doc.on.clipboard")
+        case "emoji.picker": return ExtensionMeta(id: "emoji", name: "Emoji & Symbols", icon: "face.smiling")
+        case "screenshots.search": return ExtensionMeta(id: "screenshots", name: "Screenshots", icon: "camera.viewfinder")
+        case "app.settings": return ExtensionMeta(id: "invoke", name: "Invoke", icon: "command.square")
+        default: return ExtensionMeta(id: "other", name: "Other", icon: "command")
+        }
+    }
+
+    /// Group the built-in commands by parent extension (preserving each command's natural order),
+    /// plus the resident Calculator (a typed fallback — enable-only). Groups are listed alphabetically.
+    private func extensionGroups() -> [ExtensionGroup] {
+        var order: [String] = []
+        var metas: [String: ExtensionMeta] = [:]
+        var kids: [String: [CommandInfo]] = [:]
+        for c in commands {
+            let m = Self.extensionMeta(for: c.id)
+            if metas[m.id] == nil { metas[m.id] = m; order.append(m.id) }
+            kids[m.id, default: []].append(CommandInfo(id: c.id, title: c.title, subtitle: "", icon: c.icon))
+        }
+        var groups = order.map { id in
+            ExtensionGroup(id: id, name: metas[id]!.name, icon: metas[id]!.icon, commands: kids[id] ?? [])
+        }
+        groups.append(ExtensionGroup(id: "calculator", name: "Calculator", icon: "function",
+            commands: [CommandInfo(id: "calculator", title: "Calculate", subtitle: "", icon: "function", supportsBinding: false)]))
+        return groups.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    }
+
+    // MARK: - Per-command global hotkeys (PLAN.md §3.2, §6)
+
+    /// (Re)register the user-assigned per-command hotkeys. Ids 100+ are reserved for these (1–5 are
+    /// the fixed bindings). Called at launch and whenever the Settings window mutates a binding or
+    /// an enable toggle — a disabled command's hotkey is removed.
+    private func reloadCommandHotkeys() {
+        let settings = AppSettings.shared
+        for (i, cmd) in commands.enumerated() {
+            let hid = UInt32(100 + i)
+            if settings.isEnabled(cmd.id), let combo = settings.hotkey(for: cmd.id) {
+                hotkey.register(id: hid, keyCode: combo.keyCode, modifiers: combo.modifiers) { [weak self] in
+                    self?.runCommandFromHotkey(cmd)
+                }
+            } else {
+                hotkey.unregister(id: hid)
+            }
+        }
+    }
+
+    /// A command fired by its global hotkey: action commands run directly (no palette); navigating
+    /// commands (clipboard/emoji/screenshots) summon the palette into their mode. captureTarget()
+    /// runs first for ALL commands so window/quit actions hit the *current* frontmost app, not a
+    /// stale `pasteTarget` from an earlier summon (and not a nil one on a cold fire).
+    private func runCommandFromHotkey(_ cmd: RootCommand) {
+        frecency.bump("cmd:\(cmd.id)")
+        captureTarget()
+        if cmd.closesPalette {
+            cmd.run()
+            if palette.isVisible { afterLaunch() } // keep an open root in sync (frecency changed)
+        } else {
+            palette.show()
+            cmd.run()
+        }
     }
 
     private func makeMainMenu() -> NSMenu {

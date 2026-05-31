@@ -36,7 +36,8 @@ _Last updated: 2026-05-31_
 | Result **card** (calculator conversion) | ✅ | |
 | Global ⌥Space summon hotkey | ✅ | Carbon (no Accessibility grant) |
 | Auto-hide on blur | ✅ | palette closes when it loses focus (like Raycast) |
-| Settings window (SwiftUI, tabbed) | ✅ | General / Commands (enable-disable) / Clipboard / Advanced (Accessibility, skin tone) / About; ⌘, or "Open Settings" |
+| Settings window (SwiftUI, tabbed) | ✅ | Native NSTabViewController(.toolbar) icon tabs. General / Commands / Clipboard / Advanced / About; ⌘, or "Open Settings" |
+| Commands settings: grouped by extension + per-command alias/hotkey | ✅ | Raycast-style: collapsible extension groups, columns Name·Type·Alias·Hotkey·Enabled; functional aliases (surface in root) + recordable global hotkeys per command |
 | Themes / semantic color tokens | ⬜ | single look for now |
 | Navigation stack (push/pop) | ⬜ | |
 
@@ -44,10 +45,11 @@ _Last updated: 2026-05-31_
 | Item | Status | Notes |
 |---|---|---|
 | Native **Applications** index + fuzzy launch | ✅ | `AppIndexService` |
-| **Command registry** (built-in commands) | 🟡 | 22 commands (folders/system/window/clipboard/emoji); always-listed + scrollable root |
+| **Command registry** (built-in commands) | 🟡 | 24 commands grouped into 8 extensions (Window Management/System/Navigation/Clipboard/Emoji/Screenshots/Calculator/Invoke); always-listed + scrollable root |
 | **Frecency ranking** + Suggestions default | ✅ | `Frecency`, persisted |
 | **Composed sections** (apps + commands + calc card, one tree) | ✅ | |
-| Aliases / hotkeys per command / fallbacks | ⬜ | |
+| Aliases / hotkeys per command | ✅ | per-command alias (typed in root) + recordable global hotkey, set in Settings → Commands; persisted |
+| Fallback commands | ⬜ | |
 | Favorites/Pins + manual ranking overrides | ⬜ | |
 
 ## Extension platform & SDK (PLAN §5)
