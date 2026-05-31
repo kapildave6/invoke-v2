@@ -478,3 +478,89 @@ private func placeholderPane(_ text: String) -> some View {
     VStack { Spacer(); Text(text).foregroundColor(.secondary); Spacer() }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
 }
+
+// MARK: - Import (in-app `invoke import`)
+
+/// Settings → Import: paste/Browse to an extension's source folder, check compatibility, and import.
+struct ImportPane: View {
+    let repoRoot: String
+    @State private var path = ""
+    @State private var report: ImportReport?
+    @State private var error = ""
+    @State private var busy = false
+
+    var body: some View {
+        Form {
+            Section {
+                HStack {
+                    TextField("Path to an extension's source folder", text: $path).textFieldStyle(.roundedBorder)
+                    Button("Browse…", action: browse)
+                }
+                Text("Point at a folder with package.json + src/ — e.g. a folder from github.com/raycast/extensions. Dependency-light extensions (just @raycast/api / @raycast/utils) work best.")
+                    .font(.caption).foregroundColor(.secondary)
+                HStack {
+                    Button("Check Compatibility") { Task { await go(install: false) } }.disabled(path.isEmpty || busy)
+                    Button("Import") { Task { await go(install: true) } }
+                        .disabled(path.isEmpty || busy || (report?.blocking ?? false))
+                    if busy { ProgressView().controlSize(.small) }
+                }
+            } header: { Text("Import an extension") }
+
+            if !error.isEmpty {
+                Section { Text(error).font(.callout).foregroundColor(.red) }
+            }
+            if let r = report { reportSection(r) }
+        }
+        .formStyle(.grouped)
+        .frame(minWidth: 540, maxWidth: .infinity, minHeight: 380, maxHeight: .infinity)
+    }
+
+    @ViewBuilder private func reportSection(_ r: ImportReport) -> some View {
+        Section {
+            LabeledContent("Extension", value: r.title)
+            ForEach(r.commands, id: \.name) { c in
+                LabeledContent(c.title) {
+                    Text(c.entryFound ? (c.mode == "view" ? "view ✓" : c.mode) : "entry missing")
+                        .foregroundColor(c.entryFound ? .secondary : .red)
+                }
+            }
+            LabeledContent("Verdict") {
+                switch r.verdict {
+                case "runnable": Text("👍 Looks runnable").foregroundColor(.green)
+                case "degraded": Text("Loads, degraded (denied builtins)").foregroundColor(.orange)
+                default: Text("⚠️ Needs work before it runs").foregroundColor(.red)
+                }
+            }
+            if !r.missingApi.isEmpty {
+                LabeledContent("Unsupported APIs") { Text(r.missingApi.joined(separator: ", ")).foregroundColor(.red) }
+            }
+            if !r.deniedBuiltins.isEmpty {
+                LabeledContent("Denied builtins") { Text(r.deniedBuiltins.joined(separator: ", ")).foregroundColor(.orange) }
+            }
+            if r.installed {
+                Text("✓ Imported to \(r.dest). Relaunch Invoke to use it (Extensions group).")
+                    .font(.callout).foregroundColor(.green)
+            }
+        } header: { Text("Compatibility") }
+    }
+
+    private func browse() {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.allowsMultipleSelection = false
+        panel.prompt = "Choose"
+        if panel.runModal() == .OK, let url = panel.url { path = url.path }
+    }
+
+    private func go(install: Bool) async {
+        busy = true
+        error = ""
+        let result = await ExtensionImporter(repoRoot: repoRoot).run(path: path, install: install)
+        busy = false
+        switch result {
+        case .success(let r): report = r
+        case .failure(let e): error = e.message; report = nil
+        }
+    }
+}

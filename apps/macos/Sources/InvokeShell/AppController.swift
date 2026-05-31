@@ -1521,7 +1521,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     @objc private func openSettingsMenu() { openSettings() }
 
     /// Settings tab indices (must match the order SettingsWindow adds its tabs).
-    enum SettingsTab: Int { case general, commands, snippets, quicklinks, clipboard, advanced, about }
+    enum SettingsTab: Int { case general, commands, snippets, quicklinks, importExt, clipboard, advanced, about }
 
     private func openSettings(tab: SettingsTab? = nil) {
         palette.hide()
@@ -1529,6 +1529,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
             groups: extensionGroups(),
             onClearClipboard: { [weak self] in self?.clipboard.clear() },
             onBindingsChanged: { [weak self] in self?.reloadCommandHotkeys() },
+            repoRoot: repoRoot,
             selectTab: tab?.rawValue
         )
     }
