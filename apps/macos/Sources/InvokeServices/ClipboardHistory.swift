@@ -23,9 +23,12 @@ public final class ClipboardHistory {
     private var clips: [Clip] = []
     private var lastChange = 0
     private var timer: Timer?
-    private let cap = 100
+    public var capacity = 100
 
     public init() {}
+
+    /// Clear all history (Settings → Clipboard → Clear History).
+    public func clear() { clips.removeAll() }
 
     public func start() {
         lastChange = NSPasteboard.general.changeCount
@@ -72,7 +75,7 @@ public final class ClipboardHistory {
     private func insert(_ clip: Clip) {
         clips.removeAll { $0.key == clip.key } // re-copy → move to top
         clips.insert(clip, at: 0)
-        if clips.count > cap { clips.removeLast(clips.count - cap) }
+        if clips.count > capacity { clips.removeLast(clips.count - capacity) }
     }
 
     private static func png(_ image: NSImage) -> Data? {

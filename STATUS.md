@@ -35,6 +35,8 @@ _Last updated: 2026-05-31_
 | Polished rows (icon · title · subtitle · type · selection) | ✅ | Raycast-style row parity |
 | Result **card** (calculator conversion) | ✅ | |
 | Global ⌥Space summon hotkey | ✅ | Carbon (no Accessibility grant) |
+| Auto-hide on blur | ✅ | palette closes when it loses focus (like Raycast) |
+| Settings window (SwiftUI, tabbed) | ✅ | General / Commands (enable-disable) / Clipboard / Advanced (Accessibility, skin tone) / About; ⌘, or "Open Settings" |
 | Themes / semantic color tokens | ⬜ | single look for now |
 | Navigation stack (push/pop) | ⬜ | |
 

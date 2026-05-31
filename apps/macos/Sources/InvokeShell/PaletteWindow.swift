@@ -151,6 +151,7 @@ public final class PaletteWindow: NSObject {
         ])
 
         panel.contentView = blur
+        panel.delegate = self
     }
 
     deinit {
@@ -330,10 +331,10 @@ public final class PaletteWindow: NSObject {
             menu.addItem(item)
         }
         actionMenu = menu
-        // Anchor near the top-right; the menu grows downward and AppKit keeps it on-screen.
-        // (A styled, bottom-right, searchable Action Panel is a fidelity follow-up.)
-        let anchor = NSPoint(x: max(0, content.bounds.maxX - 240), y: content.bounds.maxY - 48)
-        menu.popUp(positioning: menu.items.first, at: anchor, in: content) // modal: returns when tracking ends
+        // Anchor the LAST item just above the action bar (bottom-right), so the menu grows UPWARD
+        // from there — matching Raycast's Action Panel position.
+        let anchor = NSPoint(x: max(0, content.bounds.maxX - 260), y: 46)
+        menu.popUp(positioning: menu.items.last, at: anchor, in: content) // modal: returns when tracking ends
         actionMenu = nil
     }
 
@@ -342,6 +343,14 @@ public final class PaletteWindow: NSObject {
     @objc private func runMenuAction(_ sender: NSMenuItem) {
         guard let actions = actionsProvider?(), sender.tag >= 0, sender.tag < actions.count else { return }
         actions[sender.tag].run()
+    }
+}
+
+extension PaletteWindow: NSWindowDelegate {
+    /// Auto-hide on blur (PLAN.md §4.3) — like Raycast. Skip while the ⌘K Action Panel is tracking
+    /// (that briefly takes key focus).
+    public func windowDidResignKey(_ notification: Notification) {
+        if actionMenu == nil { hide() }
     }
 }
 

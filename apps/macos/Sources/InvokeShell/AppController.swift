@@ -19,6 +19,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private let clipboard = ClipboardHistory()
     private let windowManager = WindowManager()
     private let screenshots = ScreenshotIndex()
+    private let settingsWindow = SettingsWindow()
     private lazy var commands: [RootCommand] = makeCommands()
 
     private enum Mode { case root, clipboard, emoji, screenshots }
@@ -45,7 +46,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     public override init() { super.init() }
 
     public func applicationDidFinishLaunching(_ notification: Notification) {
-        NSApp.mainMenu = Self.makeMainMenu()
+        NSApp.mainMenu = makeMainMenu()
 
         host.onLog = { message in print("[invoke:host] \(message)") }
         host.onCommit = { [weak self] _ in
@@ -86,6 +87,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
 
         appIndex.build()
         clipboard.start()
+        clipboard.capacity = AppSettings.shared.clipboardLimit
         print("[invoke:host] app index: \(appIndex.count) applications · \(commands.count) commands")
 
         // ⌥Space summons the root; ⌘⇧V opens Clipboard History directly (Raycast parity).
@@ -152,11 +154,12 @@ public final class AppController: NSObject, NSApplicationDelegate {
         var nid = 10
         func item(_ em: EmojiData.Emoji) -> ViewNode {
             nid += 1
+            let display = Self.applySkinTone(em.char)
             return ViewNode(id: nid, type: "list-item", props: [
                 "title": .string(em.name.capitalized),
-                "glyph": .string(em.char),
-                "insertText": .string(em.char),
-                "frecencyKey": .string("emoji:\(em.char)"),
+                "glyph": .string(display),
+                "insertText": .string(display),
+                "frecencyKey": .string("emoji:\(em.char)"), // keyed on the base char so recents are tone-stable
             ])
         }
         func section(_ title: String, _ children: [ViewNode]) -> ViewNode {
@@ -215,6 +218,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
 
     private func enterClipboard() {
         mode = .clipboard
+        clipboard.capacity = AppSettings.shared.clipboardLimit
         clipKind = "All Types"
         lastQuery = ""
         palette.clearSearch()
@@ -288,6 +292,13 @@ public final class AppController: NSObject, NSApplicationDelegate {
         }
         tree.root.children = [list]
         return tree
+    }
+
+    /// Emojis that accept a skin-tone modifier (the hand/gesture set we ship).
+    private static let skinnable: Set<String> = ["👍", "👎", "👌", "✌️", "🤞", "🙏", "👏", "🙌", "💪", "👋", "🤝"]
+    private static func applySkinTone(_ char: String) -> String {
+        guard let mod = AppSettings.shared.skinToneModifier, skinnable.contains(char) else { return char }
+        return char + mod
     }
 
     private static func isImagePath(_ path: String) -> Bool {
@@ -428,8 +439,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
         if q.isEmpty {
             let suggestions = suggestionItems(nextId: nextId)
             if !suggestions.isEmpty { sections.append(sectionNode("Suggestions", suggestions)) }
-            // Always list every command (Raycast-style), scrollable.
-            let cmds = commands.map {
+            // Always list every enabled command (Raycast-style), scrollable.
+            let cmds = commands.filter { AppSettings.shared.isEnabled($0.id) }.map {
                 itemNode(id: nextId(), title: $0.title, subtitle: $0.subtitle, kind: "Command", appPath: nil, icon: $0.icon, commandId: $0.id)
             }
             sections.append(sectionNode("Commands", cmds))
@@ -470,7 +481,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private func matchCommands(_ q: String) -> [RootCommand] {
         let ql = q.lowercased()
         return commands
-            .filter { $0.title.lowercased().contains(ql) || $0.keywords.contains { $0.contains(ql) } }
+            .filter { AppSettings.shared.isEnabled($0.id) && ($0.title.lowercased().contains(ql) || $0.keywords.contains { $0.contains(ql) }) }
             .sorted { frecency.score("cmd:\($0.id)") > frecency.score("cmd:\($1.id)") }
     }
 
@@ -778,6 +789,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
             RootCommand(id: "system.volumeDown", title: "Turn Volume Down", subtitle: "System", runTitle: "Run", icon: "speaker.wave.1.fill", keywords: ["volume", "down", "sound", "quieter"], closesPalette: true, run: shell("/usr/bin/osascript", ["-e", "set volume output volume (output volume of (get volume settings) - 10)"])),
             RootCommand(id: "system.mute", title: "Mute Volume", subtitle: "System", runTitle: "Run", icon: "speaker.slash.fill", keywords: ["mute", "silence", "volume"], closesPalette: true, run: shell("/usr/bin/osascript", ["-e", "set volume output muted true"])),
             RootCommand(id: "system.quitFront", title: "Quit Frontmost App", subtitle: "System", runTitle: "Quit", icon: "xmark.circle.fill", keywords: ["quit", "close", "app"], closesPalette: true) { [weak self] in self?.pasteTarget?.terminate() },
+            RootCommand(id: "app.settings", title: "Open Settings", subtitle: "Invoke", runTitle: "Open", icon: "gearshape", keywords: ["settings", "preferences", "config", "options"], closesPalette: true) { [weak self] in self?.openSettings() },
             windowCommand("window.maximize", "Maximize", "macwindow", ["maximize", "full", "fill"], .maximize),
             windowCommand("window.leftHalf", "Left Half", "rectangle.lefthalf.filled", ["left", "half"], .leftHalf),
             windowCommand("window.rightHalf", "Right Half", "rectangle.righthalf.filled", ["right", "half"], .rightHalf),
@@ -829,12 +841,23 @@ public final class AppController: NSObject, NSApplicationDelegate {
         return "\(s / 3600)h ago"
     }
 
-    private static func makeMainMenu() -> NSMenu {
+    @objc private func openSettingsMenu() { openSettings() }
+
+    private func openSettings() {
+        palette.hide()
+        let meta = commands.map { CommandInfo(id: $0.id, title: $0.title, subtitle: $0.subtitle) }
+        settingsWindow.show(commands: meta, onClearClipboard: { [weak self] in self?.clipboard.clear() })
+    }
+
+    private func makeMainMenu() -> NSMenu {
         let main = NSMenu()
         let appItem = NSMenuItem()
         main.addItem(appItem)
         let appMenu = NSMenu()
         appItem.submenu = appMenu
+        let settingsItem = appMenu.addItem(withTitle: "Settings…", action: #selector(openSettingsMenu), keyEquivalent: ",")
+        settingsItem.target = self
+        appMenu.addItem(.separator())
         appMenu.addItem(withTitle: "Quit Invoke", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
 
         let editItem = NSMenuItem()
