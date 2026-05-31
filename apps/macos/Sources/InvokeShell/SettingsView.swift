@@ -302,9 +302,13 @@ struct AdvancedPane: View {
 struct AboutPane: View {
     var body: some View {
         VStack(spacing: 12) {
-            Image(systemName: "command.square.fill")
-                .resizable().frame(width: 72, height: 72).foregroundColor(.accentColor)
-            Text("Invoke").font(.title.bold())
+            if let logo = Brand.logo {
+                Image(nsImage: logo).resizable().scaledToFit().frame(width: 240)
+            } else {
+                Image(systemName: "command.square.fill")
+                    .resizable().frame(width: 72, height: 72).foregroundColor(.accentColor)
+                Text("Invoke").font(.title.bold())
+            }
             Text("Version 0.1 (dev)").foregroundColor(.secondary)
             Text("A keyboard-first command palette — a Raycast-style launcher.\nPersonal project.")
                 .multilineTextAlignment(.center).foregroundColor(.secondary).font(.callout)

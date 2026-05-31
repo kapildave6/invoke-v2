@@ -26,6 +26,8 @@ let package = Package(
         .target(
             name: "InvokeShell",
             dependencies: ["InvokePalette", "InvokeIPC", "InvokeRenderer", "InvokeServices", "InvokePersistence"],
+            // Brand assets (app icon + wordmark) bundled as Bundle.module resources.
+            resources: [.process("Resources")],
             // Carbon: RegisterEventHotKey for the global summon hotkey (§3.2).
             linkerSettings: [.linkedFramework("Carbon")]
         ),

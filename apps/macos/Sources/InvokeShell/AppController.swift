@@ -46,6 +46,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     public override init() { super.init() }
 
     public func applicationDidFinishLaunching(_ notification: Notification) {
+        if let icon = Brand.appIcon { NSApp.applicationIconImage = icon } // shows in system dialogs
         NSApp.mainMenu = makeMainMenu()
 
         host.onLog = { message in print("[invoke:host] \(message)") }
