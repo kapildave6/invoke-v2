@@ -459,15 +459,22 @@ public final class AppController: NSObject, NSApplicationDelegate {
             }
             sections.append(sectionNode("Commands", cmds))
         } else {
-            let apps = appIndex.search(q).map {
+            let matched = matchCommands(q) // exact-alias matches sorted first
+            // If the query exactly matches a configured alias, that command must be the FIRST result
+            // overall — so put Commands above Applications (otherwise apps lead, as usual).
+            let aliasFirst = matched.first.flatMap { AppSettings.shared.alias(for: $0.id) } == q.lowercased()
+
+            let appItems = appIndex.search(q).map {
                 itemNode(id: nextId(), title: $0.name, subtitle: nil, kind: "Application", appPath: $0.path, icon: nil, commandId: nil)
             }
-            if !apps.isEmpty { sections.append(sectionNode("Applications", apps)) }
-
-            let cmds = matchCommands(q).map {
+            let cmdItems = matched.map {
                 itemNode(id: nextId(), title: $0.title, subtitle: $0.subtitle, kind: "Command", appPath: nil, icon: $0.icon, commandId: $0.id, alias: AppSettings.shared.alias(for: $0.id))
             }
-            if !cmds.isEmpty { sections.append(sectionNode("Commands", cmds)) }
+            let appsSection = appItems.isEmpty ? nil : sectionNode("Applications", appItems)
+            let cmdsSection = cmdItems.isEmpty ? nil : sectionNode("Commands", cmdItems)
+
+            let ordered = aliasFirst ? [cmdsSection, appsSection] : [appsSection, cmdsSection]
+            sections.append(contentsOf: ordered.compactMap { $0 })
         }
 
         list.children = sections
