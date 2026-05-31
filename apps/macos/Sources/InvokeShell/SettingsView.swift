@@ -1,5 +1,6 @@
 import AppKit
 import ApplicationServices
+import InvokeServices
 import SwiftUI
 
 /// Lightweight metadata for a command row in the Commands tab.
@@ -319,4 +320,161 @@ struct AboutPane: View {
         }
         .frame(minWidth: 540, maxWidth: .infinity, minHeight: 380, maxHeight: .infinity)
     }
+}
+
+// MARK: - Snippets
+
+/// Master–detail CRUD for snippets: a list on the left (+/- to add/remove), an editor on the right.
+/// The editor edits a local @State copy (re-seeded per selection via `.id`) and writes back on each
+/// change — so typing never fights the caret, and the list/palette update from the store.
+struct SnippetsPane: View {
+    @ObservedObject private var store = SnippetStore.shared
+    @State private var selectedId: String?
+
+    private var selected: Snippet? { store.snippets.first { $0.id == selectedId } }
+
+    var body: some View {
+        HStack(spacing: 0) {
+            VStack(spacing: 0) {
+                List(selection: $selectedId) {
+                    ForEach(store.snippets) { s in
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(s.name.isEmpty ? "Untitled Snippet" : s.name).lineLimit(1)
+                            if !s.keyword.isEmpty { Text(s.keyword).font(.caption).foregroundColor(.secondary) }
+                        }.tag(s.id)
+                    }
+                }
+                listToolbar(add: addSnippet, remove: deleteSelected, canRemove: selectedId != nil)
+            }
+            .frame(width: 200)
+            Divider()
+            Group {
+                if let snip = selected {
+                    SnippetEditor(snippet: snip) { store.update($0) }.id(snip.id)
+                } else {
+                    placeholderPane("Select a snippet, or add one with +")
+                }
+            }
+        }
+        .frame(minWidth: 600, maxWidth: .infinity, minHeight: 380, maxHeight: .infinity)
+        .onAppear { if selectedId == nil { selectedId = store.snippets.first?.id } }
+    }
+
+    private func addSnippet() { selectedId = store.add(Snippet(name: "New Snippet")).id }
+    private func deleteSelected() {
+        guard let id = selectedId, let idx = store.snippets.firstIndex(where: { $0.id == id }) else { return }
+        store.delete(id: id)
+        selectedId = store.snippets.isEmpty ? nil : store.snippets[min(idx, store.snippets.count - 1)].id
+    }
+}
+
+private struct SnippetEditor: View {
+    let snippet: Snippet
+    let onChange: (Snippet) -> Void
+    @State private var name = ""
+    @State private var keyword = ""
+    @State private var content = ""
+
+    var body: some View {
+        Form {
+            TextField("Name", text: $name).onChange(of: name) { _, _ in commit() }
+            TextField("Keyword (optional)", text: $keyword).onChange(of: keyword) { _, _ in commit() }
+            Section("Content") {
+                TextEditor(text: $content)
+                    .font(.system(size: 13, design: .monospaced))
+                    .frame(minHeight: 150)
+                    .onChange(of: content) { _, _ in commit() }
+            }
+        }
+        .formStyle(.grouped)
+        .onAppear { name = snippet.name; keyword = snippet.keyword; content = snippet.content }
+    }
+
+    private func commit() { onChange(Snippet(id: snippet.id, name: name, keyword: keyword, content: content)) }
+}
+
+// MARK: - Quicklinks
+
+struct QuicklinksPane: View {
+    @ObservedObject private var store = QuicklinkStore.shared
+    @State private var selectedId: String?
+
+    private var selected: Quicklink? { store.quicklinks.first { $0.id == selectedId } }
+
+    var body: some View {
+        HStack(spacing: 0) {
+            VStack(spacing: 0) {
+                List(selection: $selectedId) {
+                    ForEach(store.quicklinks) { q in
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(q.name.isEmpty ? "Untitled" : q.name).lineLimit(1)
+                            Text(q.link).font(.caption).foregroundColor(.secondary).lineLimit(1)
+                        }.tag(q.id)
+                    }
+                }
+                listToolbar(add: addQuicklink, remove: deleteSelected, canRemove: selectedId != nil)
+            }
+            .frame(width: 200)
+            Divider()
+            Group {
+                if let q = selected {
+                    QuicklinkEditor(quicklink: q) { store.update($0) }.id(q.id)
+                } else {
+                    placeholderPane("Select a quicklink, or add one with +")
+                }
+            }
+        }
+        .frame(minWidth: 600, maxWidth: .infinity, minHeight: 380, maxHeight: .infinity)
+        .onAppear { if selectedId == nil { selectedId = store.quicklinks.first?.id } }
+    }
+
+    private func addQuicklink() { selectedId = store.add(Quicklink(name: "New Quicklink")).id }
+    private func deleteSelected() {
+        guard let id = selectedId, let idx = store.quicklinks.firstIndex(where: { $0.id == id }) else { return }
+        store.delete(id: id)
+        selectedId = store.quicklinks.isEmpty ? nil : store.quicklinks[min(idx, store.quicklinks.count - 1)].id
+    }
+}
+
+private struct QuicklinkEditor: View {
+    let quicklink: Quicklink
+    let onChange: (Quicklink) -> Void
+    @State private var name = ""
+    @State private var link = ""
+
+    var body: some View {
+        Form {
+            TextField("Name", text: $name).onChange(of: name) { _, _ in commit() }
+            TextField("Link", text: $link).onChange(of: link) { _, _ in commit() }
+            Section {
+                Text("Use **{query}** as a placeholder for input you'll type when running it — e.g.\nhttps://www.google.com/search?q={query}")
+                    .font(.caption).foregroundColor(.secondary)
+            }
+        }
+        .formStyle(.grouped)
+        .onAppear { name = quicklink.name; link = quicklink.link }
+    }
+
+    private func commit() { onChange(Quicklink(id: quicklink.id, name: name, link: link)) }
+}
+
+// MARK: - Shared list chrome
+
+/// The +/- bar under a CRUD list (native source-list footer style).
+private func listToolbar(add: @escaping () -> Void, remove: @escaping () -> Void, canRemove: Bool) -> some View {
+    VStack(spacing: 0) {
+        Divider()
+        HStack(spacing: 0) {
+            Button(action: add) { Image(systemName: "plus").frame(width: 24, height: 22) }.buttonStyle(.borderless)
+            Divider().frame(height: 14)
+            Button(action: remove) { Image(systemName: "minus").frame(width: 24, height: 22) }.buttonStyle(.borderless).disabled(!canRemove)
+            Spacer()
+        }
+        .padding(.horizontal, 4)
+    }
+}
+
+private func placeholderPane(_ text: String) -> some View {
+    VStack { Spacer(); Text(text).foregroundColor(.secondary); Spacer() }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
 }

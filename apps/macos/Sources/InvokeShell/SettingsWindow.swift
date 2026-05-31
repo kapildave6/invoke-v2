@@ -6,10 +6,11 @@ import SwiftUI
 /// Settings / Raycast — each tab a SwiftUI pane via NSHostingController.
 public final class SettingsWindow {
     private var window: NSWindow?
+    private var tabController: NSTabViewController?
 
     public init() {}
 
-    public func show(groups: [ExtensionGroup], onClearClipboard: @escaping () -> Void, onBindingsChanged: @escaping () -> Void) {
+    public func show(groups: [ExtensionGroup], onClearClipboard: @escaping () -> Void, onBindingsChanged: @escaping () -> Void, selectTab: Int? = nil) {
         if window == nil {
             let tabs = NSTabViewController()
             tabs.tabStyle = .toolbar
@@ -29,11 +30,15 @@ public final class SettingsWindow {
                 return c
             }
 
+            // Tab order must match AppController.SettingsTab.
             tabs.addTabViewItem(tab("General", "gearshape", hosted(GeneralPane())))
             tabs.addTabViewItem(tab("Commands", "command", hosted(CommandsPane(groups: groups, onBindingsChanged: onBindingsChanged))))
+            tabs.addTabViewItem(tab("Snippets", "text.quote", hosted(SnippetsPane())))
+            tabs.addTabViewItem(tab("Quicklinks", "link", hosted(QuicklinksPane())))
             tabs.addTabViewItem(tab("Clipboard", "doc.on.clipboard", hosted(ClipboardPane(onClear: onClearClipboard))))
             tabs.addTabViewItem(tab("Advanced", "wrench.and.screwdriver", hosted(AdvancedPane())))
             tabs.addTabViewItem(tab("About", "info.circle", hosted(AboutPane())))
+            self.tabController = tabs
 
             let w = NSWindow(contentViewController: tabs)
             w.styleMask = [.titled, .closable, .miniaturizable]
@@ -41,6 +46,9 @@ public final class SettingsWindow {
             w.setContentSize(NSSize(width: 600, height: 470))
             w.center()
             window = w
+        }
+        if let selectTab, let tabs = tabController, selectTab >= 0, selectTab < tabs.tabViewItems.count {
+            tabs.selectedTabViewItemIndex = selectTab
         }
         NSApp.activate(ignoringOtherApps: true)
         window?.makeKeyAndOrderFront(nil)

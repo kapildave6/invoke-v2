@@ -19,13 +19,17 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private let clipboard = ClipboardHistory()
     private let windowManager = WindowManager()
     private let screenshots = ScreenshotIndex()
+    private let snippetStore = SnippetStore.shared
+    private let quicklinkStore = QuicklinkStore.shared
     private let settingsWindow = SettingsWindow()
     private lazy var commands: [RootCommand] = makeCommands()
 
-    private enum Mode { case root, clipboard, emoji, screenshots }
+    private enum Mode { case root, clipboard, emoji, screenshots, snippets, quicklinks }
     private var mode: Mode = .root
     private var clipKind = "All Types" // clipboard type filter
+    private var pendingQuicklink: Quicklink? // quicklink awaiting its {query} argument (input sub-mode)
     private var pasteTarget: NSRunningApplication? // app to paste back into
+    private static let defaultPlaceholder = "Search for apps and commands…"
     private var selectedIndex = 0
     private var rootTree: ViewTree?
     private var lastQuery = ""
@@ -51,7 +55,9 @@ public final class AppController: NSObject, NSApplicationDelegate {
 
         host.onLog = { message in print("[invoke:host] \(message)") }
         host.onCommit = { [weak self] _ in
-            guard let self, Self.looksLikeCalculation(self.lastQuery) else { return }
+            // Only the root shows the calculator card — guard the mode so an async FX-rate commit
+            // can't clobber a sub-mode list (Snippets/Clipboard/etc.) whose query looks like math.
+            guard let self, self.mode == .root, Self.looksLikeCalculation(self.lastQuery) else { return }
             self.renderRoot(calcCard: self.extractCalcCard())
         }
         host.onRpc = { [weak self] method, params in
@@ -67,7 +73,13 @@ public final class AppController: NSObject, NSApplicationDelegate {
         palette.onActivate = { [weak self] secondary in self?.activateSelection(secondary: secondary) }
         palette.onCancel = { [weak self] in
             guard let self else { return }
-            if self.mode != .root { self.exitToRoot() } else { self.palette.hide() }
+            if self.pendingQuicklink != nil {
+                self.cancelQuicklinkInput() // back to the quicklink list, not all the way to root
+            } else if self.mode != .root {
+                self.exitToRoot()
+            } else {
+                self.palette.hide()
+            }
         }
         palette.actionsProvider = { [weak self] in self?.currentActions() ?? [] }
         palette.onFilterChange = { [weak self] kind in
@@ -141,6 +153,11 @@ public final class AppController: NSObject, NSApplicationDelegate {
         if mode == .clipboard { renderClipboard(query: text); return }
         if mode == .emoji { renderEmoji(query: text); return }
         if mode == .screenshots { renderScreenshots(query: text); return }
+        if mode == .snippets { renderSnippets(query: text); return }
+        if mode == .quicklinks {
+            if pendingQuicklink != nil { renderQuicklinkPrompt() } else { renderQuicklinks(query: text) }
+            return
+        }
         if Self.looksLikeCalculation(text) { host.setSearchText(text) } // card arrives via onCommit
         renderRoot(calcCard: nil)
     }
@@ -149,6 +166,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         mode = .emoji
         lastQuery = ""
         palette.clearSearch()
+        palette.setPlaceholder("Search emoji & symbols…")
         selectedIndex = 0
         renderEmoji(query: "")
     }
@@ -236,13 +254,16 @@ public final class AppController: NSObject, NSApplicationDelegate {
         clipKind = "All Types"
         lastQuery = ""
         palette.clearSearch()
+        palette.setPlaceholder("Search clipboard history…")
         selectedIndex = 0
         renderClipboard(query: "")
     }
 
     private func exitToRoot() {
         mode = .root
+        pendingQuicklink = nil
         palette.hideFilter()
+        palette.setPlaceholder(Self.defaultPlaceholder)
         lastQuery = ""
         palette.clearSearch()
         selectedIndex = 0
@@ -371,6 +392,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         mode = .screenshots
         lastQuery = ""
         palette.clearSearch()
+        palette.setPlaceholder("Search screenshots…")
         selectedIndex = 0
         renderScreenshots(query: "")
     }
@@ -423,6 +445,169 @@ public final class AppController: NSObject, NSApplicationDelegate {
         ]
         rows.append(.object(["label": .string("Created"), "value": .string(relativeTime(shot.date))]))
         return .array(rows)
+    }
+
+    // MARK: - Snippets
+
+    private func enterSnippets() {
+        mode = .snippets
+        lastQuery = ""
+        palette.clearSearch()
+        palette.setPlaceholder("Search snippets…")
+        selectedIndex = 0
+        renderSnippets(query: "")
+    }
+
+    private func renderSnippets(query: String) {
+        let count = snippetStore.search(query).count
+        if selectedIndex >= count { selectedIndex = max(0, count - 1) }
+        rootTree = buildSnippets(query: query)
+        palette.hideFilter()
+        palette.render(activeTree, selectedIndex: selectedIndex)
+        updateActionBar()
+    }
+
+    private func buildSnippets(query: String) -> ViewTree {
+        let tree = ViewTree()
+        let list = ViewNode(id: 1, type: "list")
+        let items = snippetStore.search(query)
+        if items.isEmpty {
+            let msg = query.trimmingCharacters(in: .whitespaces).isEmpty
+                ? "No snippets yet — create one in Settings (⌘,)"
+                : "No matching snippets"
+            list.children = [ViewNode(id: 2, type: "list-section", props: ["title": .string(msg)])]
+        } else {
+            list.props["showDetail"] = .bool(true) // master–detail: content preview on the right
+            let section = ViewNode(id: 2, type: "list-section", props: ["title": .string("Snippets  \(items.count)")])
+            var nid = 10
+            for s in items {
+                nid += 1
+                var props: [String: JSONValue] = [
+                    "title": .string(s.name.isEmpty ? "Untitled Snippet" : s.name),
+                    "icon": .string("text.quote"),
+                    "snippetKey": .string(s.id),
+                    "detailText": .string(s.content),
+                    "metadata": Self.snippetMetadata(s),
+                ]
+                if !s.keyword.isEmpty { props["accessories"] = .array([.object(["tag": .string(s.keyword)])]) }
+                section.children.append(ViewNode(id: nid, type: "list-item", props: props))
+            }
+            list.children = [section]
+        }
+        tree.root.children = [list]
+        return tree
+    }
+
+    private static func snippetMetadata(_ s: Snippet) -> JSONValue {
+        var rows: [JSONValue] = []
+        if !s.keyword.isEmpty { rows.append(.object(["label": .string("Keyword"), "value": .string(s.keyword)])) }
+        let words = s.content.split(whereSeparator: { $0 == " " || $0.isNewline }).filter { !$0.isEmpty }.count
+        rows.append(.object(["label": .string("Characters"), "value": .string("\(s.content.count)")]))
+        rows.append(.object(["label": .string("Words"), "value": .string("\(words)")]))
+        return .array(rows)
+    }
+
+    // MARK: - Quicklinks
+
+    private func enterQuicklinks() {
+        mode = .quicklinks
+        pendingQuicklink = nil
+        lastQuery = ""
+        palette.clearSearch()
+        palette.setPlaceholder("Search quicklinks…")
+        selectedIndex = 0
+        renderQuicklinks(query: "")
+    }
+
+    private func renderQuicklinks(query: String) {
+        let count = quicklinkStore.search(query).count
+        if selectedIndex >= count { selectedIndex = max(0, count - 1) }
+        rootTree = buildQuicklinks(query: query)
+        palette.hideFilter()
+        palette.render(activeTree, selectedIndex: selectedIndex)
+        updateActionBar()
+    }
+
+    private func buildQuicklinks(query: String) -> ViewTree {
+        let tree = ViewTree()
+        let list = ViewNode(id: 1, type: "list")
+        let items = quicklinkStore.search(query)
+        if items.isEmpty {
+            let msg = query.trimmingCharacters(in: .whitespaces).isEmpty
+                ? "No quicklinks yet — create one in Settings (⌘,)"
+                : "No matching quicklinks"
+            list.children = [ViewNode(id: 2, type: "list-section", props: ["title": .string(msg)])]
+        } else {
+            let section = ViewNode(id: 2, type: "list-section", props: ["title": .string("Quicklinks")])
+            var nid = 10
+            for q in items {
+                nid += 1
+                section.children.append(ViewNode(id: nid, type: "list-item", props: [
+                    "title": .string(q.name.isEmpty ? q.link : q.name),
+                    "subtitle": .string(q.link),
+                    "icon": .string("link"),
+                    "quicklinkKey": .string(q.id),
+                    "accessories": .array([.object(["text": .string(q.hasArgument ? "Quicklink · input" : "Quicklink")])]),
+                ]))
+            }
+            list.children = [section]
+        }
+        tree.root.children = [list]
+        return tree
+    }
+
+    /// A quicklink with a {query} placeholder: enter an input sub-mode where the search field becomes
+    /// the argument and Enter opens the substituted URL.
+    private func beginQuicklinkInput(_ ql: Quicklink) {
+        pendingQuicklink = ql
+        lastQuery = ""
+        palette.clearSearch()
+        palette.setPlaceholder("Enter input for \(ql.name)…")
+        selectedIndex = 0
+        renderQuicklinkPrompt()
+    }
+
+    private func cancelQuicklinkInput() {
+        pendingQuicklink = nil
+        lastQuery = ""
+        palette.clearSearch()
+        palette.setPlaceholder("Search quicklinks…")
+        selectedIndex = 0
+        renderQuicklinks(query: "")
+    }
+
+    private func renderQuicklinkPrompt() {
+        rootTree = buildQuicklinkPrompt()
+        selectedIndex = 0
+        palette.hideFilter()
+        palette.render(activeTree, selectedIndex: 0)
+        updateActionBar()
+    }
+
+    private func buildQuicklinkPrompt() -> ViewTree {
+        let tree = ViewTree()
+        let list = ViewNode(id: 1, type: "list")
+        if let ql = pendingQuicklink {
+            let preview = ql.resolvedURL(argument: lastQuery)?.absoluteString ?? ql.link
+            let section = ViewNode(id: 2, type: "list-section", props: ["title": .string("Open \(ql.name)")])
+            section.children = [ViewNode(id: 10, type: "list-item", props: [
+                "title": .string(lastQuery.isEmpty ? "Type your input, then press ↵" : lastQuery),
+                "subtitle": .string(preview),
+                "icon": .string("link"),
+            ])]
+            list.children = [section]
+        }
+        tree.root.children = [list]
+        return tree
+    }
+
+    private func openQuicklink(_ ql: Quicklink, argument: String) {
+        guard let url = ql.resolvedURL(argument: argument) else {
+            palette.showToast("Invalid link")
+            return
+        }
+        NSWorkspace.shared.open(url)
+        afterLaunch()
     }
 
     private func renderRoot(calcCard: ViewNode?) {
@@ -549,6 +734,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         switch mode {
         case .clipboard: renderClipboard(query: lastQuery)      // rebuild so detail thumbnail follows
         case .screenshots: renderScreenshots(query: lastQuery)  // ditto
+        case .snippets: renderSnippets(query: lastQuery)        // rebuild so the detail pane follows
         default:
             palette.render(activeTree, selectedIndex: selectedIndex)
             updateActionBar()
@@ -563,6 +749,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         switch mode {
         case .clipboard: renderClipboard(query: lastQuery)
         case .screenshots: renderScreenshots(query: lastQuery)
+        case .snippets: renderSnippets(query: lastQuery)
         default:
             palette.render(activeTree, selectedIndex: selectedIndex)
             updateActionBar()
@@ -576,6 +763,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     }
 
     private func activateSelection(secondary: Bool) {
+        if let ql = pendingQuicklink { openQuicklink(ql, argument: lastQuery); return } // confirm input
         let acts = currentActions()
         guard !acts.isEmpty else { return }
         (secondary && acts.count > 1 ? acts[1] : acts[0]).run()
@@ -587,9 +775,12 @@ public final class AppController: NSObject, NSApplicationDelegate {
         case .clipboard: label = "Clipboard History"
         case .emoji: label = "Emoji & Symbols"
         case .screenshots: label = "Screenshots"
+        case .snippets: label = "Snippets"
+        case .quicklinks: label = pendingQuicklink?.name ?? "Quicklinks"
         case .root: label = "Invoke"
         }
-        palette.setActionBar(command: label, primary: currentActions().first?.title)
+        let primary = pendingQuicklink != nil ? "Open" : currentActions().first?.title
+        palette.setActionBar(command: label, primary: primary)
     }
 
     /// Actions for the selected row: launch an app, run a command (both bump frecency), or the
@@ -632,6 +823,17 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 PaletteAction(title: copyTitle, shortcut: "⌘↵") { [weak self] in self?.copyClip(clip) },
             ]
         }
+        if let sid = node.props["snippetKey"]?.stringValue, let snip = snippetStore.snippet(id: sid) {
+            return [
+                PaletteAction(title: pasteTitle(), shortcut: "↵") { [weak self] in self?.pasteText(snip.content) },
+                PaletteAction(title: "Copy", shortcut: "⌘↵") { [weak self] in self?.copyText(snip.content) },
+            ]
+        }
+        if let qid = node.props["quicklinkKey"]?.stringValue, let ql = quicklinkStore.quicklink(id: qid) {
+            return [PaletteAction(title: ql.hasArgument ? "Open with Input…" : "Open", shortcut: "↵") { [weak self] in
+                if ql.hasArgument { self?.beginQuicklinkInput(ql) } else { self?.openQuicklink(ql, argument: "") }
+            }]
+        }
         if let cid = node.props["commandId"]?.stringValue, let cmd = commands.first(where: { $0.id == cid }) {
             return [PaletteAction(title: cmd.runTitle, shortcut: "↵") { [weak self] in
                 self?.frecency.bump("cmd:\(cid)")
@@ -644,9 +846,14 @@ public final class AppController: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// Launching/running closes the palette and resets the root for next summon.
+    /// Launching/running closes the palette and resets to a clean root for the next summon — from any
+    /// mode (so opening a quicklink / running a snippet doesn't leave us stuck in that mode).
     private func afterLaunch() {
         palette.hide()
+        mode = .root
+        pendingQuicklink = nil
+        palette.hideFilter()
+        palette.setPlaceholder(Self.defaultPlaceholder)
         palette.clearSearch()
         lastQuery = ""
         selectedIndex = 0
@@ -844,6 +1051,10 @@ public final class AppController: NSObject, NSApplicationDelegate {
             RootCommand(id: "system.volumeDown", title: "Turn Volume Down", subtitle: "System", runTitle: "Run", icon: "speaker.wave.1.fill", keywords: ["volume", "down", "sound", "quieter"], closesPalette: true, run: shell("/usr/bin/osascript", ["-e", "set volume output volume (output volume of (get volume settings) - 10)"])),
             RootCommand(id: "system.mute", title: "Mute Volume", subtitle: "System", runTitle: "Run", icon: "speaker.slash.fill", keywords: ["mute", "silence", "volume"], closesPalette: true, run: shell("/usr/bin/osascript", ["-e", "set volume output muted true"])),
             RootCommand(id: "system.quitFront", title: "Quit Frontmost App", subtitle: "System", runTitle: "Quit", icon: "xmark.circle.fill", keywords: ["quit", "close", "app"], closesPalette: true) { [weak self] in self?.pasteTarget?.terminate() },
+            RootCommand(id: "snippet.search", title: "Search Snippets", subtitle: "Snippets", runTitle: "Open", icon: "text.quote", keywords: ["snippet", "snippets", "text", "expand", "paste"], closesPalette: false) { [weak self] in self?.enterSnippets() },
+            RootCommand(id: "snippet.create", title: "Create Snippet", subtitle: "Snippets", runTitle: "Open", icon: "plus.rectangle.on.rectangle", keywords: ["snippet", "create", "new", "add"], closesPalette: true) { [weak self] in self?.openSettings(tab: .snippets) },
+            RootCommand(id: "quicklink.search", title: "Search Quicklinks", subtitle: "Quicklinks", runTitle: "Open", icon: "link", keywords: ["quicklink", "quicklinks", "link", "url", "bookmark"], closesPalette: false) { [weak self] in self?.enterQuicklinks() },
+            RootCommand(id: "quicklink.create", title: "Create Quicklink", subtitle: "Quicklinks", runTitle: "Open", icon: "link.badge.plus", keywords: ["quicklink", "create", "new", "add", "link"], closesPalette: true) { [weak self] in self?.openSettings(tab: .quicklinks) },
             RootCommand(id: "app.settings", title: "Open Settings", subtitle: "Invoke", runTitle: "Open", icon: "gearshape", keywords: ["settings", "preferences", "config", "options"], closesPalette: true) { [weak self] in self?.openSettings() },
             windowCommand("window.maximize", "Maximize", "macwindow", ["maximize", "full", "fill"], .maximize),
             windowCommand("window.leftHalf", "Left Half", "rectangle.lefthalf.filled", ["left", "half"], .leftHalf),
@@ -898,12 +1109,16 @@ public final class AppController: NSObject, NSApplicationDelegate {
 
     @objc private func openSettingsMenu() { openSettings() }
 
-    private func openSettings() {
+    /// Settings tab indices (must match the order SettingsWindow adds its tabs).
+    enum SettingsTab: Int { case general, commands, snippets, quicklinks, clipboard, advanced, about }
+
+    private func openSettings(tab: SettingsTab? = nil) {
         palette.hide()
         settingsWindow.show(
             groups: extensionGroups(),
             onClearClipboard: { [weak self] in self?.clipboard.clear() },
-            onBindingsChanged: { [weak self] in self?.reloadCommandHotkeys() }
+            onBindingsChanged: { [weak self] in self?.reloadCommandHotkeys() },
+            selectTab: tab?.rawValue
         )
     }
 
@@ -913,6 +1128,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
         if commandId.hasPrefix("window.") { return ExtensionMeta(id: "window-management", name: "Window Management", icon: "macwindow") }
         if commandId.hasPrefix("folder.") { return ExtensionMeta(id: "navigation", name: "Navigation", icon: "folder") }
         if commandId.hasPrefix("system.") { return ExtensionMeta(id: "system", name: "System", icon: "gearshape.2") }
+        if commandId.hasPrefix("snippet.") { return ExtensionMeta(id: "snippets", name: "Snippets", icon: "text.quote") }
+        if commandId.hasPrefix("quicklink.") { return ExtensionMeta(id: "quicklinks", name: "Quicklinks", icon: "link") }
         switch commandId {
         case "clipboard.history": return ExtensionMeta(id: "clipboard-history", name: "Clipboard History", icon: "doc.on.clipboard")
         case "emoji.picker": return ExtensionMeta(id: "emoji", name: "Emoji & Symbols", icon: "face.smiling")

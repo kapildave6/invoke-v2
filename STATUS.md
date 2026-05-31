@@ -45,7 +45,7 @@ _Last updated: 2026-05-31_
 | Item | Status | Notes |
 |---|---|---|
 | Native **Applications** index + fuzzy launch | ✅ | `AppIndexService` |
-| **Command registry** (built-in commands) | 🟡 | 24 commands grouped into 8 extensions (Window Management/System/Navigation/Clipboard/Emoji/Screenshots/Calculator/Invoke); always-listed + scrollable root |
+| **Command registry** (built-in commands) | 🟡 | 28 commands grouped into 10 extensions (Window Management/System/Navigation/Clipboard/Emoji/Screenshots/Snippets/Quicklinks/Calculator/Invoke); always-listed + scrollable root |
 | **Frecency ranking** + Suggestions default | ✅ | `Frecency`, persisted |
 | **Composed sections** (apps + commands + calc card, one tree) | ✅ | |
 | Aliases / hotkeys per command | ✅ | per-command alias (typed in root) + recordable global hotkey, set in Settings → Commands; persisted |
@@ -69,8 +69,8 @@ _Last updated: 2026-05-31_
 | Clipboard history | ✅ | text/link/file/image; master–detail view + metadata; ⌘⇧V; type filter; paste-to-app (⌘V, needs Accessibility). In-memory (encryption pending §3.4) |
 | Window management (maximize/halves) | ✅ | AX move/resize: maximize, halves, quarters, center; root commands + ⌃⌥←/→/↑ hotkeys (needs Accessibility) |
 | Search Screenshots | ✅ | browse screenshot folder, preview + metadata, paste/copy (grid layout is a follow-up) |
-| Snippets / text expansion | ⬜ | |
-| Quicklinks | ⬜ | |
+| Snippets / text expansion | ✅ | create/edit/delete in Settings → Snippets; "Search Snippets" mode (master–detail) + keyword chip; paste-to-app on Enter. Adversarially reviewed. (Global keyword auto-expansion deferred — needs system-wide keystroke monitoring) |
+| Quicklinks | ✅ | create/edit/delete in Settings → Quicklinks; "Search Quicklinks" mode; opens URL on Enter; `{query}` placeholder → input sub-mode then opens substituted URL (strict query encoding; scheme decided from template; http/bare/mailto/tel/sms). Adversarially reviewed |
 | Emoji & symbols picker | ✅ | curated set, search, recents (frecency), paste-on-Enter |
 | System commands | 🟡 | folders, sleep, volume, mute, quit-frontmost (more to add) |
 | Calendar / My Schedule | ⬜ | |
@@ -78,3 +78,10 @@ _Last updated: 2026-05-31_
 
 ## AI / v2 / v3
 Per PLAN §7/§8 — all ⬜ (AI Chat, MCP, Skills, gateway, store pipeline, sync, Translate, Screenshot OCR, Windows/iOS, Teams). Branded third-party integrations (1Password, Spotify, Linear, …) arrive via the **ecosystem** (compat shim + store), not built here.
+
+## Known low-priority follow-ups (tracked, not blocking)
+- **Mouse interaction**: drag-to-move + click-select + double-click-run shipped; awaiting user confirmation that scroll works under real mouse events.
+- **Settings editors** (Snippets/Quicklinks): commit to the store on every keystroke (full JSON re-encode). Correct but wasteful — debounce or commit-on-blur later.
+- **Snippets**: global keyword auto-expansion (type-anywhere) needs system-wide keystroke monitoring — deferred.
+- **Search Screenshots**: thumbnail grid (currently master–detail).
+- **Signed .app bundle** (PLAN §3.4/§8.5): so the brand icon shows in Dock/Finder and the Accessibility grant persists across rebuilds.

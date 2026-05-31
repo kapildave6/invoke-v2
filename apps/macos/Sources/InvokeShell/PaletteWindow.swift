@@ -224,6 +224,12 @@ public final class PaletteWindow: NSObject {
         searchField.stringValue = ""
     }
 
+    /// Update the search-field placeholder (per mode — e.g. "Search snippets…", or the quicklink
+    /// argument prompt).
+    public func setPlaceholder(_ text: String) {
+        searchField.placeholderString = text
+    }
+
     /// Show the type-filter dropdown (clipboard mode) with the given options/selection.
     public func setFilter(options: [String], selected: String) {
         filterButton.removeAllItems()
