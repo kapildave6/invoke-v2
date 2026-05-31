@@ -600,7 +600,7 @@ public final class PaletteView: NSView {
             tv.isHorizontallyResizable = false
             tv.autoresizingMask = [.width]
             tv.minSize = NSSize(width: 0, height: 0)
-            tv.maxSize = NSSize(width: .greatestFiniteMagnitude, height: .greatestFiniteMagnitude)
+            tv.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
             tv.textContainerInset = NSSize(width: 4, height: 6)
             tv.textContainer?.widthTracksTextView = true
             let s = NSScrollView()
