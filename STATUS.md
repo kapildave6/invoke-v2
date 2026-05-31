@@ -64,6 +64,7 @@ _Last updated: 2026-05-31_
 | Applications launcher | ✅ | see Root search |
 | Clipboard history | ✅ | text/link/file/image; master–detail view + metadata; ⌘⇧V; type filter; paste-to-app (⌘V, needs Accessibility). In-memory (encryption pending §3.4) |
 | Window management (maximize/halves) | ✅ | AX move/resize: maximize, halves, quarters, center; root commands + ⌃⌥←/→/↑ hotkeys (needs Accessibility) |
+| Search Screenshots | ✅ | browse screenshot folder, preview + metadata, paste/copy (grid layout is a follow-up) |
 | Snippets / text expansion | ⬜ | |
 | Quicklinks | ⬜ | |
 | Emoji & symbols picker | ✅ | curated set, search, recents (frecency), paste-on-Enter |

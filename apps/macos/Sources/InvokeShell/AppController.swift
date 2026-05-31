@@ -18,9 +18,10 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private let frecency = Frecency()
     private let clipboard = ClipboardHistory()
     private let windowManager = WindowManager()
+    private let screenshots = ScreenshotIndex()
     private lazy var commands: [RootCommand] = makeCommands()
 
-    private enum Mode { case root, clipboard, emoji }
+    private enum Mode { case root, clipboard, emoji, screenshots }
     private var mode: Mode = .root
     private var clipKind = "All Types" // clipboard type filter
     private var pasteTarget: NSRunningApplication? // app to paste back into
@@ -123,6 +124,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         selectedIndex = 0
         if mode == .clipboard { renderClipboard(query: text); return }
         if mode == .emoji { renderEmoji(query: text); return }
+        if mode == .screenshots { renderScreenshots(query: text); return }
         if Self.looksLikeCalculation(text) { host.setSearchText(text) } // card arrives via onCommit
         renderRoot(calcCard: nil)
     }
@@ -261,7 +263,13 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 case "File":
                     props["title"] = .string((clip.filePath.map { ($0 as NSString).lastPathComponent }) ?? "File")
                     if let p = clip.filePath { props["fileIcon"] = .string(p) }
-                    props["detailText"] = .string(clip.text)
+                    // Image files show a preview (not just the path) in the detail pane.
+                    if i == selectedIndex, let p = clip.filePath, Self.isImagePath(p),
+                       let data = try? Data(contentsOf: URL(fileURLWithPath: p)) {
+                        props["thumb"] = .string(Self.thumbBase64(data, maxDim: 480))
+                    } else {
+                        props["detailText"] = .string(clip.text)
+                    }
                 case "Image":
                     let dims = clip.imageW.map { "\($0)×\(clip.imageH ?? 0)" } ?? ""
                     props["title"] = .string("Image \(dims)")
@@ -280,6 +288,10 @@ public final class AppController: NSObject, NSApplicationDelegate {
         }
         tree.root.children = [list]
         return tree
+    }
+
+    private static func isImagePath(_ path: String) -> Bool {
+        ["png", "jpg", "jpeg", "gif", "heic", "heif", "tiff", "bmp", "webp"].contains((path as NSString).pathExtension.lowercased())
     }
 
     /// Downscaled base64 PNG thumbnail for the detail pane (the full image stays in ClipboardHistory).
@@ -325,6 +337,66 @@ public final class AppController: NSObject, NSApplicationDelegate {
         rows.append(.object(["label": .string("Times copied"), "value": .string("\(clip.timesCopied)")]))
         if let src = clip.source { rows.append(.object(["label": .string("Source"), "value": .string(src)])) }
         rows.append(.object(["label": .string("Last copied"), "value": .string(relativeTime(clip.date))]))
+        return .array(rows)
+    }
+
+    // MARK: - Screenshots
+
+    private func enterScreenshots() {
+        mode = .screenshots
+        lastQuery = ""
+        palette.clearSearch()
+        selectedIndex = 0
+        renderScreenshots(query: "")
+    }
+
+    private func renderScreenshots(query: String) {
+        let count = screenshots.search(query).count
+        if selectedIndex >= count { selectedIndex = max(0, count - 1) }
+        rootTree = buildScreenshots(query: query, selectedIndex: selectedIndex)
+        palette.hideFilter()
+        palette.render(activeTree, selectedIndex: selectedIndex)
+        updateActionBar()
+    }
+
+    private func buildScreenshots(query: String, selectedIndex: Int) -> ViewTree {
+        let tree = ViewTree()
+        let list = ViewNode(id: 1, type: "list")
+        let shots = screenshots.search(query)
+        if shots.isEmpty {
+            let msg = query.trimmingCharacters(in: .whitespaces).isEmpty ? "No screenshots found" : "No matching screenshots"
+            list.children = [ViewNode(id: 2, type: "list-section", props: ["title": .string(msg)])]
+        } else {
+            list.props["showDetail"] = .bool(true)
+            let section = ViewNode(id: 2, type: "list-section", props: ["title": .string("Screenshots & Recordings  \(shots.count)")])
+            var nid = 10
+            for (i, shot) in shots.enumerated() {
+                nid += 1
+                var props: [String: JSONValue] = [
+                    "title": .string(Self.relativeTime(shot.date)),
+                    "subtitle": .string(shot.name),
+                    "fileIcon": .string(shot.path),
+                    "fileToPaste": .string(shot.path),
+                    "metadata": Self.screenshotMetadata(shot),
+                ]
+                if i == selectedIndex, let data = try? Data(contentsOf: URL(fileURLWithPath: shot.path)) {
+                    props["thumb"] = .string(Self.thumbBase64(data, maxDim: 480))
+                }
+                section.children.append(ViewNode(id: nid, type: "list-item", props: props))
+            }
+            list.children = [section]
+        }
+        tree.root.children = [list]
+        return tree
+    }
+
+    private static func screenshotMetadata(_ shot: ScreenshotIndex.Shot) -> JSONValue {
+        var rows: [JSONValue] = [
+            .object(["label": .string("Content type"), "value": .string(shot.path.hasSuffix(".mov") ? "Recording" : "Image")]),
+            .object(["label": .string("Size"), "value": .string(ByteCountFormatter.string(fromByteCount: Int64(shot.size), countStyle: .file))]),
+            .object(["label": .string("Path"), "value": .string((shot.path as NSString).abbreviatingWithTildeInPath)]),
+        ]
+        rows.append(.object(["label": .string("Created"), "value": .string(relativeTime(shot.date))]))
         return .array(rows)
     }
 
@@ -428,9 +500,10 @@ public final class AppController: NSObject, NSApplicationDelegate {
         let count = items().count
         guard count > 0 else { return }
         selectedIndex = min(max(0, selectedIndex + delta), count - 1)
-        if mode == .clipboard {
-            renderClipboard(query: lastQuery) // rebuild so the detail thumbnail follows selection
-        } else {
+        switch mode {
+        case .clipboard: renderClipboard(query: lastQuery)      // rebuild so detail thumbnail follows
+        case .screenshots: renderScreenshots(query: lastQuery)  // ditto
+        default:
             palette.render(activeTree, selectedIndex: selectedIndex)
             updateActionBar()
         }
@@ -447,6 +520,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         switch mode {
         case .clipboard: label = "Clipboard History"
         case .emoji: label = "Emoji & Symbols"
+        case .screenshots: label = "Screenshots"
         case .root: label = "Invoke"
         }
         palette.setActionBar(command: label, primary: currentActions().first?.title)
@@ -477,6 +551,12 @@ public final class AppController: NSObject, NSApplicationDelegate {
                     if let key { self?.frecency.bump(key) }
                     self?.copyText(text)
                 },
+            ]
+        }
+        if let path = node.props["fileToPaste"]?.stringValue {
+            return [
+                PaletteAction(title: pasteTitle(), shortcut: "↵") { [weak self] in self?.pasteImageFile(path) },
+                PaletteAction(title: "Copy to Clipboard", shortcut: "⌘↵") { [weak self] in self?.copyImageFile(path) },
             ]
         }
         if let key = node.props["clipKey"]?.stringValue, let clip = clipboard.clip(forKey: key) {
@@ -547,6 +627,32 @@ public final class AppController: NSObject, NSApplicationDelegate {
         pb.clearContents()
         pb.setString(text, forType: .string)
         palette.showToast("Copied")
+    }
+
+    private func setPasteboardImageFile(_ path: String) {
+        let pb = NSPasteboard.general
+        pb.clearContents()
+        if let img = NSImage(contentsOfFile: path) { pb.writeObjects([img]) }
+        else { pb.writeObjects([URL(fileURLWithPath: path) as NSURL]) }
+    }
+
+    private func copyImageFile(_ path: String) {
+        setPasteboardImageFile(path)
+        palette.showToast("Copied to Clipboard")
+    }
+
+    private func pasteImageFile(_ path: String) {
+        setPasteboardImageFile(path)
+        guard AXIsProcessTrusted() else {
+            Self.promptAccessibility()
+            palette.showToast("Enable Accessibility for Invoke to paste — copied instead")
+            return
+        }
+        let target = pasteTarget
+        palette.hide()
+        target?.activate()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) { Self.synthesizePaste() }
+        exitToRoot()
     }
 
     /// Set the clipboard, then (if Accessibility is granted) close the palette, refocus the target
@@ -666,6 +772,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         return [
             RootCommand(id: "clipboard.history", title: "Clipboard History", subtitle: "System", runTitle: "Open", icon: "doc.on.clipboard", keywords: ["clipboard", "history", "paste", "copy"], closesPalette: false) { [weak self] in self?.enterClipboard() },
             RootCommand(id: "emoji.picker", title: "Search Emoji & Symbols", subtitle: "System", runTitle: "Open", icon: "face.smiling", keywords: ["emoji", "symbol", "face", "smiley"], closesPalette: false) { [weak self] in self?.enterEmoji() },
+            RootCommand(id: "screenshots.search", title: "Search Screenshots", subtitle: "Screenshots", runTitle: "Open", icon: "camera.viewfinder", keywords: ["screenshot", "screen", "capture", "recording", "image"], closesPalette: false) { [weak self] in self?.enterScreenshots() },
             RootCommand(id: "system.sleep", title: "Sleep", subtitle: "System", runTitle: "Sleep", icon: "moon.fill", keywords: ["sleep", "suspend"], closesPalette: true, run: shell("/usr/bin/pmset", ["sleepnow"])),
             RootCommand(id: "system.volumeUp", title: "Turn Volume Up", subtitle: "System", runTitle: "Run", icon: "speaker.wave.3.fill", keywords: ["volume", "up", "sound", "louder"], closesPalette: true, run: shell("/usr/bin/osascript", ["-e", "set volume output volume (output volume of (get volume settings) + 10)"])),
             RootCommand(id: "system.volumeDown", title: "Turn Volume Down", subtitle: "System", runTitle: "Run", icon: "speaker.wave.1.fill", keywords: ["volume", "down", "sound", "quieter"], closesPalette: true, run: shell("/usr/bin/osascript", ["-e", "set volume output volume (output volume of (get volume settings) - 10)"])),
