@@ -75,6 +75,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
             self.selectedIndex = 0
             self.renderClipboard(query: self.lastQuery)
         }
+        palette.onSelectRow = { [weak self] i in self?.setSelection(i) }
+        palette.onActivateRow = { [weak self] i in self?.clickActivate(i) }
 
         let root = ProcessInfo.processInfo.environment["INVOKE_REPO_ROOT"]
             ?? Self.findRepoRoot()
@@ -543,6 +545,26 @@ public final class AppController: NSObject, NSApplicationDelegate {
             palette.render(activeTree, selectedIndex: selectedIndex)
             updateActionBar()
         }
+    }
+
+    /// Mouse single-click: select the clicked item index, re-rendering per mode (like arrow keys).
+    private func setSelection(_ i: Int) {
+        let count = items().count
+        guard count > 0 else { return }
+        selectedIndex = min(max(0, i), count - 1)
+        switch mode {
+        case .clipboard: renderClipboard(query: lastQuery)
+        case .screenshots: renderScreenshots(query: lastQuery)
+        default:
+            palette.render(activeTree, selectedIndex: selectedIndex)
+            updateActionBar()
+        }
+    }
+
+    /// Mouse double-click: select then run the primary action.
+    private func clickActivate(_ i: Int) {
+        setSelection(i)
+        activateSelection(secondary: false)
     }
 
     private func activateSelection(secondary: Bool) {

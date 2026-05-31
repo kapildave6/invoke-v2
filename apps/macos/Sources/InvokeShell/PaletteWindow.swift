@@ -42,6 +42,9 @@ public final class PaletteWindow: NSObject {
     public var actionsProvider: (() -> [PaletteAction])?
     /// Fired when the type-filter dropdown changes (clipboard mode).
     public var onFilterChange: ((String) -> Void)?
+    /// Mouse: single-click selects a row (by item index); double-click activates it.
+    public var onSelectRow: ((Int) -> Void)?
+    public var onActivateRow: ((Int) -> Void)?
 
     private let filterButton = NSPopUpButton(frame: .zero, pullsDown: false)
     private var searchTrailingDefault: NSLayoutConstraint!
@@ -63,7 +66,7 @@ public final class PaletteWindow: NSObject {
         panel.level = .floating
         panel.titleVisibility = .hidden
         panel.titlebarAppearsTransparent = true
-        panel.isMovableByWindowBackground = false
+        panel.isMovableByWindowBackground = true // drag the palette by its background (rows opt out)
         panel.backgroundColor = .clear
         panel.hasShadow = true
 
@@ -84,6 +87,8 @@ public final class PaletteWindow: NSObject {
         searchField.delegate = self
 
         paletteView.translatesAutoresizingMaskIntoConstraints = false
+        paletteView.onSelect = { [weak self] i in self?.onSelectRow?(i) }
+        paletteView.onActivate = { [weak self] i in self?.onActivateRow?(i) }
 
         filterButton.translatesAutoresizingMaskIntoConstraints = false
         filterButton.isBordered = false // borderless, subtle — fits the translucent theme

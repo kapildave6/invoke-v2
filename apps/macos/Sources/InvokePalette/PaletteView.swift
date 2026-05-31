@@ -7,6 +7,15 @@ private final class FlippedDocView: NSView {
     override var isFlipped: Bool { true }
 }
 
+/// A result row that reports clicks (single = select, double = activate) by item index. Overrides
+/// `mouseDownCanMoveWindow` to false so the click lands on the row instead of starting a window drag
+/// (the window is movable-by-background, so empty chrome still drags, but rows stay clickable).
+private final class ClickableRow: NSView {
+    var onClick: ((_ clickCount: Int) -> Void)?
+    override var mouseDownCanMoveWindow: Bool { false }
+    override func mouseDown(with event: NSEvent) { onClick?(event.clickCount) }
+}
+
 /// The results list (PLAN.md §4.3/§6). Renders the view-model tree into:
 ///   • section headers,
 ///   • a rich result **card** (a `list-item` with `display: "card"` — used by the Calculator's
@@ -19,6 +28,16 @@ public final class PaletteView: NSView {
     private let scrollView = NSScrollView()
     private var itemCounter = 0
     private var selectedRowView: NSView?
+
+    /// Single-click a row → select that item index. Double-click → activate it.
+    public var onSelect: ((Int) -> Void)?
+    public var onActivate: ((Int) -> Void)?
+
+    private func wireClick(_ row: ClickableRow, index: Int) {
+        row.onClick = { [weak self] count in
+            if count >= 2 { self?.onActivate?(index) } else { self?.onSelect?(index) }
+        }
+    }
 
     /// Max content height before the list scrolls (window caps near this + chrome).
     private let maxContentHeight: CGFloat = 460
@@ -110,7 +129,7 @@ public final class PaletteView: NSView {
         }
         var selectedRow: NSView?
         for (i, node) in rows.enumerated() {
-            let r = compactRow(node, selected: i == sel, width: 300)
+            let r = compactRow(node, selected: i == sel, width: 300, index: i)
             if i == sel { selectedRow = r }
             leftStack.addArrangedSubview(r)
         }
@@ -181,8 +200,9 @@ public final class PaletteView: NSView {
         return v
     }
 
-    private func compactRow(_ node: ViewNode, selected: Bool, width: CGFloat) -> NSView {
-        let row = NSView()
+    private func compactRow(_ node: ViewNode, selected: Bool, width: CGFloat, index: Int) -> NSView {
+        let row = ClickableRow()
+        wireClick(row, index: index)
         row.translatesAutoresizingMaskIntoConstraints = false
         row.wantsLayer = true
         row.layer?.cornerRadius = 6
@@ -298,13 +318,14 @@ public final class PaletteView: NSView {
             if let title = node.title, !title.isEmpty { addSectionHeader(title) }
             for child in node.children { appendRows(for: child, selectedIndex: selectedIndex) }
         case "list-item":
-            let selected = (itemCounter == selectedIndex)
+            let idx = itemCounter
+            let selected = (idx == selectedIndex)
             itemCounter += 1
             if let cardVal = node.props["card"], case .object(let card) = cardVal,
                node.props["display"]?.stringValue == "card" {
-                addCard(card, selected: selected)
+                addCard(card, selected: selected, index: idx)
             } else {
-                addItemRow(node, selected: selected)
+                addItemRow(node, selected: selected, index: idx)
             }
             // an item is a visual leaf — its ActionPanel children are not rows
         default:
@@ -333,14 +354,15 @@ public final class PaletteView: NSView {
 
     // MARK: - Result card
 
-    private func addCard(_ card: [String: JSONValue], selected: Bool) {
+    private func addCard(_ card: [String: JSONValue], selected: Bool, index: Int) {
         let left = card["left"]?.stringValue ?? ""
         let right = card["right"]?.stringValue ?? ""
         let leftLabel = card["leftLabel"]?.stringValue ?? ""
         let rightLabel = card["rightLabel"]?.stringValue ?? ""
         let note = card["note"]?.stringValue ?? ""
 
-        let cardView = NSView()
+        let cardView = ClickableRow()
+        wireClick(cardView, index: index)
         cardView.translatesAutoresizingMaskIntoConstraints = false
         cardView.wantsLayer = true
         cardView.layer?.cornerRadius = 12
@@ -411,8 +433,9 @@ public final class PaletteView: NSView {
 
     // MARK: - Item row
 
-    private func addItemRow(_ node: ViewNode, selected: Bool) {
-        let row = NSView()
+    private func addItemRow(_ node: ViewNode, selected: Bool, index: Int) {
+        let row = ClickableRow()
+        wireClick(row, index: index)
         row.translatesAutoresizingMaskIntoConstraints = false
         row.wantsLayer = true
         row.layer?.cornerRadius = 7
