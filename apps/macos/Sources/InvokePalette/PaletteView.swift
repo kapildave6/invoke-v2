@@ -147,6 +147,7 @@ public final class PaletteView: NSView {
             h.heightAnchor.constraint(equalToConstant: 360),
             divider.widthAnchor.constraint(equalToConstant: 1),
             leftScroll.widthAnchor.constraint(equalToConstant: 300),
+            detail.widthAnchor.constraint(greaterThanOrEqualToConstant: 280), // don't let it collapse
             leftStack.topAnchor.constraint(equalTo: doc.topAnchor, constant: 2),
             leftStack.leadingAnchor.constraint(equalTo: doc.leadingAnchor),
             leftStack.trailingAnchor.constraint(equalTo: doc.trailingAnchor),
@@ -156,9 +157,9 @@ public final class PaletteView: NSView {
 
         // Keep the selected clip visible as you arrow through a long list.
         if let selectedRow {
-            DispatchQueue.main.async {
-                self.layoutSubtreeIfNeeded()
-                selectedRow.scrollToVisible(selectedRow.bounds)
+            DispatchQueue.main.async { [weak self, weak selectedRow] in
+                self?.layoutSubtreeIfNeeded()
+                if let selectedRow { selectedRow.scrollToVisible(selectedRow.bounds) }
             }
         }
     }

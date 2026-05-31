@@ -539,6 +539,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         palette.hide()
         target?.activate()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) { Self.synthesizePaste() }
+        exitToRoot() // reset mode/selection so the next summon is clean
     }
 
     private func copyText(_ text: String) {
@@ -561,6 +562,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         palette.hide()
         target?.activate()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) { Self.synthesizePaste() }
+        exitToRoot() // reset mode/selection so the next summon is clean
     }
 
     private static func promptAccessibility() {
@@ -646,11 +648,19 @@ public final class AppController: NSObject, NSApplicationDelegate {
             }
         }
         func shell(_ tool: String, _ args: [String]) -> () -> Void {
-            return {
-                let p = Process()
-                p.executableURL = URL(fileURLWithPath: tool)
-                p.arguments = args
-                try? p.run()
+            return { [weak self] in
+                DispatchQueue.global(qos: .userInitiated).async { // never block the UI
+                    guard FileManager.default.isExecutableFile(atPath: tool) else {
+                        DispatchQueue.main.async { self?.palette.showToast("Command unavailable") }
+                        return
+                    }
+                    let p = Process()
+                    p.executableURL = URL(fileURLWithPath: tool)
+                    p.arguments = args
+                    do { try p.run() } catch {
+                        DispatchQueue.main.async { self?.palette.showToast("Command failed") }
+                    }
+                }
             }
         }
         return [
