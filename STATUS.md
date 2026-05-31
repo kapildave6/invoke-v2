@@ -39,7 +39,7 @@ _Last updated: 2026-05-31_
 | Settings window (SwiftUI, tabbed) | ✅ | Native NSTabViewController(.toolbar) icon tabs. General / Commands / Clipboard / Advanced / About; ⌘, or "Open Settings" |
 | Commands settings: grouped by extension + per-command alias/hotkey | ✅ | Raycast-style: collapsible extension groups, columns Name·Type·Alias·Hotkey·Enabled; functional aliases (surface in root) + recordable global hotkeys per command |
 | Themes / semantic color tokens | ⬜ | single look for now |
-| Navigation stack (push/pop) | ⬜ | |
+| Navigation stack (push/pop) | ✅ | declarative `Action.Push` → renders the (snapshotted) target surface on a nav stack; Esc pops. Programmatic `useNavigation().push()` is a follow-up |
 
 ## Root search (PLAN §4.3, §4.7)
 | Item | Status | Notes |
@@ -76,7 +76,7 @@ _Last updated: 2026-05-31_
 | Emoji & symbols picker | ✅ | curated set, search, recents (frecency), paste-on-Enter |
 | System commands | 🟡 | folders, sleep, volume, mute, quit-frontmost (more to add) |
 | Calendar / My Schedule | ⬜ | |
-| AI in root + AI Commands ("improve writing") | ⬜ | |
+| AI in root + AI Commands ("improve writing") | ✅ | `AIService` (Anthropic; key from `ANTHROPIC_API_KEY`/Keychain, never persisted). Commands: Improve Writing / Fix Grammar / Make Professional / Make Concise / Summarize (act on the selection, paste back; clipboard restored). "Ask AI" in root → answer in a Detail. Needs a key + Accessibility |
 
 ## AI / v2 / v3
 Per PLAN §7/§8 — all ⬜ (AI Chat, MCP, Skills, gateway, store pipeline, sync, Translate, Screenshot OCR, Windows/iOS, Teams). Branded third-party integrations (1Password, Spotify, Linear, …) arrive via the **ecosystem** (compat shim + store), not built here.
