@@ -1217,6 +1217,14 @@ public final class AppController: NSObject, NSApplicationDelegate {
         navStack.removeAll()
     }
 
+    /// Detached deep copy of a view subtree (props/text are value types; children copied recursively),
+    /// so a pushed page can't be mutated by subsequent commits to the live extension tree.
+    private static func deepCopy(_ n: ViewNode) -> ViewNode {
+        let copy = ViewNode(id: n.id, type: n.type, text: n.text, props: n.props)
+        copy.children = n.children.map { deepCopy($0) }
+        return copy
+    }
+
     private func onExtensionCommit() {
         guard mode == .extensionView else { return }
         renderExtension()
@@ -1258,9 +1266,12 @@ public final class AppController: NSObject, NSApplicationDelegate {
         }
         switch n.props["variant"]?.stringValue {
         case "push":
-            // The pushed view is the action's lifted child surface — render it on the nav stack.
+            // The pushed view is the action's lifted child surface. SNAPSHOT it (deep copy) — the live
+            // node is a reference into the extension's mutable tree, so a later re-render (search/async
+            // commit) would otherwise detach it or silently rewrite the page you navigated into. A
+            // pushed page is frozen (Raycast semantics).
             if let target = n.children.first(where: { ["detail", "form", "grid", "list"].contains($0.type) }) {
-                navStack.append(target)
+                navStack.append(Self.deepCopy(target))
                 selectedIndex = 0
                 renderExtension()
             }
