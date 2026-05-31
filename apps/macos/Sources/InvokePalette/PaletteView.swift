@@ -248,11 +248,18 @@ public final class PaletteView: NSView {
             label.font = .systemFont(ofSize: 13)
             label.textColor = .labelColor
             label.isSelectable = true
-            label.maximumNumberOfLines = 12
+            label.maximumNumberOfLines = 8 // truncate within the fixed preview height
             contentView = label
         }
         contentView.translatesAutoresizingMaskIntoConstraints = false
-        pane.addSubview(contentView)
+
+        // Fixed-height preview region (Raycast parity): the content sits top-aligned in a constant-
+        // height box, so the "Information" block below stays put as you arrow through clips instead
+        // of sliding up/down with each item's content height.
+        let preview = NSView()
+        preview.translatesAutoresizingMaskIntoConstraints = false
+        preview.addSubview(contentView)
+        pane.addSubview(preview)
 
         let info = NSStackView()
         info.orientation = .vertical
@@ -272,13 +279,21 @@ public final class PaletteView: NSView {
         }
         pane.addSubview(info)
 
-        // Stack content then Information top-down so they never overlap (the old top/bottom pinning
-        // collided when the preview image was tall).
+        let previewH: CGFloat = 180
         NSLayoutConstraint.activate([
-            contentView.topAnchor.constraint(equalTo: pane.topAnchor, constant: 12),
-            contentView.leadingAnchor.constraint(equalTo: pane.leadingAnchor, constant: 16),
-            contentView.trailingAnchor.constraint(equalTo: pane.trailingAnchor, constant: -16),
-            info.topAnchor.constraint(equalTo: contentView.bottomAnchor, constant: 16),
+            preview.topAnchor.constraint(equalTo: pane.topAnchor, constant: 12),
+            preview.leadingAnchor.constraint(equalTo: pane.leadingAnchor, constant: 16),
+            preview.trailingAnchor.constraint(equalTo: pane.trailingAnchor, constant: -16),
+            preview.heightAnchor.constraint(equalToConstant: previewH),
+
+            // Content top-aligned inside the fixed box (image scales down, text truncates).
+            contentView.topAnchor.constraint(equalTo: preview.topAnchor),
+            contentView.leadingAnchor.constraint(equalTo: preview.leadingAnchor),
+            contentView.trailingAnchor.constraint(equalTo: preview.trailingAnchor),
+            contentView.bottomAnchor.constraint(lessThanOrEqualTo: preview.bottomAnchor),
+
+            // Information anchored at a constant Y (preview bottom), so it no longer jumps per item.
+            info.topAnchor.constraint(equalTo: preview.bottomAnchor, constant: 14),
             info.leadingAnchor.constraint(equalTo: pane.leadingAnchor, constant: 16),
             info.trailingAnchor.constraint(equalTo: pane.trailingAnchor, constant: -16),
             info.bottomAnchor.constraint(lessThanOrEqualTo: pane.bottomAnchor, constant: -14),
