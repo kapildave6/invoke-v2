@@ -350,11 +350,20 @@ public final class PaletteView: NSView {
             return NSAttributedString(string: md, attributes: [.font: NSFont.systemFont(ofSize: baseSize), .foregroundColor: NSColor.labelColor])
         }
         let out = NSMutableAttributedString()
+        var lastBlock: PresentationIntent? = nil
         for run in parsed.runs {
             let text = String(parsed[run.range].characters)
             var size = baseSize, bold = false, italic = false, mono = false
+            var separator = ""
             if let block = run.presentationIntent {
+                let isList = block.components.contains { if case .listItem = $0.kind { return true }; return false }
                 for comp in block.components { if case .header(let level) = comp.kind { bold = true; size = baseSize + CGFloat(max(0, 7 - level) * 2) } }
+                // Foundation strips the newlines between blocks — reinsert them on each block change.
+                if block != lastBlock {
+                    if lastBlock != nil { separator = isList ? "\n" : "\n\n" }
+                    if isList { separator += "•  " }
+                    lastBlock = block
+                }
             }
             if let inline = run.inlinePresentationIntent {
                 if inline.contains(.stronglyEmphasized) { bold = true }
@@ -364,6 +373,9 @@ public final class PaletteView: NSView {
             var font = mono ? NSFont.monospacedSystemFont(ofSize: size, weight: bold ? .semibold : .regular)
                             : NSFont.systemFont(ofSize: size, weight: bold ? .semibold : .regular)
             if italic { font = NSFontManager.shared.convert(font, toHaveTrait: .italicFontMask) }
+            if !separator.isEmpty {
+                out.append(NSAttributedString(string: separator, attributes: [.font: NSFont.systemFont(ofSize: baseSize), .foregroundColor: NSColor.labelColor]))
+            }
             var attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: NSColor.labelColor]
             if let link = run.link { attrs[.foregroundColor] = NSColor.linkColor; attrs[.link] = link }
             out.append(NSAttributedString(string: text, attributes: attrs))
@@ -595,6 +607,9 @@ public final class PaletteView: NSView {
             tv.string = f.props["value"]?.stringValue ?? f.props["defaultValue"]?.stringValue ?? ""
             tv.isEditable = true
             tv.font = .systemFont(ofSize: 13)
+            tv.textColor = .labelColor
+            tv.backgroundColor = NSColor.white.withAlphaComponent(0.08) // subtle dark fill, not stark white
+            tv.insertionPointColor = .labelColor
             // Standard document-view-in-scrollview wiring so text wraps + scrolls correctly.
             tv.isVerticallyResizable = true
             tv.isHorizontallyResizable = false
@@ -604,9 +619,12 @@ public final class PaletteView: NSView {
             tv.textContainerInset = NSSize(width: 4, height: 6)
             tv.textContainer?.widthTracksTextView = true
             let s = NSScrollView()
-            s.borderType = .lineBorder
+            s.borderType = .noBorder
+            s.drawsBackground = false
             s.hasVerticalScroller = true
             s.documentView = tv
+            s.wantsLayer = true
+            s.layer?.cornerRadius = 6
             s.translatesAutoresizingMaskIntoConstraints = false
             row.addArrangedSubview(s)
             NSLayoutConstraint.activate([s.widthAnchor.constraint(equalTo: row.widthAnchor), s.heightAnchor.constraint(equalToConstant: 80)])
