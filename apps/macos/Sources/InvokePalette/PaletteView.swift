@@ -93,8 +93,17 @@ public final class PaletteView: NSView {
         stack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         itemCounter = 0
         selectedRowView = nil
-        if let list = tree.root.children.first(where: { $0.type == "list" }),
-           case .bool(true)? = list.props["showDetail"] {
+        let surfaces = tree.root.children
+        // Dispatch on the top-level surface the extension rendered (PLAN.md §5 component set).
+        if let detail = surfaces.first(where: { $0.type == "detail" }) {
+            renderDetailSurface(detail)
+        } else if let form = surfaces.first(where: { $0.type == "form" }) {
+            renderFormSurface(form)
+        } else if let grid = surfaces.first(where: { $0.type == "grid" }) {
+            renderGrid(grid, selectedIndex: selectedIndex)
+            scrollSelectedIntoView()
+        } else if let list = surfaces.first(where: { $0.type == "list" }),
+                  case .bool(true)? = list.props["showDetail"] {
             renderSplit(list: list, selectedIndex: selectedIndex) // master–detail (e.g. Clipboard History)
         } else {
             appendRows(for: tree.root, selectedIndex: selectedIndex)
@@ -324,6 +333,284 @@ public final class PaletteView: NSView {
             v.centerYAnchor.constraint(equalTo: row.centerYAnchor),
             v.leadingAnchor.constraint(greaterThanOrEqualTo: l.trailingAnchor, constant: 12),
         ])
+        return row
+    }
+
+    // MARK: - Detail / Form / Grid surfaces (PLAN.md §5)
+
+    /// Render markdown to an attributed string, mapping the parser's semantic intents to fonts
+    /// (Foundation gives intents, not concrete fonts) — headings larger/bold, **bold**, *italic*,
+    /// `code`, and links coloured.
+    private static func attributedMarkdown(_ md: String, baseSize: CGFloat = 13) -> NSAttributedString {
+        let opts = AttributedString.MarkdownParsingOptions(interpretedSyntax: .full, failurePolicy: .returnPartiallyParsedIfPossible)
+        guard let parsed = try? AttributedString(markdown: md, options: opts) else {
+            return NSAttributedString(string: md, attributes: [.font: NSFont.systemFont(ofSize: baseSize), .foregroundColor: NSColor.labelColor])
+        }
+        let out = NSMutableAttributedString()
+        for run in parsed.runs {
+            let text = String(parsed[run.range].characters)
+            var size = baseSize, bold = false, italic = false, mono = false
+            if let block = run.presentationIntent {
+                for comp in block.components { if case .header(let level) = comp.kind { bold = true; size = baseSize + CGFloat(max(0, 7 - level) * 2) } }
+            }
+            if let inline = run.inlinePresentationIntent {
+                if inline.contains(.stronglyEmphasized) { bold = true }
+                if inline.contains(.emphasized) { italic = true }
+                if inline.contains(.code) { mono = true; size = baseSize - 1 }
+            }
+            var font = mono ? NSFont.monospacedSystemFont(ofSize: size, weight: bold ? .semibold : .regular)
+                            : NSFont.systemFont(ofSize: size, weight: bold ? .semibold : .regular)
+            if italic { font = NSFontManager.shared.convert(font, toHaveTrait: .italicFontMask) }
+            var attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: NSColor.labelColor]
+            if let link = run.link { attrs[.foregroundColor] = NSColor.linkColor; attrs[.link] = link }
+            out.append(NSAttributedString(string: text, attributes: attrs))
+        }
+        return out
+    }
+
+    /// A scrollable wrapping label of attributed markdown.
+    private func markdownScroll(_ md: String) -> NSScrollView {
+        let body = NSTextField(labelWithAttributedString: Self.attributedMarkdown(md))
+        body.isSelectable = true
+        body.lineBreakMode = .byWordWrapping
+        body.maximumNumberOfLines = 0
+        body.translatesAutoresizingMaskIntoConstraints = false
+        let doc = FlippedDocView()
+        doc.translatesAutoresizingMaskIntoConstraints = false
+        doc.addSubview(body)
+        let scroll = NSScrollView()
+        scroll.drawsBackground = false
+        scroll.hasVerticalScroller = true
+        scroll.scrollerStyle = .overlay
+        scroll.documentView = doc
+        scroll.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            doc.widthAnchor.constraint(equalTo: scroll.contentView.widthAnchor),
+            body.leadingAnchor.constraint(equalTo: doc.leadingAnchor, constant: 16),
+            body.trailingAnchor.constraint(equalTo: doc.trailingAnchor, constant: -16),
+            body.topAnchor.constraint(equalTo: doc.topAnchor, constant: 14),
+            body.bottomAnchor.constraint(equalTo: doc.bottomAnchor, constant: -14),
+        ])
+        return scroll
+    }
+
+    private func renderDetailSurface(_ node: ViewNode) {
+        let md = node.props["markdown"]?.stringValue ?? node.props["detailText"]?.stringValue ?? (node.title ?? "")
+        let h = NSStackView()
+        h.orientation = .horizontal
+        h.alignment = .top
+        h.spacing = 0
+        h.translatesAutoresizingMaskIntoConstraints = false
+        h.addArrangedSubview(markdownScroll(md))
+        if let metaNode = node.children.first(where: { $0.type == "metadata" }), !metaNode.children.isEmpty {
+            let divider = NSBox(); divider.boxType = .separator; divider.translatesAutoresizingMaskIntoConstraints = false
+            let side = detailMetadataSidebar(metaNode)
+            h.addArrangedSubview(divider)
+            h.addArrangedSubview(side)
+            NSLayoutConstraint.activate([divider.widthAnchor.constraint(equalToConstant: 1), side.widthAnchor.constraint(equalToConstant: 240)])
+        }
+        stack.addArrangedSubview(h)
+        NSLayoutConstraint.activate([
+            h.widthAnchor.constraint(equalTo: stack.widthAnchor),
+            h.heightAnchor.constraint(equalToConstant: 420),
+        ])
+    }
+
+    private func detailMetadataSidebar(_ metaNode: ViewNode) -> NSView {
+        let v = NSStackView()
+        v.orientation = .vertical
+        v.alignment = .width
+        v.spacing = 7
+        v.translatesAutoresizingMaskIntoConstraints = false
+        let header = NSTextField(labelWithString: "Information")
+        header.font = .systemFont(ofSize: 11, weight: .semibold)
+        header.textColor = .tertiaryLabelColor
+        v.addArrangedSubview(header)
+        for child in metaNode.children where child.type == "metadata-label" {
+            v.addArrangedSubview(metadataRow(label: child.props["title"]?.stringValue ?? "", value: child.props["text"]?.stringValue ?? ""))
+        }
+        let wrap = NSView()
+        wrap.translatesAutoresizingMaskIntoConstraints = false
+        wrap.addSubview(v)
+        NSLayoutConstraint.activate([
+            v.topAnchor.constraint(equalTo: wrap.topAnchor, constant: 14),
+            v.leadingAnchor.constraint(equalTo: wrap.leadingAnchor, constant: 14),
+            v.trailingAnchor.constraint(equalTo: wrap.trailingAnchor, constant: -14),
+        ])
+        return wrap
+    }
+
+    // MARK: Grid
+
+    private func renderGrid(_ grid: ViewNode, selectedIndex: Int) {
+        var columns = 5
+        if case .number(let n)? = grid.props["columns"] { columns = max(1, Int(n)) }
+        var gridItems: [ViewNode] = []
+        func collect(_ n: ViewNode) { if n.type == "grid-item" { gridItems.append(n) }; n.children.forEach(collect) }
+        collect(grid)
+        var idx = 0
+        var i = 0
+        while i < gridItems.count {
+            let rowItems = Array(gridItems[i..<min(i + columns, gridItems.count)])
+            let rowStack = NSStackView()
+            rowStack.orientation = .horizontal
+            rowStack.distribution = .fillEqually
+            rowStack.spacing = 8
+            rowStack.translatesAutoresizingMaskIntoConstraints = false
+            for node in rowItems {
+                let cell = gridCell(node, selected: idx == selectedIndex, index: idx)
+                if idx == selectedIndex { selectedRowView = cell }
+                rowStack.addArrangedSubview(cell)
+                idx += 1
+            }
+            for _ in 0..<(columns - rowItems.count) { rowStack.addArrangedSubview(NSView()) } // pad for equal cells
+            stack.addArrangedSubview(rowStack)
+            NSLayoutConstraint.activate([rowStack.widthAnchor.constraint(equalTo: stack.widthAnchor)])
+            i += columns
+        }
+        itemCounter = gridItems.count
+    }
+
+    private func gridCell(_ node: ViewNode, selected: Bool, index: Int) -> NSView {
+        let cell = ClickableRow()
+        wireClick(cell, index: index)
+        cell.translatesAutoresizingMaskIntoConstraints = false
+        cell.wantsLayer = true
+        cell.layer?.cornerRadius = 8
+        cell.layer?.backgroundColor = (selected ? NSColor.white.withAlphaComponent(0.13) : NSColor.white.withAlphaComponent(0.04)).cgColor
+        let v = NSStackView()
+        v.orientation = .vertical
+        v.alignment = .centerX
+        v.spacing = 6
+        v.translatesAutoresizingMaskIntoConstraints = false
+        let thumb = NSView()
+        thumb.wantsLayer = true
+        thumb.layer?.cornerRadius = 6
+        thumb.layer?.backgroundColor = NSColor.white.withAlphaComponent(0.06).cgColor
+        thumb.translatesAutoresizingMaskIntoConstraints = false
+        if let b64 = node.props["thumb"]?.stringValue, let data = Data(base64Encoded: b64), let img = NSImage(data: data) {
+            let iv = NSImageView(image: img); iv.imageScaling = .scaleProportionallyUpOrDown; iv.translatesAutoresizingMaskIntoConstraints = false
+            thumb.addSubview(iv)
+            NSLayoutConstraint.activate([iv.leadingAnchor.constraint(equalTo: thumb.leadingAnchor), iv.trailingAnchor.constraint(equalTo: thumb.trailingAnchor), iv.topAnchor.constraint(equalTo: thumb.topAnchor), iv.bottomAnchor.constraint(equalTo: thumb.bottomAnchor)])
+        } else if let sym = node.props["icon"]?.stringValue ?? node.props["content"]?.stringValue,
+                  let img = NSImage(systemSymbolName: sym, accessibilityDescription: nil) ?? NSImage(systemSymbolName: sfSymbol(for: sym), accessibilityDescription: nil) {
+            let iv = NSImageView(image: img); iv.contentTintColor = .secondaryLabelColor; iv.imageScaling = .scaleProportionallyDown; iv.translatesAutoresizingMaskIntoConstraints = false
+            thumb.addSubview(iv)
+            NSLayoutConstraint.activate([iv.centerXAnchor.constraint(equalTo: thumb.centerXAnchor), iv.centerYAnchor.constraint(equalTo: thumb.centerYAnchor), iv.widthAnchor.constraint(equalToConstant: 30), iv.heightAnchor.constraint(equalToConstant: 30)])
+        }
+        v.addArrangedSubview(thumb)
+        let title = NSTextField(labelWithString: node.title ?? "")
+        title.font = .systemFont(ofSize: 12)
+        title.alignment = .center
+        title.lineBreakMode = .byTruncatingTail
+        title.maximumNumberOfLines = 2
+        v.addArrangedSubview(title)
+        cell.addSubview(v)
+        NSLayoutConstraint.activate([
+            thumb.heightAnchor.constraint(equalToConstant: 72),
+            thumb.widthAnchor.constraint(equalTo: v.widthAnchor),
+            v.leadingAnchor.constraint(equalTo: cell.leadingAnchor, constant: 6),
+            v.trailingAnchor.constraint(equalTo: cell.trailingAnchor, constant: -6),
+            v.topAnchor.constraint(equalTo: cell.topAnchor, constant: 6),
+            v.bottomAnchor.constraint(equalTo: cell.bottomAnchor, constant: -6),
+        ])
+        return cell
+    }
+
+    // MARK: Form
+
+    /// Live value readers for the currently-rendered form, by field id (read at submit time).
+    private var formControls: [(id: String, value: () -> String)] = []
+    public func currentFormValues() -> [String: String] {
+        var out: [String: String] = [:]
+        for c in formControls { out[c.id] = c.value() }
+        return out
+    }
+
+    private func renderFormSurface(_ node: ViewNode) {
+        formControls.removeAll()
+        let form = NSStackView()
+        form.orientation = .vertical
+        form.alignment = .leading
+        form.spacing = 12
+        form.translatesAutoresizingMaskIntoConstraints = false
+        var fields: [ViewNode] = []
+        func collect(_ n: ViewNode) { if n.type.hasPrefix("form-") { fields.append(n) }; n.children.forEach(collect) }
+        collect(node)
+        for f in fields {
+            guard let row = formFieldRow(f) else { continue }
+            form.addArrangedSubview(row)
+            NSLayoutConstraint.activate([row.widthAnchor.constraint(equalTo: form.widthAnchor)])
+        }
+        let doc = FlippedDocView()
+        doc.translatesAutoresizingMaskIntoConstraints = false
+        doc.addSubview(form)
+        let scroll = NSScrollView()
+        scroll.drawsBackground = false
+        scroll.hasVerticalScroller = true
+        scroll.scrollerStyle = .overlay
+        scroll.documentView = doc
+        scroll.translatesAutoresizingMaskIntoConstraints = false
+        stack.addArrangedSubview(scroll)
+        NSLayoutConstraint.activate([
+            scroll.widthAnchor.constraint(equalTo: stack.widthAnchor),
+            scroll.heightAnchor.constraint(equalToConstant: 360),
+            doc.widthAnchor.constraint(equalTo: scroll.contentView.widthAnchor),
+            form.topAnchor.constraint(equalTo: doc.topAnchor, constant: 16),
+            form.leadingAnchor.constraint(equalTo: doc.leadingAnchor, constant: 16),
+            form.trailingAnchor.constraint(equalTo: doc.trailingAnchor, constant: -16),
+            form.bottomAnchor.constraint(equalTo: doc.bottomAnchor, constant: -16),
+        ])
+    }
+
+    private func formFieldRow(_ f: ViewNode) -> NSView? {
+        let id = f.props["id"]?.stringValue ?? ""
+        let row = NSStackView()
+        row.orientation = .vertical
+        row.alignment = .leading
+        row.spacing = 4
+        row.translatesAutoresizingMaskIntoConstraints = false
+        if let title = f.props["title"]?.stringValue, !title.isEmpty {
+            let label = NSTextField(labelWithString: title)
+            label.font = .systemFont(ofSize: 12, weight: .medium)
+            label.textColor = .secondaryLabelColor
+            row.addArrangedSubview(label)
+        }
+        switch f.type {
+        case "form-textfield":
+            let tf = NSTextField(string: f.props["value"]?.stringValue ?? f.props["defaultValue"]?.stringValue ?? "")
+            tf.placeholderString = f.props["placeholder"]?.stringValue
+            tf.translatesAutoresizingMaskIntoConstraints = false
+            row.addArrangedSubview(tf)
+            NSLayoutConstraint.activate([tf.widthAnchor.constraint(equalTo: row.widthAnchor)])
+            formControls.append((id, { [weak tf] in tf?.stringValue ?? "" }))
+        case "form-textarea":
+            let tv = NSTextView()
+            tv.string = f.props["value"]?.stringValue ?? f.props["defaultValue"]?.stringValue ?? ""
+            tv.isEditable = true
+            tv.font = .systemFont(ofSize: 13)
+            let s = NSScrollView()
+            s.borderType = .lineBorder
+            s.hasVerticalScroller = true
+            s.documentView = tv
+            s.translatesAutoresizingMaskIntoConstraints = false
+            row.addArrangedSubview(s)
+            NSLayoutConstraint.activate([s.widthAnchor.constraint(equalTo: row.widthAnchor), s.heightAnchor.constraint(equalToConstant: 80)])
+            formControls.append((id, { [weak tv] in tv?.string ?? "" }))
+        case "form-checkbox":
+            let cb = NSButton(checkboxWithTitle: f.props["label"]?.stringValue ?? "", target: nil, action: nil)
+            if case .bool(true)? = f.props["value"] { cb.state = .on }
+            cb.translatesAutoresizingMaskIntoConstraints = false
+            row.addArrangedSubview(cb)
+            formControls.append((id, { [weak cb] in cb?.state == .on ? "true" : "false" }))
+        case "form-dropdown":
+            let pop = NSPopUpButton(frame: .zero, pullsDown: false)
+            pop.translatesAutoresizingMaskIntoConstraints = false
+            row.addArrangedSubview(pop) // options need Form.Dropdown.Item (SDK gap) — empty for now
+            formControls.append((id, { [weak pop] in pop?.titleOfSelectedItem ?? "" }))
+        default:
+            return nil
+        }
         return row
     }
 

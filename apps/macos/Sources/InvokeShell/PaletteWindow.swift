@@ -245,6 +245,9 @@ public final class PaletteWindow: NSObject {
         searchField.placeholderString = text
     }
 
+    /// Current values of a rendered Form's fields, by field id (read when a submit action fires).
+    public func formValues() -> [String: String] { paletteView.currentFormValues() }
+
     /// Show the type-filter dropdown (clipboard mode) with the given options/selection.
     public func setFilter(options: [String], selected: String) {
         filterButton.removeAllItems()

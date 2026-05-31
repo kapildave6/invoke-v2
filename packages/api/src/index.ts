@@ -135,6 +135,7 @@ type ActionType = ((props: CommonActionProps) => ReactElement) & {
   Paste: (props: { content: string } & CommonActionProps) => ReactElement;
   OpenInBrowser: (props: { url: string } & CommonActionProps) => ReactElement;
   Push: (props: { target: ReactNode } & CommonActionProps) => ReactElement;
+  SubmitForm: (props: { onSubmit: (values: Record<string, unknown>) => void } & CommonActionProps) => ReactElement;
 };
 const makeAction = (variant: string) =>
   host(T.Action, ["target"]) as unknown as (p: Record<string, unknown>) => ReactElement;
@@ -148,6 +149,11 @@ Action.OpenInBrowser = (props) => createElement(T.Action, { variant: "open-in-br
 Action.Push = (props) => {
   const { target, ...rest } = props;
   return createElement(T.Action, { variant: "push", ...rest }, target);
+};
+// Form submit: the host gathers the field values and passes them to onAction (PLAN.md §5.3).
+Action.SubmitForm = (props) => {
+  const { onSubmit, ...rest } = props as { onSubmit?: (v: Record<string, unknown>) => void } & Record<string, unknown>;
+  return createElement(T.Action, { variant: "submit-form", onAction: onSubmit, ...rest });
 };
 
 type ActionPanelType = ReturnType<typeof host> & { Section: ReturnType<typeof host> };

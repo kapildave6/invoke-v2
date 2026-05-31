@@ -1,0 +1,20 @@
+{
+  "name": "ui-gallery",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "title": "UI Gallery",
+  "description": "Exercises Invoke's native Detail / Grid / Form rendering",
+  "icon": "icon.png",
+  "author": "your-handle",
+  "categories": ["Other"],
+  "platforms": ["macOS"],
+  "preferences": [],
+  "commands": [
+    { "name": "detail", "title": "Detail Demo", "description": "A Detail surface: markdown + metadata sidebar", "mode": "view" },
+    { "name": "grid", "title": "Grid Demo", "description": "A Grid of items", "mode": "view" },
+    { "name": "form", "title": "Form Demo", "description": "A Form with fields + submit", "mode": "view" }
+  ],
+  "dependencies": { "@raycast/api": "*" },
+  "peerDependencies": { "react": "^19.0.0" }
+}

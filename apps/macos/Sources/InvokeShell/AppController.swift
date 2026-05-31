@@ -795,11 +795,17 @@ public final class AppController: NSObject, NSApplicationDelegate {
     /// Actions for the selected row: launch an app, run a command (both bump frecency), or the
     /// extension's own actions (the calculator card's Copy).
     private func currentActions() -> [PaletteAction] {
+        if mode == .extensionView {
+            let rows = items()
+            // The selected list/grid row if there is one; otherwise the surface itself —
+            // Detail/Form have an ActionPanel but no selectable rows.
+            guard let node = (selectedIndex < rows.count) ? rows[selectedIndex] : extensionSurfaceNode() else { return [] }
+            return extensionActions(under: node)
+        }
+
         let rows = items()
         guard selectedIndex < rows.count else { return [] }
         let node = rows[selectedIndex]
-
-        if mode == .extensionView { return extensionActions(under: node) }
 
         if let path = node.props["appPath"]?.stringValue {
             return [PaletteAction(title: "Open", shortcut: "↵") { [weak self] in
@@ -989,7 +995,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private func items() -> [ViewNode] {
         var out: [ViewNode] = []
         func walk(_ n: ViewNode) {
-            if n.type == "list-item" { out.append(n) }
+            if n.type == "list-item" || n.type == "grid-item" { out.append(n) }
             for c in n.children { walk(c) }
         }
         walk(activeTree.root)
@@ -1200,6 +1206,12 @@ public final class AppController: NSObject, NSApplicationDelegate {
         updateActionBar()
     }
 
+    /// The current extension's top-level surface node (list/grid/detail/form) — used to find the
+    /// ActionPanel when the surface has no selectable rows (Detail/Form), and to detect form submits.
+    private func extensionSurfaceNode() -> ViewNode? {
+        activeTree.root.children.first { ["detail", "form", "grid", "list"].contains($0.type) }
+    }
+
     /// Actions for the selected extension row. Extension-driven actions (onAction) re-enter the child;
     /// declarative ones (open-in-browser/copy/paste) are fulfilled natively.
     private func extensionActions(under node: ViewNode) -> [PaletteAction] {
@@ -1212,7 +1224,13 @@ public final class AppController: NSObject, NSApplicationDelegate {
 
     private func runExtensionAction(_ n: ViewNode) {
         if let handler = n.props["onAction"]?.handlerRef {
-            extHost?.invoke(handler: handler) // stays open; re-renders on the next commit
+            // On a Form, the action is a submit — gather the field values and pass them to the handler.
+            if extensionSurfaceNode()?.type == "form" {
+                let values = palette.formValues().mapValues { JSONValue.string($0) }
+                extHost?.invoke(handler: handler, args: [.object(values)])
+            } else {
+                extHost?.invoke(handler: handler) // stays open; re-renders on the next commit
+            }
             return
         }
         switch n.props["variant"]?.stringValue {

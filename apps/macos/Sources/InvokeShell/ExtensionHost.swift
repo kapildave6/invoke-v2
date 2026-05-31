@@ -150,8 +150,9 @@ public final class ExtensionHost {
     }
 
     /// Host → child: invoke an action handler the child exposed via a serialized `onAction` prop.
-    public func invoke(handler: String) {
-        guard let data = try? jsonEncoder.encode(ChildBound.invoke(handler)) else { return }
+    /// `args` carries e.g. the collected Form values to a submit handler.
+    public func invoke(handler: String, args: [JSONValue] = []) {
+        guard let data = try? jsonEncoder.encode(ChildBound.invoke(handler, args)) else { return }
         write(FrameCodec.encode(data))
     }
 

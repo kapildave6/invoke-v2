@@ -55,7 +55,7 @@ _Last updated: 2026-05-31_
 ## Extension platform & SDK (PLAN §5)
 | Item | Status | Notes |
 |---|---|---|
-| `@invoke/api` components (List/Grid/Detail/Form/ActionPanel) | 🟡 | **List path complete end-to-end**; +`open()`, `LocalStorage`. Grid/Detail/Form emit valid nodes but aren't rendered natively yet (Track 1.3) |
+| `@invoke/api` components (List/Grid/Detail/Form/ActionPanel) | ✅ | **all render natively** (Track 1.3): List · markdown **Detail** + metadata sidebar · thumbnail **Grid** · **Form** (textfield/textarea/checkbox + value-collecting submit via `Action.SubmitForm`). +`open()`, `LocalStorage`. Verified via `examples/ui-gallery`. (Navigation push/pop still ⬜) |
 | `@invoke/utils` hooks | 🟡 | useFetch/usePromise/useCachedState |
 | `@raycast/api` compat shim | 🟡 | **`@raycast/api` + `@raycast/utils` shims; a real `@raycast/api` List extension runs end-to-end** (`examples/hacker-news`: useFetch + getPreferenceValues + OpenInBrowser + LocalStorage). No codemod yet (Track 1.4) |
 | Host capabilities (allowlisted RPC) | ✅ | **fulfilled natively in Swift** (open=NSWorkspace · clipboard=NSPasteboard+⌘V · toast/hud · window.close · localStorage=UserDefaults · preferences) and in Node (dev runner). Allowlist enforced host-side both places. Red-team gated |
