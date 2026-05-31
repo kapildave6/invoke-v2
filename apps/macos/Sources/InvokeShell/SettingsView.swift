@@ -14,83 +14,80 @@ public struct CommandInfo: Identifiable {
     }
 }
 
-/// The Settings window content (PLAN.md §6). Thin SwiftUI over the shared AppSettings model.
-struct SettingsView: View {
+private let paneSize = CGSize(width: 580, height: 420)
+
+/// Settings panes (PLAN.md §6). Hosted individually by SettingsWindow inside an NSTabViewController
+/// with the native `.toolbar` tab style (icon + label, like macOS System Settings / Raycast).
+
+struct GeneralPane: View {
     @ObservedObject var settings = AppSettings.shared
-    let commands: [CommandInfo]
-    let onClearClipboard: () -> Void
-
-    var body: some View {
-        TabView {
-            GeneralTab(settings: settings).tabItem { Label("General", systemImage: "gearshape") }
-            CommandsTab(settings: settings, commands: commands).tabItem { Label("Commands", systemImage: "command") }
-            ClipboardTab(settings: settings, onClear: onClearClipboard).tabItem { Label("Clipboard", systemImage: "doc.on.clipboard") }
-            AdvancedTab(settings: settings).tabItem { Label("Advanced", systemImage: "wrench.and.screwdriver") }
-            AboutTab().tabItem { Label("About", systemImage: "info.circle") }
-        }
-        .frame(width: 640, height: 480)
-    }
-}
-
-private struct GeneralTab: View {
-    @ObservedObject var settings: AppSettings
     var body: some View {
         Form {
             Toggle("Launch Invoke at login", isOn: $settings.launchAtLogin)
             Section("Hotkeys") {
-                LabeledContent("Summon", value: "⌥Space")
+                LabeledContent("Summon Invoke", value: "⌥Space")
                 LabeledContent("Clipboard History", value: "⌘⇧V")
-                LabeledContent("Window: left / right / maximize", value: "⌃⌥← / → / ↑")
+                LabeledContent("Window — left / right / maximize", value: "⌃⌥← / → / ↑")
             }
         }
         .formStyle(.grouped)
+        .frame(width: paneSize.width, height: paneSize.height)
     }
 }
 
-private struct CommandsTab: View {
-    @ObservedObject var settings: AppSettings
+struct CommandsPane: View {
+    @ObservedObject var settings = AppSettings.shared
     let commands: [CommandInfo]
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text("Enable or disable commands in the root search.")
-                .font(.callout).foregroundColor(.secondary).padding([.horizontal, .top], 16).padding(.bottom, 8)
-            List(commands) { c in
-                Toggle(isOn: Binding(get: { settings.isEnabled(c.id) }, set: { settings.setEnabled(c.id, $0) })) {
-                    HStack(spacing: 8) {
-                        Text(c.title)
-                        Text(c.subtitle).foregroundColor(.secondary).font(.caption)
+        Form {
+            Section {
+                ForEach(commands) { c in
+                    Toggle(isOn: Binding(get: { settings.isEnabled(c.id) }, set: { settings.setEnabled(c.id, $0) })) {
+                        HStack {
+                            Text(c.title)
+                            Spacer()
+                            Text(c.subtitle).foregroundColor(.secondary).font(.callout)
+                        }
                     }
                 }
+            } header: {
+                Text("Enable or disable commands in the root search")
             }
         }
+        .formStyle(.grouped)
+        .frame(width: paneSize.width, height: paneSize.height)
     }
 }
 
-private struct ClipboardTab: View {
-    @ObservedObject var settings: AppSettings
+struct ClipboardPane: View {
+    @ObservedObject var settings = AppSettings.shared
     let onClear: () -> Void
     var body: some View {
         Form {
-            Picker("History size", selection: $settings.clipboardLimit) {
-                Text("25 items").tag(25)
-                Text("50 items").tag(50)
-                Text("100 items").tag(100)
-                Text("250 items").tag(250)
+            Section {
+                Picker("History size", selection: $settings.clipboardLimit) {
+                    Text("25 items").tag(25)
+                    Text("50 items").tag(50)
+                    Text("100 items").tag(100)
+                    Text("250 items").tag(250)
+                }
+                Button("Clear Clipboard History", role: .destructive, action: onClear)
+            } footer: {
+                Text("History is kept in memory only — no plaintext on disk until the encrypted store ships.")
+                    .font(.caption).foregroundColor(.secondary)
             }
-            Text("History is kept in memory only (no plaintext on disk until the encrypted store ships).")
-                .font(.caption).foregroundColor(.secondary)
-            Button("Clear Clipboard History", role: .destructive, action: onClear)
         }
         .formStyle(.grouped)
+        .frame(width: paneSize.width, height: paneSize.height)
     }
 }
 
-private struct AdvancedTab: View {
-    @ObservedObject var settings: AppSettings
+struct AdvancedPane: View {
+    @ObservedObject var settings = AppSettings.shared
     @State private var axGranted = AXIsProcessTrusted()
     var body: some View {
         Form {
-            Section("Permissions") {
+            Section {
                 LabeledContent("Accessibility") {
                     HStack(spacing: 10) {
                         Text(axGranted ? "Granted" : "Not granted")
@@ -103,26 +100,33 @@ private struct AdvancedTab: View {
                         Button("Recheck") { axGranted = AXIsProcessTrusted() }
                     }
                 }
+            } header: {
+                Text("Permissions")
+            } footer: {
                 Text("Required to paste clipboard/emoji into apps and to move windows.")
                     .font(.caption).foregroundColor(.secondary)
             }
             Section("Emoji") {
-                Picker("Skin tone", selection: $settings.emojiSkinTone) {
-                    Text("Default").tag(0)
-                    Text("🏻").tag(1); Text("🏼").tag(2); Text("🏽").tag(3); Text("🏾").tag(4); Text("🏿").tag(5)
+                Picker("Default skin tone", selection: $settings.emojiSkinTone) {
+                    Text("👋  Default").tag(0)
+                    Text("👋🏻  Light").tag(1)
+                    Text("👋🏼  Medium-Light").tag(2)
+                    Text("👋🏽  Medium").tag(3)
+                    Text("👋🏾  Medium-Dark").tag(4)
+                    Text("👋🏿  Dark").tag(5)
                 }
-                .pickerStyle(.segmented)
             }
         }
         .formStyle(.grouped)
+        .frame(width: paneSize.width, height: paneSize.height)
     }
 }
 
-private struct AboutTab: View {
+struct AboutPane: View {
     var body: some View {
         VStack(spacing: 12) {
             Image(systemName: "command.square.fill")
-                .resizable().frame(width: 64, height: 64).foregroundColor(.accentColor)
+                .resizable().frame(width: 72, height: 72).foregroundColor(.accentColor)
             Text("Invoke").font(.title.bold())
             Text("Version 0.1 (dev)").foregroundColor(.secondary)
             Text("A keyboard-first command palette — a Raycast-style launcher.\nPersonal project.")
@@ -132,7 +136,6 @@ private struct AboutTab: View {
             }
             .padding(.top, 4)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(30)
+        .frame(width: paneSize.width, height: paneSize.height)
     }
 }
