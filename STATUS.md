@@ -55,10 +55,11 @@ _Last updated: 2026-05-31_
 ## Extension platform & SDK (PLAN §5)
 | Item | Status | Notes |
 |---|---|---|
-| `@invoke/api` components (List/Grid/Detail/Form/ActionPanel) | 🟡 | List/Item/Section/Actions used; others stubbed |
+| `@invoke/api` components (List/Grid/Detail/Form/ActionPanel) | 🟡 | **List path complete end-to-end**; +`open()`, `LocalStorage`. Grid/Detail/Form emit valid nodes but aren't rendered natively yet (Track 1.3) |
 | `@invoke/utils` hooks | 🟡 | useFetch/usePromise/useCachedState |
-| `@raycast/api` compat shim | 🟡 | re-export alias only; no codemod/corpus |
-| `invoke` CLI (dev/build/import/publish) | ⬜ | scaffold stubs only |
+| `@raycast/api` compat shim | 🟡 | **`@raycast/api` + `@raycast/utils` shims; a real `@raycast/api` List extension runs end-to-end** (`examples/hacker-news`: useFetch + getPreferenceValues + OpenInBrowser + LocalStorage). No codemod yet (Track 1.4) |
+| Host capabilities (allowlisted RPC) | 🟡 | injectable fulfilment (Swift native / Node dev); open · clipboard · toast · hud · window.close · preferences · localStorage. Red-team gated |
+| `invoke` CLI (dev/build/import/publish) | 🟡 | Go CLI still stubs; **Node manifest runner works** — `npm run dev:ext <dir>` reads the manifest, resolves the command, launches it, and fulfils host capabilities |
 | In-app store + registry | ⬜ | |
 
 ## First-party features (PLAN §2)

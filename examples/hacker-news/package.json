@@ -1,0 +1,32 @@
+{
+  "name": "hacker-news",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "title": "Hacker News",
+  "description": "Search Hacker News stories",
+  "icon": "icon.png",
+  "author": "your-handle",
+  "categories": ["News"],
+  "platforms": ["macOS"],
+  "preferences": [
+    {
+      "name": "defaultQuery",
+      "title": "Default Search",
+      "description": "Pre-fill the search box on launch",
+      "type": "textfield",
+      "required": false,
+      "default": ""
+    }
+  ],
+  "commands": [
+    { "name": "search", "title": "Search Hacker News", "description": "Search HN stories and open them", "mode": "view" }
+  ],
+  "dependencies": {
+    "@raycast/api": "*",
+    "@raycast/utils": "*"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  }
+}

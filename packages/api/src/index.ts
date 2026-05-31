@@ -217,6 +217,22 @@ export async function closeMainWindow(opts?: { clearRootSearch?: boolean }): Pro
   await rpc("window.close", opts ?? {});
 }
 
+/** Open a URL or file path with the default app (or a specific one). */
+export async function open(target: string, application?: string): Promise<void> {
+  await rpc("open", { target, application });
+}
+
+/** Per-extension key/value store (host-fulfilled). Mirrors @raycast/api LocalStorage. */
+export const LocalStorage = {
+  getItem: <T = string>(key: string): Promise<T | undefined> =>
+    rpc("localStorage.getItem", { key }) as Promise<T | undefined>,
+  setItem: (key: string, value: string | number | boolean): Promise<void> =>
+    rpc("localStorage.setItem", { key, value }) as Promise<void>,
+  removeItem: (key: string): Promise<void> => rpc("localStorage.removeItem", { key }) as Promise<void>,
+  clear: (): Promise<void> => rpc("localStorage.clear", {}) as Promise<void>,
+  allItems: <T = Record<string, unknown>>(): Promise<T> => rpc("localStorage.allItems", {}) as Promise<T>,
+};
+
 export const environment = {
   appearance: "dark" as "dark" | "light",
   launchType: LaunchType.UserInitiated as string,

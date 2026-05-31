@@ -35,11 +35,23 @@ export const ALLOWED_RPC: ReadonlySet<string> = new Set([
   "hud.show",
   "window.close",
   "preferences.get",
+  "open",
+  "localStorage.getItem",
+  "localStorage.setItem",
+  "localStorage.removeItem",
+  "localStorage.clear",
+  "localStorage.allItems",
 ]);
 
 export function isAllowedRpcMethod(method: string): boolean {
   return ALLOWED_RPC.has(method);
 }
+
+/**
+ * Native fulfilment of an allowlisted host capability. The macOS app provides a Swift implementation
+ * (NSPasteboard, NSWorkspace.open, …); the dev runner (run.ts) provides a Node one. May be async.
+ */
+export type HostCapabilities = (method: string, params: unknown) => unknown | Promise<unknown>;
 
 export interface ExtensionEvents {
   ready: [string];
@@ -56,9 +68,11 @@ export class ExtensionProcess extends EventEmitter {
   private child: ChildProcess;
   private sock: NodeJS.ReadWriteStream;
   private decoder = new FrameDecoder();
+  private capabilities?: HostCapabilities;
 
-  constructor(entry: string, command: string, preferences: Record<string, unknown> = {}) {
+  constructor(entry: string, command: string, preferences: Record<string, unknown> = {}, capabilities?: HostCapabilities) {
     super();
+    this.capabilities = capabilities;
     // process-per-extension: a fresh OS process, isolated address space (§4.4).
     this.child = spawn(
       process.execPath,
@@ -98,15 +112,18 @@ export class ExtensionProcess extends EventEmitter {
           this.send({ kind: "rpcResult", id: msg.id, error: `host method not allowed: ${msg.method}` });
           break;
         }
-        // A real host performs the capability natively (NSPasteboard, toast, AX…) and replies.
-        // Demo: benign stubs so the round-trip and the allowlist are both exercised.
-        this.send({ kind: "rpcResult", id: msg.id, result: this.fulfill(msg.method, msg.params) });
+        // The host performs the capability (Swift services natively, or the dev runner's Node impl)
+        // and replies. Fulfilment may be async; errors come back as an rpc error.
+        Promise.resolve()
+          .then(() => (this.capabilities ?? this.fulfill)(msg.method, msg.params))
+          .then((result) => this.send({ kind: "rpcResult", id: msg.id, result }))
+          .catch((err: unknown) => this.send({ kind: "rpcResult", id: msg.id, error: String(err) }));
         break;
       }
     }
   }
 
-  /** Demo-only native fulfilment of an allowlisted host method (real host: Swift services). */
+  /** Fallback fulfilment when no capabilities are injected (benign stubs). */
   private fulfill(method: string, _params: unknown): unknown {
     switch (method) {
       case "clipboard.readText":
