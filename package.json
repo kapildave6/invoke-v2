@@ -13,7 +13,8 @@
     "runtime/reconciler",
     "runtime/node-host",
     "examples/hello-world",
-    "examples/hacker-news"
+    "examples/hacker-news",
+    "examples/tech-radar"
   ],
   "engines": { "node": ">=22" },
   "scripts": {

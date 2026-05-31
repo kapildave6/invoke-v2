@@ -1,0 +1,32 @@
+{
+  "name": "tech-radar",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "title": "Tech Radar",
+  "description": "Search the best engineering blogs, articles, discussions and latest news on any topic — across Hacker News, Lobsters, Dev.to, Reddit and GitHub at once",
+  "icon": "icon.png",
+  "author": "your-handle",
+  "categories": ["News", "Developer Tools"],
+  "platforms": ["macOS"],
+  "preferences": [
+    {
+      "name": "defaultTopic",
+      "title": "Default Topic",
+      "description": "Pre-fill the search box on launch (e.g. 'kafka partitioning')",
+      "type": "textfield",
+      "required": false,
+      "default": ""
+    }
+  ],
+  "commands": [
+    { "name": "search", "title": "Search Tech Radar", "description": "Find the best reading and latest news on a topic across the web", "mode": "view" }
+  ],
+  "dependencies": {
+    "@raycast/api": "*",
+    "@raycast/utils": "*"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  }
+}
