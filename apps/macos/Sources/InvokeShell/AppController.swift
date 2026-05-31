@@ -40,8 +40,19 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private var selectedIndex = 0
     private var rootTree: ViewTree?
     private var lastQuery = ""
+    /// Pushed extension surfaces (Action.Push / useNavigation). The base is the extension's root
+    /// surface; each push renders the target subtree, Esc pops back.
+    private var navStack: [ViewNode] = []
+
     private var activeTree: ViewTree {
-        if mode == .extensionView, let extHost { return extHost.tree }
+        if mode == .extensionView, let extHost {
+            if let top = navStack.last { // render the pushed surface
+                let t = ViewTree()
+                t.root.children = [top]
+                return t
+            }
+            return extHost.tree
+        }
         return rootTree ?? host.tree
     }
 
@@ -79,6 +90,10 @@ public final class AppController: NSObject, NSApplicationDelegate {
             guard let self else { return }
             if self.pendingQuicklink != nil {
                 self.cancelQuicklinkInput() // back to the quicklink list, not all the way to root
+            } else if !self.navStack.isEmpty {
+                self.navStack.removeLast() // pop a pushed view, stay in the extension
+                self.selectedIndex = 0
+                self.renderExtension()
             } else if self.mode != .root {
                 self.exitToRoot()
             } else {
@@ -785,7 +800,13 @@ public final class AppController: NSObject, NSApplicationDelegate {
         case .screenshots: label = "Screenshots"
         case .snippets: label = "Snippets"
         case .quicklinks: label = pendingQuicklink?.name ?? "Quicklinks"
-        case .extensionView: label = currentExtTitle
+        case .extensionView:
+            // Show the pushed view's title with a back chevron when navigated in.
+            if let top = navStack.last {
+                label = "‹ " + (top.props["navigationTitle"]?.stringValue ?? currentExtTitle)
+            } else {
+                label = currentExtTitle
+            }
         case .root: label = "Invoke"
         }
         let primary = pendingQuicklink != nil ? "Open" : currentActions().first?.title
@@ -1005,7 +1026,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private func actions(under item: ViewNode) -> [ViewNode] {
         var out: [ViewNode] = []
         func walk(_ n: ViewNode) {
-            if n.type == "action" { out.append(n) }
+            // Don't descend into an action's pushed target — its nested view's actions aren't this row's.
+            if n.type == "action" { out.append(n); return }
             for c in n.children { walk(c) }
         }
         walk(item)
@@ -1192,6 +1214,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         extHost = nil
         currentExtId = ""
         currentExtTitle = ""
+        navStack.removeAll()
     }
 
     private func onExtensionCommit() {
@@ -1234,6 +1257,13 @@ public final class AppController: NSObject, NSApplicationDelegate {
             return
         }
         switch n.props["variant"]?.stringValue {
+        case "push":
+            // The pushed view is the action's lifted child surface — render it on the nav stack.
+            if let target = n.children.first(where: { ["detail", "form", "grid", "list"].contains($0.type) }) {
+                navStack.append(target)
+                selectedIndex = 0
+                renderExtension()
+            }
         case "open-in-browser":
             if let url = n.props["url"]?.stringValue { openTarget(url) }
             afterLaunch()

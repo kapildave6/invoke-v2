@@ -13,7 +13,8 @@
   "commands": [
     { "name": "detail", "title": "Detail Demo", "description": "A Detail surface: markdown + metadata sidebar", "mode": "view" },
     { "name": "grid", "title": "Grid Demo", "description": "A Grid of items", "mode": "view" },
-    { "name": "form", "title": "Form Demo", "description": "A Form with fields + submit", "mode": "view" }
+    { "name": "form", "title": "Form Demo", "description": "A Form with fields + submit", "mode": "view" },
+    { "name": "push", "title": "Navigation Demo", "description": "A List that pushes a Detail (Action.Push)", "mode": "view" }
   ],
   "dependencies": { "@raycast/api": "*" },
   "peerDependencies": { "react": "^19.0.0" }
