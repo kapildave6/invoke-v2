@@ -21,11 +21,13 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private let screenshots = ScreenshotIndex()
     private let snippetStore = SnippetStore.shared
     private let quicklinkStore = QuicklinkStore.shared
+    private let ai = AIService()
     private let settingsWindow = SettingsWindow()
     private lazy var commands: [RootCommand] = makeCommands()
 
-    private enum Mode { case root, clipboard, emoji, screenshots, snippets, quicklinks, extensionView }
+    private enum Mode { case root, clipboard, emoji, screenshots, snippets, quicklinks, extensionView, aiAnswer }
     private var mode: Mode = .root
+    private var lastAIAnswer = "" // for the AI-answer surface's Copy/Paste actions
     private var clipKind = "All Types" // clipboard type filter
     private var pendingQuicklink: Quicklink? // quicklink awaiting its {query} argument (input sub-mode)
     private var pasteTarget: NSRunningApplication? // app to paste back into
@@ -180,6 +182,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
             return
         }
         if mode == .extensionView { extHost?.setSearchText(text); return } // re-render arrives via onCommit
+        if mode == .aiAnswer { return } // showing an answer; Esc to go back
         if Self.looksLikeCalculation(text) { host.setSearchText(text) } // card arrives via onCommit
         renderRoot(calcCard: nil)
     }
@@ -683,6 +686,13 @@ public final class AppController: NSObject, NSApplicationDelegate {
 
             let ordered = aliasFirst ? [cmdsSection, appsSection] : [appsSection, cmdsSection]
             sections.append(contentsOf: ordered.compactMap { $0 })
+
+            // "Ask AI" — answer the typed query (only when a key is configured).
+            if ai.hasKey {
+                let aiItem = itemNode(id: nextId(), title: "Ask AI", subtitle: q, kind: "AI", appPath: nil, icon: "sparkles", commandId: nil)
+                aiItem.props["aiAsk"] = .string(q)
+                sections.append(sectionNode("Use AI", [aiItem]))
+            }
         }
 
         list.children = sections
@@ -807,6 +817,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
             } else {
                 label = currentExtTitle
             }
+        case .aiAnswer: label = "Ask AI"
         case .root: label = "Invoke"
         }
         let primary = pendingQuicklink != nil ? "Open" : currentActions().first?.title
@@ -823,11 +834,20 @@ public final class AppController: NSObject, NSApplicationDelegate {
             guard let node = (selectedIndex < rows.count) ? rows[selectedIndex] : extensionSurfaceNode() else { return [] }
             return extensionActions(under: node)
         }
+        if mode == .aiAnswer {
+            return [
+                PaletteAction(title: pasteTitle(), shortcut: "↵") { [weak self] in guard let a = self?.lastAIAnswer, !a.isEmpty else { return }; self?.pasteText(a) },
+                PaletteAction(title: "Copy Answer", shortcut: "⌘↵") { [weak self] in guard let a = self?.lastAIAnswer, !a.isEmpty else { return }; self?.copyText(a) },
+            ]
+        }
 
         let rows = items()
         guard selectedIndex < rows.count else { return [] }
         let node = rows[selectedIndex]
 
+        if let q = node.props["aiAsk"]?.stringValue {
+            return [PaletteAction(title: "Ask AI", shortcut: "↵") { [weak self] in self?.runAIAsk(q) }]
+        }
         if let path = node.props["appPath"]?.stringValue {
             return [PaletteAction(title: "Open", shortcut: "↵") { [weak self] in
                 self?.frecency.bump("app:\(path)")
@@ -988,15 +1008,97 @@ public final class AppController: NSObject, NSApplicationDelegate {
         _ = AXIsProcessTrustedWithOptions(opts)
     }
 
-    private static func synthesizePaste() {
+    private static func synthesizePaste() { synthesizeCmdKey(9) } // ⌘V
+    private static func synthesizeCopy() { synthesizeCmdKey(8) }  // ⌘C (kVK_ANSI_C)
+
+    private static func synthesizeCmdKey(_ keyCode: CGKeyCode) {
         let src = CGEventSource(stateID: .combinedSessionState)
-        let v: CGKeyCode = 9 // kVK_ANSI_V
-        let down = CGEvent(keyboardEventSource: src, virtualKey: v, keyDown: true)
+        let down = CGEvent(keyboardEventSource: src, virtualKey: keyCode, keyDown: true)
         down?.flags = .maskCommand
-        let up = CGEvent(keyboardEventSource: src, virtualKey: v, keyDown: false)
+        let up = CGEvent(keyboardEventSource: src, virtualKey: keyCode, keyDown: false)
         up?.flags = .maskCommand
         down?.post(tap: .cghidEventTap)
         up?.post(tap: .cghidEventTap)
+    }
+
+    // MARK: - AI commands (PLAN.md §2/§7)
+
+    /// Copy the frontmost app's current selection (synthesize ⌘C, then read the pasteboard).
+    private func captureSelection(_ completion: @escaping (String?) -> Void) {
+        guard AXIsProcessTrusted() else {
+            Self.promptAccessibility()
+            palette.showToast("Enable Accessibility for Invoke to read the selection")
+            completion(nil)
+            return
+        }
+        let target = pasteTarget
+        let pb = NSPasteboard.general
+        let before = pb.changeCount
+        palette.hide()
+        target?.activate()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+            Self.synthesizeCopy()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
+                completion(pb.changeCount != before ? pb.string(forType: .string) : nil)
+            }
+        }
+    }
+
+    /// Improve/transform the current selection with AI and paste the result back into the app.
+    private func runAITransform(_ system: String) {
+        guard ai.hasKey else { palette.showToast("Set ANTHROPIC_API_KEY to use AI"); return }
+        captureSelection { [weak self] text in
+            guard let self else { return }
+            guard let text, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                self.palette.show(); self.palette.showToast("Select some text first")
+                return
+            }
+            let target = self.pasteTarget
+            Task {
+                let result = await self.ai.complete(system: system, user: text)
+                await MainActor.run {
+                    switch result {
+                    case .success(let out):
+                        let pb = NSPasteboard.general; pb.clearContents(); pb.setString(out, forType: .string)
+                        target?.activate()
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) { Self.synthesizePaste() }
+                    case .failure(let err):
+                        self.palette.show(); self.palette.showToast("AI — \(err.message)")
+                    }
+                }
+            }
+        }
+    }
+
+    /// Ask AI a free-form question; render the answer in a Detail surface.
+    private func runAIAsk(_ question: String) {
+        let q = question.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !q.isEmpty else { return }
+        guard ai.hasKey else { palette.showToast("Set ANTHROPIC_API_KEY to use AI"); return }
+        mode = .aiAnswer
+        lastAIAnswer = ""
+        renderAIAnswer(markdown: "_Thinking…_")
+        Task {
+            let result = await ai.complete(system: "You are a concise, expert engineering assistant. Answer in Markdown.", user: q, maxTokens: 1500)
+            await MainActor.run {
+                guard self.mode == .aiAnswer else { return } // user navigated away
+                switch result {
+                case .success(let out): self.lastAIAnswer = out; self.renderAIAnswer(markdown: out)
+                case .failure(let err): self.renderAIAnswer(markdown: "**AI error**\n\n\(err.message)")
+                }
+            }
+        }
+    }
+
+    private func renderAIAnswer(markdown: String) {
+        let tree = ViewTree()
+        let detail = ViewNode(id: 1, type: "detail", props: ["markdown": .string(markdown)])
+        tree.root.children = [detail]
+        rootTree = tree
+        selectedIndex = 0
+        palette.hideFilter()
+        palette.render(tree, selectedIndex: 0)
+        updateActionBar()
     }
 
     private func perform(_ action: ViewNode) {
@@ -1335,6 +1437,11 @@ public final class AppController: NSObject, NSApplicationDelegate {
             RootCommand(id: "system.volumeDown", title: "Turn Volume Down", subtitle: "System", runTitle: "Run", icon: "speaker.wave.1.fill", keywords: ["volume", "down", "sound", "quieter"], closesPalette: true, run: shell("/usr/bin/osascript", ["-e", "set volume output volume (output volume of (get volume settings) - 10)"])),
             RootCommand(id: "system.mute", title: "Mute Volume", subtitle: "System", runTitle: "Run", icon: "speaker.slash.fill", keywords: ["mute", "silence", "volume"], closesPalette: true, run: shell("/usr/bin/osascript", ["-e", "set volume output muted true"])),
             RootCommand(id: "system.quitFront", title: "Quit Frontmost App", subtitle: "System", runTitle: "Quit", icon: "xmark.circle.fill", keywords: ["quit", "close", "app"], closesPalette: true) { [weak self] in self?.pasteTarget?.terminate() },
+            RootCommand(id: "ai.improve", title: "Improve Writing", subtitle: "AI", runTitle: "Run", icon: "wand.and.stars", keywords: ["ai", "improve", "writing", "rewrite", "polish"], closesPalette: false) { [weak self] in self?.runAITransform("Improve the writing of the user's text: fix grammar and spelling and improve clarity and flow while preserving the original meaning, tone, and language. Return ONLY the improved text — no preamble, no quotes.") },
+            RootCommand(id: "ai.grammar", title: "Fix Spelling & Grammar", subtitle: "AI", runTitle: "Run", icon: "checkmark.circle", keywords: ["ai", "grammar", "spelling", "fix", "correct"], closesPalette: false) { [weak self] in self?.runAITransform("Fix only the spelling and grammar of the user's text. Do not change wording, meaning, tone, or language beyond necessary corrections. Return ONLY the corrected text.") },
+            RootCommand(id: "ai.professional", title: "Make Professional", subtitle: "AI", runTitle: "Run", icon: "briefcase", keywords: ["ai", "professional", "formal", "tone"], closesPalette: false) { [weak self] in self?.runAITransform("Rewrite the user's text in a clear, professional tone suitable for workplace communication, preserving meaning and language. Return ONLY the rewritten text.") },
+            RootCommand(id: "ai.concise", title: "Make Concise", subtitle: "AI", runTitle: "Run", icon: "scissors", keywords: ["ai", "concise", "shorter", "trim", "brief"], closesPalette: false) { [weak self] in self?.runAITransform("Rewrite the user's text to be more concise while preserving meaning, key details, tone, and language. Return ONLY the rewritten text.") },
+            RootCommand(id: "ai.summarize", title: "Summarize", subtitle: "AI", runTitle: "Run", icon: "list.bullet.rectangle", keywords: ["ai", "summarize", "summary", "tldr"], closesPalette: false) { [weak self] in self?.runAITransform("Summarize the user's text into a few clear bullet points capturing the key information, in the same language. Return ONLY the summary.") },
             RootCommand(id: "snippet.search", title: "Search Snippets", subtitle: "Snippets", runTitle: "Open", icon: "text.quote", keywords: ["snippet", "snippets", "text", "expand", "paste"], closesPalette: false) { [weak self] in self?.enterSnippets() },
             RootCommand(id: "snippet.create", title: "Create Snippet", subtitle: "Snippets", runTitle: "Open", icon: "plus.rectangle.on.rectangle", keywords: ["snippet", "create", "new", "add"], closesPalette: true) { [weak self] in self?.openSettings(tab: .snippets) },
             RootCommand(id: "quicklink.search", title: "Search Quicklinks", subtitle: "Quicklinks", runTitle: "Open", icon: "link", keywords: ["quicklink", "quicklinks", "link", "url", "bookmark"], closesPalette: false) { [weak self] in self?.enterQuicklinks() },
@@ -1407,6 +1514,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         if commandId.hasPrefix("window.") { return ExtensionMeta(id: "window-management", name: "Window Management", icon: "macwindow") }
         if commandId.hasPrefix("folder.") { return ExtensionMeta(id: "navigation", name: "Navigation", icon: "folder") }
         if commandId.hasPrefix("system.") { return ExtensionMeta(id: "system", name: "System", icon: "gearshape.2") }
+        if commandId.hasPrefix("ai.") { return ExtensionMeta(id: "ai", name: "AI", icon: "sparkles") }
         if commandId.hasPrefix("snippet.") { return ExtensionMeta(id: "snippets", name: "Snippets", icon: "text.quote") }
         if commandId.hasPrefix("quicklink.") { return ExtensionMeta(id: "quicklinks", name: "Quicklinks", icon: "link") }
         if commandId.hasPrefix("ext.") { return ExtensionMeta(id: "extensions", name: "Extensions", icon: "puzzlepiece.extension") }
