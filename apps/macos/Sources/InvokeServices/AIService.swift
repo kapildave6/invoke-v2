@@ -28,8 +28,16 @@ public final class AIService {
 
     public init() {}
 
-    /// Whether an API key is available (without exposing it).
-    public var hasKey: Bool { apiKey() != nil }
+    /// Whether an API key is available (without exposing it). Cached — `buildRoot` checks this per
+    /// keystroke, and the Keychain fallback is a synchronous IPC we don't want on every render.
+    /// (A key added mid-session is picked up on next launch.)
+    private var cachedHasKey: Bool?
+    public var hasKey: Bool {
+        if let c = cachedHasKey { return c }
+        let v = apiKey() != nil
+        cachedHasKey = v
+        return v
+    }
 
     private func apiKey() -> String? {
         if let env = ProcessInfo.processInfo.environment["ANTHROPIC_API_KEY"], !env.isEmpty { return env }

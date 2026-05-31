@@ -28,6 +28,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private enum Mode { case root, clipboard, emoji, screenshots, snippets, quicklinks, extensionView, aiAnswer }
     private var mode: Mode = .root
     private var lastAIAnswer = "" // for the AI-answer surface's Copy/Paste actions
+    private var aiAskSeq = 0      // request token so a stale answer can't render over a newer one
     private var clipKind = "All Types" // clipboard type filter
     private var pendingQuicklink: Quicklink? // quicklink awaiting its {query} argument (input sub-mode)
     private var pasteTarget: NSRunningApplication? // app to paste back into
@@ -1031,11 +1032,15 @@ public final class AppController: NSObject, NSApplicationDelegate {
             completion(nil)
             return
         }
-        let target = pasteTarget
+        guard let target = pasteTarget else { // nil → ⌘C would go to an undefined app; bail clearly
+            palette.showToast("No app to read a selection from")
+            completion(nil)
+            return
+        }
         let pb = NSPasteboard.general
         let before = pb.changeCount
         palette.hide()
-        target?.activate()
+        target.activate()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
             Self.synthesizeCopy()
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
@@ -1045,11 +1050,20 @@ public final class AppController: NSObject, NSApplicationDelegate {
     }
 
     /// Improve/transform the current selection with AI and paste the result back into the app.
+    /// The user's clipboard is snapshotted and restored — the ⌘C/paste-back are an implementation
+    /// detail and shouldn't eat what they had copied.
     private func runAITransform(_ system: String) {
         guard ai.hasKey else { palette.showToast("Set ANTHROPIC_API_KEY to use AI"); return }
+        let pb = NSPasteboard.general
+        let saved = pb.string(forType: .string)
+        func restoreClipboard() {
+            pb.clearContents()
+            if let saved { pb.setString(saved, forType: .string) }
+        }
         captureSelection { [weak self] text in
             guard let self else { return }
             guard let text, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                restoreClipboard()
                 self.palette.show(); self.palette.showToast("Select some text first")
                 return
             }
@@ -1059,10 +1073,14 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 await MainActor.run {
                     switch result {
                     case .success(let out):
-                        let pb = NSPasteboard.general; pb.clearContents(); pb.setString(out, forType: .string)
+                        pb.clearContents(); pb.setString(out, forType: .string)
                         target?.activate()
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) { Self.synthesizePaste() }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
+                            Self.synthesizePaste()
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { restoreClipboard() } // after ⌘V consumed it
+                        }
                     case .failure(let err):
+                        restoreClipboard()
                         self.palette.show(); self.palette.showToast("AI — \(err.message)")
                     }
                 }
@@ -1077,11 +1095,13 @@ public final class AppController: NSObject, NSApplicationDelegate {
         guard ai.hasKey else { palette.showToast("Set ANTHROPIC_API_KEY to use AI"); return }
         mode = .aiAnswer
         lastAIAnswer = ""
+        aiAskSeq += 1
+        let seq = aiAskSeq // correlate this request, so a slow earlier answer can't clobber a newer one
         renderAIAnswer(markdown: "_Thinking…_")
         Task {
             let result = await ai.complete(system: "You are a concise, expert engineering assistant. Answer in Markdown.", user: q, maxTokens: 1500)
             await MainActor.run {
-                guard self.mode == .aiAnswer else { return } // user navigated away
+                guard self.mode == .aiAnswer, self.aiAskSeq == seq else { return } // navigated away or superseded
                 switch result {
                 case .success(let out): self.lastAIAnswer = out; self.renderAIAnswer(markdown: out)
                 case .failure(let err): self.renderAIAnswer(markdown: "**AI error**\n\n\(err.message)")
