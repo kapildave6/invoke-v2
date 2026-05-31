@@ -220,7 +220,8 @@ public final class PaletteView: NSView {
             let iv = NSImageView(image: img)
             iv.imageScaling = .scaleProportionallyUpOrDown
             iv.imageAlignment = .alignTopLeft
-            iv.heightAnchor.constraint(lessThanOrEqualToConstant: 220).isActive = true
+            iv.heightAnchor.constraint(lessThanOrEqualToConstant: 170).isActive = true
+            iv.setContentHuggingPriority(.required, for: .vertical)
             contentView = iv
         } else {
             let label = NSTextField(wrappingLabelWithString: node.props["detailText"]?.stringValue ?? (node.title ?? ""))
@@ -251,13 +252,16 @@ public final class PaletteView: NSView {
         }
         pane.addSubview(info)
 
+        // Stack content then Information top-down so they never overlap (the old top/bottom pinning
+        // collided when the preview image was tall).
         NSLayoutConstraint.activate([
-            contentView.topAnchor.constraint(equalTo: pane.topAnchor, constant: 8),
+            contentView.topAnchor.constraint(equalTo: pane.topAnchor, constant: 12),
             contentView.leadingAnchor.constraint(equalTo: pane.leadingAnchor, constant: 16),
             contentView.trailingAnchor.constraint(equalTo: pane.trailingAnchor, constant: -16),
+            info.topAnchor.constraint(equalTo: contentView.bottomAnchor, constant: 16),
             info.leadingAnchor.constraint(equalTo: pane.leadingAnchor, constant: 16),
             info.trailingAnchor.constraint(equalTo: pane.trailingAnchor, constant: -16),
-            info.bottomAnchor.constraint(equalTo: pane.bottomAnchor, constant: -14),
+            info.bottomAnchor.constraint(lessThanOrEqualTo: pane.bottomAnchor, constant: -14),
         ])
         return pane
     }
