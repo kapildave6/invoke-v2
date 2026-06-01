@@ -298,6 +298,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     }
 
     private func exitToRoot() {
+        palette.suppressAutoHide = false
         teardownExtension()
         mode = .root
         pendingQuicklink = nil
@@ -523,6 +524,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         mode = .nativeForm
         nativeFormTitle = title
         nativeFormSubmit = submit
+        palette.suppressAutoHide = true // Tab between fields must not auto-close the panel
         lastQuery = ""
         let tree = ViewTree()
         let form = ViewNode(id: 1, type: "form")
@@ -1095,6 +1097,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     /// Launching/running closes the palette and resets to a clean root for the next summon — from any
     /// mode (so opening a quicklink / running a snippet doesn't leave us stuck in that mode).
     private func afterLaunch() {
+        palette.suppressAutoHide = false
         palette.hide()
         teardownExtension()
         mode = .root

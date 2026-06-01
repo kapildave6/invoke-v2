@@ -636,12 +636,10 @@ public final class PaletteView: NSView {
             form.trailingAnchor.constraint(equalTo: doc.trailingAnchor, constant: -16),
             form.bottomAnchor.constraint(equalTo: doc.bottomAnchor, constant: -16),
         ])
-        // Tab key-view loop between fields (and wrap back to the first).
+        // Tab key-view loop between fields (forward only — a wrap can let focus escape the borderless
+        // panel, which then resigns key and auto-hides).
         for i in 0..<max(0, formResponderViews.count - 1) {
             formResponderViews[i].nextKeyView = formResponderViews[i + 1]
-        }
-        if let last = formResponderViews.last, let first = formResponderViews.first, last !== first {
-            last.nextKeyView = first
         }
         // Focus the first field so the user can type/Tab immediately (not the hidden search box).
         DispatchQueue.main.async { [weak self] in

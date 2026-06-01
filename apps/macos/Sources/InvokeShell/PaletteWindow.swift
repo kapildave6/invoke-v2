@@ -48,6 +48,9 @@ public final class PaletteWindow: NSObject {
     public var actionPanelTitleProvider: (() -> String)?
     /// Clicking the bottom-left logo opens Settings (Raycast parity).
     public var onOpenSettings: (() -> Void)?
+    /// While true, the palette won't auto-hide on resignKey — set during form editing so Tab moving
+    /// focus between fields (which can momentarily resign key on a borderless panel) doesn't close it.
+    public var suppressAutoHide = false
     /// Fired when the type-filter dropdown changes (clipboard mode).
     public var onFilterChange: ((String) -> Void)?
     /// Mouse: single-click selects a row (by item index); double-click activates it.
@@ -475,7 +478,7 @@ extension PaletteWindow: NSWindowDelegate {
     /// Auto-hide on blur (PLAN.md §4.3) — like Raycast. Skip while the ⌘K Action Panel is tracking
     /// (that briefly takes key focus).
     public func windowDidResignKey(_ notification: Notification) {
-        if !actionPanel.isShown { hide() }
+        if !actionPanel.isShown && !suppressAutoHide { hide() }
     }
 }
 
