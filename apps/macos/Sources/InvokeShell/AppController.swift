@@ -1072,7 +1072,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
 
     private func copyImageFile(_ path: String) {
         setPasteboardImageFile(path)
-        palette.showToast("Copied to Clipboard")
+        afterLaunch() // copying closes the palette (Raycast behavior)
     }
 
     private func pasteImageFile(_ path: String) {

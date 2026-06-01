@@ -93,10 +93,21 @@ public final class PaletteView: NSView {
     /// Re-render rows from the current view-model tree, highlighting the item at `selectedIndex`
     /// (item indices are assigned in pre-order, matching the host's selection model).
     public func render(_ tree: ViewTree, selectedIndex: Int) {
+        // Fast path: same grid tree, only the selection changed → just move the highlight (no rebuild,
+        // no layout churn), keeping arrow navigation snappy on large screenshot grids.
+        if lastSurfaceWasGrid, tree === lastRenderedTree, !gridCells.isEmpty {
+            for (i, c) in gridCells.enumerated() { applyGridSelection(c, selected: i == selectedIndex) }
+            selectedRowView = gridCells.indices.contains(selectedIndex) ? gridCells[selectedIndex] : nil
+            scrollSelectedIntoView()
+            return
+        }
         stack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        gridCells.removeAll()
         itemCounter = 0
         selectedRowView = nil
         let surfaces = tree.root.children
+        lastRenderedTree = tree
+        lastSurfaceWasGrid = surfaces.contains { $0.type == "grid" }
         // Dispatch on the top-level surface the extension rendered (PLAN.md §5 component set).
         if let detail = surfaces.first(where: { $0.type == "detail" }) {
             renderDetailSurface(detail)
@@ -478,6 +489,7 @@ public final class PaletteView: NSView {
             for node in rowItems {
                 let cell = gridCell(node, selected: idx == selectedIndex, index: idx, thumbHeight: itemHeight)
                 if idx == selectedIndex { selectedRowView = cell }
+                gridCells.append(cell) // index-aligned, for the selection fast-path
                 rowStack.addArrangedSubview(cell)
                 idx += 1
             }
@@ -495,10 +507,7 @@ public final class PaletteView: NSView {
         cell.translatesAutoresizingMaskIntoConstraints = false
         cell.wantsLayer = true
         cell.layer?.cornerRadius = 8
-        // Clear selection: an accent ring + stronger fill so keyboard navigation is visible.
-        cell.layer?.backgroundColor = (selected ? NSColor.controlAccentColor.withAlphaComponent(0.18) : NSColor.gray.withAlphaComponent(0.10)).cgColor
-        cell.layer?.borderWidth = selected ? 2 : 0
-        cell.layer?.borderColor = NSColor.controlAccentColor.cgColor
+        applyGridSelection(cell, selected: selected) // accent ring + fill so keyboard nav is visible
         let v = NSStackView()
         v.orientation = .vertical
         v.alignment = .centerX
@@ -544,6 +553,18 @@ public final class PaletteView: NSView {
     }
 
     // MARK: Form
+
+    // Grid fast-path state: when only the selection changes on the SAME grid tree, re-highlight the
+    // existing cells instead of rebuilding ~dozens of cell views per keypress (the screenshot-nav lag).
+    private var gridCells: [NSView] = []
+    private weak var lastRenderedTree: ViewTree?
+    private var lastSurfaceWasGrid = false
+
+    private func applyGridSelection(_ cell: NSView, selected: Bool) {
+        cell.layer?.backgroundColor = (selected ? NSColor.controlAccentColor.withAlphaComponent(0.18) : NSColor.gray.withAlphaComponent(0.10)).cgColor
+        cell.layer?.borderWidth = selected ? 2 : 0
+        cell.layer?.borderColor = NSColor.controlAccentColor.cgColor
+    }
 
     /// Decoded thumbnail cache keyed by base64 — so re-rendering a grid (e.g. on every arrow keypress)
     /// reuses images instead of re-decoding ~dozens of PNGs each time (the screenshot-nav lag).
