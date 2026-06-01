@@ -41,8 +41,13 @@ final class KeycapView: NSView {
 
     override var wantsUpdateLayer: Bool { true }
     override func updateLayer() {
-        // Resolve the dynamic color against the current effective appearance → adapts on toggle.
-        layer?.backgroundColor = NSColor.quaternaryLabelColor.withAlphaComponent(0.55).cgColor
+        // A clearly-visible "key": a light fill + subtle border + a medium glyph, like Raycast. Resolved
+        // against the current effective appearance so it adapts on a Light/Dark toggle.
+        let dark = effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+        layer?.backgroundColor = (dark ? NSColor.white.withAlphaComponent(0.13) : NSColor.black.withAlphaComponent(0.08)).cgColor
+        layer?.borderColor = (dark ? NSColor.white.withAlphaComponent(0.18) : NSColor.black.withAlphaComponent(0.14)).cgColor
+        layer?.borderWidth = 0.5
+        label.textColor = dark ? NSColor.white.withAlphaComponent(0.82) : NSColor.black.withAlphaComponent(0.64)
     }
 }
 

@@ -461,6 +461,8 @@ public final class PaletteView: NSView {
     private func renderGrid(_ grid: ViewNode, selectedIndex: Int) {
         var columns = 5
         if case .number(let n)? = grid.props["columns"] { columns = max(1, Int(n)) }
+        var itemHeight: CGFloat = 72
+        if case .number(let h)? = grid.props["itemHeight"] { itemHeight = CGFloat(h) }
         var gridItems: [ViewNode] = []
         func collect(_ n: ViewNode) { if n.type == "grid-item" { gridItems.append(n) }; n.children.forEach(collect) }
         collect(grid)
@@ -474,7 +476,7 @@ public final class PaletteView: NSView {
             rowStack.spacing = 8
             rowStack.translatesAutoresizingMaskIntoConstraints = false
             for node in rowItems {
-                let cell = gridCell(node, selected: idx == selectedIndex, index: idx)
+                let cell = gridCell(node, selected: idx == selectedIndex, index: idx, thumbHeight: itemHeight)
                 if idx == selectedIndex { selectedRowView = cell }
                 rowStack.addArrangedSubview(cell)
                 idx += 1
@@ -487,7 +489,7 @@ public final class PaletteView: NSView {
         itemCounter = gridItems.count
     }
 
-    private func gridCell(_ node: ViewNode, selected: Bool, index: Int) -> NSView {
+    private func gridCell(_ node: ViewNode, selected: Bool, index: Int, thumbHeight: CGFloat = 72) -> NSView {
         let cell = ClickableRow()
         wireClick(cell, index: index)
         cell.translatesAutoresizingMaskIntoConstraints = false
@@ -523,7 +525,7 @@ public final class PaletteView: NSView {
         v.addArrangedSubview(title)
         cell.addSubview(v)
         NSLayoutConstraint.activate([
-            thumb.heightAnchor.constraint(equalToConstant: 72),
+            thumb.heightAnchor.constraint(equalToConstant: thumbHeight),
             thumb.widthAnchor.constraint(equalTo: v.widthAnchor),
             v.leadingAnchor.constraint(equalTo: cell.leadingAnchor, constant: 6),
             v.trailingAnchor.constraint(equalTo: cell.trailingAnchor, constant: -6),

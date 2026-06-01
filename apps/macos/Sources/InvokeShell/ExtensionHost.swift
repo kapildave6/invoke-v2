@@ -27,6 +27,9 @@ public final class ExtensionHost {
     public var onCapability: ((_ method: String, _ params: JSONValue?) -> JSONValue)?
     /// Diagnostic log sink (main queue).
     public var onLog: ((String) -> Void)?
+    /// Fired on the MAIN queue when the child process ends WITHOUT an intentional terminate() — e.g. it
+    /// crashed or failed to start (missing dep, denied syscall). Lets the controller recover gracefully.
+    public var onTerminate: (() -> Void)?
 
     /// The capability allowlist — mirrors the Node supervisor's ALLOWED_RPC. Denial is enforced HERE
     /// in the host, so even a child crafting a raw RPC frame gets nothing it isn't granted (PLAN §4.4).
@@ -39,6 +42,7 @@ public final class ExtensionHost {
 
     private var pid: pid_t = -1
     private var sockFD: Int32 = -1
+    private var intentionalStop = false // set by terminate() so a clean stop doesn't fire onTerminate
     private let decoder = FrameDecoder()
     private let readQueue = DispatchQueue(label: "invoke.exthost.read")
     private let writeQueue = DispatchQueue(label: "invoke.exthost.write")
@@ -57,6 +61,12 @@ public final class ExtensionHost {
         }
         let parentFD = fds[0]
         let childFD = fds[1]
+        intentionalStop = false
+
+        // Belt-and-suspenders to the global SIGPIPE ignore: a write to this socket after the child dies
+        // returns EPIPE instead of raising SIGPIPE.
+        var noSigpipe: Int32 = 1
+        setsockopt(parentFD, SOL_SOCKET, SO_NOSIGPIPE, &noSigpipe, socklen_t(MemoryLayout<Int32>.size))
 
         // Child gets the socket on fd 3 and never sees the parent's end.
         var actions: posix_spawn_file_actions_t?
@@ -104,6 +114,9 @@ public final class ExtensionHost {
                 for body in self.decoder.push(Data(buf[0..<n])) { self.handle(body) }
             }
             self.log("extension process ended")
+            if !self.intentionalStop {
+                DispatchQueue.main.async { self.onTerminate?() } // crashed / failed to start
+            }
         }
     }
 
@@ -185,6 +198,7 @@ public final class ExtensionHost {
     }
 
     public func terminate() {
+        intentionalStop = true // a clean stop must not fire onTerminate
         if pid > 0 { kill(pid, SIGTERM); pid = -1 }
         let fd = sockFD
         sockFD = -1 // new writes see -1 and skip

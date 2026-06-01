@@ -2,6 +2,7 @@ import AppKit
 import ApplicationServices
 import Carbon.HIToolbox
 import CoreGraphics
+import ImageIO
 import InvokeIPC
 import InvokeRenderer
 import InvokeServices
@@ -19,6 +20,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private let clipboard = ClipboardHistory()
     private let windowManager = WindowManager()
     private let screenshots = ScreenshotIndex()
+    private var screenshotThumbCache: [String: String] = [:] // path → base64 PNG thumb (lazy, async)
     private let snippetStore = SnippetStore.shared
     private let quicklinkStore = QuicklinkStore.shared
     private let ai = AIService()
@@ -39,6 +41,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private var extHost: ExtensionHost?
     private var currentExtId = ""
     private var currentExtTitle = ""
+    private var extReceivedCommit = false // did the current extension render at least once?
     private var repoRoot = ""
     private var selectedIndex = 0
     private var rootTree: ViewTree?
@@ -75,6 +78,9 @@ public final class AppController: NSObject, NSApplicationDelegate {
     public override init() { super.init() }
 
     public func applicationDidFinishLaunching(_ notification: Notification) {
+        // Writing to a socket whose extension child has died raises SIGPIPE, whose default action KILLS
+        // the app. Ignore it so a failed/closed extension just yields EPIPE on write (already handled).
+        signal(SIGPIPE, SIG_IGN)
         if let icon = Brand.appIcon { NSApp.applicationIconImage = icon } // shows in system dialogs
         NSApp.mainMenu = makeMainMenu()
 
@@ -438,33 +444,66 @@ public final class AppController: NSObject, NSApplicationDelegate {
 
     private func buildScreenshots(query: String, selectedIndex: Int) -> ViewTree {
         let tree = ViewTree()
-        let list = ViewNode(id: 1, type: "list")
         let shots = screenshots.search(query)
         if shots.isEmpty {
+            let list = ViewNode(id: 1, type: "list")
             let msg = query.trimmingCharacters(in: .whitespaces).isEmpty ? "No screenshots found" : "No matching screenshots"
             list.children = [ViewNode(id: 2, type: "list-section", props: ["title": .string(msg)])]
-        } else {
-            list.props["showDetail"] = .bool(true)
-            let section = ViewNode(id: 2, type: "list-section", props: ["title": .string("Screenshots & Recordings  \(shots.count)")])
-            var nid = 10
-            for (i, shot) in shots.enumerated() {
-                nid += 1
-                var props: [String: JSONValue] = [
-                    "title": .string(Self.relativeTime(shot.date)),
-                    "subtitle": .string(shot.name),
-                    "fileIcon": .string(shot.path),
-                    "fileToPaste": .string(shot.path),
-                    "metadata": Self.screenshotMetadata(shot),
-                ]
-                if i == selectedIndex, let data = try? Data(contentsOf: URL(fileURLWithPath: shot.path)) {
-                    props["thumb"] = .string(Self.thumbBase64(data, maxDim: 480))
-                }
-                section.children.append(ViewNode(id: nid, type: "list-item", props: props))
-            }
-            list.children = [section]
+            tree.root.children = [list]
+            return tree
         }
-        tree.root.children = [list]
+        // A grid of thumbnails (Raycast parity) — the file name doesn't matter, only the preview + date.
+        let shown = Array(shots.prefix(Self.screenshotGridCap))
+        ensureScreenshotThumbs(shown, query: query) // populate the cache off-main, then re-render
+        let grid = ViewNode(id: 1, type: "grid", props: ["columns": .number(3), "itemHeight": .number(132)])
+        var nid = 10
+        for shot in shown {
+            nid += 1
+            var props: [String: JSONValue] = [
+                "title": .string(Self.relativeTime(shot.date)),
+                "fileToPaste": .string(shot.path),
+                "fileIcon": .string(shot.path),
+                "metadata": Self.screenshotMetadata(shot),
+                "icon": .string(shot.path.hasSuffix(".mov") ? "video" : "photo"), // fallback until thumb loads
+            ]
+            if let thumb = screenshotThumbCache[shot.path] { props["thumb"] = .string(thumb) }
+            grid.children.append(ViewNode(id: nid, type: "grid-item", props: props))
+        }
+        tree.root.children = [grid]
         return tree
+    }
+
+    private static let screenshotGridCap = 90
+
+    /// Generate any missing thumbnails for the shown screenshots OFF the main thread (ImageIO, so no
+    /// AppKit lockFocus), cache them, then re-render once — so opening Screenshots never freezes.
+    private func ensureScreenshotThumbs(_ shots: [ScreenshotIndex.Shot], query: String) {
+        let missing = shots.map { $0.path }.filter { screenshotThumbCache[$0] == nil && !$0.hasSuffix(".mov") }
+        guard !missing.isEmpty else { return }
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            var generated: [String: String] = [:]
+            for path in missing {
+                if let b64 = Self.diskThumb(path: path, maxPixel: 320) { generated[path] = b64 }
+            }
+            DispatchQueue.main.async {
+                guard let self, self.mode == .screenshots, self.lastQuery == query else { return }
+                for (k, v) in generated { self.screenshotThumbCache[k] = v }
+                self.renderScreenshots(query: query) // now finds the cached thumbs
+            }
+        }
+    }
+
+    /// Thread-safe downscaled PNG thumbnail via ImageIO (no NSImage lockFocus). nil for non-images.
+    private static func diskThumb(path: String, maxPixel: Int) -> String? {
+        guard let src = CGImageSourceCreateWithURL(URL(fileURLWithPath: path) as CFURL, nil) else { return nil }
+        let opts: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceThumbnailMaxPixelSize: maxPixel,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+        ]
+        guard let cg = CGImageSourceCreateThumbnailAtIndex(src, 0, opts as CFDictionary) else { return nil }
+        let rep = NSBitmapImageRep(cgImage: cg)
+        return rep.representation(using: .png, properties: [:])?.base64EncodedString()
     }
 
     private static func screenshotMetadata(_ shot: ScreenshotIndex.Shot) -> JSONValue {
@@ -1439,11 +1478,13 @@ public final class AppController: NSObject, NSApplicationDelegate {
         teardownExtension()
         let h = ExtensionHost()
         h.onLog = { msg in print("[invoke:ext] \(msg)") }
-        h.onCommit = { [weak self] _ in self?.onExtensionCommit() }
+        h.onCommit = { [weak self] _ in self?.extReceivedCommit = true; self?.onExtensionCommit() }
         h.onCapability = { [weak self] m, p in self?.handleCapability(m, p) ?? .null }
+        h.onTerminate = { [weak self] in self?.onExtensionTerminated(id: id) }
         extHost = h
         currentExtId = id
         currentExtTitle = title
+        extReceivedCommit = false
         captureTarget()
         mode = .extensionView
         lastQuery = ""
@@ -1463,6 +1504,17 @@ public final class AppController: NSObject, NSApplicationDelegate {
         tree.root.children = [list]
         palette.render(tree, selectedIndex: 0)
         updateActionBar()
+    }
+
+    /// The current extension's child process died unexpectedly (crashed / failed to start — e.g. a
+    /// missing npm dep or a denied syscall). Return to root with a clear message instead of leaving a
+    /// dead view (and never crash: writes to its closed socket are already SIGPIPE-safe).
+    private func onExtensionTerminated(id: String) {
+        guard mode == .extensionView, currentExtId == id else { return }
+        let name = currentExtTitle
+        let started = extReceivedCommit
+        exitToRoot()
+        if !started { palette.showToast("Couldn’t start “\(name)” — it may need an unsupported dependency") }
     }
 
     private func teardownExtension() {
