@@ -27,6 +27,7 @@ public final class PaletteWindow: NSObject {
 
     private var keyMonitor: Any?
     private let actionPanel = ActionPanel()
+    private var gridColumns = 0 // >0 when a grid surface is shown → arrows navigate it in 2D
 
     // Toast capsule (action feedback, e.g. "Copied to Clipboard").
     private let toastLabel = NSTextField(labelWithString: "")
@@ -289,6 +290,12 @@ public final class PaletteWindow: NSObject {
         // Any re-render (including async extension-commit / AI-answer callbacks) invalidates the tree the
         // ⌘K panel's captured actions point at — close it so it can't act on a stale node. No-op if hidden.
         actionPanel.dismiss()
+        // Track grid columns so arrow keys can navigate the grid in 2D (rows = ±columns).
+        if let grid = tree.root.children.first(where: { $0.type == "grid" }), case .number(let n)? = grid.props["columns"] {
+            gridColumns = max(1, Int(n))
+        } else {
+            gridColumns = 0
+        }
         // Skip the resize (a full layout pass over every cell) when it was only a selection move.
         if paletteView.render(tree, selectedIndex: selectedIndex) { resizeToFit() }
     }
@@ -480,11 +487,17 @@ extension PaletteWindow: NSTextFieldDelegate {
     /// Route list-navigation keys while the search field keeps focus (Raycast-style): arrows move
     /// the selection, Enter/⌘Enter activate the primary/secondary action, Esc cancels.
     public func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
+        // In a grid, navigate in 2D: up/down jump a full row (±columns), left/right step ±1. In a list,
+        // up/down step ±1 and left/right fall through to the text caret.
         switch commandSelector {
         case #selector(NSResponder.moveDown(_:)):
-            onMove?(1); return true
+            onMove?(gridColumns > 0 ? gridColumns : 1); return true
         case #selector(NSResponder.moveUp(_:)):
-            onMove?(-1); return true
+            onMove?(gridColumns > 0 ? -gridColumns : -1); return true
+        case #selector(NSResponder.moveRight(_:)):
+            if gridColumns > 0 { onMove?(1); return true }; return false
+        case #selector(NSResponder.moveLeft(_:)):
+            if gridColumns > 0 { onMove?(-1); return true }; return false
         case #selector(NSResponder.insertNewline(_:)):
             onActivate?(false); return true // ⌘Return (secondary) is handled by the key monitor
         case #selector(NSResponder.cancelOperation(_:)):
