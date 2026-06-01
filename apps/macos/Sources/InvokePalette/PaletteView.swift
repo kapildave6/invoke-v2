@@ -683,6 +683,9 @@ public final class PaletteView: NSView {
             tf.translatesAutoresizingMaskIntoConstraints = false
             tf.target = self
             tf.action = #selector(formFieldEnter) // Return in a single-line field submits the form
+            // Only Return fires the action — NOT Tab/click-away (end-editing), which would otherwise
+            // submit the form and dismiss the palette when moving between fields.
+            tf.cell?.sendsActionOnEndEditing = false
             row.addArrangedSubview(tf)
             NSLayoutConstraint.activate([tf.widthAnchor.constraint(equalTo: row.widthAnchor)])
             formControls.append((id, { [weak tf] in tf?.stringValue ?? "" }))

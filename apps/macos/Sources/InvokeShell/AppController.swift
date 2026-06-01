@@ -1429,6 +1429,22 @@ public final class AppController: NSObject, NSApplicationDelegate {
             return .null
         case "localStorage.allItems":
             return .object(extStorageAll().mapValues { JSONValue.string($0) })
+        case "runAppleScript":
+            // Gated OS-automation capability (Raycast's runAppleScript). The script text isn't logged
+            // (it may contain user content); the first run triggers the macOS Automation permission
+            // prompt for the target app. Runs on the main thread — fine for short Notes/AppleScript.
+            let source = arg("source")?.stringValue ?? ""
+            guard !source.isEmpty else { return .string("") }
+            print("[invoke:ext] runAppleScript (\(source.count) chars)")
+            var errorDict: NSDictionary?
+            let result = NSAppleScript(source: source)?.executeAndReturnError(&errorDict)
+            if let errorDict {
+                let msg = (errorDict[NSAppleScript.errorMessage] as? String) ?? "AppleScript error"
+                print("[invoke:ext] runAppleScript error: \(msg)")
+                palette.showToast("AppleScript: \(msg)")
+                return .string("")
+            }
+            return .string(result?.stringValue ?? "")
         default:
             return .null
         }
