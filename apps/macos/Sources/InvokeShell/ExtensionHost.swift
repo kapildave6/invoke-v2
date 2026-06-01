@@ -38,6 +38,7 @@ public final class ExtensionHost {
         "toast.show", "hud.show", "window.close", "preferences.get",
         "open", "localStorage.getItem", "localStorage.setItem",
         "localStorage.removeItem", "localStorage.clear", "localStorage.allItems",
+        "runAppleScript", // gated OS-automation capability (Raycast's @raycast/utils runAppleScript)
     ]
 
     private var pid: pid_t = -1

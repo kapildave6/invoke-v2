@@ -965,6 +965,14 @@ public final class AppController: NSObject, NSApplicationDelegate {
     /// Actions for the selected row: launch an app, run a command (both bump frecency), or the
     /// extension's own actions (the calculator card's Copy).
     private func currentActions() -> [PaletteAction] {
+        if mode == .nativeForm {
+            // ⌘K → Save (also ⌘↵ submits, since Enter inserts a newline in the textarea).
+            return [PaletteAction(title: "Save", shortcut: "⌘↵", icon: "checkmark.circle") { [weak self] in
+                guard let self else { return }
+                self.nativeFormSubmit?(self.palette.formValues())
+                self.afterLaunch()
+            }]
+        }
         if mode == .extensionView {
             let rows = items()
             // The selected list/grid row if there is one; otherwise the surface itself —

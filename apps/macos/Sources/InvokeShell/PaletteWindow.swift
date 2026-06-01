@@ -456,6 +456,10 @@ public final class PaletteWindow: NSObject {
                 if self.paletteView.moveFormFocus(reverse: event.modifierFlags.contains(.shift)) { return nil }
                 return event
             }
+            if event.keyCode == 53 { // Esc — works even when a form field (not the search box) has focus
+                if self.actionPanel.isShown { self.actionPanel.dismiss() } else { self.onCancel?() }
+                return nil
+            }
             guard event.modifierFlags.contains(.command) else { return event }
             if event.charactersIgnoringModifiers?.lowercased() == "k" {
                 self.actionPanel.isShown ? self.actionPanel.dismiss() : self.showActionMenu() // ⌘K toggles
