@@ -826,9 +826,10 @@ public final class AppController: NSObject, NSApplicationDelegate {
         selectedIndex = min(max(0, selectedIndex + delta), count - 1)
         switch mode {
         case .clipboard: renderClipboard(query: lastQuery)      // rebuild so detail thumbnail follows
-        case .screenshots: renderScreenshots(query: lastQuery)  // ditto
         case .snippets: renderSnippets(query: lastQuery)        // rebuild so the detail pane follows
         default:
+            // Screenshots (grid) and the rest just re-highlight the existing tree — no rebuild, no
+            // thumbnail re-scan — so arrow nav stays snappy.
             palette.render(activeTree, selectedIndex: selectedIndex)
             updateActionBar()
         }
@@ -841,7 +842,6 @@ public final class AppController: NSObject, NSApplicationDelegate {
         selectedIndex = min(max(0, i), count - 1)
         switch mode {
         case .clipboard: renderClipboard(query: lastQuery)
-        case .screenshots: renderScreenshots(query: lastQuery)
         case .snippets: renderSnippets(query: lastQuery)
         default:
             palette.render(activeTree, selectedIndex: selectedIndex)

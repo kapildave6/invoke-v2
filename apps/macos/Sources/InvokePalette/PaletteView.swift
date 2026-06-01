@@ -509,7 +509,7 @@ public final class PaletteView: NSView {
         thumb.layer?.cornerRadius = 6
         thumb.layer?.backgroundColor = NSColor.white.withAlphaComponent(0.06).cgColor
         thumb.translatesAutoresizingMaskIntoConstraints = false
-        if let b64 = node.props["thumb"]?.stringValue, let data = Data(base64Encoded: b64), let img = NSImage(data: data) {
+        if let b64 = node.props["thumb"]?.stringValue, let img = cachedImage(b64) {
             let iv = NSImageView(image: img); iv.imageScaling = .scaleProportionallyUpOrDown; iv.translatesAutoresizingMaskIntoConstraints = false
             // The image must NOT resist compression, or its intrinsic size pushes the whole window wider.
             iv.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
@@ -544,6 +544,17 @@ public final class PaletteView: NSView {
     }
 
     // MARK: Form
+
+    /// Decoded thumbnail cache keyed by base64 — so re-rendering a grid (e.g. on every arrow keypress)
+    /// reuses images instead of re-decoding ~dozens of PNGs each time (the screenshot-nav lag).
+    private var imageCache: [String: NSImage] = [:]
+    private func cachedImage(_ b64: String) -> NSImage? {
+        if let c = imageCache[b64] { return c }
+        guard let data = Data(base64Encoded: b64), let img = NSImage(data: data) else { return nil }
+        if imageCache.count > 400 { imageCache.removeAll() } // bound memory across many grids
+        imageCache[b64] = img
+        return img
+    }
 
     /// Live value readers for the currently-rendered form, by field id (read at submit time).
     private var formControls: [(id: String, value: () -> String)] = []
