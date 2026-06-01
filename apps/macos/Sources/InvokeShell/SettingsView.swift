@@ -101,15 +101,10 @@ struct CommandsPane: View {
             VStack(spacing: 0) {
                 HStack {
                     Image(systemName: "magnifyingglass").foregroundColor(.secondary).font(.caption)
-                    // Type-to-filter AND arrow-navigate from the search field (Raycast-style). Up/down
-                    // move the selection (a single-line field ignores them for the caret); right/left
-                    // expand/collapse the selected group only when the field is empty (else they move
-                    // the caret).
+                    // Down from the search field jumps into the (focusable) list; type to filter.
                     TextField("Search commands", text: $search).textFieldStyle(.plain)
-                        .onKeyPress(.downArrow) { moveSelection(1); return .handled }
-                        .onKeyPress(.upArrow) { moveSelection(-1); return .handled }
-                        .onKeyPress(.rightArrow) { search.isEmpty ? { expandSelected(true); return .handled }() : .ignored }
-                        .onKeyPress(.leftArrow) { search.isEmpty ? { expandSelected(false); return .handled }() : .ignored }
+                        .focused($focus, equals: .search)
+                        .onKeyPress(.downArrow) { focus = .list; if selection == nil { moveSelection(1) }; return .handled }
                 }
                 .padding(.horizontal, 12).padding(.vertical, 7)
                 Divider()
@@ -134,6 +129,15 @@ struct CommandsPane: View {
                         if let sel { withAnimation(.easeOut(duration: 0.12)) { proxy.scrollTo(sel, anchor: .center) } }
                     }
                 }
+                // The list (not the search field) handles arrow navigation — a focused TextField's
+                // field editor swallows arrow keys, so onKeyPress there never fires.
+                .focusable()
+                .focusEffectDisabled()
+                .focused($focus, equals: .list)
+                .onKeyPress(.upArrow) { moveSelection(-1); return .handled }
+                .onKeyPress(.downArrow) { moveSelection(1); return .handled }
+                .onKeyPress(.rightArrow) { expandSelected(true); return .handled }
+                .onKeyPress(.leftArrow) { expandSelected(false); return .handled }
             }
             .frame(minWidth: 560, maxWidth: .infinity)
             Divider()
@@ -141,8 +145,14 @@ struct CommandsPane: View {
                 .frame(width: 340)
         }
         .frame(minWidth: 920, maxWidth: .infinity, minHeight: 380, maxHeight: .infinity)
-        .onAppear { if selection == nil { selection = visibleIds.first } }
+        .onAppear {
+            if selection == nil { selection = visibleIds.first }
+            DispatchQueue.main.async { focus = .list } // focus the list so arrows work immediately
+        }
     }
+
+    private enum FocusField { case search, list }
+    @FocusState private var focus: FocusField?
 
     /// True when the row at `id` is the selected one (drives the row highlight).
     private func isSelected(_ id: String) -> Bool { selection == id }

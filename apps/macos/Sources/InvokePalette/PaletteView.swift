@@ -593,6 +593,7 @@ public final class PaletteView: NSView {
     /// Live value readers for the currently-rendered form, by field id (read at submit time).
     private var formControls: [(id: String, value: () -> String)] = []
     private weak var firstFormResponder: NSView? // focus this when a form renders (the first field)
+    private var formResponderViews: [NSView] = []  // form controls in order, for the Tab key-view loop
     public func currentFormValues() -> [String: String] {
         var out: [String: String] = [:]
         for c in formControls { out[c.id] = c.value() }
@@ -602,6 +603,7 @@ public final class PaletteView: NSView {
     private func renderFormSurface(_ node: ViewNode) {
         formControls.removeAll()
         firstFormResponder = nil
+        formResponderViews.removeAll()
         let form = NSStackView()
         form.orientation = .vertical
         form.alignment = .leading
@@ -634,7 +636,14 @@ public final class PaletteView: NSView {
             form.trailingAnchor.constraint(equalTo: doc.trailingAnchor, constant: -16),
             form.bottomAnchor.constraint(equalTo: doc.bottomAnchor, constant: -16),
         ])
-        // Focus the first field so the user can type immediately (not the hidden search box).
+        // Tab key-view loop between fields (and wrap back to the first).
+        for i in 0..<max(0, formResponderViews.count - 1) {
+            formResponderViews[i].nextKeyView = formResponderViews[i + 1]
+        }
+        if let last = formResponderViews.last, let first = formResponderViews.first, last !== first {
+            last.nextKeyView = first
+        }
+        // Focus the first field so the user can type/Tab immediately (not the hidden search box).
         DispatchQueue.main.async { [weak self] in
             if let v = self?.firstFormResponder { self?.window?.makeFirstResponder(v) }
         }
@@ -664,6 +673,7 @@ public final class PaletteView: NSView {
             NSLayoutConstraint.activate([tf.widthAnchor.constraint(equalTo: row.widthAnchor)])
             formControls.append((id, { [weak tf] in tf?.stringValue ?? "" }))
             if firstFormResponder == nil { firstFormResponder = tf }
+            formResponderViews.append(tf)
         case "form-textarea":
             let tv = NSTextView()
             tv.string = f.props["value"]?.stringValue ?? f.props["defaultValue"]?.stringValue ?? ""
@@ -692,6 +702,7 @@ public final class PaletteView: NSView {
             NSLayoutConstraint.activate([s.widthAnchor.constraint(equalTo: row.widthAnchor), s.heightAnchor.constraint(equalToConstant: 80)])
             formControls.append((id, { [weak tv] in tv?.string ?? "" }))
             if firstFormResponder == nil { firstFormResponder = tv }
+            formResponderViews.append(tv)
         case "form-checkbox":
             let cb = NSButton(checkboxWithTitle: f.props["label"]?.stringValue ?? "", target: nil, action: nil)
             if case .bool(true)? = (f.props["value"] ?? f.props["defaultValue"]) { cb.state = .on } // honor defaultValue
