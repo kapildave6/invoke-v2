@@ -30,6 +30,26 @@ public struct ExtensionGroup: Identifiable {
     }
 }
 
+/// A colored rounded-tile command icon (white glyph), matching the palette's command tiles — colored
+/// stably per group so Settings and the palette agree.
+struct CommandTileIcon: View {
+    let symbol: String
+    let colorKey: String
+    var size: CGFloat = 20
+    private static let tones: [Color] = [.blue, .red, .orange, .purple, .green, .teal, .pink, .indigo, .brown]
+    private var color: Color {
+        var h: UInt64 = 5381
+        for b in colorKey.utf8 { h = (h &* 33) &+ UInt64(b) } // djb2 — same keying as PaletteView
+        return Self.tones[Int(h % UInt64(Self.tones.count))]
+    }
+    var body: some View {
+        RoundedRectangle(cornerRadius: size * 0.25, style: .continuous)
+            .fill(color)
+            .frame(width: size, height: size)
+            .overlay(Image(systemName: symbol).font(.system(size: size * 0.55, weight: .semibold)).foregroundColor(.white))
+    }
+}
+
 /// Settings panes (PLAN.md §6). Hosted individually by SettingsWindow inside an NSTabViewController
 /// with the native `.toolbar` tab style (icon + label, like macOS System Settings / Raycast).
 /// Panes FILL the window (the window sets the size) — pinning a fixed width clipped the content.
@@ -57,11 +77,13 @@ struct GeneralPane: View {
 struct CommandsPane: View {
     @ObservedObject var settings = AppSettings.shared
     let groups: [ExtensionGroup]
+    let prefGroups: [ExtensionPrefGroup]
     /// Called after an enable/disable or hotkey change so the controller re-registers global hotkeys.
     let onBindingsChanged: () -> Void
 
     @State private var expanded: Set<String> = []
     @State private var search = ""
+    @State private var selection: String?  // selected command or group id → drives the detail panel
 
     private var filtered: [ExtensionGroup] {
         let q = search.trimmingCharacters(in: .whitespaces).lowercased()
@@ -74,32 +96,41 @@ struct CommandsPane: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Image(systemName: "magnifyingglass").foregroundColor(.secondary).font(.caption)
-                TextField("Search commands", text: $search).textFieldStyle(.plain)
-            }
-            .padding(.horizontal, 12).padding(.vertical, 7)
-            Divider()
-            columnHeader
-            Divider()
-            ScrollView {
-                LazyVStack(spacing: 0) {
-                    ForEach(filtered) { group in
-                        if group.commands.count > 1 {
-                            groupRow(group)
-                            if expanded.contains(group.id) {
-                                ForEach(group.commands) { commandRow($0, indented: true) }
+        HStack(spacing: 0) {
+            VStack(spacing: 0) {
+                HStack {
+                    Image(systemName: "magnifyingglass").foregroundColor(.secondary).font(.caption)
+                    TextField("Search commands", text: $search).textFieldStyle(.plain)
+                }
+                .padding(.horizontal, 12).padding(.vertical, 7)
+                Divider()
+                columnHeader
+                Divider()
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        ForEach(filtered) { group in
+                            if group.commands.count > 1 {
+                                groupRow(group)
+                                if expanded.contains(group.id) {
+                                    ForEach(group.commands) { commandRow($0, indented: true, groupKey: group.name) }
+                                }
+                            } else if let only = group.commands.first {
+                                commandRow(only, indented: false, type: "Command", groupKey: group.name)
                             }
-                        } else if let only = group.commands.first {
-                            commandRow(only, indented: false, type: "Command")
                         }
                     }
                 }
             }
+            .frame(minWidth: 560, maxWidth: .infinity)
+            Divider()
+            CommandDetailPane(selection: selection, groups: groups, prefGroups: prefGroups, onBindingsChanged: onBindingsChanged)
+                .frame(width: 340)
         }
-        .frame(minWidth: 820, maxWidth: .infinity, minHeight: 380, maxHeight: .infinity)
+        .frame(minWidth: 920, maxWidth: .infinity, minHeight: 380, maxHeight: .infinity)
     }
+
+    /// True when the row at `id` is the selected one (drives the row highlight).
+    private func isSelected(_ id: String) -> Bool { selection == id }
 
     // MARK: - Column layout (shared by header + rows)
 
@@ -128,9 +159,11 @@ struct CommandsPane: View {
         let symbol = allOn ? "checkmark.square.fill" : (anyOn ? "minus.square.fill" : "square")
         return HStack(spacing: 0) {
             HStack(spacing: 6) {
-                Image(systemName: expanded.contains(group.id) ? "chevron.down" : "chevron.right")
-                    .font(.caption2).foregroundColor(.secondary).frame(width: 12)
-                Image(systemName: group.icon).frame(width: 18)
+                Button { toggleExpanded(group.id) } label: {
+                    Image(systemName: expanded.contains(group.id) ? "chevron.down" : "chevron.right")
+                        .font(.caption2).foregroundColor(.secondary).frame(width: 12)
+                }.buttonStyle(.plain)
+                CommandTileIcon(symbol: group.icon, colorKey: group.name)
                 Text(group.name).fontWeight(.medium)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -150,17 +183,18 @@ struct CommandsPane: View {
             .frame(width: enabledW, alignment: .center)
         }
         .padding(.horizontal, 16).padding(.vertical, 8)
+        .background(isSelected(group.id) ? Color.accentColor.opacity(0.15) : Color.clear)
         .contentShape(Rectangle())
-        .onTapGesture { toggleExpanded(group.id) }
+        .onTapGesture { selection = group.id }
     }
 
-    private func commandRow(_ c: CommandInfo, indented: Bool, type: String = "Command") -> some View {
+    private func commandRow(_ c: CommandInfo, indented: Bool, type: String = "Command", groupKey: String) -> some View {
         HStack(spacing: 0) {
             HStack(spacing: 6) {
                 // Reserve the disclosure-chevron slot (12pt) so a standalone command's icon lines up
                 // with a group's icon; indented children sit one icon-width further right.
                 Color.clear.frame(width: 12, height: 1)
-                Image(systemName: c.icon).frame(width: 18).foregroundColor(.secondary)
+                CommandTileIcon(symbol: c.icon, colorKey: groupKey)
                 Text(c.title)
                 if !c.subtitle.isEmpty && !indented {
                     Text(c.subtitle).foregroundColor(.secondary).font(.callout)
@@ -206,10 +240,121 @@ struct CommandsPane: View {
             )).labelsHidden().toggleStyle(.checkbox).frame(width: enabledW, alignment: .center)
         }
         .padding(.horizontal, 16).padding(.vertical, 7)
+        .background(isSelected(c.id) ? Color.accentColor.opacity(0.15) : Color.clear)
+        .contentShape(Rectangle())
+        .onTapGesture { selection = c.id }
     }
 
     private func toggleExpanded(_ id: String) {
         if expanded.contains(id) { expanded.remove(id) } else { expanded.insert(id) }
+    }
+}
+
+/// The right-hand detail panel for the Commands tab (Raycast parity): shows the selected command's or
+/// extension's icon, name, type, and — for extensions that declare preferences — those preference
+/// fields inline, so configuration lives next to the list instead of in a separate tab.
+struct CommandDetailPane: View {
+    let selection: String?
+    let groups: [ExtensionGroup]
+    let prefGroups: [ExtensionPrefGroup]
+    let onBindingsChanged: () -> Void
+    @ObservedObject private var settings = AppSettings.shared
+
+    var body: some View {
+        Group {
+            if let info = resolved {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        HStack(spacing: 10) {
+                            CommandTileIcon(symbol: info.icon, colorKey: info.colorKey, size: 30)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(info.title).font(.headline)
+                                Text(info.type).font(.caption).foregroundColor(.secondary)
+                            }
+                            Spacer()
+                        }
+                        .padding(16)
+                        Divider()
+
+                        if info.supportsBinding {
+                            section("Keyboard") {
+                                LabeledRow("Alias") { AliasField(commandId: info.id).frame(maxWidth: 150) }
+                                LabeledRow("Hotkey") {
+                                    HotkeyRecorder(combo: Binding(
+                                        get: { settings.hotkey(for: info.id) },
+                                        set: { settings.setHotkey(info.id, $0); onBindingsChanged() }
+                                    ))
+                                }
+                            }
+                            Divider()
+                        }
+
+                        if let prefs = info.prefGroup, !prefs.fields.isEmpty {
+                            section("Preferences") {
+                                ForEach(prefs.fields) { f in
+                                    if f.type == "checkbox" { CheckboxPref(extID: prefs.id, pref: f) }
+                                    else { PrefField(extID: prefs.id, pref: f) }
+                                }
+                            }
+                        } else {
+                            Text("This \(info.type.lowercased()) has no preferences.")
+                                .font(.caption).foregroundColor(.secondary).padding(16)
+                        }
+                        Spacer(minLength: 0)
+                    }
+                }
+            } else {
+                VStack(spacing: 8) {
+                    Image(systemName: "sidebar.right").font(.system(size: 26)).foregroundColor(.secondary)
+                    Text("Select a command").foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .frame(maxHeight: .infinity)
+        .background(Color(nsColor: .windowBackgroundColor).opacity(0.4))
+    }
+
+    @ViewBuilder private func section<C: View>(_ title: String, @ViewBuilder _ content: () -> C) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title.uppercased()).font(.caption2).foregroundColor(.secondary)
+            content()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+    }
+
+    private struct LabeledRow<C: View>: View {
+        let label: String; let content: C
+        init(_ label: String, @ViewBuilder _ content: () -> C) { self.label = label; self.content = content() }
+        var body: some View {
+            HStack { Text(label).foregroundColor(.secondary); Spacer(); content }
+        }
+    }
+
+    /// Resolve the selected id (a command or a group) to display info + its extension's prefs.
+    private struct Info { let id: String; let title: String; let icon: String; let type: String; let supportsBinding: Bool; let colorKey: String; let prefGroup: ExtensionPrefGroup? }
+    private var resolved: Info? {
+        guard let sel = selection else { return nil }
+        // A group row?
+        if let g = groups.first(where: { $0.id == sel }) {
+            return Info(id: sel, title: g.name, icon: g.icon, type: "Extension", supportsBinding: false, colorKey: g.name, prefGroup: prefGroup(forGroupOrCommand: sel))
+        }
+        // A command row?
+        for g in groups {
+            if let c = g.commands.first(where: { $0.id == sel }) {
+                return Info(id: c.id, title: c.title, icon: c.icon, type: "Command", supportsBinding: c.supportsBinding, colorKey: g.name, prefGroup: prefGroup(forGroupOrCommand: sel))
+            }
+        }
+        return nil
+    }
+
+    /// Match the extension preference group: group ids are "ext.<key>", command ids "ext.<key>.<cmd>";
+    /// preference-group ids are the bare "<key>".
+    private func prefGroup(forGroupOrCommand id: String) -> ExtensionPrefGroup? {
+        guard id.hasPrefix("ext.") else { return nil }
+        let key = id.dropFirst(4).split(separator: ".").first.map(String.init) ?? String(id.dropFirst(4))
+        return prefGroups.first { $0.id == key }
     }
 }
 

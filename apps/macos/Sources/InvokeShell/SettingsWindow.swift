@@ -26,13 +26,13 @@ public final class SettingsWindow {
                 let c = NSHostingController(rootView: view)
                 // Drive the window size from the panes so NSTabViewController doesn't size to a
                 // narrow fitting width (which clipped the form content on the left edge).
-                c.preferredContentSize = NSSize(width: 900, height: 600)
+                c.preferredContentSize = NSSize(width: 1040, height: 640)
                 return c
             }
 
             // Tab order must match AppController.SettingsTab.
             tabs.addTabViewItem(tab("General", "gearshape", hosted(GeneralPane())))
-            tabs.addTabViewItem(tab("Commands", "command", hosted(CommandsPane(groups: groups, onBindingsChanged: onBindingsChanged))))
+            tabs.addTabViewItem(tab("Commands", "command", hosted(CommandsPane(groups: groups, prefGroups: prefGroups, onBindingsChanged: onBindingsChanged))))
             tabs.addTabViewItem(tab("Snippets", "text.quote", hosted(SnippetsPane())))
             tabs.addTabViewItem(tab("Quicklinks", "link", hosted(QuicklinksPane())))
             tabs.addTabViewItem(tab("Import", "square.and.arrow.down", hosted(ImportPane(repoRoot: repoRoot))))
@@ -45,7 +45,7 @@ public final class SettingsWindow {
             let w = NSWindow(contentViewController: tabs)
             w.styleMask = [.titled, .closable, .miniaturizable]
             w.isReleasedWhenClosed = false
-            w.setContentSize(NSSize(width: 900, height: 600))
+            w.setContentSize(NSSize(width: 1040, height: 640))
             w.center()
             window = w
         }
