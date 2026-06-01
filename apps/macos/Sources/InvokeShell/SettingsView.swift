@@ -98,15 +98,15 @@ struct CommandsPane: View {
                 }
             }
         }
-        .frame(minWidth: 600, maxWidth: .infinity, minHeight: 380, maxHeight: .infinity)
+        .frame(minWidth: 820, maxWidth: .infinity, minHeight: 380, maxHeight: .infinity)
     }
 
     // MARK: - Column layout (shared by header + rows)
 
-    private let typeW: CGFloat = 90
-    private let aliasW: CGFloat = 110
-    private let hotkeyW: CGFloat = 140
-    private let enabledW: CGFloat = 56
+    private let typeW: CGFloat = 120
+    private let aliasW: CGFloat = 140
+    private let hotkeyW: CGFloat = 170
+    private let enabledW: CGFloat = 72
 
     private var columnHeader: some View {
         HStack(spacing: 0) {
@@ -117,7 +117,7 @@ struct CommandsPane: View {
             Text("Enabled").frame(width: enabledW, alignment: .center)
         }
         .font(.caption).foregroundColor(.secondary)
-        .padding(.horizontal, 14).padding(.vertical, 6)
+        .padding(.horizontal, 16).padding(.vertical, 6)
     }
 
     // MARK: - Rows
@@ -149,7 +149,7 @@ struct CommandsPane: View {
             .buttonStyle(.borderless)
             .frame(width: enabledW, alignment: .center)
         }
-        .padding(.horizontal, 14).padding(.vertical, 6)
+        .padding(.horizontal, 16).padding(.vertical, 8)
         .contentShape(Rectangle())
         .onTapGesture { toggleExpanded(group.id) }
     }
@@ -157,13 +157,16 @@ struct CommandsPane: View {
     private func commandRow(_ c: CommandInfo, indented: Bool, type: String = "Command") -> some View {
         HStack(spacing: 0) {
             HStack(spacing: 6) {
+                // Reserve the disclosure-chevron slot (12pt) so a standalone command's icon lines up
+                // with a group's icon; indented children sit one icon-width further right.
+                Color.clear.frame(width: 12, height: 1)
                 Image(systemName: c.icon).frame(width: 18).foregroundColor(.secondary)
                 Text(c.title)
                 if !c.subtitle.isEmpty && !indented {
                     Text(c.subtitle).foregroundColor(.secondary).font(.callout)
                 }
             }
-            .padding(.leading, indented ? 26 : 0)
+            .padding(.leading, indented ? 24 : 0)
             .frame(maxWidth: .infinity, alignment: .leading)
 
             Text(type).foregroundColor(.secondary).frame(width: typeW, alignment: .leading)
@@ -202,7 +205,7 @@ struct CommandsPane: View {
                 set: { settings.setEnabled(c.id, $0); onBindingsChanged() }
             )).labelsHidden().toggleStyle(.checkbox).frame(width: enabledW, alignment: .center)
         }
-        .padding(.horizontal, 14).padding(.vertical, 5)
+        .padding(.horizontal, 16).padding(.vertical, 7)
     }
 
     private func toggleExpanded(_ id: String) {
@@ -666,20 +669,54 @@ private struct PrefField: View {
         VStack(alignment: .leading, spacing: 2) {
             switch pref.type {
             case "password":
-                SecureField(pref.title, text: $text).focused($focused).onSubmit(commit)
+                // Never read the stored secret back into the field — it stays in the Keychain. The
+                // field is blank; typing replaces, and we only write when non-empty (an untouched blur
+                // must not delete/re-add the item). Status comes from a non-secret presence marker.
+                HStack(spacing: 8) {
+                    SecureField(secretIsSet ? "Configured — type to replace" : pref.title, text: $text)
+                        .focused($focused).onSubmit(commit)
+                    if secretIsSet {
+                        Button("Remove") {
+                            text = ""
+                            settings.setExtensionPref(extID: extID, name: pref.name, secret: true, value: "")
+                        }
+                    }
+                }
             case "dropdown":
-                Picker(pref.title, selection: $text) { ForEach(pref.options) { Text($0.title).tag($0.value) } }
-                    .onChange(of: text) { _, _ in commit() }
+                // Commit only on a real user selection. A custom binding's setter fires on UI changes
+                // but NOT on the programmatic seed assignment, so opening the pane never persists an
+                // unchosen (clamped) default.
+                Picker(pref.title, selection: Binding(get: { text }, set: { text = $0; commit() })) {
+                    ForEach(pref.options) { Text($0.title).tag($0.value) }
+                }
             default:
                 TextField(pref.title, text: $text).focused($focused).onSubmit(commit)
             }
             if !pref.description.isEmpty { Text(pref.description).font(.caption).foregroundColor(.secondary) }
         }
-        .onAppear { text = settings.extensionPref(extID: extID, name: pref.name, secret: secret) ?? pref.defaultValue }
+        .onAppear(perform: seed)
         .onChange(of: focused) { _, now in if !now { commit() } }
     }
 
-    private func commit() { settings.setExtensionPref(extID: extID, name: pref.name, secret: secret, value: text) }
+    private var secretIsSet: Bool { settings.hasExtensionSecret(extID: extID, name: pref.name) }
+
+    private func seed() {
+        if secret { text = ""; return } // never pull the secret out of the Keychain into memory
+        var v = settings.extensionPref(extID: extID, name: pref.name, secret: false) ?? pref.defaultValue
+        // A dropdown whose seed isn't a valid option would show a blank selection — clamp to the first.
+        if pref.type == "dropdown", !pref.options.contains(where: { $0.value == v }) {
+            v = pref.options.first?.value ?? v
+        }
+        text = v
+    }
+
+    private func commit() {
+        // For secrets, an empty/whitespace buffer means "untouched" (use Remove to clear) — don't
+        // rewrite the item. Trim so the guard agrees with setExtensionPref's emptiness test (no orphan).
+        if secret && text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return }
+        settings.setExtensionPref(extID: extID, name: pref.name, secret: secret, value: text)
+        if secret { text = "" } // don't keep the typed secret in memory after saving
+    }
 }
 
 private struct CheckboxPref: View {

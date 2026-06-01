@@ -65,7 +65,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
         let title: String
         let subtitle: String
         let runTitle: String
-        let icon: String       // SF Symbol
+        let icon: String       // SF Symbol (fallback)
+        var iconPath: String? = nil // absolute path to a manifest icon image (extensions), preferred when set
         let keywords: [String]
         let closesPalette: Bool // folder-opens close; "navigating" commands (clipboard) keep it open
         let run: () -> Void
@@ -104,6 +105,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
             }
         }
         palette.actionsProvider = { [weak self] in self?.currentActions() ?? [] }
+        palette.actionPanelTitleProvider = { [weak self] in self?.actionPanelTitle() ?? "" }
+        palette.onOpenSettings = { [weak self] in self?.openSettings() }
         palette.onFilterChange = { [weak self] kind in
             guard let self else { return }
             self.clipKind = kind
@@ -663,11 +666,20 @@ public final class AppController: NSObject, NSApplicationDelegate {
         if let calcCard, AppSettings.shared.isEnabled("calculator") { sections.append(sectionNode("Calculator", [calcCard])) }
 
         if q.isEmpty {
+            // Favorites pinned to the very top (Raycast parity).
+            let favCmds = commands.filter { AppSettings.shared.isFavorite($0.id) && AppSettings.shared.isEnabled($0.id) }
+            if !favCmds.isEmpty {
+                let favItems = favCmds.map {
+                    itemNode(id: nextId(), title: $0.title, subtitle: $0.subtitle, kind: "Command", appPath: nil, icon: $0.icon, commandId: $0.id, alias: AppSettings.shared.alias(for: $0.id), iconPath: $0.iconPath)
+                }
+                sections.append(sectionNode("Favorites", favItems))
+            }
             let suggestions = suggestionItems(nextId: nextId)
             if !suggestions.isEmpty { sections.append(sectionNode("Suggestions", suggestions)) }
-            // Always list every enabled command (Raycast-style), scrollable.
-            let cmds = commands.filter { AppSettings.shared.isEnabled($0.id) }.map {
-                itemNode(id: nextId(), title: $0.title, subtitle: $0.subtitle, kind: "Command", appPath: nil, icon: $0.icon, commandId: $0.id, alias: AppSettings.shared.alias(for: $0.id))
+            // Every enabled command (Raycast-style), scrollable — minus the ones already pinned to
+            // Favorites so a favorite isn't shown twice.
+            let cmds = commands.filter { AppSettings.shared.isEnabled($0.id) && !AppSettings.shared.isFavorite($0.id) }.map {
+                itemNode(id: nextId(), title: $0.title, subtitle: $0.subtitle, kind: "Command", appPath: nil, icon: $0.icon, commandId: $0.id, alias: AppSettings.shared.alias(for: $0.id), iconPath: $0.iconPath)
             }
             sections.append(sectionNode("Commands", cmds))
         } else {
@@ -680,7 +692,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 itemNode(id: nextId(), title: $0.name, subtitle: nil, kind: "Application", appPath: $0.path, icon: nil, commandId: nil)
             }
             let cmdItems = matched.map {
-                itemNode(id: nextId(), title: $0.title, subtitle: $0.subtitle, kind: "Command", appPath: nil, icon: $0.icon, commandId: $0.id, alias: AppSettings.shared.alias(for: $0.id))
+                itemNode(id: nextId(), title: $0.title, subtitle: $0.subtitle, kind: "Command", appPath: nil, icon: $0.icon, commandId: $0.id, alias: AppSettings.shared.alias(for: $0.id), iconPath: $0.iconPath)
             }
             let appsSection = appItems.isEmpty ? nil : sectionNode("Applications", appItems)
             let cmdsSection = cmdItems.isEmpty ? nil : sectionNode("Commands", cmdItems)
@@ -707,7 +719,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
         var out: [ViewNode] = []
         for id in ids {
             if id.hasPrefix("cmd:"), let c = commands.first(where: { "cmd:\($0.id)" == id }) {
-                out.append(itemNode(id: nextId(), title: c.title, subtitle: c.subtitle, kind: "Command", appPath: nil, icon: c.icon, commandId: c.id, alias: AppSettings.shared.alias(for: c.id)))
+                if AppSettings.shared.isFavorite(c.id) { continue } // already pinned in Favorites — don't duplicate
+                out.append(itemNode(id: nextId(), title: c.title, subtitle: c.subtitle, kind: "Command", appPath: nil, icon: c.icon, commandId: c.id, alias: AppSettings.shared.alias(for: c.id), iconPath: c.iconPath))
             } else if id.hasPrefix("app:") {
                 let path = String(id.dropFirst(4))
                 guard FileManager.default.fileExists(atPath: path) else { continue }
@@ -736,7 +749,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         return exact + rest
     }
 
-    private func itemNode(id: Int, title: String, subtitle: String?, kind: String, appPath: String?, icon: String?, commandId: String?, alias: String? = nil) -> ViewNode {
+    private func itemNode(id: Int, title: String, subtitle: String?, kind: String, appPath: String?, icon: String?, commandId: String?, alias: String? = nil, iconPath: String? = nil) -> ViewNode {
         var accessories: [JSONValue] = []
         if let alias, !alias.isEmpty { accessories.append(.object(["tag": .string(alias)])) }
         accessories.append(.object(["text": .string(kind)]))
@@ -746,6 +759,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         ]
         if let subtitle, !subtitle.isEmpty { props["subtitle"] = .string(subtitle) }
         if let appPath { props["appPath"] = .string(appPath) }
+        if let iconPath { props["iconImagePath"] = .string(iconPath) } // manifest image icon (extensions)
         if let icon { props["icon"] = .string(icon) }
         if let commandId { props["commandId"] = .string(commandId) }
         return ViewNode(id: id, type: "list-item", props: props)
@@ -894,15 +908,53 @@ public final class AppController: NSObject, NSApplicationDelegate {
             }]
         }
         if let cid = node.props["commandId"]?.stringValue, let cmd = commands.first(where: { $0.id == cid }) {
-            return [PaletteAction(title: cmd.runTitle, shortcut: "↵") { [weak self] in
+            let primary = PaletteAction(title: cmd.runTitle, shortcut: "↵") { [weak self] in
                 self?.frecency.bump("cmd:\(cid)")
                 cmd.run()
                 if cmd.closesPalette { self?.afterLaunch() }
-            }]
+            }
+            // Settings-tab launchers are self-referential — the management panel (Disable/Configure/…)
+            // is meaningless on them, so only the primary Open action.
+            return cid.hasPrefix("settings.") ? [primary] : [primary] + defaultCommandActions(commandId: cid)
         }
         return actions(under: node).enumerated().map { index, n in
             PaletteAction(title: title(for: n), shortcut: index == 0 ? "↵" : (index == 1 ? "⌘↵" : nil)) { [weak self] in self?.perform(n) }
         }
+    }
+
+    /// Raycast-style management actions appended to every command/extension's ⌘K panel. (Shortcuts
+    /// are display-only for now; the actions run via click or arrow+Return in the panel.)
+    private func defaultCommandActions(commandId cid: String) -> [PaletteAction] {
+        let s = AppSettings.shared
+        let isExtension = cid.hasPrefix("ext.")
+        let fav = s.isFavorite(cid)
+        var acts: [PaletteAction] = [
+            PaletteAction(title: fav ? "Remove from Favorites" : "Add to Favorites", shortcut: "⇧⌘F",
+                          icon: fav ? "star.slash" : "star") { [weak self] in
+                s.toggleFavorite(cid); self?.selectedIndex = 0; self?.renderRoot(calcCard: nil)
+            },
+            PaletteAction(title: "Reset Ranking", shortcut: nil, icon: "arrow.counterclockwise") { [weak self] in
+                self?.frecency.reset("cmd:\(cid)"); self?.selectedIndex = 0; self?.renderRoot(calcCard: nil)
+            },
+            PaletteAction(title: "Copy Deeplink", shortcut: "⇧⌘C", icon: "link") { [weak self] in
+                self?.copyText("invoke://commands/\(cid)")
+            },
+            PaletteAction(title: "Configure Command", shortcut: "⇧⌘,", icon: "gearshape") { [weak self] in
+                self?.openSettings(tab: .commands)
+            },
+        ]
+        if isExtension {
+            acts.append(PaletteAction(title: "Configure Extension", shortcut: "⌥⌘,", icon: "gearshape.2") { [weak self] in
+                self?.openSettings(tab: .extensions)
+            })
+        }
+        acts.append(PaletteAction(title: "Disable Command", shortcut: "⌃⇧⌘D", icon: "minus.circle") { [weak self] in
+            s.setEnabled(cid, false)
+            self?.reloadCommandHotkeys() // unregister its global hotkey now, not just at next relaunch
+            self?.selectedIndex = 0
+            self?.renderRoot(calcCard: nil)
+        })
+        return acts
     }
 
     /// Launching/running closes the palette and resets to a clean root for the next summon — from any
@@ -1156,6 +1208,20 @@ public final class AppController: NSObject, NSApplicationDelegate {
         return out
     }
 
+    /// Title for the ⌘K Action Panel header — the selected result's name (falling back to the mode).
+    private func actionPanelTitle() -> String {
+        let rows = items()
+        if selectedIndex < rows.count, let t = rows[selectedIndex].props["title"]?.stringValue, !t.isEmpty {
+            return t
+        }
+        switch mode {
+        case .clipboard: return "Clipboard History"
+        case .aiAnswer: return "AI Answer"
+        case .extensionView: return currentExtTitle
+        default: return ""
+        }
+    }
+
     private func extractCalcCard() -> ViewNode? {
         func find(_ n: ViewNode) -> ViewNode? {
             if n.type == "list-item", n.props["display"]?.stringValue == "card" { return n }
@@ -1277,6 +1343,16 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 // Namespace the extension key by root so an imported ext can't collide ids (frecency/
                 // alias/hotkey/grouping) with a bundled example of the same name.
                 let extKey = root == "imported" ? "imported-\(name)" : name
+                // Manifest icon (Raycast convention: a filename under the extension's assets/, or a
+                // path relative to the extension dir). Per-command icon wins over the extension's.
+                func resolveIcon(_ named: Any?) -> String? {
+                    guard let n = named as? String, !n.isEmpty else { return nil }
+                    for candidate in ["\(extDir)/assets/\(n)", "\(extDir)/\(n)"] where fm.fileExists(atPath: candidate) {
+                        return candidate
+                    }
+                    return nil
+                }
+                let extIconPath = resolveIcon(json["icon"])
                 for c in cmds {
                     guard let cname = c["name"] as? String,
                           ((c["mode"] as? String) ?? "view") == "view" else { continue }
@@ -1286,7 +1362,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
                         .first(where: { fm.fileExists(atPath: repoRoot + "/" + $0) }) else { continue }
                     let cmdId = "ext.\(extKey).\(cname)"
                     out.append(RootCommand(id: cmdId, title: ctitle, subtitle: title, runTitle: "Open",
-                                           icon: "puzzlepiece.extension.fill", keywords: [name, cname, title.lowercased()],
+                                           icon: "puzzlepiece.extension.fill", iconPath: resolveIcon(c["icon"]) ?? extIconPath,
+                                           keywords: [name, cname, title.lowercased()],
                                            closesPalette: false) { [weak self] in
                         guard let self else { return }
                         // Resolve preferences at launch (defaults merged with the user's saved values).
@@ -1311,7 +1388,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 if let o = override { dict[name] = (o == "true") }
                 else if let b = p["default"] as? Bool { dict[name] = b }
                 else if let s = p["default"] as? String { dict[name] = (s == "true") }
-            } else if let o = override, !o.isEmpty {
+            } else if let o = override {
+                // A saved value (even empty) is an intentional override; only fall back when unset (nil).
                 dict[name] = o
             } else if let def = p["default"] {
                 dict[name] = def
@@ -1538,7 +1616,28 @@ public final class AppController: NSObject, NSApplicationDelegate {
             RootCommand(id: "folder.documents", title: "Open Documents", subtitle: "Navigation", runTitle: "Open", icon: "doc", keywords: ["documents", "docs", "folder"], closesPalette: true, run: openPath("~/Documents")),
             RootCommand(id: "folder.desktop", title: "Open Desktop", subtitle: "Navigation", runTitle: "Open", icon: "menubar.dock.rectangle", keywords: ["desktop", "folder"], closesPalette: true, run: openPath("~/Desktop")),
             RootCommand(id: "folder.applications", title: "Open Applications", subtitle: "Navigation", runTitle: "Open", icon: "square.grid.2x2", keywords: ["applications", "apps", "folder"], closesPalette: true, run: openPath("/Applications")),
-        ] + discoverExtensionCommands()
+        ] + discoverExtensionCommands() + settingsTabCommands()
+    }
+
+    /// One searchable root command per Settings pane (Raycast parity) — "Extensions — Invoke Settings",
+    /// "Advanced — Invoke Settings", etc. — opening Settings directly to that tab.
+    private func settingsTabCommands() -> [RootCommand] {
+        let tabs: [(SettingsTab, String, String)] = [
+            (.general, "General", "gearshape"),
+            (.commands, "Commands", "command"),
+            (.snippets, "Snippets", "text.quote"),
+            (.quicklinks, "Quicklinks", "link"),
+            (.importExt, "Import Extension", "square.and.arrow.down"),
+            (.extensions, "Extensions", "puzzlepiece.extension"),
+            (.clipboard, "Clipboard", "doc.on.clipboard"),
+            (.advanced, "Advanced", "wrench.and.screwdriver"),
+            (.about, "About", "info.circle"),
+        ]
+        return tabs.map { tab, name, icon in
+            RootCommand(id: "settings.\(tab.rawValue)", title: name, subtitle: "Invoke Settings", runTitle: "Open",
+                        icon: icon, keywords: [name.lowercased(), "settings", "preferences", "config"],
+                        closesPalette: true) { [weak self] in self?.openSettings(tab: tab) }
+        }
     }
 
     // MARK: - Helpers
@@ -1596,6 +1695,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         if commandId.hasPrefix("snippet.") { return ExtensionMeta(id: "snippets", name: "Snippets", icon: "text.quote") }
         if commandId.hasPrefix("quicklink.") { return ExtensionMeta(id: "quicklinks", name: "Quicklinks", icon: "link") }
         if commandId.hasPrefix("ext.") { return ExtensionMeta(id: "extensions", name: "Extensions", icon: "puzzlepiece.extension") }
+        if commandId.hasPrefix("settings.") { return ExtensionMeta(id: "invoke-settings", name: "Invoke Settings", icon: "gearshape") }
         switch commandId {
         case "clipboard.history": return ExtensionMeta(id: "clipboard-history", name: "Clipboard History", icon: "doc.on.clipboard")
         case "emoji.picker": return ExtensionMeta(id: "emoji", name: "Emoji & Symbols", icon: "face.smiling")

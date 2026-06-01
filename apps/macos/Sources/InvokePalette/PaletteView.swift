@@ -878,6 +878,15 @@ public final class PaletteView: NSView {
     }
 
     private func iconView(for node: ViewNode, selected: Bool) -> NSImageView? {
+        // Manifest image icon (full color) for extension commands — loaded from the extension's assets.
+        if let p = node.props["iconImagePath"]?.stringValue, let img = NSImage(contentsOfFile: p) {
+            let iv = NSImageView(image: img)
+            iv.imageScaling = .scaleProportionallyUpOrDown
+            iv.translatesAutoresizingMaskIntoConstraints = false
+            iv.widthAnchor.constraint(equalToConstant: 20).isActive = true
+            iv.heightAnchor.constraint(equalToConstant: 20).isActive = true
+            return iv
+        }
         // Real app/file icon (full color) for application and file rows.
         if let path = node.props["appPath"]?.stringValue ?? node.props["fileIcon"]?.stringValue {
             let iv = NSImageView(image: NSWorkspace.shared.icon(forFile: path))

@@ -26,7 +26,7 @@ public final class SettingsWindow {
                 let c = NSHostingController(rootView: view)
                 // Drive the window size from the panes so NSTabViewController doesn't size to a
                 // narrow fitting width (which clipped the form content on the left edge).
-                c.preferredContentSize = NSSize(width: 600, height: 470)
+                c.preferredContentSize = NSSize(width: 900, height: 600)
                 return c
             }
 
@@ -45,7 +45,7 @@ public final class SettingsWindow {
             let w = NSWindow(contentViewController: tabs)
             w.styleMask = [.titled, .closable, .miniaturizable]
             w.isReleasedWhenClosed = false
-            w.setContentSize(NSSize(width: 600, height: 470))
+            w.setContentSize(NSSize(width: 900, height: 600))
             w.center()
             window = w
         }

@@ -19,11 +19,14 @@ public final class PaletteWindow: NSObject {
     private let paletteView: PaletteView
 
     // Bottom action bar.
+    private let logoButton = NSButton()
     private let commandLabel = NSTextField(labelWithString: "")
-    private let actionHintLabel = NSTextField(labelWithString: "")
+    private let primaryActionLabel = NSTextField(labelWithString: "")
+    private var primaryGroup: NSStackView!
+    private var actionBarDivider: NSView!
 
     private var keyMonitor: Any?
-    private var actionMenu: NSMenu?
+    private let actionPanel = ActionPanel()
 
     // Toast capsule (action feedback, e.g. "Copied to Clipboard").
     private let toastLabel = NSTextField(labelWithString: "")
@@ -40,6 +43,10 @@ public final class PaletteWindow: NSObject {
     public var onCancel: (() -> Void)?
     /// Supplies the actions for the currently-selected result (for the ⌘K Action Panel).
     public var actionsProvider: (() -> [PaletteAction])?
+    /// Title shown atop the ⌘K Action Panel (typically the selected result's name).
+    public var actionPanelTitleProvider: (() -> String)?
+    /// Clicking the bottom-left logo opens Settings (Raycast parity).
+    public var onOpenSettings: (() -> Void)?
     /// Fired when the type-filter dropdown changes (clipboard mode).
     public var onFilterChange: ((String) -> Void)?
     /// Mouse: single-click selects a row (by item index); double-click activates it.
@@ -72,9 +79,13 @@ public final class PaletteWindow: NSObject {
         panel.isMovableByWindowBackground = true // drag the palette by its background (rows opt out)
         panel.backgroundColor = .clear
         panel.hasShadow = true
+        // Follow the system appearance like Raycast: a frosted-light panel in Light mode, dark in Dark
+        // mode. The earlier dullness was the dark `.hudWindow` material under Light mode (near-black text
+        // on a dark backdrop). The fix is an APPEARANCE-ADAPTIVE material (.sidebar), not forcing dark —
+        // labelColor then tracks the system so text is crisp either way.
 
         let blur = NSVisualEffectView(frame: rect)
-        blur.material = .hudWindow
+        blur.material = .sidebar // adapts to Light/Dark, translucent like Raycast's palette
         blur.blendingMode = .behindWindow
         blur.state = .active
         blur.wantsLayer = true
@@ -106,8 +117,14 @@ public final class PaletteWindow: NSObject {
 
         let actionBar = makeActionBar()
 
+        // Hairline separator between the search field and the result list (Raycast parity).
+        let searchSeparator = NSBox()
+        searchSeparator.boxType = .separator
+        searchSeparator.translatesAutoresizingMaskIntoConstraints = false
+
         blur.addSubview(searchField)
         blur.addSubview(filterButton)
+        blur.addSubview(searchSeparator)
         blur.addSubview(paletteView)
         blur.addSubview(actionBar)
 
@@ -122,9 +139,13 @@ public final class PaletteWindow: NSObject {
             filterButton.trailingAnchor.constraint(equalTo: blur.trailingAnchor, constant: -14),
             filterButton.centerYAnchor.constraint(equalTo: searchField.centerYAnchor),
 
+            searchSeparator.leadingAnchor.constraint(equalTo: blur.leadingAnchor),
+            searchSeparator.trailingAnchor.constraint(equalTo: blur.trailingAnchor),
+            searchSeparator.topAnchor.constraint(equalTo: searchField.bottomAnchor, constant: 12),
+
             paletteView.leadingAnchor.constraint(equalTo: blur.leadingAnchor),
             paletteView.trailingAnchor.constraint(equalTo: blur.trailingAnchor),
-            paletteView.topAnchor.constraint(equalTo: searchField.bottomAnchor, constant: 10),
+            paletteView.topAnchor.constraint(equalTo: searchSeparator.bottomAnchor, constant: 6),
             paletteView.bottomAnchor.constraint(equalTo: actionBar.topAnchor),
 
             actionBar.leadingAnchor.constraint(equalTo: blur.leadingAnchor),
@@ -161,6 +182,13 @@ public final class PaletteWindow: NSObject {
 
         panel.contentView = blur
         panel.delegate = self
+
+        // ⌘K Action Panel: dismiss restores focus to the main search field. The panel runs the
+        // selected action's captured closure directly (a re-render dismisses the panel first).
+        actionPanel.onDismiss = { [weak self] in
+            guard let self else { return }
+            self.panel.makeFirstResponder(self.searchField)
+        }
     }
 
     deinit {
@@ -178,26 +206,79 @@ public final class PaletteWindow: NSObject {
         sep.translatesAutoresizingMaskIntoConstraints = false
         bar.addSubview(sep)
 
+        // Left: the Invoke logo (like Raycast's bottom-left mark) → opens Settings, with the current
+        // mode/context label to its right (hidden at root so the root view stays clean).
+        logoButton.image = Brand.appIcon
+        logoButton.imageScaling = .scaleProportionallyDown
+        logoButton.isBordered = false
+        logoButton.bezelStyle = .regularSquare
+        logoButton.title = ""
+        logoButton.imagePosition = .imageOnly
+        logoButton.toolTip = "Open Settings"
+        logoButton.target = self
+        logoButton.action = #selector(logoClicked)
+        logoButton.translatesAutoresizingMaskIntoConstraints = false
+
         commandLabel.font = .systemFont(ofSize: 12, weight: .medium)
         commandLabel.textColor = .secondaryLabelColor
         commandLabel.translatesAutoresizingMaskIntoConstraints = false
+        let leftGroup = NSStackView(views: [logoButton, commandLabel])
+        leftGroup.spacing = 8
+        leftGroup.alignment = .centerY
+        leftGroup.translatesAutoresizingMaskIntoConstraints = false
 
-        actionHintLabel.font = .systemFont(ofSize: 12)
-        actionHintLabel.textColor = .secondaryLabelColor
-        actionHintLabel.alignment = .right
-        actionHintLabel.translatesAutoresizingMaskIntoConstraints = false
+        // Right: [primary action][↵]  |  Actions [⌘][K] — keycap chips, properly aligned.
+        primaryActionLabel.font = .systemFont(ofSize: 12, weight: .medium)
+        primaryActionLabel.textColor = .labelColor
+        primaryActionLabel.translatesAutoresizingMaskIntoConstraints = false
+        let enterCaps = NSStackView(views: Keycap.chips(for: "↵"))
+        enterCaps.spacing = 3
+        enterCaps.setHuggingPriority(.required, for: .horizontal)
+        primaryGroup = NSStackView(views: [primaryActionLabel, enterCaps])
+        primaryGroup.spacing = 6
+        primaryGroup.alignment = .centerY
+        primaryGroup.setHuggingPriority(.required, for: .horizontal)
 
-        bar.addSubview(commandLabel)
-        bar.addSubview(actionHintLabel)
+        actionBarDivider = NSBox()
+        let divider = actionBarDivider as! NSBox
+        divider.boxType = .custom
+        divider.fillColor = .separatorColor
+        divider.borderWidth = 0
+        divider.translatesAutoresizingMaskIntoConstraints = false
+
+        let actionsLabel = NSTextField(labelWithString: "Actions")
+        actionsLabel.font = .systemFont(ofSize: 12, weight: .medium)
+        actionsLabel.textColor = .secondaryLabelColor
+        actionsLabel.translatesAutoresizingMaskIntoConstraints = false
+        let cmdKCaps = NSStackView(views: Keycap.chips(for: "⌘K"))
+        cmdKCaps.spacing = 3
+        cmdKCaps.setHuggingPriority(.required, for: .horizontal)
+        let actionsGroup = NSStackView(views: [actionsLabel, cmdKCaps])
+        actionsGroup.spacing = 6
+        actionsGroup.alignment = .centerY
+        actionsGroup.setHuggingPriority(.required, for: .horizontal)
+
+        let rightGroup = NSStackView(views: [primaryGroup, divider, actionsGroup])
+        rightGroup.spacing = 12
+        rightGroup.alignment = .centerY
+        rightGroup.setHuggingPriority(.required, for: .horizontal)
+        rightGroup.translatesAutoresizingMaskIntoConstraints = false
+
+        bar.addSubview(leftGroup)
+        bar.addSubview(rightGroup)
         NSLayoutConstraint.activate([
             sep.leadingAnchor.constraint(equalTo: bar.leadingAnchor),
             sep.trailingAnchor.constraint(equalTo: bar.trailingAnchor),
             sep.topAnchor.constraint(equalTo: bar.topAnchor),
-            commandLabel.leadingAnchor.constraint(equalTo: bar.leadingAnchor, constant: 16),
-            commandLabel.centerYAnchor.constraint(equalTo: bar.centerYAnchor),
-            actionHintLabel.trailingAnchor.constraint(equalTo: bar.trailingAnchor, constant: -16),
-            actionHintLabel.centerYAnchor.constraint(equalTo: bar.centerYAnchor),
-            actionHintLabel.leadingAnchor.constraint(greaterThanOrEqualTo: commandLabel.trailingAnchor, constant: 8),
+            logoButton.widthAnchor.constraint(equalToConstant: 18),
+            logoButton.heightAnchor.constraint(equalToConstant: 18),
+            divider.widthAnchor.constraint(equalToConstant: 1),
+            divider.heightAnchor.constraint(equalToConstant: 16),
+            leftGroup.leadingAnchor.constraint(equalTo: bar.leadingAnchor, constant: 14),
+            leftGroup.centerYAnchor.constraint(equalTo: bar.centerYAnchor),
+            rightGroup.trailingAnchor.constraint(equalTo: bar.trailingAnchor, constant: -14),
+            rightGroup.centerYAnchor.constraint(equalTo: bar.centerYAnchor),
+            rightGroup.leadingAnchor.constraint(greaterThanOrEqualTo: leftGroup.trailingAnchor, constant: 8),
         ])
         return bar
     }
@@ -205,6 +286,9 @@ public final class PaletteWindow: NSObject {
     // MARK: - Rendering / action bar
 
     public func render(_ tree: ViewTree, selectedIndex: Int) {
+        // Any re-render (including async extension-commit / AI-answer callbacks) invalidates the tree the
+        // ⌘K panel's captured actions point at — close it so it can't act on a stale node. No-op if hidden.
+        actionPanel.dismiss()
         paletteView.render(tree, selectedIndex: selectedIndex)
         resizeToFit()
     }
@@ -216,7 +300,7 @@ public final class PaletteWindow: NSObject {
         let maxH = min(540, (vf?.height ?? 540) - 40)
         let searchH = searchField.fittingSize.height
         let contentH = paletteView.fittingHeight()
-        let targetH = min(max(14 + searchH + 10 + 8 + contentH + 12 + 38, 96), maxH)
+        let targetH = min(max(14 + searchH + 19 + 8 + contentH + 12 + 38, 96), maxH)
         // Width is FIXED (clamped on tiny screens) and re-pinned every render — a long row must
         // truncate within it, never widen the window.
         let targetW = min(Self.paletteWidth, (vf?.width ?? Self.paletteWidth + 40) - 40)
@@ -289,15 +373,22 @@ public final class PaletteWindow: NSObject {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.3, execute: work)
     }
 
-    /// Update the bottom bar: the command name (left) and the primary action + ⌘K hint (right).
+    /// Update the bottom bar: the context label (next to the logo) and the primary action chip. The
+    /// context label is hidden at root so the root view stays logo-only like Raycast.
     public func setActionBar(command: String, primary: String?) {
-        commandLabel.stringValue = command
+        commandLabel.stringValue = command == "Invoke" ? "" : command
+        commandLabel.isHidden = commandLabel.stringValue.isEmpty
         if let primary {
-            actionHintLabel.stringValue = "\(primary)   ↵        |        Actions   ⌘K"
+            primaryActionLabel.stringValue = primary
+            primaryGroup.isHidden = false
+            actionBarDivider.isHidden = false
         } else {
-            actionHintLabel.stringValue = "Actions   ⌘K"
+            primaryGroup.isHidden = true
+            actionBarDivider.isHidden = true
         }
     }
+
+    @objc private func logoClicked() { onOpenSettings?() }
 
     // MARK: - Show / hide
 
@@ -347,9 +438,11 @@ public final class PaletteWindow: NSObject {
             guard let self, self.panel.isKeyWindow,
                   event.modifierFlags.contains(.command) else { return event }
             if event.charactersIgnoringModifiers?.lowercased() == "k" {
-                self.showActionMenu(); return nil                 // ⌘K → Action Panel
+                self.actionPanel.isShown ? self.actionPanel.dismiss() : self.showActionMenu() // ⌘K toggles
+                return nil
             }
             if event.keyCode == 36 || event.keyCode == 76 {        // ⌘Return / ⌘keypad-Enter → secondary
+                if self.actionPanel.isShown { return nil }          // panel owns Return while it's open
                 self.onActivate?(true); return nil                 // (doCommandBy doesn't deliver ⌘Return reliably)
             }
             return event
@@ -362,34 +455,12 @@ public final class PaletteWindow: NSObject {
 
     /// Dismiss the Action Panel if it's open (called on re-render so it can't act on a stale tree).
     public func dismissMenu() {
-        actionMenu?.cancelTracking()
+        actionPanel.dismiss()
     }
 
     private func showActionMenu() {
         guard let actions = actionsProvider?(), !actions.isEmpty, let content = panel.contentView else { return }
-
-        let menu = NSMenu()
-        menu.autoenablesItems = false
-        for (i, action) in actions.enumerated() {
-            let item = NSMenuItem(title: action.title, action: #selector(runMenuAction(_:)), keyEquivalent: "")
-            item.target = self
-            item.tag = i
-            if let shortcut = action.shortcut { item.toolTip = shortcut }
-            menu.addItem(item)
-        }
-        actionMenu = menu
-        // Anchor the LAST item just above the action bar (bottom-right), so the menu grows UPWARD
-        // from there — matching Raycast's Action Panel position.
-        let anchor = NSPoint(x: max(0, content.bounds.maxX - 260), y: 46)
-        menu.popUp(positioning: menu.items.last, at: anchor, in: content) // modal: returns when tracking ends
-        actionMenu = nil
-    }
-
-    /// Re-fetch the CURRENT actions at click time so a re-render during menu tracking can't run a
-    /// stale action (or index out of bounds).
-    @objc private func runMenuAction(_ sender: NSMenuItem) {
-        guard let actions = actionsProvider?(), sender.tag >= 0, sender.tag < actions.count else { return }
-        actions[sender.tag].run()
+        actionPanel.present(in: content, actions: actions, title: actionPanelTitleProvider?() ?? "")
     }
 }
 
@@ -397,7 +468,7 @@ extension PaletteWindow: NSWindowDelegate {
     /// Auto-hide on blur (PLAN.md §4.3) — like Raycast. Skip while the ⌘K Action Panel is tracking
     /// (that briefly takes key focus).
     public func windowDidResignKey(_ notification: Notification) {
-        if actionMenu == nil { hide() }
+        if !actionPanel.isShown { hide() }
     }
 }
 

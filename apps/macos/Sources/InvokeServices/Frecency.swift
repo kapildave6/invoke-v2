@@ -29,6 +29,11 @@ public final class Frecency {
         return Double(e.count) * (0.25 + recency)
     }
 
+    /// Forget all usage data for `id` (Raycast's "Reset Ranking").
+    public func reset(_ id: String) {
+        if entries.removeValue(forKey: id) != nil { save() }
+    }
+
     /// Highest-scoring ids first.
     public func topIds(limit: Int) -> [String] {
         let now = Date().timeIntervalSince1970

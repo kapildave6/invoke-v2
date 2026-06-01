@@ -30,17 +30,13 @@ public final class AIService {
 
     private static let service = "com.invoke.ai"
     private static let account = "anthropic-api-key"
+    // Non-secret presence marker. Existence is checked from this (not the Keychain), so status checks
+    // and the per-keystroke "Ask AI" gating never trigger a Keychain authorization prompt — which an
+    // UNSIGNED dev build would otherwise show on every access. The key VALUE is read only on a request.
+    private static let presentFlag = "invoke.ai.keyPresent"
 
-    /// Whether an API key is available (without exposing it). Cached (static, so a Settings change is
-    /// seen by every instance) — `buildRoot` checks this per keystroke and the Keychain lookup is a
-    /// synchronous IPC we don't want on every render. Invalidated when the key is stored/cleared.
-    private static var cachedHasKey: Bool?
-    public var hasKey: Bool {
-        if let c = AIService.cachedHasKey { return c }
-        let v = apiKey() != nil
-        AIService.cachedHasKey = v
-        return v
-    }
+    /// Whether a key is configured — WITHOUT reading the Keychain (env var or the presence flag).
+    public var hasKey: Bool { AIService.hasStoredKey() }
 
     private func apiKey() -> String? {
         if let env = ProcessInfo.processInfo.environment["ANTHROPIC_API_KEY"], !env.isEmpty { return env }
@@ -49,10 +45,9 @@ public final class AIService {
 
     // MARK: - Key management for the Settings UI (the value is never logged, echoed, or returned)
 
-    /// Whether a key is configured (env var or Keychain) — for the Settings status line.
+    /// Whether a key is configured (env var or stored) — no Keychain read, so no auth prompt.
     public static func hasStoredKey() -> Bool {
-        if let env = ProcessInfo.processInfo.environment["ANTHROPIC_API_KEY"], !env.isEmpty { return true }
-        return keychainKey() != nil
+        usingEnvKey() || UserDefaults.standard.bool(forKey: presentFlag)
     }
 
     /// True when the env var supplies the key (which takes precedence over the Keychain).
@@ -74,7 +69,7 @@ public final class AIService {
             add[kSecValueData as String] = data
             SecItemAdd(add as CFDictionary, nil)
         }
-        cachedHasKey = nil // recompute on next hasKey (picks up the new/removed key, no relaunch)
+        UserDefaults.standard.set(!trimmed.isEmpty, forKey: presentFlag) // presence marker (non-secret)
     }
 
     public static func clearStoredKey() { storeAPIKey("") }
