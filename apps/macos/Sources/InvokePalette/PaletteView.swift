@@ -592,6 +592,7 @@ public final class PaletteView: NSView {
 
     /// Live value readers for the currently-rendered form, by field id (read at submit time).
     private var formControls: [(id: String, value: () -> String)] = []
+    private weak var firstFormResponder: NSView? // focus this when a form renders (the first field)
     public func currentFormValues() -> [String: String] {
         var out: [String: String] = [:]
         for c in formControls { out[c.id] = c.value() }
@@ -600,6 +601,7 @@ public final class PaletteView: NSView {
 
     private func renderFormSurface(_ node: ViewNode) {
         formControls.removeAll()
+        firstFormResponder = nil
         let form = NSStackView()
         form.orientation = .vertical
         form.alignment = .leading
@@ -632,6 +634,10 @@ public final class PaletteView: NSView {
             form.trailingAnchor.constraint(equalTo: doc.trailingAnchor, constant: -16),
             form.bottomAnchor.constraint(equalTo: doc.bottomAnchor, constant: -16),
         ])
+        // Focus the first field so the user can type immediately (not the hidden search box).
+        DispatchQueue.main.async { [weak self] in
+            if let v = self?.firstFormResponder { self?.window?.makeFirstResponder(v) }
+        }
     }
 
     private func formFieldRow(_ f: ViewNode) -> NSView? {
@@ -657,6 +663,7 @@ public final class PaletteView: NSView {
             row.addArrangedSubview(tf)
             NSLayoutConstraint.activate([tf.widthAnchor.constraint(equalTo: row.widthAnchor)])
             formControls.append((id, { [weak tf] in tf?.stringValue ?? "" }))
+            if firstFormResponder == nil { firstFormResponder = tf }
         case "form-textarea":
             let tv = NSTextView()
             tv.string = f.props["value"]?.stringValue ?? f.props["defaultValue"]?.stringValue ?? ""
@@ -684,6 +691,7 @@ public final class PaletteView: NSView {
             row.addArrangedSubview(s)
             NSLayoutConstraint.activate([s.widthAnchor.constraint(equalTo: row.widthAnchor), s.heightAnchor.constraint(equalToConstant: 80)])
             formControls.append((id, { [weak tv] in tv?.string ?? "" }))
+            if firstFormResponder == nil { firstFormResponder = tv }
         case "form-checkbox":
             let cb = NSButton(checkboxWithTitle: f.props["label"]?.stringValue ?? "", target: nil, action: nil)
             if case .bool(true)? = (f.props["value"] ?? f.props["defaultValue"]) { cb.state = .on } // honor defaultValue

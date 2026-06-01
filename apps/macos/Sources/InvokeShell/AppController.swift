@@ -27,7 +27,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private let settingsWindow = SettingsWindow()
     private lazy var commands: [RootCommand] = makeCommands()
 
-    private enum Mode { case root, clipboard, emoji, screenshots, snippets, quicklinks, extensionView, aiAnswer }
+    private enum Mode { case root, clipboard, emoji, screenshots, snippets, quicklinks, extensionView, aiAnswer, nativeForm }
     private var mode: Mode = .root
     private var lastAIAnswer = "" // for the AI-answer surface's Copy/Paste actions
     private var aiAskSeq = 0      // request token so a stale answer can't render over a newer one
@@ -42,6 +42,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private var currentExtId = ""
     private var currentExtTitle = ""
     private var extReceivedCommit = false // did the current extension render at least once?
+    private var nativeFormTitle = ""
+    private var nativeFormSubmit: (([String: String]) -> Void)? // called with field values on submit
     private var repoRoot = ""
     private var selectedIndex = 0
     private var rootTree: ViewTree?
@@ -193,6 +195,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         }
         if mode == .extensionView { extHost?.setSearchText(text); return } // re-render arrives via onCommit
         if mode == .aiAnswer { return } // showing an answer; Esc to go back
+        if mode == .nativeForm { return } // a form; typing happens in the form fields, not the search box
         if Self.looksLikeCalculation(text) { host.setSearchText(text) } // card arrives via onCommit
         renderRoot(calcCard: nil)
     }
@@ -505,6 +508,73 @@ public final class AppController: NSObject, NSApplicationDelegate {
         guard let cg = CGImageSourceCreateThumbnailAtIndex(src, 0, opts as CFDictionary) else { return nil }
         let rep = NSBitmapImageRep(cgImage: cg)
         return rep.representation(using: .png, properties: [:])?.base64EncodedString()
+    }
+
+    // MARK: - Native in-palette forms (Create/Edit Snippet & Quicklink — Raycast has no Settings tab)
+
+    private func formField(_ id: Int, fieldId: String, type: String, title: String, placeholder: String, value: String = "") -> ViewNode {
+        var props: [String: JSONValue] = ["id": .string(fieldId), "title": .string(title), "placeholder": .string(placeholder)]
+        if !value.isEmpty { props["value"] = .string(value) }
+        return ViewNode(id: id, type: type, props: props)
+    }
+
+    /// Open an in-palette form. `submit` receives the field values (by id) when the user presses Enter.
+    private func enterNativeForm(title: String, fields: [ViewNode], submit: @escaping ([String: String]) -> Void) {
+        mode = .nativeForm
+        nativeFormTitle = title
+        nativeFormSubmit = submit
+        lastQuery = ""
+        let tree = ViewTree()
+        let form = ViewNode(id: 1, type: "form")
+        form.children = fields
+        tree.root.children = [form]
+        rootTree = tree
+        palette.clearSearch()
+        palette.setPlaceholder(title)
+        palette.hideFilter()
+        selectedIndex = 0
+        if !palette.isVisible { palette.show() }
+        palette.render(activeTree, selectedIndex: 0)
+        updateActionBar()
+    }
+
+    private func presentSnippetForm(editing snip: Snippet? = nil) {
+        let fields = [
+            formField(11, fieldId: "name", type: "form-textfield", title: "Name", placeholder: "Snippet name", value: snip?.name ?? ""),
+            formField(12, fieldId: "keyword", type: "form-textfield", title: "Keyword (optional)", placeholder: "Keyword", value: snip?.keyword ?? ""),
+            formField(13, fieldId: "content", type: "form-textarea", title: "Snippet", placeholder: "Snippet text…", value: snip?.content ?? ""),
+        ]
+        enterNativeForm(title: snip == nil ? "Create Snippet" : "Edit Snippet", fields: fields) { [weak self] vals in
+            guard let self else { return }
+            let name = (vals["name"] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            let content = vals["content"] ?? ""
+            guard !name.isEmpty || !content.isEmpty else { return }
+            if var s = snip {
+                s.name = name; s.keyword = vals["keyword"] ?? ""; s.content = content
+                self.snippetStore.update(s)
+            } else {
+                _ = self.snippetStore.add(Snippet(name: name, keyword: vals["keyword"] ?? "", content: content))
+            }
+        }
+    }
+
+    private func presentQuicklinkForm(editing ql: Quicklink? = nil) {
+        let fields = [
+            formField(11, fieldId: "name", type: "form-textfield", title: "Name", placeholder: "Quicklink name", value: ql?.name ?? ""),
+            formField(12, fieldId: "link", type: "form-textfield", title: "Link", placeholder: "https://example.com/{query}", value: ql?.link ?? ""),
+        ]
+        enterNativeForm(title: ql == nil ? "Create Quicklink" : "Edit Quicklink", fields: fields) { [weak self] vals in
+            guard let self else { return }
+            let name = (vals["name"] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            let link = (vals["link"] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !name.isEmpty, !link.isEmpty else { return }
+            if var q = ql {
+                q.name = name; q.link = link
+                self.quicklinkStore.update(q)
+            } else {
+                _ = self.quicklinkStore.add(Quicklink(name: name, link: link))
+            }
+        }
     }
 
     private static func screenshotMetadata(_ shot: ScreenshotIndex.Shot) -> JSONValue {
@@ -856,6 +926,11 @@ public final class AppController: NSObject, NSApplicationDelegate {
     }
 
     private func activateSelection(secondary: Bool) {
+        if mode == .nativeForm { // Enter submits the form, then closes
+            nativeFormSubmit?(palette.formValues())
+            afterLaunch()
+            return
+        }
         if let ql = pendingQuicklink { openQuicklink(ql, argument: lastQuery); return } // confirm input
         let acts = currentActions()
         guard !acts.isEmpty else { return }
@@ -878,9 +953,10 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 label = currentExtTitle
             }
         case .aiAnswer: label = "Ask AI"
+        case .nativeForm: label = nativeFormTitle
         case .root: label = "Invoke"
         }
-        let primary = pendingQuicklink != nil ? "Open" : currentActions().first?.title
+        let primary = mode == .nativeForm ? "Save" : (pendingQuicklink != nil ? "Open" : currentActions().first?.title)
         palette.setActionBar(command: label, primary: primary)
     }
 
@@ -948,13 +1024,23 @@ public final class AppController: NSObject, NSApplicationDelegate {
         if let sid = node.props["snippetKey"]?.stringValue, let snip = snippetStore.snippet(id: sid) {
             return [
                 PaletteAction(title: pasteTitle(), shortcut: "↵") { [weak self] in self?.pasteText(snip.content) },
-                PaletteAction(title: "Copy", shortcut: "⌘↵") { [weak self] in self?.copyText(snip.content) },
+                PaletteAction(title: "Copy", shortcut: "⌘↵", icon: "doc.on.doc") { [weak self] in self?.copyText(snip.content) },
+                PaletteAction(title: "Edit Snippet", shortcut: "⌘E", icon: "pencil") { [weak self] in self?.presentSnippetForm(editing: snip) },
+                PaletteAction(title: "Delete Snippet", shortcut: "⌃X", icon: "trash") { [weak self] in
+                    self?.snippetStore.delete(id: sid); self?.selectedIndex = 0; self?.renderSnippets(query: self?.lastQuery ?? "")
+                },
             ]
         }
         if let qid = node.props["quicklinkKey"]?.stringValue, let ql = quicklinkStore.quicklink(id: qid) {
-            return [PaletteAction(title: ql.hasArgument ? "Open with Input…" : "Open", shortcut: "↵") { [weak self] in
-                if ql.hasArgument { self?.beginQuicklinkInput(ql) } else { self?.openQuicklink(ql, argument: "") }
-            }]
+            return [
+                PaletteAction(title: ql.hasArgument ? "Open with Input…" : "Open", shortcut: "↵") { [weak self] in
+                    if ql.hasArgument { self?.beginQuicklinkInput(ql) } else { self?.openQuicklink(ql, argument: "") }
+                },
+                PaletteAction(title: "Edit Quicklink", shortcut: "⌘E", icon: "pencil") { [weak self] in self?.presentQuicklinkForm(editing: ql) },
+                PaletteAction(title: "Delete Quicklink", shortcut: "⌃X", icon: "trash") { [weak self] in
+                    self?.quicklinkStore.delete(id: qid); self?.selectedIndex = 0; self?.renderQuicklinks(query: self?.lastQuery ?? "")
+                },
+            ]
         }
         if let cid = node.props["commandId"]?.stringValue, let cmd = commands.first(where: { $0.id == cid }) {
             let primary = PaletteAction(title: cmd.runTitle, shortcut: "↵") { [weak self] in
@@ -1680,9 +1766,9 @@ public final class AppController: NSObject, NSApplicationDelegate {
             RootCommand(id: "ai.concise", title: "Make Concise", subtitle: "AI", runTitle: "Run", icon: "scissors", keywords: ["ai", "concise", "shorter", "trim", "brief"], closesPalette: false) { [weak self] in self?.runAITransform("Rewrite the user's text to be more concise while preserving meaning, key details, tone, and language. Return ONLY the rewritten text.") },
             RootCommand(id: "ai.summarize", title: "Summarize", subtitle: "AI", runTitle: "Run", icon: "list.bullet.rectangle", keywords: ["ai", "summarize", "summary", "tldr"], closesPalette: false) { [weak self] in self?.runAITransform("Summarize the user's text into a few clear bullet points capturing the key information, in the same language. Return ONLY the summary.") },
             RootCommand(id: "snippet.search", title: "Search Snippets", subtitle: "Snippets", runTitle: "Open", icon: "text.quote", keywords: ["snippet", "snippets", "text", "expand", "paste"], closesPalette: false) { [weak self] in self?.enterSnippets() },
-            RootCommand(id: "snippet.create", title: "Create Snippet", subtitle: "Snippets", runTitle: "Open", icon: "plus.rectangle.on.rectangle", keywords: ["snippet", "create", "new", "add"], closesPalette: true) { [weak self] in self?.openSettings(tab: .snippets) },
+            RootCommand(id: "snippet.create", title: "Create Snippet", subtitle: "Snippets", runTitle: "Open", icon: "plus.rectangle.on.rectangle", keywords: ["snippet", "create", "new", "add"], closesPalette: false) { [weak self] in self?.presentSnippetForm() },
             RootCommand(id: "quicklink.search", title: "Search Quicklinks", subtitle: "Quicklinks", runTitle: "Open", icon: "link", keywords: ["quicklink", "quicklinks", "link", "url", "bookmark"], closesPalette: false) { [weak self] in self?.enterQuicklinks() },
-            RootCommand(id: "quicklink.create", title: "Create Quicklink", subtitle: "Quicklinks", runTitle: "Open", icon: "link.badge.plus", keywords: ["quicklink", "create", "new", "add", "link"], closesPalette: true) { [weak self] in self?.openSettings(tab: .quicklinks) },
+            RootCommand(id: "quicklink.create", title: "Create Quicklink", subtitle: "Quicklinks", runTitle: "Open", icon: "link.badge.plus", keywords: ["quicklink", "create", "new", "add", "link"], closesPalette: false) { [weak self] in self?.presentQuicklinkForm() },
             RootCommand(id: "app.settings", title: "Open Settings", subtitle: "Invoke", runTitle: "Open", icon: "gearshape", keywords: ["settings", "preferences", "config", "options"], closesPalette: true) { [weak self] in self?.openSettings() },
             windowCommand("window.maximize", "Maximize", "macwindow", ["maximize", "full", "fill"], .maximize),
             windowCommand("window.leftHalf", "Left Half", "rectangle.lefthalf.filled", ["left", "half"], .leftHalf),
@@ -1708,8 +1794,6 @@ public final class AppController: NSObject, NSApplicationDelegate {
         let tabs: [(SettingsTab, String, String)] = [
             (.general, "General", "gearshape"),
             (.commands, "Extensions", "puzzlepiece.extension"),
-            (.snippets, "Snippets", "text.quote"),
-            (.quicklinks, "Quicklinks", "link"),
             (.importExt, "Import Extension", "square.and.arrow.down"),
             (.advanced, "Advanced", "wrench.and.screwdriver"),
             (.about, "About", "info.circle"),
@@ -1752,7 +1836,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     @objc private func openSettingsMenu() { openSettings() }
 
     /// Settings tab indices (must match the order SettingsWindow adds its tabs).
-    enum SettingsTab: Int { case general, commands, snippets, quicklinks, importExt, advanced, about }
+    enum SettingsTab: Int { case general, commands, importExt, advanced, about }
 
     private func openSettings(tab: SettingsTab? = nil) {
         palette.hide()

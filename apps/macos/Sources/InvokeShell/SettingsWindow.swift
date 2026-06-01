@@ -33,8 +33,7 @@ public final class SettingsWindow {
             // Tab order must match AppController.SettingsTab.
             tabs.addTabViewItem(tab("General", "gearshape", hosted(GeneralPane())))
             tabs.addTabViewItem(tab("Extensions", "puzzlepiece.extension", hosted(CommandsPane(groups: groups, prefGroups: prefGroups, onBindingsChanged: onBindingsChanged, onClearClipboard: onClearClipboard))))
-            tabs.addTabViewItem(tab("Snippets", "text.quote", hosted(SnippetsPane())))
-            tabs.addTabViewItem(tab("Quicklinks", "link", hosted(QuicklinksPane())))
+            // Snippets & Quicklinks are created/edited via in-palette forms (Raycast has no tab for them).
             tabs.addTabViewItem(tab("Import", "square.and.arrow.down", hosted(ImportPane(repoRoot: repoRoot))))
             // Extensions prefs now live inline in the Commands detail panel; Clipboard settings live in
             // the Clipboard History command's detail — so neither needs its own tab anymore.
