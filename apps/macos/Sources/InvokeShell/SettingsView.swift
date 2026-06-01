@@ -80,6 +80,7 @@ struct CommandsPane: View {
     let prefGroups: [ExtensionPrefGroup]
     /// Called after an enable/disable or hotkey change so the controller re-registers global hotkeys.
     let onBindingsChanged: () -> Void
+    let onClearClipboard: () -> Void
 
     @State private var expanded: Set<String> = []
     @State private var search = ""
@@ -123,7 +124,7 @@ struct CommandsPane: View {
             }
             .frame(minWidth: 560, maxWidth: .infinity)
             Divider()
-            CommandDetailPane(selection: selection, groups: groups, prefGroups: prefGroups, onBindingsChanged: onBindingsChanged)
+            CommandDetailPane(selection: selection, groups: groups, prefGroups: prefGroups, onBindingsChanged: onBindingsChanged, onClearClipboard: onClearClipboard)
                 .frame(width: 340)
         }
         .frame(minWidth: 920, maxWidth: .infinity, minHeight: 380, maxHeight: .infinity)
@@ -258,6 +259,7 @@ struct CommandDetailPane: View {
     let groups: [ExtensionGroup]
     let prefGroups: [ExtensionPrefGroup]
     let onBindingsChanged: () -> Void
+    let onClearClipboard: () -> Void
     @ObservedObject private var settings = AppSettings.shared
 
     var body: some View {
@@ -289,7 +291,19 @@ struct CommandDetailPane: View {
                             Divider()
                         }
 
-                        if let prefs = info.prefGroup, !prefs.fields.isEmpty {
+                        if info.id == "clipboard.history" {
+                            // Clipboard settings live here now (no separate tab) — Raycast keeps a
+                            // command's config in its detail panel.
+                            section("Clipboard") {
+                                Picker("History size", selection: $settings.clipboardLimit) {
+                                    Text("25 items").tag(25); Text("50 items").tag(50)
+                                    Text("100 items").tag(100); Text("250 items").tag(250)
+                                }
+                                Button("Clear Clipboard History", role: .destructive, action: onClearClipboard)
+                                Text("History is kept in memory only — no plaintext on disk until the encrypted store ships.")
+                                    .font(.caption).foregroundColor(.secondary)
+                            }
+                        } else if let prefs = info.prefGroup, !prefs.fields.isEmpty {
                             section("Preferences") {
                                 ForEach(prefs.fields) { f in
                                     if f.type == "checkbox" { CheckboxPref(extID: prefs.id, pref: f) }

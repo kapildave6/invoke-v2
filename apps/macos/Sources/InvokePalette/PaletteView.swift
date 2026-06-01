@@ -232,7 +232,8 @@ public final class PaletteView: NSView {
         row.translatesAutoresizingMaskIntoConstraints = false
         row.wantsLayer = true
         row.layer?.cornerRadius = 6
-        row.layer?.backgroundColor = selected ? NSColor.white.withAlphaComponent(0.13).cgColor : NSColor.clear.cgColor
+        // Accent tint reads in both Light and Dark (the old white-alpha was invisible in Light mode).
+        row.layer?.backgroundColor = selected ? NSColor.controlAccentColor.withAlphaComponent(0.20).cgColor : NSColor.clear.cgColor
         let h = NSStackView()
         h.orientation = .horizontal
         h.alignment = .centerY
@@ -287,15 +288,21 @@ public final class PaletteView: NSView {
         preview.addSubview(contentView)
         pane.addSubview(preview)
 
+        // Horizontal divider separating the content preview from the Information block (Raycast parity).
+        let infoDivider = NSBox()
+        infoDivider.boxType = .separator
+        infoDivider.translatesAutoresizingMaskIntoConstraints = false
+        pane.addSubview(infoDivider)
+
         let info = NSStackView()
         info.orientation = .vertical
         info.alignment = .width // rows fill the pane width so values right-align
         info.distribution = .fill
-        info.spacing = 7
+        info.spacing = 8
         info.translatesAutoresizingMaskIntoConstraints = false
         let header = NSTextField(labelWithString: "Information")
         header.font = .systemFont(ofSize: 11, weight: .semibold)
-        header.textColor = .tertiaryLabelColor
+        header.textColor = .secondaryLabelColor
         info.addArrangedSubview(header)
         if let md = node.props["metadata"], case .array(let mdRows) = md {
             for r in mdRows {
@@ -318,8 +325,11 @@ public final class PaletteView: NSView {
             contentView.trailingAnchor.constraint(equalTo: preview.trailingAnchor),
             contentView.bottomAnchor.constraint(lessThanOrEqualTo: preview.bottomAnchor),
 
-            // Information anchored at a constant Y (preview bottom), so it no longer jumps per item.
-            info.topAnchor.constraint(equalTo: preview.bottomAnchor, constant: 14),
+            // A divider under the fixed-height preview, then the Information block at a constant Y.
+            infoDivider.topAnchor.constraint(equalTo: preview.bottomAnchor, constant: 12),
+            infoDivider.leadingAnchor.constraint(equalTo: pane.leadingAnchor, constant: 16),
+            infoDivider.trailingAnchor.constraint(equalTo: pane.trailingAnchor, constant: -16),
+            info.topAnchor.constraint(equalTo: infoDivider.bottomAnchor, constant: 12),
             info.leadingAnchor.constraint(equalTo: pane.leadingAnchor, constant: 16),
             info.trailingAnchor.constraint(equalTo: pane.trailingAnchor, constant: -16),
             info.bottomAnchor.constraint(lessThanOrEqualTo: pane.bottomAnchor, constant: -14),

@@ -994,7 +994,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         ]
         if isExtension {
             acts.append(PaletteAction(title: "Configure Extension", shortcut: "⌥⌘,", icon: "gearshape.2") { [weak self] in
-                self?.openSettings(tab: .extensions)
+                self?.openSettings(tab: .commands) // prefs live in the Commands detail panel now
             })
         }
         acts.append(PaletteAction(title: "Disable Command", shortcut: "⌃⇧⌘D", icon: "minus.circle") { [weak self] in
@@ -1690,8 +1690,6 @@ public final class AppController: NSObject, NSApplicationDelegate {
             (.snippets, "Snippets", "text.quote"),
             (.quicklinks, "Quicklinks", "link"),
             (.importExt, "Import Extension", "square.and.arrow.down"),
-            (.extensions, "Extensions", "puzzlepiece.extension"),
-            (.clipboard, "Clipboard", "doc.on.clipboard"),
             (.advanced, "Advanced", "wrench.and.screwdriver"),
             (.about, "About", "info.circle"),
         ]
@@ -1733,7 +1731,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     @objc private func openSettingsMenu() { openSettings() }
 
     /// Settings tab indices (must match the order SettingsWindow adds its tabs).
-    enum SettingsTab: Int { case general, commands, snippets, quicklinks, importExt, extensions, clipboard, advanced, about }
+    enum SettingsTab: Int { case general, commands, snippets, quicklinks, importExt, advanced, about }
 
     private func openSettings(tab: SettingsTab? = nil) {
         palette.hide()

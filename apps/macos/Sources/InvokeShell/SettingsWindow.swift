@@ -32,12 +32,12 @@ public final class SettingsWindow {
 
             // Tab order must match AppController.SettingsTab.
             tabs.addTabViewItem(tab("General", "gearshape", hosted(GeneralPane())))
-            tabs.addTabViewItem(tab("Commands", "command", hosted(CommandsPane(groups: groups, prefGroups: prefGroups, onBindingsChanged: onBindingsChanged))))
+            tabs.addTabViewItem(tab("Commands", "command", hosted(CommandsPane(groups: groups, prefGroups: prefGroups, onBindingsChanged: onBindingsChanged, onClearClipboard: onClearClipboard))))
             tabs.addTabViewItem(tab("Snippets", "text.quote", hosted(SnippetsPane())))
             tabs.addTabViewItem(tab("Quicklinks", "link", hosted(QuicklinksPane())))
             tabs.addTabViewItem(tab("Import", "square.and.arrow.down", hosted(ImportPane(repoRoot: repoRoot))))
-            tabs.addTabViewItem(tab("Extensions", "puzzlepiece.extension", hosted(ExtensionPrefsPane(groups: prefGroups))))
-            tabs.addTabViewItem(tab("Clipboard", "doc.on.clipboard", hosted(ClipboardPane(onClear: onClearClipboard))))
+            // Extensions prefs now live inline in the Commands detail panel; Clipboard settings live in
+            // the Clipboard History command's detail — so neither needs its own tab anymore.
             tabs.addTabViewItem(tab("Advanced", "wrench.and.screwdriver", hosted(AdvancedPane())))
             tabs.addTabViewItem(tab("About", "info.circle", hosted(AboutPane())))
             self.tabController = tabs
