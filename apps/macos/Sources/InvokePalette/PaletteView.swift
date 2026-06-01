@@ -91,15 +91,17 @@ public final class PaletteView: NSView {
     }
 
     /// Re-render rows from the current view-model tree, highlighting the item at `selectedIndex`
-    /// (item indices are assigned in pre-order, matching the host's selection model).
-    public func render(_ tree: ViewTree, selectedIndex: Int) {
+    /// (item indices are assigned in pre-order, matching the host's selection model). Returns true if it
+    /// did a full rebuild (so the window should resize); false on the selection-only fast path.
+    @discardableResult
+    public func render(_ tree: ViewTree, selectedIndex: Int) -> Bool {
         // Fast path: same grid tree, only the selection changed → just move the highlight (no rebuild,
         // no layout churn), keeping arrow navigation snappy on large screenshot grids.
         if lastSurfaceWasGrid, tree === lastRenderedTree, !gridCells.isEmpty {
             for (i, c) in gridCells.enumerated() { applyGridSelection(c, selected: i == selectedIndex) }
             selectedRowView = gridCells.indices.contains(selectedIndex) ? gridCells[selectedIndex] : nil
             scrollSelectedIntoView()
-            return
+            return false
         }
         stack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         gridCells.removeAll()
@@ -123,6 +125,7 @@ public final class PaletteView: NSView {
             appendRows(for: tree.root, selectedIndex: selectedIndex)
             scrollSelectedIntoView()
         }
+        return true
     }
 
     private func scrollSelectedIntoView() {

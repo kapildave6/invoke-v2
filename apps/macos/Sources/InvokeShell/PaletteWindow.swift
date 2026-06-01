@@ -289,8 +289,8 @@ public final class PaletteWindow: NSObject {
         // Any re-render (including async extension-commit / AI-answer callbacks) invalidates the tree the
         // ⌘K panel's captured actions point at — close it so it can't act on a stale node. No-op if hidden.
         actionPanel.dismiss()
-        paletteView.render(tree, selectedIndex: selectedIndex)
-        resizeToFit()
+        // Skip the resize (a full layout pass over every cell) when it was only a selection move.
+        if paletteView.render(tree, selectedIndex: selectedIndex) { resizeToFit() }
     }
 
     /// Compact Mode (PLAN.md §4.3): size the window to its content — search bar + results + action
