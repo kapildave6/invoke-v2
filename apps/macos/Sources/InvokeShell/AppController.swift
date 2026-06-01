@@ -1453,31 +1453,52 @@ public final class AppController: NSObject, NSApplicationDelegate {
     func extensionPreferenceGroups() -> [ExtensionPrefGroup] {
         let fm = FileManager.default
         var out: [ExtensionPrefGroup] = []
+
+        // Parse a manifest preferences[] array into our model (Raycast schema: name/title/label/
+        // description/type/default/data). `title` is a section header; `label` is a checkbox's text.
+        func parsePrefs(_ arr: [[String: Any]]) -> [ExtensionPreference] {
+            arr.compactMap { p in
+                guard let pname = p["name"] as? String else { return nil }
+                let def: String
+                if let b = p["default"] as? Bool { def = b ? "true" : "false" }
+                else if let s = p["default"] as? String { def = s }
+                else if let n = p["default"] as? NSNumber { def = n.stringValue }
+                else { def = "" }
+                let options: [PrefOption] = (p["data"] as? [[String: Any]] ?? []).compactMap { o in
+                    (o["value"] as? String).map { PrefOption(value: $0, title: (o["title"] as? String) ?? $0) }
+                }
+                return ExtensionPreference(name: pname, title: (p["title"] as? String) ?? "",
+                                           label: (p["label"] as? String) ?? "",
+                                           description: (p["description"] as? String) ?? "",
+                                           type: (p["type"] as? String) ?? "textfield",
+                                           defaultValue: def, options: options)
+            }
+        }
+
         for root in ["examples", "imported"] {
             let rootDir = repoRoot + "/" + root
             guard let names = try? fm.contentsOfDirectory(atPath: rootDir) else { continue }
             for name in names.sorted() where name != "calculator" {
                 guard let data = fm.contents(atPath: rootDir + "/" + name + "/package.json"),
                       let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
-                      let title = json["title"] as? String,
-                      let prefs = json["preferences"] as? [[String: Any]], !prefs.isEmpty else { continue }
+                      let title = json["title"] as? String else { continue }
                 let extKey = root == "imported" ? "imported-\(name)" : name
-                let fields: [ExtensionPreference] = prefs.compactMap { p in
-                    guard let pname = p["name"] as? String else { return nil }
-                    let def: String
-                    if let b = p["default"] as? Bool { def = b ? "true" : "false" }
-                    else if let s = p["default"] as? String { def = s }
-                    else if let n = p["default"] as? NSNumber { def = n.stringValue }
-                    else { def = "" }
-                    let options: [PrefOption] = (p["data"] as? [[String: Any]] ?? []).compactMap { o in
-                        (o["value"] as? String).map { PrefOption(value: $0, title: (o["title"] as? String) ?? $0) }
-                    }
-                    return ExtensionPreference(name: pname, title: (p["title"] as? String) ?? pname,
-                                               description: (p["description"] as? String) ?? "",
-                                               type: (p["type"] as? String) ?? "textfield",
-                                               defaultValue: def, options: options)
+                let fields = parsePrefs((json["preferences"] as? [[String: Any]]) ?? [])
+                let commands: [ExtensionCommandDetail] = ((json["commands"] as? [[String: Any]]) ?? []).compactMap { c in
+                    guard let cname = c["name"] as? String else { return nil }
+                    return ExtensionCommandDetail(name: cname, title: (c["title"] as? String) ?? cname,
+                                                  description: (c["description"] as? String) ?? "",
+                                                  fields: parsePrefs((c["preferences"] as? [[String: Any]]) ?? []))
                 }
-                if !fields.isEmpty { out.append(ExtensionPrefGroup(id: extKey, title: title, fields: fields)) }
+                let capabilities: [ExtensionCapability] = ((json["tools"] as? [[String: Any]]) ?? []).compactMap { t in
+                    guard let tname = t["name"] as? String else { return nil }
+                    return ExtensionCapability(name: tname, title: (t["title"] as? String) ?? tname,
+                                               description: (t["description"] as? String) ?? "")
+                }
+                // Emit a group for EVERY extension (not just those with prefs) so its description,
+                // commands, and capabilities all show in the Commands detail panel (Raycast parity).
+                out.append(ExtensionPrefGroup(id: extKey, title: title, description: (json["description"] as? String) ?? "",
+                                              fields: fields, commands: commands, capabilities: capabilities))
             }
         }
         return out
@@ -1686,7 +1707,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private func settingsTabCommands() -> [RootCommand] {
         let tabs: [(SettingsTab, String, String)] = [
             (.general, "General", "gearshape"),
-            (.commands, "Commands", "command"),
+            (.commands, "Extensions", "puzzlepiece.extension"),
             (.snippets, "Snippets", "text.quote"),
             (.quicklinks, "Quicklinks", "link"),
             (.importExt, "Import Extension", "square.and.arrow.down"),

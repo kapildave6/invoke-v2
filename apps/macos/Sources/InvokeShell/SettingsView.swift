@@ -101,24 +101,37 @@ struct CommandsPane: View {
             VStack(spacing: 0) {
                 HStack {
                     Image(systemName: "magnifyingglass").foregroundColor(.secondary).font(.caption)
+                    // Type-to-filter AND arrow-navigate from the search field (Raycast-style). Up/down
+                    // move the selection (a single-line field ignores them for the caret); right/left
+                    // expand/collapse the selected group only when the field is empty (else they move
+                    // the caret).
                     TextField("Search commands", text: $search).textFieldStyle(.plain)
+                        .onKeyPress(.downArrow) { moveSelection(1); return .handled }
+                        .onKeyPress(.upArrow) { moveSelection(-1); return .handled }
+                        .onKeyPress(.rightArrow) { search.isEmpty ? { expandSelected(true); return .handled }() : .ignored }
+                        .onKeyPress(.leftArrow) { search.isEmpty ? { expandSelected(false); return .handled }() : .ignored }
                 }
                 .padding(.horizontal, 12).padding(.vertical, 7)
                 Divider()
                 columnHeader
                 Divider()
-                ScrollView {
-                    LazyVStack(spacing: 0) {
-                        ForEach(filtered) { group in
-                            if group.commands.count > 1 {
-                                groupRow(group)
-                                if expanded.contains(group.id) {
-                                    ForEach(group.commands) { commandRow($0, indented: true, groupKey: group.name) }
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVStack(spacing: 0) {
+                            ForEach(filtered) { group in
+                                if group.commands.count > 1 {
+                                    groupRow(group).id(group.id)
+                                    if expanded.contains(group.id) {
+                                        ForEach(group.commands) { commandRow($0, indented: true, groupKey: group.name).id($0.id) }
+                                    }
+                                } else if let only = group.commands.first {
+                                    commandRow(only, indented: false, type: "Command", groupKey: group.name).id(only.id)
                                 }
-                            } else if let only = group.commands.first {
-                                commandRow(only, indented: false, type: "Command", groupKey: group.name)
                             }
                         }
+                    }
+                    .onChange(of: selection) { _, sel in
+                        if let sel { withAnimation(.easeOut(duration: 0.12)) { proxy.scrollTo(sel, anchor: .center) } }
                     }
                 }
             }
@@ -128,10 +141,39 @@ struct CommandsPane: View {
                 .frame(width: 340)
         }
         .frame(minWidth: 920, maxWidth: .infinity, minHeight: 380, maxHeight: .infinity)
+        .onAppear { if selection == nil { selection = visibleIds.first } }
     }
 
     /// True when the row at `id` is the selected one (drives the row highlight).
     private func isSelected(_ id: String) -> Bool { selection == id }
+
+    // MARK: - Keyboard navigation
+
+    /// The row ids currently visible, in display order (groups + their expanded children).
+    private var visibleIds: [String] {
+        var ids: [String] = []
+        for g in filtered {
+            if g.commands.count > 1 {
+                ids.append(g.id)
+                if expanded.contains(g.id) { ids.append(contentsOf: g.commands.map { $0.id }) }
+            } else if let only = g.commands.first {
+                ids.append(only.id)
+            }
+        }
+        return ids
+    }
+
+    private func moveSelection(_ delta: Int) {
+        let ids = visibleIds
+        guard !ids.isEmpty else { return }
+        let cur = selection.flatMap { ids.firstIndex(of: $0) } ?? (delta > 0 ? -1 : 0)
+        selection = ids[max(0, min(ids.count - 1, cur + delta))]
+    }
+
+    private func expandSelected(_ expand: Bool) {
+        guard let sel = selection, filtered.contains(where: { $0.id == sel && $0.commands.count > 1 }) else { return }
+        if expand { expanded.insert(sel) } else { expanded.remove(sel) }
+    }
 
     // MARK: - Column layout (shared by header + rows)
 
@@ -278,6 +320,13 @@ struct CommandDetailPane: View {
                         .padding(16)
                         Divider()
 
+                        if !info.description.isEmpty {
+                            section("Description") {
+                                Text(info.description).font(.callout).fixedSize(horizontal: false, vertical: true)
+                            }
+                            Divider()
+                        }
+
                         if info.supportsBinding {
                             section("Keyboard") {
                                 LabeledRow("Alias") { AliasField(commandId: info.id).frame(maxWidth: 150) }
@@ -291,9 +340,8 @@ struct CommandDetailPane: View {
                             Divider()
                         }
 
-                        if info.id == "clipboard.history" {
-                            // Clipboard settings live here now (no separate tab) — Raycast keeps a
-                            // command's config in its detail panel.
+                        if info.isClipboard {
+                            // Clipboard settings live in the command's detail now (no separate tab).
                             section("Clipboard") {
                                 Picker("History size", selection: $settings.clipboardLimit) {
                                     Text("25 items").tag(25); Text("50 items").tag(50)
@@ -303,16 +351,43 @@ struct CommandDetailPane: View {
                                 Text("History is kept in memory only — no plaintext on disk until the encrypted store ships.")
                                     .font(.caption).foregroundColor(.secondary)
                             }
-                        } else if let prefs = info.prefGroup, !prefs.fields.isEmpty {
-                            section("Preferences") {
-                                ForEach(prefs.fields) { f in
-                                    if f.type == "checkbox" { CheckboxPref(extID: prefs.id, pref: f) }
-                                    else { PrefField(extID: prefs.id, pref: f) }
+                            Divider()
+                        }
+
+                        if !info.fields.isEmpty {
+                            section("Preferences") { prefsView(info.fields, extID: info.prefExtID) }
+                            Divider()
+                        }
+
+                        if !info.capabilities.isEmpty {
+                            section("Capabilities") {
+                                ForEach(info.capabilities) { cap in
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(cap.title).fontWeight(.medium)
+                                        if !cap.description.isEmpty {
+                                            Text(cap.description).font(.caption).foregroundColor(.secondary)
+                                                .fixedSize(horizontal: false, vertical: true)
+                                        }
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
                                 }
                             }
-                        } else {
-                            Text("This \(info.type.lowercased()) has no preferences.")
-                                .font(.caption).foregroundColor(.secondary).padding(16)
+                            Divider()
+                        }
+
+                        if !info.commands.isEmpty {
+                            section("Commands") {
+                                ForEach(info.commands) { c in
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(c.title).fontWeight(.medium)
+                                        if !c.description.isEmpty {
+                                            Text(c.description).font(.caption).foregroundColor(.secondary)
+                                                .fixedSize(horizontal: false, vertical: true)
+                                        }
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                            }
                         }
                         Spacer(minLength: 0)
                     }
@@ -327,6 +402,19 @@ struct CommandDetailPane: View {
         }
         .frame(maxHeight: .infinity)
         .background(Color(nsColor: .windowBackgroundColor).opacity(0.4))
+    }
+
+    /// Render preference fields with Raycast-style section headers (a pref's `title` starts a group;
+    /// checkboxes show their `label`).
+    @ViewBuilder private func prefsView(_ fields: [ExtensionPreference], extID: String) -> some View {
+        ForEach(fields) { f in
+            if !f.title.isEmpty {
+                Text(f.title).font(.caption).foregroundColor(.secondary).padding(.top, 2)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            if f.type == "checkbox" { CheckboxPref(extID: extID, pref: f) }
+            else { PrefField(extID: extID, pref: f) }
+        }
     }
 
     @ViewBuilder private func section<C: View>(_ title: String, @ViewBuilder _ content: () -> C) -> some View {
@@ -346,18 +434,31 @@ struct CommandDetailPane: View {
         }
     }
 
-    /// Resolve the selected id (a command or a group) to display info + its extension's prefs.
-    private struct Info { let id: String; let title: String; let icon: String; let type: String; let supportsBinding: Bool; let colorKey: String; let prefGroup: ExtensionPrefGroup? }
+    /// Resolve the selected id (a command or an extension) to all the manifest detail to display.
+    private struct Info {
+        let id: String; let title: String; let icon: String; let type: String
+        let supportsBinding: Bool; let colorKey: String
+        let description: String; let fields: [ExtensionPreference]; let prefExtID: String
+        let capabilities: [ExtensionCapability]; let commands: [ExtensionCommandDetail]; let isClipboard: Bool
+    }
     private var resolved: Info? {
         guard let sel = selection else { return nil }
-        // A group row?
+        // Extension (group) selected → its description, extension-level prefs, capabilities, command list.
         if let g = groups.first(where: { $0.id == sel }) {
-            return Info(id: sel, title: g.name, icon: g.icon, type: "Extension", supportsBinding: false, colorKey: g.name, prefGroup: prefGroup(forGroupOrCommand: sel))
+            let pg = prefGroup(forGroupOrCommand: sel)
+            return Info(id: sel, title: g.name, icon: g.icon, type: "Extension", supportsBinding: false, colorKey: g.name,
+                        description: pg?.description ?? "", fields: pg?.fields ?? [], prefExtID: pg?.id ?? sel,
+                        capabilities: pg?.capabilities ?? [], commands: pg?.commands ?? [], isClipboard: false)
         }
-        // A command row?
+        // Command selected → its own description + command-level prefs.
         for g in groups {
             if let c = g.commands.first(where: { $0.id == sel }) {
-                return Info(id: c.id, title: c.title, icon: c.icon, type: "Command", supportsBinding: c.supportsBinding, colorKey: g.name, prefGroup: prefGroup(forGroupOrCommand: sel))
+                let pg = prefGroup(forGroupOrCommand: sel)
+                let cname = sel.split(separator: ".").last.map(String.init) ?? sel
+                let cd = pg?.commands.first { $0.id == cname }
+                return Info(id: c.id, title: c.title, icon: c.icon, type: "Command", supportsBinding: c.supportsBinding, colorKey: g.name,
+                            description: cd?.description ?? "", fields: cd?.fields ?? [], prefExtID: pg?.id ?? g.id,
+                            capabilities: [], commands: [], isClipboard: c.id == "clipboard.history")
             }
         }
         return nil
@@ -770,22 +871,47 @@ public struct PrefOption: Identifiable { public let value: String; public let ti
 public struct ExtensionPreference: Identifiable {
     public let id: String        // = name
     public let name: String
-    public let title: String
+    public let title: String     // section header when present (Raycast groups by this)
+    public let label: String     // the checkbox's own text
     public let description: String
     public let type: String      // textfield | password | checkbox | dropdown
     public let defaultValue: String
     public let options: [PrefOption]
-    public init(name: String, title: String, description: String, type: String, defaultValue: String, options: [PrefOption]) {
-        self.id = name; self.name = name; self.title = title; self.description = description
+    public init(name: String, title: String, label: String = "", description: String, type: String, defaultValue: String, options: [PrefOption]) {
+        self.id = name; self.name = name; self.title = title; self.label = label; self.description = description
         self.type = type; self.defaultValue = defaultValue; self.options = options
+    }
+}
+
+/// An AI tool the extension exposes (Raycast's "Capabilities").
+public struct ExtensionCapability: Identifiable {
+    public let id: String; public let title: String; public let description: String
+    public init(name: String, title: String, description: String) { self.id = name; self.title = title; self.description = description }
+}
+
+/// Per-command detail (title, description, and its own preferences) for the detail panel.
+public struct ExtensionCommandDetail: Identifiable {
+    public let id: String        // command name
+    public let title: String
+    public let description: String
+    public let fields: [ExtensionPreference]
+    public init(name: String, title: String, description: String, fields: [ExtensionPreference]) {
+        self.id = name; self.title = title; self.description = description; self.fields = fields
     }
 }
 
 public struct ExtensionPrefGroup: Identifiable {
     public let id: String        // extension key
     public let title: String
-    public let fields: [ExtensionPreference]
-    public init(id: String, title: String, fields: [ExtensionPreference]) { self.id = id; self.title = title; self.fields = fields }
+    public let description: String
+    public let fields: [ExtensionPreference]              // extension-level preferences
+    public let commands: [ExtensionCommandDetail]         // per-command title/description/preferences
+    public let capabilities: [ExtensionCapability]        // tools[]
+    public init(id: String, title: String, description: String = "", fields: [ExtensionPreference],
+                commands: [ExtensionCommandDetail] = [], capabilities: [ExtensionCapability] = []) {
+        self.id = id; self.title = title; self.description = description
+        self.fields = fields; self.commands = commands; self.capabilities = capabilities
+    }
 }
 
 /// Settings → Extensions: configure each installed extension's declared preferences. Values are
@@ -887,7 +1013,7 @@ private struct CheckboxPref: View {
             get: { (settings.extensionPref(extID: extID, name: pref.name, secret: false) ?? pref.defaultValue) == "true" },
             set: { settings.setExtensionPref(extID: extID, name: pref.name, secret: false, value: $0 ? "true" : "false") }
         )) {
-            Text(pref.title)
+            Text(pref.label.isEmpty ? pref.title : pref.label) // the checkbox's own text (label), not the section header
             if !pref.description.isEmpty { Text(pref.description).font(.caption).foregroundColor(.secondary) }
         }
     }

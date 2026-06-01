@@ -32,7 +32,7 @@ public final class SettingsWindow {
 
             // Tab order must match AppController.SettingsTab.
             tabs.addTabViewItem(tab("General", "gearshape", hosted(GeneralPane())))
-            tabs.addTabViewItem(tab("Commands", "command", hosted(CommandsPane(groups: groups, prefGroups: prefGroups, onBindingsChanged: onBindingsChanged, onClearClipboard: onClearClipboard))))
+            tabs.addTabViewItem(tab("Extensions", "puzzlepiece.extension", hosted(CommandsPane(groups: groups, prefGroups: prefGroups, onBindingsChanged: onBindingsChanged, onClearClipboard: onClearClipboard))))
             tabs.addTabViewItem(tab("Snippets", "text.quote", hosted(SnippetsPane())))
             tabs.addTabViewItem(tab("Quicklinks", "link", hosted(QuicklinksPane())))
             tabs.addTabViewItem(tab("Import", "square.and.arrow.down", hosted(ImportPane(repoRoot: repoRoot))))
