@@ -28,14 +28,17 @@ public final class AIService {
 
     public init() {}
 
-    /// Whether an API key is available (without exposing it). Cached — `buildRoot` checks this per
-    /// keystroke, and the Keychain fallback is a synchronous IPC we don't want on every render.
-    /// (A key added mid-session is picked up on next launch.)
-    private var cachedHasKey: Bool?
+    private static let service = "com.invoke.ai"
+    private static let account = "anthropic-api-key"
+
+    /// Whether an API key is available (without exposing it). Cached (static, so a Settings change is
+    /// seen by every instance) — `buildRoot` checks this per keystroke and the Keychain lookup is a
+    /// synchronous IPC we don't want on every render. Invalidated when the key is stored/cleared.
+    private static var cachedHasKey: Bool?
     public var hasKey: Bool {
-        if let c = cachedHasKey { return c }
+        if let c = AIService.cachedHasKey { return c }
         let v = apiKey() != nil
-        cachedHasKey = v
+        AIService.cachedHasKey = v
         return v
     }
 
@@ -43,6 +46,38 @@ public final class AIService {
         if let env = ProcessInfo.processInfo.environment["ANTHROPIC_API_KEY"], !env.isEmpty { return env }
         return Self.keychainKey()
     }
+
+    // MARK: - Key management for the Settings UI (the value is never logged, echoed, or returned)
+
+    /// Whether a key is configured (env var or Keychain) — for the Settings status line.
+    public static func hasStoredKey() -> Bool {
+        if let env = ProcessInfo.processInfo.environment["ANTHROPIC_API_KEY"], !env.isEmpty { return true }
+        return keychainKey() != nil
+    }
+
+    /// True when the env var supplies the key (which takes precedence over the Keychain).
+    public static func usingEnvKey() -> Bool {
+        !(ProcessInfo.processInfo.environment["ANTHROPIC_API_KEY"] ?? "").isEmpty
+    }
+
+    /// Store (or, with empty, remove) the Anthropic key in the Keychain. Replaces any existing item.
+    public static func storeAPIKey(_ key: String) {
+        let base: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account,
+        ]
+        SecItemDelete(base as CFDictionary)
+        let trimmed = key.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty, let data = trimmed.data(using: .utf8) {
+            var add = base
+            add[kSecValueData as String] = data
+            SecItemAdd(add as CFDictionary, nil)
+        }
+        cachedHasKey = nil // recompute on next hasKey (picks up the new/removed key, no relaunch)
+    }
+
+    public static func clearStoredKey() { storeAPIKey("") }
 
     /// One-shot completion: `system` instruction + `user` content → assistant text.
     public func complete(system: String, user: String, maxTokens: Int = 1024) async -> Result<String, AIError> {
@@ -83,8 +118,8 @@ public final class AIService {
     private static func keychainKey() -> String? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: "com.invoke.ai",
-            kSecAttrAccount as String: "anthropic-api-key",
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account,
             kSecReturnData as String: true,
             kSecMatchLimit as String: kSecMatchLimitOne,
         ]

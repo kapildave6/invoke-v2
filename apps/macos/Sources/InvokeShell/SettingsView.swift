@@ -263,6 +263,9 @@ struct ClipboardPane: View {
 struct AdvancedPane: View {
     @ObservedObject var settings = AppSettings.shared
     @State private var axGranted = AXIsProcessTrusted()
+    @State private var aiKey = ""
+    @State private var aiKeyStored = AIService.hasStoredKey()
+    @State private var aiSaved = false
     var body: some View {
         Form {
             Section {
@@ -294,9 +297,41 @@ struct AdvancedPane: View {
                     Text("👋🏿  Dark").tag(5)
                 }
             }
+            Section {
+                SecureField("Enter your Anthropic API key", text: $aiKey).onSubmit(saveAIKey)
+                HStack {
+                    Button("Save Key", action: saveAIKey).disabled(aiKey.isEmpty || AIService.usingEnvKey())
+                    if aiKeyStored && !AIService.usingEnvKey() {
+                        Button("Remove", role: .destructive) { AIService.clearStoredKey(); aiKey = ""; aiKeyStored = false; aiSaved = false }
+                    }
+                    Spacer()
+                    Text(aiStatus).font(.caption).foregroundColor(aiKeyStored ? .green : .secondary)
+                }
+                Link("Get an Anthropic API key", destination: URL(string: "https://console.anthropic.com/settings/keys")!).font(.caption)
+            } header: {
+                Text("AI")
+            } footer: {
+                Text("Powers the AI commands (Improve Writing, Ask AI). Stored in your macOS Keychain — never in plaintext. An ANTHROPIC_API_KEY environment variable, if set, takes precedence.")
+                    .font(.caption).foregroundColor(.secondary)
+            }
         }
         .formStyle(.grouped)
         .frame(minWidth: 540, maxWidth: .infinity, minHeight: 380, maxHeight: .infinity)
+    }
+
+    private var aiStatus: String {
+        if AIService.usingEnvKey() { return "Using ANTHROPIC_API_KEY (env)" }
+        if aiSaved { return "Saved ✓" }
+        return aiKeyStored ? "Key configured ✓" : "No key set"
+    }
+
+    private func saveAIKey() {
+        let key = aiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !key.isEmpty else { return }
+        AIService.storeAPIKey(key)
+        aiKey = "" // never keep or re-display the key
+        aiKeyStored = true
+        aiSaved = true
     }
 }
 
