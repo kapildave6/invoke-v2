@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import Security
 import ServiceManagement
 
 /// User-configurable settings (PLAN.md §6 Preferences), persisted in UserDefaults and shared by the
@@ -27,6 +28,9 @@ public final class AppSettings: ObservableObject {
     @Published public var aliases: [String: String] { didSet { d.set(aliases, forKey: "commandAliases") } }
     /// commandId → recorded global hotkey.
     @Published public var hotkeys: [String: KeyCombo] { didSet { persistHotkeys() } }
+    /// extensionId → { preferenceName: value } for NON-secret extension preferences. Secret
+    /// (`password`) preferences are NOT kept here — they go to the Keychain (never plaintext).
+    @Published public var extensionPrefs: [String: [String: String]] { didSet { persistExtensionPrefs() } }
     @Published public var launchAtLogin: Bool {
         didSet {
             d.set(launchAtLogin, forKey: "launchAtLogin")
@@ -44,7 +48,61 @@ public final class AppSettings: ObservableObject {
                   let decoded = try? JSONDecoder().decode([String: KeyCombo].self, from: data) else { return [:] }
             return decoded
         }()
+        extensionPrefs = {
+            guard let data = UserDefaults.standard.data(forKey: "extensionPrefs"),
+                  let decoded = try? JSONDecoder().decode([String: [String: String]].self, from: data) else { return [:] }
+            return decoded
+        }()
         launchAtLogin = d.bool(forKey: "launchAtLogin")
+    }
+
+    private func persistExtensionPrefs() {
+        if let data = try? JSONEncoder().encode(extensionPrefs) { d.set(data, forKey: "extensionPrefs") }
+    }
+
+    // MARK: - Extension preferences (non-secret in UserDefaults; `password` type in Keychain)
+
+    public func extensionPref(extID: String, name: String, secret: Bool) -> String? {
+        secret ? Self.keychainGet(service: "com.invoke.ext.\(extID)", account: name) : extensionPrefs[extID]?[name]
+    }
+
+    public func setExtensionPref(extID: String, name: String, secret: Bool, value: String) {
+        if secret {
+            Self.keychainSet(service: "com.invoke.ext.\(extID)", account: name, value: value)
+            return
+        }
+        var byExt = extensionPrefs
+        var fields = byExt[extID] ?? [:]
+        if value.isEmpty { fields[name] = nil } else { fields[name] = value }
+        byExt[extID] = fields
+        extensionPrefs = byExt
+    }
+
+    private static func keychainGet(service: String, account: String) -> String? {
+        let q: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne,
+        ]
+        var item: CFTypeRef?
+        guard SecItemCopyMatching(q as CFDictionary, &item) == errSecSuccess,
+              let data = item as? Data, let s = String(data: data, encoding: .utf8) else { return nil }
+        return s
+    }
+
+    private static func keychainSet(service: String, account: String, value: String) {
+        let base: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account,
+        ]
+        SecItemDelete(base as CFDictionary)
+        guard !value.isEmpty, let data = value.data(using: .utf8) else { return }
+        var add = base
+        add[kSecValueData as String] = data
+        SecItemAdd(add as CFDictionary, nil)
     }
 
     public func isEnabled(_ commandID: String) -> Bool { !disabledCommands.contains(commandID) }

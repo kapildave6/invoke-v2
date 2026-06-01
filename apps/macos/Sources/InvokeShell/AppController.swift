@@ -1273,7 +1273,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
                       let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
                       let title = json["title"] as? String,
                       let cmds = json["commands"] as? [[String: Any]] else { continue }
-                let prefsJSON = Self.manifestPreferencesJSON(json)
+                let prefsSpec = (json["preferences"] as? [[String: Any]]) ?? []
                 // Namespace the extension key by root so an imported ext can't collide ids (frecency/
                 // alias/hotkey/grouping) with a bundled example of the same name.
                 let extKey = root == "imported" ? "imported-\(name)" : name
@@ -1288,7 +1288,10 @@ public final class AppController: NSObject, NSApplicationDelegate {
                     out.append(RootCommand(id: cmdId, title: ctitle, subtitle: title, runTitle: "Open",
                                            icon: "puzzlepiece.extension.fill", keywords: [name, cname, title.lowercased()],
                                            closesPalette: false) { [weak self] in
-                        self?.launchExtension(id: cmdId, title: ctitle, entryRelPath: rel, command: cname, preferences: prefsJSON)
+                        guard let self else { return }
+                        // Resolve preferences at launch (defaults merged with the user's saved values).
+                        let prefs = self.resolvePreferencesJSON(extKey: extKey, spec: prefsSpec)
+                        self.launchExtension(id: cmdId, title: ctitle, entryRelPath: rel, command: cname, preferences: prefs)
                     })
                 }
             }
@@ -1296,13 +1299,61 @@ public final class AppController: NSObject, NSApplicationDelegate {
         return out
     }
 
-    private static func manifestPreferencesJSON(_ json: [String: Any]) -> String {
-        guard let prefs = json["preferences"] as? [[String: Any]] else { return "{}" }
+    /// Build INVOKE_PREFERENCES for an extension: each manifest preference's saved value (Keychain for
+    /// `password`, UserDefaults otherwise) falling back to its manifest default.
+    private func resolvePreferencesJSON(extKey: String, spec: [[String: Any]]) -> String {
         var dict: [String: Any] = [:]
-        for p in prefs { if let n = p["name"] as? String, let def = p["default"] { dict[n] = def } }
+        for p in spec {
+            guard let name = p["name"] as? String else { continue }
+            let type = (p["type"] as? String) ?? "textfield"
+            let override = AppSettings.shared.extensionPref(extID: extKey, name: name, secret: type == "password")
+            if type == "checkbox" {
+                if let o = override { dict[name] = (o == "true") }
+                else if let b = p["default"] as? Bool { dict[name] = b }
+                else if let s = p["default"] as? String { dict[name] = (s == "true") }
+            } else if let o = override, !o.isEmpty {
+                dict[name] = o
+            } else if let def = p["default"] {
+                dict[name] = def
+            }
+        }
         guard let data = try? JSONSerialization.data(withJSONObject: dict),
               let s = String(data: data, encoding: .utf8) else { return "{}" }
         return s
+    }
+
+    /// Preference groups (manifest `preferences[]`) for the Settings → Extensions pane.
+    func extensionPreferenceGroups() -> [ExtensionPrefGroup] {
+        let fm = FileManager.default
+        var out: [ExtensionPrefGroup] = []
+        for root in ["examples", "imported"] {
+            let rootDir = repoRoot + "/" + root
+            guard let names = try? fm.contentsOfDirectory(atPath: rootDir) else { continue }
+            for name in names.sorted() where name != "calculator" {
+                guard let data = fm.contents(atPath: rootDir + "/" + name + "/package.json"),
+                      let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+                      let title = json["title"] as? String,
+                      let prefs = json["preferences"] as? [[String: Any]], !prefs.isEmpty else { continue }
+                let extKey = root == "imported" ? "imported-\(name)" : name
+                let fields: [ExtensionPreference] = prefs.compactMap { p in
+                    guard let pname = p["name"] as? String else { return nil }
+                    let def: String
+                    if let b = p["default"] as? Bool { def = b ? "true" : "false" }
+                    else if let s = p["default"] as? String { def = s }
+                    else if let n = p["default"] as? NSNumber { def = n.stringValue }
+                    else { def = "" }
+                    let options: [PrefOption] = (p["data"] as? [[String: Any]] ?? []).compactMap { o in
+                        (o["value"] as? String).map { PrefOption(value: $0, title: (o["title"] as? String) ?? $0) }
+                    }
+                    return ExtensionPreference(name: pname, title: (p["title"] as? String) ?? pname,
+                                               description: (p["description"] as? String) ?? "",
+                                               type: (p["type"] as? String) ?? "textfield",
+                                               defaultValue: def, options: options)
+                }
+                if !fields.isEmpty { out.append(ExtensionPrefGroup(id: extKey, title: title, fields: fields)) }
+            }
+        }
+        return out
     }
 
     /// Launch a discovered extension into a full palette surface (.extension mode), in its own process.
@@ -1521,12 +1572,13 @@ public final class AppController: NSObject, NSApplicationDelegate {
     @objc private func openSettingsMenu() { openSettings() }
 
     /// Settings tab indices (must match the order SettingsWindow adds its tabs).
-    enum SettingsTab: Int { case general, commands, snippets, quicklinks, importExt, clipboard, advanced, about }
+    enum SettingsTab: Int { case general, commands, snippets, quicklinks, importExt, extensions, clipboard, advanced, about }
 
     private func openSettings(tab: SettingsTab? = nil) {
         palette.hide()
         settingsWindow.show(
             groups: extensionGroups(),
+            prefGroups: extensionPreferenceGroups(),
             onClearClipboard: { [weak self] in self?.clipboard.clear() },
             onBindingsChanged: { [weak self] in self?.reloadCommandHotkeys() },
             repoRoot: repoRoot,

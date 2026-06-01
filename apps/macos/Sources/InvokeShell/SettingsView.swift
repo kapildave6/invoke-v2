@@ -564,3 +564,100 @@ struct ImportPane: View {
         }
     }
 }
+
+// MARK: - Extension preferences
+
+public struct PrefOption: Identifiable { public let value: String; public let title: String; public var id: String { value }
+    public init(value: String, title: String) { self.value = value; self.title = title } }
+
+public struct ExtensionPreference: Identifiable {
+    public let id: String        // = name
+    public let name: String
+    public let title: String
+    public let description: String
+    public let type: String      // textfield | password | checkbox | dropdown
+    public let defaultValue: String
+    public let options: [PrefOption]
+    public init(name: String, title: String, description: String, type: String, defaultValue: String, options: [PrefOption]) {
+        self.id = name; self.name = name; self.title = title; self.description = description
+        self.type = type; self.defaultValue = defaultValue; self.options = options
+    }
+}
+
+public struct ExtensionPrefGroup: Identifiable {
+    public let id: String        // extension key
+    public let title: String
+    public let fields: [ExtensionPreference]
+    public init(id: String, title: String, fields: [ExtensionPreference]) { self.id = id; self.title = title; self.fields = fields }
+}
+
+/// Settings → Extensions: configure each installed extension's declared preferences. Values are
+/// applied at the extension's next launch (read via getPreferenceValues). `password` fields are
+/// stored in the Keychain.
+struct ExtensionPrefsPane: View {
+    let groups: [ExtensionPrefGroup]
+    var body: some View {
+        Group {
+            if groups.isEmpty {
+                placeholderPane("No extension preferences yet. Extensions that declare preferences in their manifest show their settings here once installed.")
+            } else {
+                Form {
+                    ForEach(groups) { g in
+                        Section(g.title) {
+                            ForEach(g.fields) { f in
+                                if f.type == "checkbox" { CheckboxPref(extID: g.id, pref: f) } else { PrefField(extID: g.id, pref: f) }
+                            }
+                        }
+                    }
+                }
+                .formStyle(.grouped)
+            }
+        }
+        .frame(minWidth: 540, maxWidth: .infinity, minHeight: 380, maxHeight: .infinity)
+    }
+}
+
+/// A text/password/dropdown preference editing a LOCAL buffer, committing on submit/blur (so it
+/// neither fights the caret nor writes the Keychain on every keystroke).
+private struct PrefField: View {
+    let extID: String
+    let pref: ExtensionPreference
+    @ObservedObject private var settings = AppSettings.shared
+    @State private var text = ""
+    @FocusState private var focused: Bool
+    private var secret: Bool { pref.type == "password" }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            switch pref.type {
+            case "password":
+                SecureField(pref.title, text: $text).focused($focused).onSubmit(commit)
+            case "dropdown":
+                Picker(pref.title, selection: $text) { ForEach(pref.options) { Text($0.title).tag($0.value) } }
+                    .onChange(of: text) { _, _ in commit() }
+            default:
+                TextField(pref.title, text: $text).focused($focused).onSubmit(commit)
+            }
+            if !pref.description.isEmpty { Text(pref.description).font(.caption).foregroundColor(.secondary) }
+        }
+        .onAppear { text = settings.extensionPref(extID: extID, name: pref.name, secret: secret) ?? pref.defaultValue }
+        .onChange(of: focused) { _, now in if !now { commit() } }
+    }
+
+    private func commit() { settings.setExtensionPref(extID: extID, name: pref.name, secret: secret, value: text) }
+}
+
+private struct CheckboxPref: View {
+    let extID: String
+    let pref: ExtensionPreference
+    @ObservedObject private var settings = AppSettings.shared
+    var body: some View {
+        Toggle(isOn: Binding(
+            get: { (settings.extensionPref(extID: extID, name: pref.name, secret: false) ?? pref.defaultValue) == "true" },
+            set: { settings.setExtensionPref(extID: extID, name: pref.name, secret: false, value: $0 ? "true" : "false") }
+        )) {
+            Text(pref.title)
+            if !pref.description.isEmpty { Text(pref.description).font(.caption).foregroundColor(.secondary) }
+        }
+    }
+}
