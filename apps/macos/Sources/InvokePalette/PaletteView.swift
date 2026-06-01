@@ -495,7 +495,10 @@ public final class PaletteView: NSView {
         cell.translatesAutoresizingMaskIntoConstraints = false
         cell.wantsLayer = true
         cell.layer?.cornerRadius = 8
-        cell.layer?.backgroundColor = (selected ? NSColor.white.withAlphaComponent(0.13) : NSColor.white.withAlphaComponent(0.04)).cgColor
+        // Clear selection: an accent ring + stronger fill so keyboard navigation is visible.
+        cell.layer?.backgroundColor = (selected ? NSColor.controlAccentColor.withAlphaComponent(0.18) : NSColor.gray.withAlphaComponent(0.10)).cgColor
+        cell.layer?.borderWidth = selected ? 2 : 0
+        cell.layer?.borderColor = NSColor.controlAccentColor.cgColor
         let v = NSStackView()
         v.orientation = .vertical
         v.alignment = .centerX
@@ -508,7 +511,12 @@ public final class PaletteView: NSView {
         thumb.translatesAutoresizingMaskIntoConstraints = false
         if let b64 = node.props["thumb"]?.stringValue, let data = Data(base64Encoded: b64), let img = NSImage(data: data) {
             let iv = NSImageView(image: img); iv.imageScaling = .scaleProportionallyUpOrDown; iv.translatesAutoresizingMaskIntoConstraints = false
+            // The image must NOT resist compression, or its intrinsic size pushes the whole window wider.
+            iv.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+            iv.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
+            iv.setContentHuggingPriority(.defaultLow, for: .horizontal)
             thumb.addSubview(iv)
+            iv.layer?.cornerRadius = 6; iv.wantsLayer = true; iv.layer?.masksToBounds = true
             NSLayoutConstraint.activate([iv.leadingAnchor.constraint(equalTo: thumb.leadingAnchor), iv.trailingAnchor.constraint(equalTo: thumb.trailingAnchor), iv.topAnchor.constraint(equalTo: thumb.topAnchor), iv.bottomAnchor.constraint(equalTo: thumb.bottomAnchor)])
         } else if let sym = node.props["icon"]?.stringValue ?? node.props["content"]?.stringValue,
                   let img = NSImage(systemSymbolName: sym, accessibilityDescription: nil) ?? NSImage(systemSymbolName: sfSymbol(for: sym), accessibilityDescription: nil) {
@@ -879,7 +887,7 @@ public final class PaletteView: NSView {
         return out
     }
 
-    private func iconView(for node: ViewNode, selected: Bool) -> NSImageView? {
+    private func iconView(for node: ViewNode, selected: Bool) -> NSView? {
         // Manifest image icon (full color) for extension commands — loaded from the extension's assets.
         if let p = node.props["iconImagePath"]?.stringValue, let img = NSImage(contentsOfFile: p) {
             let iv = NSImageView(image: img)
@@ -897,16 +905,55 @@ public final class PaletteView: NSView {
             iv.heightAnchor.constraint(equalToConstant: 20).isActive = true
             return iv
         }
-        // Otherwise a tinted SF Symbol: try the name directly (e.g. "house"), else map the Icon enum.
+        // SF Symbol: try the name directly (e.g. "house"), else map the Icon enum.
         guard let name = node.props["icon"]?.stringValue,
               let img = NSImage(systemSymbolName: name, accessibilityDescription: nil)
                 ?? NSImage(systemSymbolName: sfSymbol(for: name), accessibilityDescription: nil) else { return nil }
+        // Command/AI rows render the glyph white on a colored rounded tile (Raycast-style).
+        if let key = node.props["iconTileKey"]?.stringValue {
+            return Self.commandTile(symbol: img, key: key)
+        }
         let iv = NSImageView(image: img)
         iv.contentTintColor = selected ? .white : .secondaryLabelColor
         iv.translatesAutoresizingMaskIntoConstraints = false
         iv.widthAnchor.constraint(equalToConstant: 16).isActive = true
         iv.heightAnchor.constraint(equalToConstant: 16).isActive = true
         return iv
+    }
+
+    /// Curated tile colors (white glyph reads on all of them). Keyed stably by group so a whole
+    /// extension shares one color, like Raycast.
+    private static let tilePalette: [NSColor] = [
+        .systemBlue, .systemRed, .systemOrange, .systemPurple, .systemGreen,
+        .systemTeal, .systemPink, .systemIndigo, .systemBrown,
+    ]
+    private static func tileColor(_ key: String) -> NSColor {
+        var h: UInt64 = 5381
+        for b in key.utf8 { h = (h &* 33) &+ UInt64(b) } // djb2 — stable across runs (Swift hashValue isn't)
+        return tilePalette[Int(h % UInt64(tilePalette.count))]
+    }
+    private static func commandTile(symbol: NSImage, key: String) -> NSView {
+        let tile = NSView()
+        tile.wantsLayer = true
+        tile.layer?.cornerRadius = 5
+        tile.layer?.backgroundColor = tileColor(key).cgColor
+        tile.translatesAutoresizingMaskIntoConstraints = false
+        let conf = NSImage.SymbolConfiguration(pointSize: 12, weight: .semibold)
+        let glyph = symbol.withSymbolConfiguration(conf) ?? symbol
+        let iv = NSImageView(image: glyph)
+        iv.contentTintColor = .white
+        iv.imageScaling = .scaleProportionallyDown
+        iv.translatesAutoresizingMaskIntoConstraints = false
+        tile.addSubview(iv)
+        NSLayoutConstraint.activate([
+            tile.widthAnchor.constraint(equalToConstant: 20),
+            tile.heightAnchor.constraint(equalToConstant: 20),
+            iv.centerXAnchor.constraint(equalTo: tile.centerXAnchor),
+            iv.centerYAnchor.constraint(equalTo: tile.centerYAnchor),
+            iv.widthAnchor.constraint(equalToConstant: 13),
+            iv.heightAnchor.constraint(equalToConstant: 13),
+        ])
+        return tile
     }
 
     private func sfSymbol(for icon: String) -> String {

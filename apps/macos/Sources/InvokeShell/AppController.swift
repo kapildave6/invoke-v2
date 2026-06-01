@@ -465,6 +465,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 "fileIcon": .string(shot.path),
                 "metadata": Self.screenshotMetadata(shot),
                 "icon": .string(shot.path.hasSuffix(".mov") ? "video" : "photo"), // fallback until thumb loads
+                "copyPrimary": .bool(true), // Enter copies the screenshot (Raycast); ⌘↵ pastes
             ]
             if let thumb = screenshotThumbCache[shot.path] { props["thumb"] = .string(thumb) }
             grid.children.append(ViewNode(id: nid, type: "grid-item", props: props))
@@ -800,6 +801,11 @@ public final class AppController: NSObject, NSApplicationDelegate {
         if let appPath { props["appPath"] = .string(appPath) }
         if let iconPath { props["iconImagePath"] = .string(iconPath) } // manifest image icon (extensions)
         if let icon { props["icon"] = .string(icon) }
+        // Command/AI SF-symbol icons render as a colored tile (Raycast-style), keyed by group so a whole
+        // extension shares a color. Apps/files/extension-image icons keep their native art.
+        if (kind == "Command" || kind == "AI"), appPath == nil, iconPath == nil {
+            props["iconTileKey"] = .string(subtitle ?? title)
+        }
         if let commandId { props["commandId"] = .string(commandId) }
         return ViewNode(id: id, type: "list-item", props: props)
     }
@@ -923,10 +929,14 @@ public final class AppController: NSObject, NSApplicationDelegate {
             ]
         }
         if let path = node.props["fileToPaste"]?.stringValue {
-            return [
-                PaletteAction(title: pasteTitle(), shortcut: "↵") { [weak self] in self?.pasteImageFile(path) },
-                PaletteAction(title: "Copy to Clipboard", shortcut: "⌘↵") { [weak self] in self?.copyImageFile(path) },
-            ]
+            let copy = PaletteAction(title: "Copy to Clipboard", shortcut: nil, icon: "doc.on.doc") { [weak self] in self?.copyImageFile(path) }
+            let paste = PaletteAction(title: pasteTitle(), shortcut: nil, icon: "doc.on.clipboard") { [weak self] in self?.pasteImageFile(path) }
+            // Screenshots default to Copy (Raycast); files-to-paste default to Paste.
+            let copyFirst = { if case .bool(true)? = node.props["copyPrimary"] { return true }; return false }()
+            let ordered = copyFirst ? [copy, paste] : [paste, copy]
+            return ordered.enumerated().map { i, a in
+                PaletteAction(title: a.title, shortcut: i == 0 ? "↵" : "⌘↵", icon: a.icon, run: a.run)
+            }
         }
         if let key = node.props["clipKey"]?.stringValue, let clip = clipboard.clip(forKey: key) {
             let copyTitle = clip.kind == "File" ? "Copy File" : (clip.kind == "Image" ? "Copy Image" : "Copy to Clipboard")
