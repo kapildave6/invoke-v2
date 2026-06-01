@@ -600,6 +600,22 @@ public final class PaletteView: NSView {
         return out
     }
 
+    /// Cycle focus among the current form's fields (Tab / Shift-Tab). Returns false if there's no form,
+    /// so the caller can let the event pass through. Handled here (not via nextKeyView) so Tab can't
+    /// escape the borderless panel and make it resign key.
+    public func moveFormFocus(reverse: Bool) -> Bool {
+        guard !formResponderViews.isEmpty, let win = window else { return false }
+        let fr = win.firstResponder
+        var idx = formResponderViews.firstIndex { $0 === fr }
+        if idx == nil, let editor = fr as? NSText { // a focused NSTextField's responder is its field editor
+            idx = formResponderViews.firstIndex { ($0 as? NSTextField) != nil && (editor.delegate as AnyObject?) === ($0 as AnyObject) }
+        }
+        let count = formResponderViews.count
+        let next = ((idx ?? (reverse ? 0 : -1)) + (reverse ? -1 : 1) + count) % count
+        win.makeFirstResponder(formResponderViews[next])
+        return true
+    }
+
     private func renderFormSurface(_ node: ViewNode) {
         formControls.removeAll()
         firstFormResponder = nil

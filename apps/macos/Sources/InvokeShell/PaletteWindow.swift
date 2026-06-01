@@ -76,6 +76,10 @@ public final class PaletteWindow: NSObject {
         paletteView = PaletteView(frame: rect)
         super.init()
 
+        // NSPanel.hidesOnDeactivate defaults to TRUE — so clicking/Tabbing a form field (which causes
+        // app-activation churn) would make AppKit auto-order-out the panel, bypassing our own auto-hide
+        // guard. We manage dismissal ourselves (Esc / resignKey), so turn it off.
+        panel.hidesOnDeactivate = false
         panel.isFloatingPanel = true
         panel.level = .floating
         panel.titleVisibility = .hidden
@@ -445,8 +449,14 @@ public final class PaletteWindow: NSObject {
     private func installKeyMonitor() {
         guard keyMonitor == nil else { return }
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            guard let self, self.panel.isKeyWindow,
-                  event.modifierFlags.contains(.command) else { return event }
+            guard let self, self.panel.isKeyWindow else { return event }
+            // Tab cycles form fields ourselves (consume it), so AppKit's key-view machinery can't walk
+            // focus out of the borderless panel.
+            if event.keyCode == 48 { // Tab
+                if self.paletteView.moveFormFocus(reverse: event.modifierFlags.contains(.shift)) { return nil }
+                return event
+            }
+            guard event.modifierFlags.contains(.command) else { return event }
             if event.charactersIgnoringModifiers?.lowercased() == "k" {
                 self.actionPanel.isShown ? self.actionPanel.dismiss() : self.showActionMenu() // ⌘K toggles
                 return nil
