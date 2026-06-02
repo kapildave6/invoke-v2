@@ -228,6 +228,12 @@ export async function open(target: string, application?: string): Promise<void> 
   await rpc("open", { target, application });
 }
 
+/** Run an AppleScript via the host (gated capability). Returns the script's string output.
+ *  The first call triggers the macOS Automation permission prompt for the target app. */
+export async function runAppleScript(source: string): Promise<string> {
+  return (await rpc("runAppleScript", { source })) as string;
+}
+
 /** Per-extension key/value store (host-fulfilled). Mirrors @raycast/api LocalStorage. */
 export const LocalStorage = {
   getItem: <T = string>(key: string): Promise<T | undefined> =>

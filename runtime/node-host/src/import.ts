@@ -15,6 +15,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { builtinModules } from "node:module";
+import { execFileSync } from "node:child_process";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const BUILTINS = new Set(builtinModules);
@@ -136,6 +137,8 @@ async function main(): Promise<void> {
   // repo node_modules), with a per-file automatic-JSX pragma codemod so it needn't `import React`.
   let installed = false;
   let destRel = "";
+  let installedDeps: string[] = [];
+  let depInstallError = "";
   if (!checkOnly) {
     const dest = path.join(ROOT, "imported", id);
     fs.rmSync(dest, { recursive: true, force: true });
@@ -164,6 +167,23 @@ async function main(): Promise<void> {
     if (fs.existsSync(path.join(dest, "src"))) codemod(path.join(dest, "src"));
     installed = true;
     destRel = path.relative(ROOT, dest);
+
+    // Auto-install the extension's third-party npm deps into the repo node_modules (skip the ones we
+    // shim: @raycast/api, @raycast/utils, @invoke/*, and React which the repo already provides).
+    const allDeps = (manifest as { dependencies?: Record<string, string> }).dependencies ?? {};
+    const toInstall = Object.keys(allDeps).filter(
+      (d) => !d.startsWith("@raycast/") && !d.startsWith("@invoke/") && d !== "react" && d !== "react-dom",
+    );
+    const missingDeps = toInstall.filter((d) => !fs.existsSync(path.join(ROOT, "node_modules", d)));
+    if (missingDeps.length) {
+      try {
+        const specs = missingDeps.map((d) => `${d}@${allDeps[d]}`);
+        execFileSync("npm", ["install", "--no-save", ...specs], { cwd: ROOT, stdio: jsonOut ? "ignore" : "inherit" });
+        installedDeps = missingDeps;
+      } catch {
+        depInstallError = `Could not install: ${missingDeps.join(", ")} — run \`npm install ${missingDeps.join(" ")}\` manually.`;
+      }
+    }
   }
 
   if (jsonOut) {
@@ -179,6 +199,8 @@ async function main(): Promise<void> {
       verdict,
       installed,
       dest: destRel,
+      installedDeps,
+      depInstallError,
     }));
     return;
   }

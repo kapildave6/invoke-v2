@@ -75,3 +75,9 @@ export async function showFailureToast(error: unknown, opts?: { title?: string }
   const api = await import("@invoke/api");
   await api.showToast({ style: api.Toast.Style.Failure, title: opts?.title ?? "Something went wrong", message });
 }
+
+/** Run an AppleScript via the host (Raycast's @raycast/utils runAppleScript). */
+export async function runAppleScript(source: string): Promise<string> {
+  const api = await import("@invoke/api");
+  return api.runAppleScript(source);
+}
