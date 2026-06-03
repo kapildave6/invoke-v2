@@ -3,7 +3,7 @@
 > Living checklist of what's **implemented** vs **pending**, tracked against `PLAN.md`.
 > Updated as features land. Legend: ✅ done · 🟡 partial · ⬜ not started.
 
-_Last updated: 2026-05-31_
+_Last updated: 2026-06-02_
 
 ## How we track progress
 - **This file (`STATUS.md`)** — the source of truth for done-vs-pending, mapped to PLAN.md sections.
@@ -21,8 +21,8 @@ _Last updated: 2026-05-31_
 | **Extension isolation** (built-ins denied 3 ways + RPC allowlist) | ✅ | `sandbox.ts`, red-team gate `npm run redteam` |
 | Native host ↔ Node runtime bridge (live extension → AppKit) | ✅ | `ExtensionHost` over socketpair |
 | Red-team CI security gate | ✅ | 8 probes + allowlist, adversarially reviewed |
-| Warm pool / crash-restart / backpressure | ⬜ | Phase-0 perf hardening still open |
-| Perf gates (summon <150ms / first-paint <300ms) | ⬜ | not yet measured in CI |
+| Warm pool / crash-restart / backpressure | ⬜ | Phase-0 perf hardening still open (next item) |
+| Perf gates (summon <150ms / first-paint <300ms) | 🟡 | **Harness landed** (`npm run bench`, `--json` for CI): 5k-row mutation stream + realistic extension first-paint measured headlessly. Baseline (2026-06-02): mount 30ms p95 / update 23ms p95 / **first-paint 150ms p95** (cold spawn, no warm pool) — green. **Native-summon (release build, n=16): p50 145ms / p95 157ms — marginally OVER the 150ms budget** (4/16 presses >150; sync build+show ~103ms p50, +~40ms to first frame). Release ≈ debug → cost is AppKit + the per-summon root-list build, not Swift compute. Instrumented via `[invoke:perf] summon …ms` per ⌥Space. Open: localize/trim the ~103ms sync path; wire `npm run bench` into CI |
 
 ## Shell / UI (PLAN §4.3, §6)
 | Item | Status | Notes |

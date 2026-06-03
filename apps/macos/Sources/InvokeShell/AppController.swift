@@ -259,7 +259,18 @@ public final class AppController: NSObject, NSApplicationDelegate {
 
     /// ⌥Space: toggle the palette, always resetting to the root when summoning.
     private func summonToggle() {
-        if palette.isVisible { palette.hide() } else { captureTarget(); exitToRoot(); palette.show() }
+        if palette.isVisible { palette.hide(); return }
+        // Phase-0 perf gate (PLAN.md §1/§8.2/§8.4): native-summon p95 < 150ms. We time the
+        // synchronous build+show cost, then a runloop tick later (when AppKit has committed the
+        // panel to the screen) the user-perceived first-frame cost. Logged every summon so a
+        // baseline/regression is visible in the host log without a window-server screen grab.
+        let t0 = DispatchTime.now()
+        captureTarget(); exitToRoot(); palette.show()
+        let syncMs = Double(DispatchTime.now().uptimeNanoseconds - t0.uptimeNanoseconds) / 1_000_000
+        DispatchQueue.main.async {
+            let frameMs = Double(DispatchTime.now().uptimeNanoseconds - t0.uptimeNanoseconds) / 1_000_000
+            print(String(format: "[invoke:perf] summon %.1fms (sync %.1fms) · budget 150ms (PLAN §1)", frameMs, syncMs))
+        }
     }
 
     /// ⌘⇧V: summon straight into Clipboard History.

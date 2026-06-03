@@ -24,6 +24,7 @@
     "dev:ext": "tsx runtime/node-host/src/run.ts",
     "import:ext": "tsx runtime/node-host/src/import.ts",
     "redteam": "tsx runtime/node-host/src/redteam.ts",
+    "bench": "tsx runtime/node-host/src/bench.ts",
     "test:calc": "tsx examples/calculator/src/engine.test.ts",
     "typecheck": "tsc -p tsconfig.json",
     "clean": "rm -rf node_modules **/node_modules **/dist **/*.tsbuildinfo"
