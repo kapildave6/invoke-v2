@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleName</key>
+	<string>Invoke</string>
+	<key>CFBundleDisplayName</key>
+	<string>Invoke</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.invoke.app</string>
+	<key>CFBundleExecutable</key>
+	<string>invoke</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>0.1.0</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>14.0</string>
+	<!-- Accessory launcher: no Dock icon, lives behind the global hotkey (matches main.swift). -->
+	<key>LSUIElement</key>
+	<true/>
+	<!-- Automation TCC prompt copy (for extensions the user authorizes to run AppleScript). -->
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Invoke lets extensions you explicitly authorize automate apps like Apple Notes.</string>
+	<!-- invoke:// deep links (Copy Deeplink). -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.invoke.deeplink</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>invoke</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

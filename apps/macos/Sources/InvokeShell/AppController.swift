@@ -86,6 +86,11 @@ public final class AppController: NSObject, NSApplicationDelegate {
         if let icon = Brand.appIcon { NSApp.applicationIconImage = icon } // shows in system dialogs
         NSApp.mainMenu = makeMainMenu()
 
+        // invoke:// deep links (Copy Deeplink). Custom URL schemes arrive as a GetURL Apple event.
+        NSAppleEventManager.shared().setEventHandler(
+            self, andSelector: #selector(handleGetURLEvent(_:withReplyEvent:)),
+            forEventClass: AEEventClass(kInternetEventClass), andEventID: AEEventID(kAEGetURL))
+
         host.onLog = { message in print("[invoke:host] \(message)") }
         host.onCommit = { [weak self] _ in
             // Only the root shows the calculator card — guard the mode so an async FX-rate commit
@@ -1911,6 +1916,25 @@ public final class AppController: NSObject, NSApplicationDelegate {
             repoRoot: repoRoot,
             selectTab: tab?.rawValue
         )
+    }
+
+    // MARK: - invoke:// deep links
+
+    @objc private func handleGetURLEvent(_ event: NSAppleEventDescriptor, withReplyEvent: NSAppleEventDescriptor) {
+        guard let s = event.paramDescriptor(forKeyword: AEKeyword(keyDirectObject))?.stringValue,
+              let url = URL(string: s) else { return }
+        openDeeplink(url)
+    }
+
+    /// Handle `invoke://commands/<id>` — run that command (the payoff for the Copy Deeplink action).
+    private func openDeeplink(_ url: URL) {
+        guard url.scheme == "invoke", url.host == "commands" else { return }
+        let id = String(url.path.dropFirst()) // "/window.maximize" → "window.maximize"
+        guard !id.isEmpty, let cmd = commands.first(where: { $0.id == id }) else {
+            palette.showToast("Unknown command in deep link"); return
+        }
+        frecency.bump("cmd:\(id)")
+        cmd.run() // view commands open the palette; action commands run (and reset if they close it)
     }
 
     /// The extension a command belongs to, for the grouped Commands settings (Raycast parity).
