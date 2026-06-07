@@ -135,15 +135,23 @@ public final class AppController: NSObject, NSApplicationDelegate {
         palette.onSelectRow = { [weak self] i in self?.setSelection(i) }
         palette.onActivateRow = { [weak self] i in self?.clickActivate(i) }
 
-        let root = ProcessInfo.processInfo.environment["INVOKE_REPO_ROOT"]
-            ?? Self.findRepoRoot()
-            ?? FileManager.default.currentDirectoryPath
-        repoRoot = root // discovered extensions are resolved relative to this
-        print("[invoke:host] repo root: \(root)")
+        // The repo (node_modules, runtime/node-host, examples/, imported/) must be locatable. When run
+        // via `swift run` from the repo, cwd-walking finds it. When run as /Applications/Invoke.app, cwd
+        // is "/", so build-app.sh bakes the dev repo path into Info.plist (INVOKERepoRoot). Pick the
+        // first candidate that is actually a repo; else the last as a best-effort fallback.
+        let fm = FileManager.default
+        let candidates = [
+            ProcessInfo.processInfo.environment["INVOKE_REPO_ROOT"],
+            Bundle.main.object(forInfoDictionaryKey: "INVOKERepoRoot") as? String,
+            Self.findRepoRoot(),
+            fm.currentDirectoryPath,
+        ].compactMap { $0 }.filter { !$0.isEmpty }
+        repoRoot = candidates.first { fm.fileExists(atPath: $0 + "/runtime/node-host/src/child.ts") } ?? candidates.last ?? ""
+        print("[invoke:host] repo root: \(repoRoot)")
 
         let entry = ProcessInfo.processInfo.environment["INVOKE_EXT_ENTRY"] ?? "examples/calculator/src/calculate.tsx"
         let command = ProcessInfo.processInfo.environment["INVOKE_EXT_COMMAND"] ?? "calculate"
-        host.launch(repoRoot: root, entryRelPath: entry, command: command)
+        host.launch(repoRoot: repoRoot, entryRelPath: entry, command: command)
 
         appIndex.build()
         clipboard.start()

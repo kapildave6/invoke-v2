@@ -30,6 +30,9 @@ rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$EXE" "$APP/Contents/MacOS/invoke"
 cp "$PKG/Resources/Info.plist" "$APP/Contents/Info.plist"
+# Bake the dev repo path so the bundle (whose cwd is "/") can find node_modules / runtime / examples.
+/usr/libexec/PlistBuddy -c "Add :INVOKERepoRoot string $ROOT" "$APP/Contents/Info.plist" 2>/dev/null \
+  || /usr/libexec/PlistBuddy -c "Set :INVOKERepoRoot $ROOT" "$APP/Contents/Info.plist"
 printf 'APPL????' > "$APP/Contents/PkgInfo"
 [ -f "$ICON" ] && cp "$ICON" "$APP/Contents/Resources/AppIcon.icns"
 # Bundle.module for InvokeShell resolves via Bundle.main.resourceURL (Contents/Resources) for an app,
