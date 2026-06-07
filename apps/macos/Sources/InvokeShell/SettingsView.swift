@@ -801,10 +801,10 @@ struct ImportPane: View {
         Form {
             Section {
                 HStack {
-                    TextField("Path to an extension's source folder", text: $path).textFieldStyle(.roundedBorder)
+                    TextField("Folder path or GitHub URL", text: $path).textFieldStyle(.roundedBorder)
                     Button("Browse…", action: browse)
                 }
-                Text("Point at a folder with package.json + src/ — e.g. a folder from github.com/raycast/extensions. Dependency-light extensions (just @raycast/api / @raycast/utils) work best.")
+                Text("A local folder (package.json + src/), or a github.com URL — a repo, or a monorepo subfolder like github.com/raycast/extensions/tree/main/extensions/apple-notes. Dependency-light extensions (just @raycast/api / @raycast/utils) work best.")
                     .font(.caption).foregroundColor(.secondary)
                 HStack {
                     Button("Check Compatibility") { Task { await go(install: false) } }.disabled(path.isEmpty || busy)

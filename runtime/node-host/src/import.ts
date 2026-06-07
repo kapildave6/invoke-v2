@@ -12,6 +12,7 @@
  * discovers it. `--check` does the scan only.
  */
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { builtinModules } from "node:module";
@@ -86,6 +87,44 @@ function specifiers(code: string): Set<string> {
   return out;
 }
 
+/** Parse a github.com repo or subfolder URL (incl. raycast/extensions monorepo `.../tree/<branch>/<sub>`). */
+function parseGitHubURL(u: string): { owner: string; repo: string; branch?: string; subpath?: string } | null {
+  let m = u.match(/^git@github\.com:([^/]+)\/(.+?)(?:\.git)?\/?$/i);
+  if (m) return { owner: m[1], repo: m[2] };
+  m = u.match(/^https?:\/\/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?(?:\/(?:tree|blob)\/([^/]+)\/(.+?))?\/?$/i);
+  if (m) return { owner: m[1], repo: m[2], branch: m[3], subpath: m[4] };
+  return null;
+}
+
+/** Resolve the import source to a local dir: clone a github URL (shallow + sparse for a subfolder) or
+ *  use the path as-is. git clone does NOT run repo hooks/scripts, so cloning itself executes no code;
+ *  the cloned source is then scanned + copied + its deps installed with --ignore-scripts (gated). */
+async function resolveSource(arg: string, quiet: boolean): Promise<{ dir: string; cleanup: () => void }> {
+  if (!/^(https?:\/\/|git@)/i.test(arg)) return { dir: path.resolve(arg), cleanup: () => {} };
+  const g = parseGitHubURL(arg) ?? die(`Unsupported URL — expected a github.com repo or subfolder: ${arg}`);
+  if (g.subpath && g.subpath.split("/").includes("..")) die(`Invalid path in URL: ${g.subpath}`);
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "invoke-import-"));
+  const repoURL = `https://github.com/${g.owner}/${g.repo}.git`;
+  const run = (args: string[]) => execFileSync("git", args, { stdio: quiet ? ["ignore", "ignore", "pipe"] : "inherit" });
+  try {
+    const branchArgs = g.branch ? ["--branch", g.branch] : [];
+    if (g.subpath) {
+      run(["clone", "--depth", "1", "--filter=blob:none", "--sparse", ...branchArgs, repoURL, tmp]);
+      run(["-C", tmp, "sparse-checkout", "set", g.subpath]);
+      const dir = path.join(tmp, g.subpath);
+      if (!fs.existsSync(path.join(dir, "package.json"))) die(`No extension (package.json) at "${g.subpath}" in ${g.owner}/${g.repo}`);
+      return { dir, cleanup: () => fs.rmSync(tmp, { recursive: true, force: true }) };
+    }
+    run(["clone", "--depth", "1", ...branchArgs, repoURL, tmp]);
+    if (!fs.existsSync(path.join(tmp, "package.json"))) die(`No package.json at the repo root of ${g.owner}/${g.repo} — for a monorepo, use the subfolder URL (…/tree/<branch>/<path>)`);
+    return { dir: tmp, cleanup: () => fs.rmSync(tmp, { recursive: true, force: true }) };
+  } catch (e) {
+    fs.rmSync(tmp, { recursive: true, force: true });
+    const msg = (e as { stderr?: Buffer }).stderr?.toString().trim() || (e as Error).message;
+    die(`git clone failed: ${msg}`);
+  }
+}
+
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const checkOnly = args.includes("--check");
@@ -94,9 +133,13 @@ async function main(): Promise<void> {
   const nameFlag = args.find((a) => a.startsWith("--name="))?.split("=")[1] ?? (nameIdx >= 0 ? args[nameIdx + 1] : undefined);
   const nameValueIdx = nameIdx >= 0 ? nameIdx + 1 : -1; // -1 → don't exclude anything
   const positional = args.filter((a, i) => !a.startsWith("--") && i !== nameValueIdx); // exclude --name's value
-  const src = path.resolve(positional[0] ?? die("usage: import <sourceDir> [--name <id>] [--check]"));
+  // Source is a local folder OR a github.com URL (repo / monorepo subfolder) — clone the latter.
+  const { dir: src, cleanup } = await resolveSource(
+    positional[0] ?? die("usage: import <sourceDir|githubURL> [--name <id>] [--check]"), jsonOut);
+  process.on("exit", cleanup); // remove any temp clone, even on die()
 
   const manifest = readManifest(src);
+  // For a monorepo subfolder the basename is the extension dir; manifest.name is preferred.
   const id = (nameFlag ?? manifest.name ?? path.basename(src)).replace(/[^a-zA-Z0-9._-]/g, "-");
   const commands = manifest.commands ?? [];
 
