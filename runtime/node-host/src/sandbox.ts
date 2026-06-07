@@ -18,9 +18,15 @@
  */
 import Module, { register, isBuiltin } from "node:module";
 import SAFE_LIST from "./safe-builtins.json" with { type: "json" };
+import osSafe from "./os-safe.mjs";
 
 /** Pure-compute / data builtins that grant no ambient OS authority (no fs/net/exec). */
 const SAFE_BUILTINS = new Set<string>(SAFE_LIST);
+
+/** The curated read-only `os` shim (see os-safe.mjs) shaped for CJS require(): named methods AND a
+ *  `default` for esModuleInterop's transpiled `import os from "os"` -> require("os").default. Captured
+ *  at module load (before lockdown), so reaching the real node:os here is allowed. */
+const CURATED_OS_CJS: Record<string, unknown> = { ...(osSafe as Record<string, unknown>), default: osSafe };
 
 function isDeniedBuiltin(request: string): boolean {
   const hasNodePrefix = request.startsWith("node:");
@@ -92,6 +98,10 @@ export function lockdown(): void {
   };
   const originalLoad = ModuleAny._load;
   function patchedLoad(this: unknown, request: string, parent: unknown, isMain: boolean): unknown {
+    // Curated `os`: an extension whose package.json lacks "type":"module" is transpiled to CJS, so its
+    // `import os from "os"` becomes require("os") and arrives HERE (not the ESM deny-loader). Return the
+    // same read-only shim instead of denying, so the redirect covers CJS-output extensions too.
+    if (request === "os" || request === "node:os") return CURATED_OS_CJS;
     if (isDeniedBuiltin(request)) {
       throw new Error(`[invoke:sandbox] require("${request}") is denied (PLAN.md §4.4)`);
     }
