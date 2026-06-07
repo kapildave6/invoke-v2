@@ -40,6 +40,10 @@ public final class SettingsWindow {
             tabs.addTabViewItem(tab("Advanced", "wrench.and.screwdriver", hosted(AdvancedPane())))
             tabs.addTabViewItem(tab("About", "info.circle", hosted(AboutPane())))
             self.tabController = tabs
+            // In .toolbar mode the window title tracks the tab CONTROLLER's title (not the selected tab
+            // label); a nil title is what renders as "Untitled". Set it on the controller so the value
+            // the appearance lifecycle syncs to the window is right from the start.
+            tabs.title = "Invoke Settings"
 
             let w = NSWindow(contentViewController: tabs)
             w.styleMask = [.titled, .closable, .miniaturizable]
