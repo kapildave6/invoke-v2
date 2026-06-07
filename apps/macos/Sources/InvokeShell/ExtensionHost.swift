@@ -39,6 +39,7 @@ public final class ExtensionHost {
         "open", "localStorage.getItem", "localStorage.setItem",
         "localStorage.removeItem", "localStorage.clear", "localStorage.allItems",
         "runAppleScript", // gated OS-automation capability (Raycast's @raycast/utils runAppleScript)
+        "executeSQL",     // gated read-only SQLite capability (Raycast's @raycast/utils useSQL/executeSQL)
     ]
 
     private var pid: pid_t = -1

@@ -81,3 +81,160 @@ export async function runAppleScript(source: string): Promise<string> {
   const api = await import("@invoke/api");
   return api.runAppleScript(source);
 }
+
+/* ------------------------------------------------------------------ SQL (read-only)
+ * Raycast's useSQL/executeSQL read a local SQLite file directly. In Invoke that file access is a
+ * HOST-mediated, consent-gated, read-only capability (the sandboxed child has no fs) — the query runs
+ * in the Swift host with ATTACH and non-SELECT statements denied (PLAN.md §4.4). */
+
+/** Run a read-only SQL query against a local SQLite file via the host. Resolves to the rows. */
+export async function executeSQL<T = unknown>(databasePath: string, query: string): Promise<T[]> {
+  const api = await import("@invoke/api");
+  return (await api.executeSQL(databasePath, query)) as T[];
+}
+
+export interface UseSQLOptions<T> {
+  /** Skip running the query (e.g. until a dependency is ready). Defaults to true. */
+  execute?: boolean;
+  /** Shown by Raycast as a permission-priming view; Invoke gates via the host consent dialog instead. */
+  permissionPriming?: string;
+  onError?: (error: Error) => void;
+  onData?: (data: T[]) => void;
+}
+
+/** Reactive read-only SQL query — `{ data, isLoading, error, revalidate, permissionView }`. */
+export function useSQL<T = unknown>(
+  databasePath: string,
+  query: string,
+  options: UseSQLOptions<T> = {},
+): AsyncState<T[]> & { permissionView: undefined } {
+  // Callers commonly gate with `execute: data && data.length > 0`, which is `undefined` (not `false`)
+  // before the parent query resolves. Treat an explicitly-passed `execute` as a real boolean so a
+  // falsy-but-not-false value still skips, rather than `?? true` letting the gated query run early.
+  const execute = "execute" in options ? Boolean(options.execute) : true;
+  const state = usePromise<T[]>(
+    async () => (execute ? executeSQL<T>(databasePath, query) : ([] as T[])),
+    [databasePath, query, execute],
+  );
+  const { error, data } = state;
+  useEffect(() => {
+    if (error) options.onError?.(error);
+  }, [error]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (data) options.onData?.(data);
+  }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Raycast surfaces a permissionView when access is denied; Invoke handles consent in the host dialog,
+  // so there's nothing to render here — but the field must exist so destructuring/spreading is safe.
+  return { ...state, permissionView: undefined };
+}
+
+/* ------------------------------------------------------------------ useCachedPromise
+ * Like usePromise, but the dependency tuple is also the argument list passed to `fn`. (Our cache layer
+ * is the same process-local store as useCachedState; cross-session persistence lands with the host Cache.) */
+export function useCachedPromise<T, A extends unknown[] = unknown[]>(
+  fn: (...args: A) => Promise<T>,
+  args: A = [] as unknown as A,
+  _options?: { initialData?: T; keepPreviousData?: boolean; onError?: (e: Error) => void },
+): AsyncState<T> {
+  // Depend on a STRUCTURAL key of args, not the array's identity: callers routinely pass a fresh
+  // literal each render (e.g. [note.id]); spreading that straight into deps re-runs the effect every
+  // render → infinite refetch loop when an element is itself a fresh object. Call fn with the latest
+  // args via a ref so the data stays current without widening the dependency.
+  let key: string;
+  try {
+    key = JSON.stringify(args);
+  } catch {
+    key = String(args.length);
+  }
+  const argsRef = useRef(args);
+  argsRef.current = args;
+  return usePromise<T>(() => fn(...(argsRef.current as A)), [key]);
+}
+
+/* ------------------------------------------------------------------ useForm
+ * Minimal but real port of Raycast's useForm: controlled values + validation, returning `itemProps`
+ * to spread onto Form fields. Our Form fields are host-rendered and collect their values on submit, so
+ * handleSubmit validates the host-collected values (its argument) and falls back to internal state. */
+export const FormValidation = { Required: "required" } as const;
+
+type Validator<V> = ((value: V) => string | undefined | null) | "required";
+
+export interface UseFormProps<T extends Record<string, unknown>> {
+  onSubmit: (values: T) => void | boolean | Promise<void | boolean>;
+  initialValues?: Partial<T>;
+  validation?: { [K in keyof T]?: Validator<T[K]> };
+}
+
+export interface FormItemProps<V> {
+  id: string;
+  value: V;
+  onChange: (value: V) => void;
+  error: string | undefined;
+}
+
+export function useForm<T extends Record<string, unknown>>(props: UseFormProps<T>) {
+  const [values, setValues] = useState<T>(() => ({ ...(props.initialValues ?? {}) }) as T);
+  const [errors, setErrors] = useState<{ [K in keyof T]?: string }>({});
+
+  const setValue = useCallback(<K extends keyof T>(id: K, value: T[K]) => {
+    setValues((prev) => ({ ...prev, [id]: value }));
+  }, []);
+
+  const validate = useCallback(
+    (vals: T): boolean => {
+      const next: { [K in keyof T]?: string } = {};
+      let ok = true;
+      for (const key in props.validation) {
+        const rule = props.validation[key];
+        const v = vals[key];
+        let message: string | undefined | null;
+        if (rule === "required") {
+          const empty = v === undefined || v === null || v === "" || v === false;
+          message = empty ? "The item is required" : undefined;
+        } else if (typeof rule === "function") {
+          message = rule(v as T[typeof key]);
+        }
+        if (message) {
+          next[key] = message;
+          ok = false;
+        }
+      }
+      setErrors(next);
+      return ok;
+    },
+    [props.validation],
+  );
+
+  const handleSubmit = useCallback(
+    (submitted?: T): boolean => {
+      const vals = (submitted ?? values) as T;
+      if (!validate(vals)) return false;
+      void props.onSubmit(vals);
+      return true;
+    },
+    [values, validate, props],
+  );
+
+  const reset = useCallback(
+    (newValues?: Partial<T>) => {
+      setValues({ ...(newValues ?? props.initialValues ?? {}) } as T);
+      setErrors({});
+    },
+    [props.initialValues],
+  );
+
+  // `itemProps.<field>` lazily yields { id, value, onChange, error } for any accessed field name.
+  const itemProps = new Proxy({} as { [K in keyof T]: FormItemProps<T[K]> }, {
+    get: (_t, id) => {
+      if (typeof id !== "string") return undefined;
+      return {
+        id,
+        value: (values as Record<string, unknown>)[id],
+        onChange: (value: unknown) => setValue(id as keyof T, value as T[keyof T]),
+        error: (errors as Record<string, string | undefined>)[id],
+      };
+    },
+  });
+
+  return { values, setValue, errors, itemProps, handleSubmit, reset, focus: () => {} };
+}

@@ -59,6 +59,31 @@ export function lockdown(): void {
     }
   }
 
+  // process.report.getReport() returns host diagnostics — hostname, CPU model, and every network
+  // interface's MAC/IP — i.e. exactly the identity/fingerprinting surface the curated `os` shim
+  // withholds (userInfo/networkInterfaces/hostname/cpus). Neuter the report API too, fail-closed, or
+  // the shim is trivially bypassed (PLAN.md §4.4).
+  const report = proc.report as Record<string, unknown> | undefined;
+  if (report) {
+    for (const name of ["getReport", "writeReport", "triggerReport"]) {
+      const deny = (): never => {
+        throw new Error(`[invoke:sandbox] process.report.${name} is denied (PLAN.md §4.4)`);
+      };
+      try {
+        Object.defineProperty(report, name, { value: deny, writable: false, configurable: false });
+      } catch {
+        try {
+          report[name] = deny;
+        } catch {
+          /* verified next */
+        }
+      }
+      if (report[name] !== deny) {
+        throw new Error(`[invoke:sandbox] lockdown FAILED: could not neuter process.report.${name} (fail-closed)`);
+      }
+    }
+  }
+
   // (2) CJS require(): catches transitive CommonJS deps that try to require a builtin.
   // ESM `import` of `node:module` is already denied, so the extension cannot mint a fresh
   // `createRequire`; this guards requires inside already-resolvable CJS packages.

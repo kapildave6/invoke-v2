@@ -6,6 +6,7 @@ import ImageIO
 import InvokeIPC
 import InvokeRenderer
 import InvokeServices
+import SQLite3
 
 /// App lifecycle + summon + the root ranker (PLAN.md §4.3). Composes ONE result tree from several
 /// sources — Applications (native index), built-in Commands (registry), and the resident Calculator
@@ -1606,9 +1607,119 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 return .string("")
             }
             return .string(result?.stringValue ?? "")
+        case "executeSQL":
+            // Read-only SQLite capability (Raycast's useSQL/executeSQL). The sandboxed child has no fs;
+            // the host opens the file and is NOT itself OS-sandboxed, so reading an arbitrary SQLite path
+            // is a file-disclosure primitive — gated several ways (PLAN.md §4.4):
+            //   • default-deny per-extension consent (a blocking dialog naming the extension + the path).
+            //   • opened SQLITE_OPEN_READONLY (no writes, no journal creation).
+            //   • an authorizer that allows only SELECT/READ/FUNCTION — so ATTACH (which would reach
+            //     other files) and every mutating/PRAGMA statement is denied.
+            let raw = ((arg("db")?.stringValue ?? "") as NSString).expandingTildeInPath
+            let query = arg("query")?.stringValue ?? ""
+            guard !raw.isEmpty, !query.isEmpty else { return .array([]) }
+            // Canonicalize (resolve symlinks + . / ..) so the path the user consents to is EXACTLY the
+            // file we open — a later call can't smuggle a different file under a string that merely
+            // looks like an approved one.
+            let dbPath = URL(fileURLWithPath: raw).resolvingSymlinksInPath().path
+            guard ensureSQLGrant(dbPath: dbPath) else { return .array([]) }
+            switch Self.runReadOnlySQL(path: dbPath, query: query) {
+            case .success(let rows):
+                return .array(rows.map { JSONValue.object($0) })
+            case .failure(let err):
+                palette.showToast("SQL: \(err.message)")
+                print("[invoke:ext] executeSQL failed for \(currentExtId): \(err.message)")
+                return .array([])
+            }
         default:
             return .null
         }
+    }
+
+    /// Default-deny consent for the read-only SQLite capability, scoped to the specific
+    /// (extension, canonical file) PAIR — never just the extension. A grant for NoteStore.sqlite must
+    /// NOT silently authorize the same extension to later read Messages chat.db, Safari history, etc.
+    /// (confused-deputy file disclosure). Blocking dialog on the main thread.
+    private func ensureSQLGrant(dbPath: String) -> Bool {
+        let id = currentExtId
+        guard !id.isEmpty else { return false }
+        let key = id + "\u{0}" + dbPath // NUL separates the parts; a filesystem path can't contain NUL
+        if AppSettings.shared.sqlGrants.contains(key) { return true }
+        let alert = NSAlert()
+        alert.messageText = "Allow “\(currentExtTitle)” to read a local database?"
+        alert.informativeText = "It wants read-only access to:\n\(dbPath)\n\nThe query runs read-only (no changes, no access to other files). You’ll be asked again for any other file. Only allow extensions you trust."
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "Allow")
+        alert.addButton(withTitle: "Don’t Allow")
+        let allow = alert.runModal() == .alertFirstButtonReturn
+        if allow { AppSettings.shared.sqlGrants.insert(key) }
+        return allow
+    }
+
+    /// SQLite authorizer: permit only the operations a read-only SELECT needs. SQLITE_ATTACH (reaches
+    /// other files), writes, and PRAGMAs are denied. A C function pointer — no captured state.
+    private static let sqlAuthorizer: @convention(c) (
+        UnsafeMutableRawPointer?, Int32,
+        UnsafePointer<CChar>?, UnsafePointer<CChar>?, UnsafePointer<CChar>?, UnsafePointer<CChar>?
+    ) -> Int32 = { _, action, _, _, _, _ in
+        switch action {
+        case SQLITE_SELECT, SQLITE_READ, SQLITE_FUNCTION, SQLITE_RECURSIVE:
+            return SQLITE_OK
+        default:
+            return SQLITE_DENY
+        }
+    }
+
+    private struct SQLError: Error { let message: String }
+
+    /// Open `path` read-only and run a single SELECT, returning rows as column→value maps. All access is
+    /// constrained by sqlAuthorizer. Returns a human-readable message on failure.
+    private static func runReadOnlySQL(path: String, query: String) -> Result<[[String: JSONValue]], SQLError> {
+        var db: OpaquePointer?
+        let openRC = sqlite3_open_v2(path, &db, SQLITE_OPEN_READONLY, nil)
+        defer { sqlite3_close(db) }
+        guard openRC == SQLITE_OK else {
+            let msg = db.map { String(cString: sqlite3_errmsg($0)) } ?? "cannot open database"
+            return .failure(SQLError(message: "\(msg) (grant Invoke Full Disk Access if this is a protected database)"))
+        }
+        sqlite3_set_authorizer(db, sqlAuthorizer, nil)
+
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, query, -1, &stmt, nil) == SQLITE_OK else {
+            return .failure(SQLError(message: String(cString: sqlite3_errmsg(db))))
+        }
+        defer { sqlite3_finalize(stmt) }
+
+        var rows: [[String: JSONValue]] = []
+        let maxRows = 50_000 // backstop so a runaway query can't exhaust memory
+        while sqlite3_step(stmt) == SQLITE_ROW {
+            if rows.count >= maxRows { break }
+            let ncol = sqlite3_column_count(stmt)
+            var row: [String: JSONValue] = [:]
+            for i in 0..<ncol {
+                let name = sqlite3_column_name(stmt, i).map { String(cString: $0) } ?? "col\(i)"
+                switch sqlite3_column_type(stmt, i) {
+                case SQLITE_INTEGER:
+                    row[name] = .number(Double(sqlite3_column_int64(stmt, i)))
+                case SQLITE_FLOAT:
+                    row[name] = .number(sqlite3_column_double(stmt, i))
+                case SQLITE_TEXT:
+                    row[name] = sqlite3_column_text(stmt, i).map { JSONValue.string(String(cString: $0)) } ?? .null
+                case SQLITE_BLOB:
+                    if let bytes = sqlite3_column_blob(stmt, i) {
+                        let len = Int(sqlite3_column_bytes(stmt, i))
+                        let data = Data(bytes: bytes, count: len)
+                        row[name] = .string(data.base64EncodedString())
+                    } else {
+                        row[name] = .null
+                    }
+                default:
+                    row[name] = .null
+                }
+            }
+            rows.append(row)
+        }
+        return .success(rows)
     }
 
     private func setStringPasteboard(_ s: String) {

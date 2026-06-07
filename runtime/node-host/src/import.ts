@@ -35,6 +35,10 @@ const TYPE_ONLY_API = new Set<string>([
   "FileSystemItem",
 ]);
 
+// Node builtins the sandbox denies by default but for which Invoke provides a curated, read-only shim
+// (see runtime/node-host/src/os-safe.mjs + deny-loader.mjs), so they should NOT count as "denied".
+const CURATED_BUILTINS = new Set<string>(["os"]);
+
 interface Manifest {
   name?: string;
   title?: string;
@@ -182,7 +186,7 @@ async function main(): Promise<void> {
     for (const s of importedSymbols(code, "@raycast/utils")) if (!utils.has(s)) missingUtils.add(s);
     for (const spec of specifiers(code)) {
       const bare = spec.startsWith("node:") ? spec.slice(5) : spec;
-      if (BUILTINS.has(bare) && !SAFE_BUILTINS.has(bare)) deniedBuiltins.add(bare);
+      if (BUILTINS.has(bare) && !SAFE_BUILTINS.has(bare) && !CURATED_BUILTINS.has(bare)) deniedBuiltins.add(bare);
     }
   }
 

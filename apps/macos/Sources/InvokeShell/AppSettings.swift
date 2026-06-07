@@ -46,6 +46,7 @@ public final class AppSettings: ObservableObject {
     /// Extension ids the user has explicitly allowed to run AppleScript (a powerful OS-automation
     /// capability). Default-deny: an extension must be granted before runAppleScript executes.
     @Published public var appleScriptGrants: Set<String> { didSet { d.set(Array(appleScriptGrants), forKey: "appleScriptGrants") } }
+    @Published public var sqlGrants: Set<String> { didSet { d.set(Array(sqlGrants), forKey: "sqlGrants") } }
 
     private init() {
         clipboardLimit = (d.object(forKey: "clipboardLimit") as? Int) ?? 100
@@ -65,6 +66,7 @@ public final class AppSettings: ObservableObject {
         extensionSecretKeys = Set((d.array(forKey: "extensionSecretKeys") as? [String]) ?? [])
         favorites = Set((d.array(forKey: "favoriteCommands") as? [String]) ?? [])
         appleScriptGrants = Set((d.array(forKey: "appleScriptGrants") as? [String]) ?? [])
+        sqlGrants = Set((d.array(forKey: "sqlGrants") as? [String]) ?? [])
         launchAtLogin = d.bool(forKey: "launchAtLogin")
     }
 

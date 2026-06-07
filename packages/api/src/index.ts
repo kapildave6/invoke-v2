@@ -234,6 +234,13 @@ export async function runAppleScript(source: string): Promise<string> {
   return (await rpc("runAppleScript", { source })) as string;
 }
 
+/** Run a read-only SQL query against a local SQLite file via the host (gated capability). The host
+ *  opens the file read-only, denies ATTACH / non-SELECT statements, and asks for per-extension consent
+ *  on first use. Resolves to the result rows (each an object keyed by column name). */
+export async function executeSQL<T = unknown>(databasePath: string, query: string): Promise<T[]> {
+  return (await rpc("executeSQL", { db: databasePath, query })) as T[];
+}
+
 /** Per-extension key/value store (host-fulfilled). Mirrors @raycast/api LocalStorage. */
 export const LocalStorage = {
   getItem: <T = string>(key: string): Promise<T | undefined> =>

@@ -29,7 +29,8 @@ let package = Package(
             // Brand assets (app icon + wordmark) bundled as Bundle.module resources.
             resources: [.process("Resources")],
             // Carbon: RegisterEventHotKey for the global summon hotkey (§3.2).
-            linkerSettings: [.linkedFramework("Carbon")]
+            // sqlite3: the host-mediated read-only executeSQL capability (§4.4) uses the system SQLite.
+            linkerSettings: [.linkedFramework("Carbon"), .linkedLibrary("sqlite3")]
         ),
         .executableTarget(name: "InvokeApp", dependencies: ["InvokeShell"]),
         .testTarget(name: "InvokeIPCTests", dependencies: ["InvokeIPC", "InvokeRenderer"]),
