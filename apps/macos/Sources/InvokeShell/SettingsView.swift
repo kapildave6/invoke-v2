@@ -845,6 +845,9 @@ struct ImportPane: View {
             if !r.missingApi.isEmpty {
                 LabeledContent("Unsupported APIs") { Text(r.missingApi.joined(separator: ", ")).foregroundColor(.red) }
             }
+            if !r.missingUtils.isEmpty {
+                LabeledContent("Unsupported utils") { Text(r.missingUtils.joined(separator: ", ")).foregroundColor(.red) }
+            }
             if !r.deniedBuiltins.isEmpty {
                 LabeledContent("Denied builtins") { Text(r.deniedBuiltins.joined(separator: ", ")).foregroundColor(.orange) }
             }

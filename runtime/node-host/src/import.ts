@@ -21,6 +21,20 @@ import { execFileSync } from "node:child_process";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const BUILTINS = new Set(builtinModules);
 
+// @raycast/api exports that are TYPE-ONLY (interfaces / type-namespaces with no runtime value form).
+// Extensions import them in mixed `import { List, LaunchProps }` statements, but they only ever appear
+// in type position, so TS/esbuild erases them at runtime — a missing runtime export in our shim is
+// harmless and must not drive the compatibility verdict to "needs-work". (Symbols that are BOTH a type
+// and a runtime value — e.g. Toast, which carries Toast.Style — are deliberately NOT listed here.)
+const TYPE_ONLY_API = new Set<string>([
+  "LaunchProps",
+  "Tool",
+  "LaunchContext",
+  "PreferenceValues",
+  "Application",
+  "FileSystemItem",
+]);
+
 interface Manifest {
   name?: string;
   title?: string;
@@ -158,7 +172,13 @@ async function main(): Promise<void> {
 
   for (const f of files) {
     const code = fs.readFileSync(f, "utf8");
-    for (const s of importedSymbols(code, "@raycast/api")) if (!api.has(s)) missingApi.add(s);
+    // A symbol in a MIXED import (`import { List, LaunchProps } from "@raycast/api"`) reads as a value
+    // import syntactically, but if it's a TYPE_ONLY_API symbol it's only ever used in type position and
+    // esbuild/tsx erases it at runtime — so a missing runtime export is harmless, not blocking. (The
+    // `import type { … }` / inline `type X` cases are already filtered inside importedSymbols.)
+    for (const s of importedSymbols(code, "@raycast/api")) {
+      if (!api.has(s) && !TYPE_ONLY_API.has(s)) missingApi.add(s);
+    }
     for (const s of importedSymbols(code, "@raycast/utils")) if (!utils.has(s)) missingUtils.add(s);
     for (const spec of specifiers(code)) {
       const bare = spec.startsWith("node:") ? spec.slice(5) : spec;
