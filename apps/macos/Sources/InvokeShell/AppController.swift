@@ -1603,7 +1603,14 @@ public final class AppController: NSObject, NSApplicationDelegate {
             let result = NSAppleScript(source: source)?.executeAndReturnError(&errorDict)
             if let errorDict {
                 let msg = (errorDict[NSAppleScript.errorMessage] as? String) ?? "AppleScript error"
-                palette.showToast("AppleScript: \(msg)")
+                let num = (errorDict[NSAppleScript.errorNumber] as? NSNumber)?.intValue ?? 0
+                // -1743 errAEEventNotPermitted: macOS TCC Automation isn't granted for the target app.
+                // Offer to open the right settings pane rather than leaving a dead-end toast.
+                if num == -1743 {
+                    presentPermissionHelp(.automation)
+                } else {
+                    palette.showToast("AppleScript: \(msg)")
+                }
                 return .string("")
             }
             return .string(result?.stringValue ?? "")
@@ -1627,8 +1634,14 @@ public final class AppController: NSObject, NSApplicationDelegate {
             case .success(let rows):
                 return .array(rows.map { JSONValue.object($0) })
             case .failure(let err):
-                palette.showToast("SQL: \(err.message)")
                 print("[invoke:ext] executeSQL failed for \(currentExtId): \(err.message)")
+                // A failure to OPEN the file is almost always macOS TCC on a protected location (Notes,
+                // Messages, …) — offer Full Disk Access. A prepare/step failure is a real SQL error.
+                if err.isOpenFailure {
+                    presentPermissionHelp(.fullDiskAccess)
+                } else {
+                    palette.showToast("SQL: \(err.message)")
+                }
                 return .array([])
             }
         default:
@@ -1656,6 +1669,38 @@ public final class AppController: NSObject, NSApplicationDelegate {
         return allow
     }
 
+    /// A macOS TCC denial we can't fix in-app (Full Disk Access / Automation) — offer a one-click jump
+    /// to the exact System Settings pane instead of a dead-end toast. Throttled so a burst of failures
+    /// (e.g. the several useSQL queries one search fires) collapses into a single prompt.
+    private enum PermissionHelp { case fullDiskAccess, automation }
+    private static var lastPermissionPrompt: [String: Date] = [:]
+    private func presentPermissionHelp(_ kind: PermissionHelp) {
+        let key: String, title: String, info: String, urlString: String
+        switch kind {
+        case .fullDiskAccess:
+            key = "fullDiskAccess"
+            title = "“\(currentExtTitle)” needs Full Disk Access"
+            info = "macOS won’t let Invoke read this database until you grant Full Disk Access. Open Settings, turn on Invoke under Full Disk Access, then quit and reopen Invoke."
+            urlString = "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles"
+        case .automation:
+            key = "automation"
+            title = "“\(currentExtTitle)” needs permission to control another app"
+            info = "macOS blocks sending commands to the target app (for example Notes) until you allow it. Open Settings → Automation and turn on the target app under Invoke."
+            urlString = "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation"
+        }
+        if let last = Self.lastPermissionPrompt[key], Date().timeIntervalSince(last) < 10 { return }
+        Self.lastPermissionPrompt[key] = Date()
+        let alert = NSAlert()
+        alert.messageText = title
+        alert.informativeText = info
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "Open Settings")
+        alert.addButton(withTitle: "Cancel")
+        if alert.runModal() == .alertFirstButtonReturn, let url = URL(string: urlString) {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
     /// SQLite authorizer: permit only the operations a read-only SELECT needs. SQLITE_ATTACH (reaches
     /// other files), writes, and PRAGMAs are denied. A C function pointer — no captured state.
     private static let sqlAuthorizer: @convention(c) (
@@ -1670,23 +1715,24 @@ public final class AppController: NSObject, NSApplicationDelegate {
         }
     }
 
-    private struct SQLError: Error { let message: String }
+    private struct SQLError: Error { let message: String; let isOpenFailure: Bool }
 
     /// Open `path` read-only and run a single SELECT, returning rows as column→value maps. All access is
-    /// constrained by sqlAuthorizer. Returns a human-readable message on failure.
+    /// constrained by sqlAuthorizer. Returns a human-readable message on failure; `isOpenFailure`
+    /// distinguishes a file-open denial (usually macOS TCC) from a SQL/query error.
     private static func runReadOnlySQL(path: String, query: String) -> Result<[[String: JSONValue]], SQLError> {
         var db: OpaquePointer?
         let openRC = sqlite3_open_v2(path, &db, SQLITE_OPEN_READONLY, nil)
         defer { sqlite3_close(db) }
         guard openRC == SQLITE_OK else {
             let msg = db.map { String(cString: sqlite3_errmsg($0)) } ?? "cannot open database"
-            return .failure(SQLError(message: "\(msg) (grant Invoke Full Disk Access if this is a protected database)"))
+            return .failure(SQLError(message: msg, isOpenFailure: true))
         }
         sqlite3_set_authorizer(db, sqlAuthorizer, nil)
 
         var stmt: OpaquePointer?
         guard sqlite3_prepare_v2(db, query, -1, &stmt, nil) == SQLITE_OK else {
-            return .failure(SQLError(message: String(cString: sqlite3_errmsg(db))))
+            return .failure(SQLError(message: String(cString: sqlite3_errmsg(db)), isOpenFailure: false))
         }
         defer { sqlite3_finalize(stmt) }
 
