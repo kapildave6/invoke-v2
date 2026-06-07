@@ -293,6 +293,9 @@ public final class PaletteWindow: NSObject {
 
     // MARK: - Rendering / action bar
 
+    /// Scroll the current surface to the bottom (AI Chat keeps the streaming answer in view).
+    public func scrollToBottom() { paletteView.scrollContentToBottom() }
+
     public func render(_ tree: ViewTree, selectedIndex: Int) {
         // Any re-render (including async extension-commit / AI-answer callbacks) invalidates the tree the
         // ⌘K panel's captured actions point at — close it so it can't act on a stale node. No-op if hidden.

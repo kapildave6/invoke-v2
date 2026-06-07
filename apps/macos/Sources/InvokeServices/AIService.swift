@@ -110,6 +110,67 @@ public final class AIService {
         }
     }
 
+    /// Streaming, multi-turn completion (Anthropic SSE). `messages` is the full conversation
+    /// ([{role:"user"|"assistant", content:…}]). `onDelta` fires per text chunk and `onComplete` with
+    /// the full text (or an error) — both delivered on the MAIN queue, so callers update UI directly.
+    public func stream(system: String, messages: [[String: String]], maxTokens: Int = 2000,
+                       onDelta: @escaping (String) -> Void,
+                       onComplete: @escaping (Result<String, AIError>) -> Void) {
+        func finish(_ r: Result<String, AIError>) { DispatchQueue.main.async { onComplete(r) } }
+        guard let key = apiKey() else { finish(.failure(.noKey)); return }
+        guard let url = URL(string: "https://api.anthropic.com/v1/messages") else { finish(.failure(.network("bad url"))); return }
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.timeoutInterval = 120
+        req.setValue(key, forHTTPHeaderField: "x-api-key")
+        req.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
+        req.setValue("application/json", forHTTPHeaderField: "content-type")
+        let body: [String: Any] = [
+            "model": model, "max_tokens": maxTokens, "system": system,
+            "messages": messages, "stream": true,
+        ]
+        req.httpBody = try? JSONSerialization.data(withJSONObject: body)
+
+        Task {
+            do {
+                let (bytes, resp) = try await URLSession.shared.bytes(for: req)
+                guard let http = resp as? HTTPURLResponse else { finish(.failure(.network("no response"))); return }
+                guard (200..<300).contains(http.statusCode) else {
+                    var raw = ""
+                    for try await line in bytes.lines { raw += line }
+                    let json = (try? JSONSerialization.jsonObject(with: Data(raw.utf8))) as? [String: Any]
+                    let detail = ((json?["error"] as? [String: Any])?["message"] as? String) ?? "HTTP \(http.statusCode)"
+                    finish(.failure(.api(detail)))
+                    return
+                }
+                var full = ""
+                for try await line in bytes.lines {
+                    guard line.hasPrefix("data:") else { continue }
+                    let payload = line.dropFirst(5).trimmingCharacters(in: .whitespaces)
+                    guard let obj = (try? JSONSerialization.jsonObject(with: Data(payload.utf8))) as? [String: Any],
+                          let type = obj["type"] as? String else { continue }
+                    switch type {
+                    case "content_block_delta":
+                        if let delta = obj["delta"] as? [String: Any], let t = delta["text"] as? String, !t.isEmpty {
+                            full += t
+                            DispatchQueue.main.async { onDelta(t) }
+                        }
+                    case "error":
+                        let msg = ((obj["error"] as? [String: Any])?["message"] as? String) ?? "stream error"
+                        finish(.failure(.api(msg))); return
+                    case "message_stop":
+                        finish(full.isEmpty ? .failure(.empty) : .success(full)); return
+                    default:
+                        break
+                    }
+                }
+                finish(full.isEmpty ? .failure(.empty) : .success(full))
+            } catch {
+                finish(.failure(.network(error.localizedDescription)))
+            }
+        }
+    }
+
     private static func keychainKey() -> String? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,

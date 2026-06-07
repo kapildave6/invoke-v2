@@ -136,6 +136,17 @@ public final class PaletteView: NSView {
         }
     }
 
+    /// Scroll the content to the bottom — used by AI Chat so the streaming answer stays in view.
+    public func scrollContentToBottom() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self, let doc = self.scrollView.documentView else { return }
+            self.layoutSubtreeIfNeeded()
+            let maxY = max(0, doc.bounds.height - self.scrollView.contentView.bounds.height)
+            self.scrollView.contentView.scroll(to: NSPoint(x: 0, y: maxY))
+            self.scrollView.reflectScrolledClipView(self.scrollView.contentView)
+        }
+    }
+
     // MARK: - Master–detail (list + detail pane)
 
     private func renderSplit(list: ViewNode, selectedIndex: Int) {

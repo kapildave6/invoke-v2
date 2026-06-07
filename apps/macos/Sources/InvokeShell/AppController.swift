@@ -27,10 +27,16 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private let settingsWindow = SettingsWindow()
     private lazy var commands: [RootCommand] = makeCommands()
 
-    private enum Mode { case root, clipboard, emoji, screenshots, snippets, quicklinks, extensionView, aiAnswer, nativeForm }
+    private enum Mode { case root, clipboard, emoji, screenshots, snippets, quicklinks, extensionView, aiAnswer, nativeForm, aiChat }
     private var mode: Mode = .root
     private var lastAIAnswer = "" // for the AI-answer surface's Copy/Paste actions
     private var aiAskSeq = 0      // request token so a stale answer can't render over a newer one
+    // AI Chat (multi-turn, streaming).
+    private var chatMessages: [(role: String, content: String)] = []
+    private var chatStreaming = false
+    private var chatStreamBuffer = ""
+    private var chatSeq = 0
+    private var lastChatRender = Date.distantPast
     private var clipKind = "All Types" // clipboard type filter
     private var pendingQuicklink: Quicklink? // quicklink awaiting its {query} argument (input sub-mode)
     private var pasteTarget: NSRunningApplication? // app to paste back into
@@ -201,6 +207,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         if mode == .extensionView { extHost?.setSearchText(text); return } // re-render arrives via onCommit
         if mode == .aiAnswer { return } // showing an answer; Esc to go back
         if mode == .nativeForm { return } // a form; typing happens in the form fields, not the search box
+        if mode == .aiChat { return } // the search field is the chat composer; Enter sends (lastQuery)
         if Self.looksLikeCalculation(text) { host.setSearchText(text) } // card arrives via onCommit
         renderRoot(calcCard: nil)
     }
@@ -944,6 +951,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     }
 
     private func activateSelection(secondary: Bool) {
+        if mode == .aiChat { sendChatMessage(lastQuery); return } // Enter sends the composed message
         if mode == .nativeForm { // Enter submits the form, then closes
             nativeFormSubmit?(palette.formValues())
             afterLaunch()
@@ -971,6 +979,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 label = currentExtTitle
             }
         case .aiAnswer: label = "Ask AI"
+        case .aiChat: label = chatStreaming ? "AI Chat — thinking…" : "AI Chat"
         case .nativeForm: label = nativeFormTitle
         case .root: label = "Invoke"
         }
@@ -981,6 +990,15 @@ public final class AppController: NSObject, NSApplicationDelegate {
     /// Actions for the selected row: launch an app, run a command (both bump frecency), or the
     /// extension's own actions (the calculator card's Copy).
     private func currentActions() -> [PaletteAction] {
+        if mode == .aiChat {
+            let lastAnswer = chatMessages.last(where: { $0.role == "assistant" })?.content ?? ""
+            var acts = [PaletteAction(title: "Send", shortcut: "↵", icon: "paperplane") { [weak self] in self?.sendChatMessage(self?.lastQuery ?? "") }]
+            if !lastAnswer.isEmpty {
+                acts.append(PaletteAction(title: "Copy Answer", shortcut: "⌘↵", icon: "doc.on.doc") { [weak self] in self?.copyText(lastAnswer) })
+            }
+            acts.append(PaletteAction(title: "New Chat", shortcut: nil, icon: "plus.bubble") { [weak self] in self?.enterAIChat(initial: "") })
+            return acts
+        }
         if mode == .nativeForm {
             // ⌘K → Save (also ⌘↵ submits, since Enter inserts a newline in the textarea).
             return [PaletteAction(title: "Save", shortcut: "⌘↵", icon: "checkmark.circle") { [weak self] in
@@ -1008,7 +1026,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         let node = rows[selectedIndex]
 
         if let q = node.props["aiAsk"]?.stringValue {
-            return [PaletteAction(title: "Ask AI", shortcut: "↵") { [weak self] in self?.runAIAsk(q) }]
+            return [PaletteAction(title: "Ask AI", shortcut: "↵") { [weak self] in self?.enterAIChat(initial: q) }]
         }
         if let path = node.props["appPath"]?.stringValue {
             return [PaletteAction(title: "Open", shortcut: "↵") { [weak self] in
@@ -1340,6 +1358,84 @@ public final class AppController: NSObject, NSApplicationDelegate {
         updateActionBar()
     }
 
+    // MARK: - AI Chat (multi-turn, streaming)
+
+    private static let chatSystemPrompt = "You are a concise, expert assistant inside a macOS command palette. Answer in GitHub-flavored Markdown. Keep answers focused; use code blocks for code."
+
+    /// Enter conversational AI Chat. If `initial` is non-empty, send it as the first turn.
+    private func enterAIChat(initial: String) {
+        guard ai.hasKey else { palette.showToast("Set your Anthropic API key in Settings → Advanced to use AI"); return }
+        mode = .aiChat
+        chatMessages = []
+        chatStreaming = false
+        chatStreamBuffer = ""
+        captureTarget()
+        lastQuery = ""
+        palette.clearSearch()
+        palette.setPlaceholder("Message AI…  (↵ to send)")
+        palette.hideFilter()
+        if !palette.isVisible { palette.show() }
+        let q = initial.trimmingCharacters(in: .whitespacesAndNewlines)
+        if q.isEmpty { renderAIChat() } else { sendChatMessage(q) }
+    }
+
+    /// Append a user turn and stream the assistant reply.
+    private func sendChatMessage(_ text: String) {
+        let q = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !q.isEmpty, !chatStreaming else { return }
+        guard ai.hasKey else { palette.showToast("Set your Anthropic API key in Settings → Advanced to use AI"); return }
+        chatMessages.append((role: "user", content: q))
+        lastQuery = ""
+        palette.clearSearch()
+        chatStreaming = true
+        chatStreamBuffer = ""
+        chatSeq += 1
+        let seq = chatSeq
+        lastChatRender = .distantPast
+        renderAIChat()
+        ai.stream(
+            system: Self.chatSystemPrompt,
+            messages: chatMessages.map { ["role": $0.role, "content": $0.content] },
+            onDelta: { [weak self] t in
+                guard let self, self.mode == .aiChat, self.chatSeq == seq else { return }
+                self.chatStreamBuffer += t
+                let now = Date()
+                if now.timeIntervalSince(self.lastChatRender) > 0.05 { self.lastChatRender = now; self.renderAIChat() }
+            },
+            onComplete: { [weak self] result in
+                guard let self, self.mode == .aiChat, self.chatSeq == seq else { return }
+                self.chatStreaming = false
+                switch result {
+                case .success(let full):
+                    self.chatMessages.append((role: "assistant", content: full))
+                case .failure(let err):
+                    self.chatMessages.append((role: "assistant", content: "**AI error** — \(err.message)"))
+                }
+                self.chatStreamBuffer = ""
+                self.renderAIChat()
+            }
+        )
+    }
+
+    private func renderAIChat() {
+        var md = ""
+        for m in chatMessages {
+            md += m.role == "user" ? "### 🧑 You\n\n\(m.content)\n\n" : "### ✦ AI\n\n\(m.content)\n\n"
+        }
+        if chatStreaming {
+            let partial = chatStreamBuffer.isEmpty ? "_Thinking…_" : chatStreamBuffer
+            md += "### ✦ AI\n\n\(partial)\n\n"
+        }
+        if md.isEmpty { md = "_Ask anything. Type a message and press ↵._" }
+        let tree = ViewTree()
+        tree.root.children = [ViewNode(id: 1, type: "detail", props: ["markdown": .string(md)])]
+        rootTree = tree
+        selectedIndex = 0
+        palette.render(tree, selectedIndex: 0)
+        palette.scrollToBottom() // keep the latest (streaming) turn in view
+        updateActionBar()
+    }
+
     private func perform(_ action: ViewNode) {
         if let handler = action.props["onAction"]?.handlerRef {
             host.invoke(handler: handler)
@@ -1384,6 +1480,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         switch mode {
         case .clipboard: return "Clipboard History"
         case .aiAnswer: return "AI Answer"
+        case .aiChat: return "AI Chat"
         case .extensionView: return currentExtTitle
         default: return ""
         }
@@ -1843,6 +1940,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
             RootCommand(id: "quicklink.search", title: "Search Quicklinks", subtitle: "Quicklinks", runTitle: "Open", icon: "link", keywords: ["quicklink", "quicklinks", "link", "url", "bookmark"], closesPalette: false) { [weak self] in self?.enterQuicklinks() },
             RootCommand(id: "quicklink.create", title: "Create Quicklink", subtitle: "Quicklinks", runTitle: "Open", icon: "link.badge.plus", keywords: ["quicklink", "create", "new", "add", "link"], closesPalette: false) { [weak self] in self?.presentQuicklinkForm() },
             RootCommand(id: "app.settings", title: "Open Settings", subtitle: "Invoke", runTitle: "Open", icon: "gearshape", keywords: ["settings", "preferences", "config", "options"], closesPalette: true) { [weak self] in self?.openSettings() },
+            RootCommand(id: "ai.chat", title: "AI Chat", subtitle: "AI", runTitle: "Open", icon: "bubble.left.and.bubble.right", keywords: ["ai", "chat", "ask", "claude", "assistant", "gpt"], closesPalette: false) { [weak self] in self?.enterAIChat(initial: "") },
             windowCommand("window.maximize", "Maximize", "macwindow", ["maximize", "full", "fill"], .maximize),
             windowCommand("window.leftHalf", "Left Half", "rectangle.lefthalf.filled", ["left", "half"], .leftHalf),
             windowCommand("window.rightHalf", "Right Half", "rectangle.righthalf.filled", ["right", "half"], .rightHalf),
