@@ -43,6 +43,9 @@ public final class AppSettings: ObservableObject {
     }
     /// Favorited command ids (Raycast's Favorites) — pinned to the top of the empty root.
     @Published public var favorites: Set<String> { didSet { d.set(Array(favorites), forKey: "favoriteCommands") } }
+    /// Extension ids the user has explicitly allowed to run AppleScript (a powerful OS-automation
+    /// capability). Default-deny: an extension must be granted before runAppleScript executes.
+    @Published public var appleScriptGrants: Set<String> { didSet { d.set(Array(appleScriptGrants), forKey: "appleScriptGrants") } }
 
     private init() {
         clipboardLimit = (d.object(forKey: "clipboardLimit") as? Int) ?? 100
@@ -61,6 +64,7 @@ public final class AppSettings: ObservableObject {
         }()
         extensionSecretKeys = Set((d.array(forKey: "extensionSecretKeys") as? [String]) ?? [])
         favorites = Set((d.array(forKey: "favoriteCommands") as? [String]) ?? [])
+        appleScriptGrants = Set((d.array(forKey: "appleScriptGrants") as? [String]) ?? [])
         launchAtLogin = d.bool(forKey: "launchAtLogin")
     }
 

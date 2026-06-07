@@ -845,6 +845,13 @@ struct ImportPane: View {
             if !r.deniedBuiltins.isEmpty {
                 LabeledContent("Denied builtins") { Text(r.deniedBuiltins.joined(separator: ", ")).foregroundColor(.orange) }
             }
+            if let deps = r.installedDeps, !deps.isEmpty {
+                LabeledContent("Installed dependencies") { Text(deps.joined(separator: ", ")).foregroundColor(.secondary) }
+            }
+            if let err = r.depInstallError, !err.isEmpty {
+                Text("⚠️ \(err) The extension may fail to load until this is resolved.")
+                    .font(.callout).foregroundColor(.orange)
+            }
             if r.installed {
                 Text("✓ Imported to \(r.dest). Relaunch Invoke to use it (Extensions group).")
                     .font(.callout).foregroundColor(.green)

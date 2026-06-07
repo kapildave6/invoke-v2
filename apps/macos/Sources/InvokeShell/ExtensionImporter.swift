@@ -13,6 +13,8 @@ public struct ImportReport: Codable {
     public let verdict: String      // "runnable" | "degraded" | "needs-work"
     public let installed: Bool
     public let dest: String
+    public let installedDeps: [String]?   // third-party deps installed during import
+    public let depInstallError: String?   // non-nil if a dependency couldn't be installed / was skipped
 }
 
 /// Runs the `invoke import` CLI (the same one `npm run import:ext` uses) out of process and parses its

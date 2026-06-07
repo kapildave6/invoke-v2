@@ -1403,6 +1403,24 @@ public final class AppController: NSObject, NSApplicationDelegate {
 
     /// Native fulfilment of the allowlisted host capabilities — the Swift counterpart of the dev
     /// runner's Node `devCapabilities`. Shared by the resident calculator and any running extension.
+    /// Default-deny per-extension consent for the powerful runAppleScript capability. Returns true if
+    /// the current extension may run AppleScript (already granted, or the user allows it now). Runs a
+    /// blocking dialog on the main thread (handleCapability is invoked on main).
+    private func ensureAppleScriptGrant() -> Bool {
+        let id = currentExtId
+        guard !id.isEmpty else { return false }
+        if AppSettings.shared.appleScriptGrants.contains(id) { return true }
+        let alert = NSAlert()
+        alert.messageText = "Allow “\(currentExtTitle)” to run AppleScript?"
+        alert.informativeText = "This lets the extension automate apps on your Mac (for example, Apple Notes). Only allow extensions you trust."
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "Allow")
+        alert.addButton(withTitle: "Don’t Allow")
+        let allow = alert.runModal() == .alertFirstButtonReturn
+        if allow { AppSettings.shared.appleScriptGrants.insert(id) }
+        return allow
+    }
+
     private func handleCapability(_ method: String, _ params: JSONValue?) -> JSONValue {
         func arg(_ key: String) -> JSONValue? {
             if case .object(let o)? = params { return o[key] }
@@ -1449,17 +1467,24 @@ public final class AppController: NSObject, NSApplicationDelegate {
         case "localStorage.allItems":
             return .object(extStorageAll().mapValues { JSONValue.string($0) })
         case "runAppleScript":
-            // Gated OS-automation capability (Raycast's runAppleScript). The script text isn't logged
-            // (it may contain user content); the first run triggers the macOS Automation permission
-            // prompt for the target app. Runs on the main thread — fine for short Notes/AppleScript.
+            // Powerful OS-automation capability (Raycast's runAppleScript). Gated several ways because
+            // the host runs UNREVIEWED imported extensions and is not itself OS-sandboxed:
+            //   • `do shell script` is an arbitrary-command escape (runs /bin/sh in our process) — refuse it.
+            //   • default-deny per-extension consent (a blocking dialog naming the extension) before running.
+            //   • macOS TCC still prompts for automating another app (e.g. Notes) on first use.
+            // The script text isn't logged (may contain user content).
             let source = arg("source")?.stringValue ?? ""
             guard !source.isEmpty else { return .string("") }
-            print("[invoke:ext] runAppleScript (\(source.count) chars)")
+            if source.range(of: "do[ \\t]+shell[ \\t]+script", options: .regularExpression) != nil {
+                palette.showToast("Blocked: “\(currentExtTitle)” tried to run a shell command via AppleScript")
+                print("[invoke:ext] runAppleScript blocked (do shell script) from \(currentExtId)")
+                return .string("")
+            }
+            guard ensureAppleScriptGrant() else { return .string("") }
             var errorDict: NSDictionary?
             let result = NSAppleScript(source: source)?.executeAndReturnError(&errorDict)
             if let errorDict {
                 let msg = (errorDict[NSAppleScript.errorMessage] as? String) ?? "AppleScript error"
-                print("[invoke:ext] runAppleScript error: \(msg)")
                 palette.showToast("AppleScript: \(msg)")
                 return .string("")
             }

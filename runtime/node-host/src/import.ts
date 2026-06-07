@@ -170,18 +170,41 @@ async function main(): Promise<void> {
 
     // Auto-install the extension's third-party npm deps into the repo node_modules (skip the ones we
     // shim: @raycast/api, @raycast/utils, @invoke/*, and React which the repo already provides).
+    //
+    // SECURITY: this runs `npm install` from an UNREVIEWED, user-chosen extension's package.json.
+    //   • Only registry packages with a valid name + plain semver range are installed — git/url/file/
+    //     link/alias version sources (an install-source injection that fetches arbitrary code) are
+    //     rejected outright.
+    //   • `--ignore-scripts` so no pre/post-install lifecycle script can execute at import time.
+    //   • `--` so a package name can never be parsed as an npm flag.
+    const NAME_RE = /^(@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/;
+    const safeVersion = (v: unknown): boolean => {
+      if (typeof v !== "string") return false;
+      const t = v.trim();
+      if (t === "*" || t === "latest") return true;
+      if (/[/:]/.test(t)) return false; // protocols, github:owner/repo, owner/repo, npm: aliases
+      if (/\b(git|https?|ssh|file|link|workspace|npm)\b/i.test(t)) return false;
+      return /^[\^~>=< ]*\d[\w.\-+ |x*]*$/.test(t); // semver-ish range
+    };
     const allDeps = (manifest as { dependencies?: Record<string, string> }).dependencies ?? {};
-    const toInstall = Object.keys(allDeps).filter(
-      (d) => !d.startsWith("@raycast/") && !d.startsWith("@invoke/") && d !== "react" && d !== "react-dom",
-    );
+    const rejected: string[] = [];
+    const toInstall = Object.keys(allDeps).filter((d) => {
+      if (d.startsWith("@raycast/") || d.startsWith("@invoke/") || d === "react" || d === "react-dom") return false;
+      if (!NAME_RE.test(d) || !safeVersion(allDeps[d])) { rejected.push(d); return false; }
+      return true;
+    });
+    if (rejected.length) depInstallError = `Skipped unsafe dependency specs: ${rejected.join(", ")}.`;
     const missingDeps = toInstall.filter((d) => !fs.existsSync(path.join(ROOT, "node_modules", d)));
     if (missingDeps.length) {
+      const present = () => missingDeps.filter((d) => fs.existsSync(path.join(ROOT, "node_modules", d)));
       try {
-        const specs = missingDeps.map((d) => `${d}@${allDeps[d]}`);
-        execFileSync("npm", ["install", "--no-save", ...specs], { cwd: ROOT, stdio: jsonOut ? "ignore" : "inherit" });
-        installedDeps = missingDeps;
-      } catch {
-        depInstallError = `Could not install: ${missingDeps.join(", ")} — run \`npm install ${missingDeps.join(" ")}\` manually.`;
+        const specs = missingDeps.map((d) => `${d}@${allDeps[d].trim()}`);
+        execFileSync("npm", ["install", "--no-save", "--ignore-scripts", "--", ...specs], { cwd: ROOT, stdio: jsonOut ? "ignore" : "inherit" });
+        installedDeps = present();
+      } catch (e) {
+        installedDeps = present();
+        const msg = (e as Error)?.message ?? String(e);
+        depInstallError = `${depInstallError ? depInstallError + " " : ""}Could not install ${missingDeps.join(", ")}: ${msg}`;
       }
     }
   }
