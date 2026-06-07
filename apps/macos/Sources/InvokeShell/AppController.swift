@@ -1218,7 +1218,12 @@ public final class AppController: NSObject, NSApplicationDelegate {
         exitToRoot() // reset mode/selection so the next summon is clean
     }
 
+    private static var didPromptAccessibility = false
     private static func promptAccessibility() {
+        // Prompt at most once per launch — otherwise every paste while untrusted re-opens the system
+        // dialog ("asking again and again"). After the first prompt, callers fall back to copy + a toast.
+        guard !didPromptAccessibility else { return }
+        didPromptAccessibility = true
         let opts = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
         _ = AXIsProcessTrustedWithOptions(opts)
     }
