@@ -59,10 +59,14 @@ struct GeneralPane: View {
     var body: some View {
         Form {
             Toggle("Launch Invoke at login", isOn: $settings.launchAtLogin)
-            Section("Hotkeys") {
+            Section {
                 LabeledContent("Summon Invoke", value: "⌥Space")
-                LabeledContent("Clipboard History", value: "⌘⇧V")
                 LabeledContent("Window — left / right / maximize", value: "⌃⌥← / → / ↑")
+            } header: {
+                Text("Hotkeys")
+            } footer: {
+                Text("Per-command hotkeys (including Clipboard History’s ⌘⇧V) are set in Extensions.")
+                    .font(.caption).foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)

@@ -158,12 +158,10 @@ public final class AppController: NSObject, NSApplicationDelegate {
         clipboard.capacity = AppSettings.shared.clipboardLimit
         print("[invoke:host] app index: \(appIndex.count) applications · \(commands.count) commands")
 
-        // ⌥Space summons the root; ⌘⇧V opens Clipboard History directly (Raycast parity).
+        // ⌥Space summons the root. (Clipboard History's ⌘⇧V is a configurable per-command hotkey now —
+        // seeded as a default below and editable in Settings → Extensions → Clipboard History.)
         hotkey.register(id: 1, keyCode: UInt32(kVK_Space), modifiers: UInt32(optionKey)) { [weak self] in
             self?.summonToggle()
-        }
-        hotkey.register(id: 2, keyCode: UInt32(kVK_ANSI_V), modifiers: UInt32(cmdKey | shiftKey)) { [weak self] in
-            self?.openClipboardHotkey()
         }
         // Window management on the current frontmost app: ⌃⌥← / → / ↑.
         let winMods = UInt32(controlKey | optionKey)
@@ -176,16 +174,25 @@ public final class AppController: NSObject, NSApplicationDelegate {
         hotkey.register(id: 5, keyCode: UInt32(kVK_UpArrow), modifiers: winMods) { [weak self] in
             self?.applyWindow(.maximize, pid: NSWorkspace.shared.frontmostApplication?.processIdentifier)
         }
-        print("[invoke:host] global hotkeys: ⌥Space · ⌘⇧V · ⌃⌥←/→/↑ (windows)")
+        print("[invoke:host] global hotkeys: ⌥Space · ⌃⌥←/→/↑ (windows)")
         // Reserve the fixed combos so the recorder won't let a command shadow them (Carbon would
-        // drop the duplicate registration silently).
+        // drop the duplicate registration silently). ⌘⇧V is NOT reserved — it's the editable default
+        // for the Clipboard History command.
         AppSettings.reservedCombos = [
             AppSettings.comboKey(keyCode: UInt32(kVK_Space), modifiers: UInt32(optionKey)),
-            AppSettings.comboKey(keyCode: UInt32(kVK_ANSI_V), modifiers: UInt32(cmdKey | shiftKey)),
             AppSettings.comboKey(keyCode: UInt32(kVK_LeftArrow), modifiers: winMods),
             AppSettings.comboKey(keyCode: UInt32(kVK_RightArrow), modifiers: winMods),
             AppSettings.comboKey(keyCode: UInt32(kVK_UpArrow), modifiers: winMods),
         ]
+        // Seed ⌘⇧V as the default Clipboard History hotkey ONCE (the user can change/clear it; we don't
+        // re-seed after that). Registered via the per-command path below.
+        if !UserDefaults.standard.bool(forKey: "hotkeyDefaultsSeeded") {
+            if AppSettings.shared.hotkey(for: "clipboard.history") == nil {
+                AppSettings.shared.setHotkey("clipboard.history",
+                    AppSettings.KeyCombo(keyCode: UInt32(kVK_ANSI_V), modifiers: UInt32(cmdKey | shiftKey), display: "⌘⇧V"))
+            }
+            UserDefaults.standard.set(true, forKey: "hotkeyDefaultsSeeded")
+        }
         AppSettings.shared.reconcileLaunchAtLogin() // didSet is skipped for the in-init assignment
         reloadCommandHotkeys() // user-assigned per-command hotkeys from Settings
 
@@ -291,13 +298,6 @@ public final class AppController: NSObject, NSApplicationDelegate {
             let frameMs = Double(DispatchTime.now().uptimeNanoseconds - t0.uptimeNanoseconds) / 1_000_000
             print(String(format: "[invoke:perf] summon %.1fms (sync %.1fms) · budget 150ms (PLAN §1)", frameMs, syncMs))
         }
-    }
-
-    /// ⌘⇧V: summon straight into Clipboard History.
-    private func openClipboardHotkey() {
-        captureTarget()
-        palette.show()
-        enterClipboard()
     }
 
     /// Move/resize a window via Accessibility (target = palette's previous app, or the frontmost

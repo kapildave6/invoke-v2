@@ -185,9 +185,10 @@ public final class AppSettings: ObservableObject {
         if let data = try? JSONEncoder().encode(hotkeys) { d.set(data, forKey: "commandHotkeys") }
     }
 
-    /// Physical combos that are already bound to fixed system hotkeys (⌥Space, ⌘⇧V, the window
-    /// ⌃⌥arrows). AppController populates this at launch (it owns the Carbon values). The recorder
-    /// refuses them so a user can't shadow a built-in shortcut into a silently-dropped registration.
+    /// Physical combos that are already bound to fixed system hotkeys (⌥Space, the window ⌃⌥arrows).
+    /// AppController populates this at launch (it owns the Carbon values). The recorder refuses them so
+    /// a user can't shadow a built-in shortcut into a silently-dropped registration. (⌘⇧V is NOT here —
+    /// it's the editable default for the Clipboard History command, not a fixed shortcut.)
     public static var reservedCombos: Set<UInt64> = []
     public static func comboKey(keyCode: UInt32, modifiers: UInt32) -> UInt64 {
         (UInt64(modifiers) << 32) | UInt64(keyCode)
