@@ -61,11 +61,10 @@ struct GeneralPane: View {
             Toggle("Launch Invoke at login", isOn: $settings.launchAtLogin)
             Section {
                 LabeledContent("Summon Invoke", value: "⌥Space")
-                LabeledContent("Window — left / right / maximize", value: "⌃⌥← / → / ↑")
             } header: {
                 Text("Hotkeys")
             } footer: {
-                Text("Per-command hotkeys (including Clipboard History’s ⌘⇧V) are set in Extensions.")
+                Text("⌥Space is the only fixed shortcut. Every other hotkey — Clipboard History (⌘⇧V), Window Management (⌃⌥arrows), and any command — is set per command in Extensions.")
                     .font(.caption).foregroundStyle(.secondary)
             }
         }

@@ -158,40 +158,42 @@ public final class AppController: NSObject, NSApplicationDelegate {
         clipboard.capacity = AppSettings.shared.clipboardLimit
         print("[invoke:host] app index: \(appIndex.count) applications · \(commands.count) commands")
 
-        // ⌥Space summons the root. (Clipboard History's ⌘⇧V is a configurable per-command hotkey now —
-        // seeded as a default below and editable in Settings → Extensions → Clipboard History.)
+        // ⌥Space is the one truly-fixed global hotkey (summon the root). Everything else — Clipboard
+        // History's ⌘⇧V and Window Management's ⌃⌥arrows — is a configurable per-command hotkey, seeded
+        // as a default below and editable in Settings → Extensions.
         hotkey.register(id: 1, keyCode: UInt32(kVK_Space), modifiers: UInt32(optionKey)) { [weak self] in
             self?.summonToggle()
         }
-        // Window management on the current frontmost app: ⌃⌥← / → / ↑.
-        let winMods = UInt32(controlKey | optionKey)
-        hotkey.register(id: 3, keyCode: UInt32(kVK_LeftArrow), modifiers: winMods) { [weak self] in
-            self?.applyWindow(.leftHalf, pid: NSWorkspace.shared.frontmostApplication?.processIdentifier)
-        }
-        hotkey.register(id: 4, keyCode: UInt32(kVK_RightArrow), modifiers: winMods) { [weak self] in
-            self?.applyWindow(.rightHalf, pid: NSWorkspace.shared.frontmostApplication?.processIdentifier)
-        }
-        hotkey.register(id: 5, keyCode: UInt32(kVK_UpArrow), modifiers: winMods) { [weak self] in
-            self?.applyWindow(.maximize, pid: NSWorkspace.shared.frontmostApplication?.processIdentifier)
-        }
-        print("[invoke:host] global hotkeys: ⌥Space · ⌃⌥←/→/↑ (windows)")
-        // Reserve the fixed combos so the recorder won't let a command shadow them (Carbon would
-        // drop the duplicate registration silently). ⌘⇧V is NOT reserved — it's the editable default
-        // for the Clipboard History command.
+        let winMods = UInt32(controlKey | optionKey) // ⌃⌥ — default modifier for Window Management
+        print("[invoke:host] global hotkeys: ⌥Space (summon) · per-command via Settings → Extensions")
+        // Reserve only ⌥Space so the recorder won't let a command shadow it (Carbon would drop the
+        // duplicate registration silently). ⌘⇧V and the ⌃⌥arrows are NOT reserved — they're editable
+        // per-command defaults seeded just below.
         AppSettings.reservedCombos = [
             AppSettings.comboKey(keyCode: UInt32(kVK_Space), modifiers: UInt32(optionKey)),
-            AppSettings.comboKey(keyCode: UInt32(kVK_LeftArrow), modifiers: winMods),
-            AppSettings.comboKey(keyCode: UInt32(kVK_RightArrow), modifiers: winMods),
-            AppSettings.comboKey(keyCode: UInt32(kVK_UpArrow), modifiers: winMods),
         ]
-        // Seed ⌘⇧V as the default Clipboard History hotkey ONCE (the user can change/clear it; we don't
-        // re-seed after that). Registered via the per-command path below.
+        // Seed built-in default hotkeys ONCE per batch (the user can change/clear them afterwards; we
+        // don't re-seed once a batch's flag is set). All register via the per-command path below.
         if !UserDefaults.standard.bool(forKey: "hotkeyDefaultsSeeded") {
             if AppSettings.shared.hotkey(for: "clipboard.history") == nil {
                 AppSettings.shared.setHotkey("clipboard.history",
                     AppSettings.KeyCombo(keyCode: UInt32(kVK_ANSI_V), modifiers: UInt32(cmdKey | shiftKey), display: "⌘⇧V"))
             }
             UserDefaults.standard.set(true, forKey: "hotkeyDefaultsSeeded")
+        }
+        // Window Management defaults use a SEPARATE flag: an existing install already has
+        // hotkeyDefaultsSeeded set from the clipboard batch, so reusing it would skip these.
+        if !UserDefaults.standard.bool(forKey: "windowHotkeyDefaultsSeeded") {
+            let winDefaults: [(id: String, keyCode: UInt32, display: String)] = [
+                ("window.leftHalf",  UInt32(kVK_LeftArrow),  "⌃⌥←"),
+                ("window.rightHalf", UInt32(kVK_RightArrow), "⌃⌥→"),
+                ("window.maximize",  UInt32(kVK_UpArrow),    "⌃⌥↑"),
+            ]
+            for d in winDefaults where AppSettings.shared.hotkey(for: d.id) == nil {
+                AppSettings.shared.setHotkey(d.id,
+                    AppSettings.KeyCombo(keyCode: d.keyCode, modifiers: winMods, display: d.display))
+            }
+            UserDefaults.standard.set(true, forKey: "windowHotkeyDefaultsSeeded")
         }
         AppSettings.shared.reconcileLaunchAtLogin() // didSet is skipped for the in-init assignment
         reloadCommandHotkeys() // user-assigned per-command hotkeys from Settings
@@ -300,8 +302,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// Move/resize a window via Accessibility (target = palette's previous app, or the frontmost
-    /// app for the global hotkeys). Prompts for the grant if missing.
+    /// Move/resize a window via Accessibility (target = the captured pasteTarget — the app focused
+    /// before the palette/hotkey fired). Prompts for the grant if missing.
     private func applyWindow(_ action: WindowManager.Action, pid: pid_t?) {
         guard AXIsProcessTrusted() else {
             Self.promptAccessibility()
@@ -2098,9 +2100,9 @@ public final class AppController: NSObject, NSApplicationDelegate {
 
     // MARK: - Per-command global hotkeys (PLAN.md §3.2, §6)
 
-    /// (Re)register the user-assigned per-command hotkeys. Ids 100+ are reserved for these (1–5 are
-    /// the fixed bindings). Called at launch and whenever the Settings window mutates a binding or
-    /// an enable toggle — a disabled command's hotkey is removed.
+    /// (Re)register the user-assigned per-command hotkeys. Ids 100+ are reserved for these (only id 1,
+    /// ⌥Space, is a fixed binding now). Called at launch and whenever the Settings window mutates a
+    /// binding or an enable toggle — a disabled command's hotkey is removed.
     private func reloadCommandHotkeys() {
         let settings = AppSettings.shared
         for (i, cmd) in commands.enumerated() {
