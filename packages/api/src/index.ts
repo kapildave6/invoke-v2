@@ -16,14 +16,16 @@
  */
 import { createElement, createContext, useContext, type ReactNode, type ReactElement } from "react";
 
-// Push targets render EAGERLY (the host lifts the target subtree into the action's children and
-// snapshots it on push). Real extensions often have mutually-recursive targets — a List item whose
-// actions push a Detail, whose actions push the same Detail … — which would recurse forever when
-// rendered eagerly. Cap the eager render depth: one level pre-renders (so a normal list→detail push
-// works), deeper targets render as nothing until pushed. (A fully-lazy render-on-push is the longer-
-// term fix; this stops the infinite recursion that drops the whole view.)
+// Action.Push targets are NOT rendered eagerly. The host lifts the target subtree into the action's
+// children and snapshots it on push, but eagerly rendering every target on a list mounts them all —
+// which (a) recurses forever for mutually-recursive targets (a List item that pushes a Detail whose
+// actions push a Detail …) and (b) runs each target's mount effects in the background. For apple-notes
+// that means a getNoteBody AppleScript per row just from *searching*, spamming the macOS Automation
+// prompt. So render the target as nothing here; it should be rendered lazily on push instead.
+// (Render-on-push isn't wired yet, so in-app `Action.Push` navigation is a no-op for now — extensions
+// that need to open something use Action.Open/OpenInBrowser, which work.)
 const PushDepthContext = createContext(0);
-const MAX_EAGER_PUSH_DEPTH = 1;
+const MAX_EAGER_PUSH_DEPTH = 0;
 function PushTarget({ element }: { element: ReactNode }): ReactElement | null {
   const depth = useContext(PushDepthContext);
   if (depth >= MAX_EAGER_PUSH_DEPTH) return null;
