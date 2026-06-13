@@ -28,6 +28,19 @@ const SAFE_BUILTINS = new Set<string>(SAFE_LIST);
  *  at module load (before lockdown), so reaching the real node:os here is allowed. */
 const CURATED_OS_CJS: Record<string, unknown> = { ...(osSafe as Record<string, unknown>), default: osSafe };
 
+/** CJS form of the `run-applescript` compat shim (see run-applescript-shim.mjs): route the script
+ *  through the host's runAppleScript capability instead of child_process. */
+const RUN_APPLESCRIPT_CJS: Record<string, unknown> = (() => {
+  const runAppleScript = (script: unknown): Promise<unknown> => {
+    const send = (globalThis as Record<string, unknown>)["__invokeHostRpc__"] as
+      | ((method: string, params: unknown) => Promise<unknown>)
+      | undefined;
+    if (typeof send !== "function") return Promise.reject(new Error("run-applescript shim: host bridge not ready"));
+    return send("runAppleScript", { source: typeof script === "string" ? script : String(script ?? "") });
+  };
+  return { runAppleScript, default: runAppleScript };
+})();
+
 function isDeniedBuiltin(request: string): boolean {
   const hasNodePrefix = request.startsWith("node:");
   const name = hasNodePrefix ? request.slice(5) : request;
@@ -102,6 +115,7 @@ export function lockdown(): void {
     // `import os from "os"` becomes require("os") and arrives HERE (not the ESM deny-loader). Return the
     // same read-only shim instead of denying, so the redirect covers CJS-output extensions too.
     if (request === "os" || request === "node:os") return CURATED_OS_CJS;
+    if (request === "run-applescript") return RUN_APPLESCRIPT_CJS;
     if (isDeniedBuiltin(request)) {
       throw new Error(`[invoke:sandbox] require("${request}") is denied (PLAN.md §4.4)`);
     }

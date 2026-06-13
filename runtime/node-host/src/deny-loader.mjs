@@ -36,6 +36,8 @@ export function isDeniedBuiltin(specifier) {
 /** Our curated read-only `os` shim. An extension's `import … from "os"` resolves HERE instead of being
  *  denied; the shim itself is the only module allowed to import the real `node:os`. */
 const OS_SAFE_URL = new URL("./os-safe.mjs", import.meta.url).href;
+/** Compat shim for the `run-applescript` npm package (it shells out via child_process). */
+const RUN_APPLESCRIPT_URL = new URL("./run-applescript-shim.mjs", import.meta.url).href;
 
 export async function resolve(specifier, context, nextResolve) {
   const name = specifier.startsWith("node:") ? specifier.slice(5) : specifier;
@@ -43,6 +45,9 @@ export async function resolve(specifier, context, nextResolve) {
     // The shim reaching for the real os is allowed; everyone else gets the curated subset.
     if (context.parentURL === OS_SAFE_URL) return nextResolve(specifier, context);
     return { url: OS_SAFE_URL, shortCircuit: true };
+  }
+  if (specifier === "run-applescript") {
+    return { url: RUN_APPLESCRIPT_URL, shortCircuit: true };
   }
   if (isDeniedBuiltin(specifier)) {
     throw new Error(
