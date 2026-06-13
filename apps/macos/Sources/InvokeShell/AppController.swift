@@ -2032,6 +2032,9 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private func runNoViewExtension(id: String, title: String, entryRelPath: String, command: String, preferences: String) {
         frecency.bump("cmd:\(id)")
         captureTarget()
+        afterLaunch() // an action command: tear the palette down first; the action runs in the background.
+        // Set the ext identity AFTER afterLaunch — it tears down the extension and clears currentExtId,
+        // which the headless action's capabilities (consent grants for runAppleScript, etc.) key on.
         currentExtId = id
         currentExtTitle = title
         let key = UUID()
@@ -2040,7 +2043,6 @@ public final class AppController: NSObject, NSApplicationDelegate {
         h.onCapability = { [weak self] m, p in self?.handleCapability(m, p) ?? .null }
         h.onTerminate = { [weak self] in DispatchQueue.main.async { self?.noViewHosts[key] = nil } }
         noViewHosts[key] = h
-        afterLaunch() // an action command: tear the palette down, the action runs in the background
         h.launch(repoRoot: repoRoot, entryRelPath: entryRelPath, command: command, preferences: preferences, mode: "no-view")
     }
 
