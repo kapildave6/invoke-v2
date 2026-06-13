@@ -1877,10 +1877,13 @@ public final class AppController: NSObject, NSApplicationDelegate {
                         out.append(RootCommand(id: cmdId, title: ctitle, subtitle: title, runTitle: "Run",
                                                icon: "bolt.fill", iconPath: iconPath,
                                                keywords: [name, cname, title.lowercased()],
-                                               closesPalette: true) { [weak self] in
+                                               closesPalette: false) { [weak self] in
+                            // closesPalette:false so a first-run prefs-onboarding form can open in the
+                            // palette; the no-view action itself tears the palette down when it runs.
                             guard let self else { return }
-                            let prefs = self.resolvePreferencesJSON(extKey: extKey, spec: prefsSpec)
-                            self.runNoViewExtension(id: cmdId, title: ctitle, entryRelPath: rel, command: cname, preferences: prefs)
+                            self.launchExtensionCommand(extKey: extKey, extTitle: title, spec: prefsSpec) { prefs in
+                                self.runNoViewExtension(id: cmdId, title: ctitle, entryRelPath: rel, command: cname, preferences: prefs)
+                            }
                         })
                     } else {
                         out.append(RootCommand(id: cmdId, title: ctitle, subtitle: title, runTitle: "Open",
@@ -1888,9 +1891,9 @@ public final class AppController: NSObject, NSApplicationDelegate {
                                                keywords: [name, cname, title.lowercased()],
                                                closesPalette: false) { [weak self] in
                             guard let self else { return }
-                            // Resolve preferences at launch (defaults merged with the user's saved values).
-                            let prefs = self.resolvePreferencesJSON(extKey: extKey, spec: prefsSpec)
-                            self.launchExtension(id: cmdId, title: ctitle, entryRelPath: rel, command: cname, preferences: prefs)
+                            self.launchExtensionCommand(extKey: extKey, extTitle: title, spec: prefsSpec) { prefs in
+                                self.launchExtension(id: cmdId, title: ctitle, entryRelPath: rel, command: cname, preferences: prefs)
+                            }
                         })
                     }
                 }
@@ -2036,6 +2039,80 @@ public final class AppController: NSObject, NSApplicationDelegate {
         noViewHosts[key] = h
         afterLaunch() // an action command: tear the palette down, the action runs in the background
         h.launch(repoRoot: repoRoot, entryRelPath: entryRelPath, command: command, preferences: preferences, mode: "no-view")
+    }
+
+    // MARK: - Required-preferences onboarding (Raycast parity)
+
+    /// True if the extension has a `required` preference the user hasn't set yet. Raycast shows a
+    /// "Welcome to <ext>" config screen on first run in this case; we do the same (presentPrefsOnboarding)
+    /// before launching, so e.g. YouTube Music's Browser is actually chosen rather than silently
+    /// defaulting. Once the user saves them, the overrides exist and onboarding no longer appears.
+    private func needsPrefsOnboarding(extKey: String, spec: [[String: Any]]) -> Bool {
+        for p in spec where (p["required"] as? Bool) ?? false {
+            guard let name = p["name"] as? String else { continue }
+            let secret = (p["type"] as? String) == "password"
+            if AppSettings.shared.extensionPref(extID: extKey, name: name, secret: secret) == nil { return true }
+        }
+        return false
+    }
+
+    /// In-palette form that collects an extension's required preferences (dropdowns render as real
+    /// dropdowns), saves them, then runs `then` (the actual command launch).
+    private func presentPrefsOnboarding(extKey: String, extTitle: String, spec: [[String: Any]],
+                                        then: @escaping () -> Void) {
+        var fields: [ViewNode] = []
+        var fid = 100
+        for p in spec where (p["required"] as? Bool) ?? false {
+            guard let name = p["name"] as? String else { continue }
+            let ptype = (p["type"] as? String) ?? "textfield"
+            let ptitle = (p["title"] as? String) ?? name
+            let saved = AppSettings.shared.extensionPref(extID: extKey, name: name, secret: ptype == "password")
+            let current = saved ?? (p["default"] as? String)
+                ?? ((p["default"] as? Bool).map { $0 ? "true" : "false" }) ?? ""
+            fid += 1
+            switch ptype {
+            case "dropdown":
+                let node = ViewNode(id: fid, type: "form-dropdown",
+                                    props: ["id": .string(name), "title": .string(ptitle), "value": .string(current)])
+                var itemId = fid * 1000
+                node.children = ((p["data"] as? [[String: Any]]) ?? []).compactMap { o in
+                    guard let v = o["value"] as? String else { return nil }
+                    itemId += 1
+                    return ViewNode(id: itemId, type: "form-dropdown-item",
+                                    props: ["title": .string((o["title"] as? String) ?? v), "value": .string(v)])
+                }
+                fields.append(node)
+            case "checkbox":
+                fields.append(ViewNode(id: fid, type: "form-checkbox",
+                                       props: ["id": .string(name), "label": .string(ptitle), "value": .bool(current == "true")]))
+            default: // textfield, appPicker, password → a text field (type the app name for appPicker)
+                fields.append(formField(fid, fieldId: name, type: "form-textfield", title: ptitle,
+                                        placeholder: (p["description"] as? String) ?? "", value: current))
+            }
+        }
+        enterNativeForm(title: "Set up \(extTitle)", fields: fields) { [weak self] vals in
+            guard let self else { return }
+            for p in spec where (p["required"] as? Bool) ?? false {
+                guard let name = p["name"] as? String, let v = vals[name] else { continue }
+                let secret = (p["type"] as? String) == "password"
+                AppSettings.shared.setExtensionPref(extID: extKey, name: name, secret: secret, value: v)
+            }
+            then()
+        }
+    }
+
+    /// Launch an extension command, first showing the required-preferences onboarding if it isn't
+    /// configured yet. `launch` performs the actual view/no-view launch with the resolved prefs JSON.
+    private func launchExtensionCommand(extKey: String, extTitle: String, spec: [[String: Any]],
+                                        launch: @escaping (String) -> Void) {
+        if needsPrefsOnboarding(extKey: extKey, spec: spec) {
+            presentPrefsOnboarding(extKey: extKey, extTitle: extTitle, spec: spec) { [weak self] in
+                guard let self else { return }
+                launch(self.resolvePreferencesJSON(extKey: extKey, spec: spec))
+            }
+        } else {
+            launch(resolvePreferencesJSON(extKey: extKey, spec: spec))
+        }
     }
 
     /// A one-row "Loading…" surface shown between launch and the extension's first render commit.
