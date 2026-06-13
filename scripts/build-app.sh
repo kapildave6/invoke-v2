@@ -43,10 +43,13 @@ if [ -d "$RESBUNDLE" ]; then
 fi
 
 echo "▸ codesign (identity: $IDENTITY)…"
+ENTITLEMENTS="$PKG/Resources/Invoke.entitlements"
+# The apple-events entitlement is what lets a hardened-runtime build send Apple events (runAppleScript →
+# Notes etc.). Without it macOS hard-denies (-1743) and never shows the Automation prompt.
 if [ "$IDENTITY" = "-" ]; then
-  codesign --force --deep --sign - "$APP"
+  codesign --force --deep --entitlements "$ENTITLEMENTS" --sign - "$APP"
 else
-  codesign --force --deep --options runtime --timestamp --sign "$IDENTITY" "$APP"
+  codesign --force --deep --options runtime --entitlements "$ENTITLEMENTS" --timestamp --sign "$IDENTITY" "$APP"
 fi
 codesign --verify --verbose=2 "$APP" 2>&1 | sed 's/^/  /' || true
 
