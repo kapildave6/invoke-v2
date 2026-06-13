@@ -637,7 +637,12 @@ public final class PaletteView: NSView {
         form.spacing = 12
         form.translatesAutoresizingMaskIntoConstraints = false
         var fields: [ViewNode] = []
-        func collect(_ n: ViewNode) { if n.type.hasPrefix("form-") { fields.append(n) }; n.children.forEach(collect) }
+        let fieldTypes: Set<String> = ["form-textfield", "form-textarea", "form-checkbox", "form-dropdown"]
+        func collect(_ n: ViewNode) {
+            // A field owns its own children (e.g. a dropdown's items) — don't treat those as fields.
+            if fieldTypes.contains(n.type) { fields.append(n); return }
+            n.children.forEach(collect)
+        }
         collect(node)
         for f in fields {
             guard let row = formFieldRow(f) else { continue }
@@ -676,32 +681,40 @@ public final class PaletteView: NSView {
 
     private func formFieldRow(_ f: ViewNode) -> NSView? {
         let id = f.props["id"]?.stringValue ?? ""
+        // Raycast-style row: a fixed-width, right-aligned label gutter on the left and the control
+        // filling the rest on the right (vs. the old stacked, left-aligned layout).
         let row = NSStackView()
-        row.orientation = .vertical
-        row.alignment = .leading
-        row.spacing = 4
+        row.orientation = .horizontal
+        row.spacing = 12
+        row.distribution = .fill // fixed label gutter; control fills the rest
         row.translatesAutoresizingMaskIntoConstraints = false
-        if let title = f.props["title"]?.stringValue, !title.isEmpty {
-            let label = NSTextField(labelWithString: title)
-            label.font = .systemFont(ofSize: 12, weight: .medium)
-            label.textColor = .secondaryLabelColor
-            row.addArrangedSubview(label)
-        }
+
+        let label = NSTextField(labelWithString: f.props["title"]?.stringValue ?? "")
+        label.alignment = .right
+        label.font = .systemFont(ofSize: 13)
+        label.textColor = .secondaryLabelColor
+        label.lineBreakMode = .byTruncatingTail
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.setContentHuggingPriority(.required, for: .horizontal)
+        label.setContentCompressionResistancePriority(.required, for: .horizontal)
+        row.addArrangedSubview(label)
+        NSLayoutConstraint.activate([label.widthAnchor.constraint(equalToConstant: 120)])
+
+        let control: NSView
         switch f.type {
         case "form-textfield":
             let tf = NSTextField(string: f.props["value"]?.stringValue ?? f.props["defaultValue"]?.stringValue ?? "")
             tf.placeholderString = f.props["placeholder"]?.stringValue
-            tf.translatesAutoresizingMaskIntoConstraints = false
             tf.target = self
             tf.action = #selector(formFieldEnter) // Return in a single-line field submits the form
             // Only Return fires the action — NOT Tab/click-away (end-editing), which would otherwise
             // submit the form and dismiss the palette when moving between fields.
             tf.cell?.sendsActionOnEndEditing = false
-            row.addArrangedSubview(tf)
-            NSLayoutConstraint.activate([tf.widthAnchor.constraint(equalTo: row.widthAnchor)])
             formControls.append((id, { [weak tf] in tf?.stringValue ?? "" }))
             if firstFormResponder == nil { firstFormResponder = tf }
             formResponderViews.append(tf)
+            control = tf
+            row.alignment = .firstBaseline
         case "form-textarea":
             let tv = NSTextView()
             tv.string = f.props["value"]?.stringValue ?? f.props["defaultValue"]?.stringValue ?? ""
@@ -719,32 +732,68 @@ public final class PaletteView: NSView {
             tv.textContainerInset = NSSize(width: 4, height: 6)
             tv.textContainer?.widthTracksTextView = true
             let s = NSScrollView()
-            s.borderType = .noBorder
+            s.borderType = .lineBorder
             s.drawsBackground = false
             s.hasVerticalScroller = true
             s.documentView = tv
             s.wantsLayer = true
             s.layer?.cornerRadius = 6
+            s.layer?.borderWidth = 1
+            s.layer?.borderColor = NSColor.separatorColor.cgColor
             s.translatesAutoresizingMaskIntoConstraints = false
-            row.addArrangedSubview(s)
-            NSLayoutConstraint.activate([s.widthAnchor.constraint(equalTo: row.widthAnchor), s.heightAnchor.constraint(equalToConstant: 80)])
+            NSLayoutConstraint.activate([s.heightAnchor.constraint(equalToConstant: 96)])
             formControls.append((id, { [weak tv] in tv?.string ?? "" }))
             if firstFormResponder == nil { firstFormResponder = tv }
             formResponderViews.append(tv)
+            control = s
+            row.alignment = .top
         case "form-checkbox":
+            // The checkbox carries its own label; the gutter title is usually empty (Raycast parity).
             let cb = NSButton(checkboxWithTitle: f.props["label"]?.stringValue ?? "", target: nil, action: nil)
             if case .bool(true)? = (f.props["value"] ?? f.props["defaultValue"]) { cb.state = .on } // honor defaultValue
-            cb.translatesAutoresizingMaskIntoConstraints = false
-            row.addArrangedSubview(cb)
             formControls.append((id, { [weak cb] in cb?.state == .on ? "true" : "false" }))
+            control = cb
+            row.alignment = .firstBaseline
         case "form-dropdown":
             let pop = NSPopUpButton(frame: .zero, pullsDown: false)
-            pop.translatesAutoresizingMaskIntoConstraints = false
-            row.addArrangedSubview(pop) // options need Form.Dropdown.Item (SDK gap) — empty for now
-            formControls.append((id, { [weak pop] in pop?.titleOfSelectedItem ?? "" }))
+            // Populate from Form.Dropdown.Item children (possibly grouped in Form.Dropdown.Section).
+            // The visible title is the item's `title`; the SUBMITTED value is its `value`
+            // (carried on the menu item's representedObject), not the title.
+            var values: [String] = []
+            func addItems(_ n: ViewNode) {
+                for c in n.children {
+                    if c.type == "form-dropdown-item" {
+                        let title = c.props["title"]?.stringValue ?? c.props["value"]?.stringValue ?? ""
+                        let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
+                        item.representedObject = c.props["value"]?.stringValue ?? title
+                        pop.menu?.addItem(item)
+                        values.append(item.representedObject as? String ?? title)
+                    } else if c.type == "form-dropdown-section" {
+                        if let t = c.props["title"]?.stringValue, !t.isEmpty {
+                            pop.menu?.addItem(.sectionHeader(title: t))
+                        }
+                        addItems(c)
+                    }
+                }
+            }
+            addItems(f)
+            if let current = (f.props["value"] ?? f.props["defaultValue"])?.stringValue,
+               let idx = values.firstIndex(of: current) {
+                // selectItem(at:) indexes menu items, which may include section headers — find the menu row.
+                if let mi = pop.menu?.items.first(where: { ($0.representedObject as? String) == current }) {
+                    pop.select(mi)
+                }
+                _ = idx
+            }
+            formControls.append((id, { [weak pop] in (pop?.selectedItem?.representedObject as? String) ?? pop?.titleOfSelectedItem ?? "" }))
+            control = pop
+            row.alignment = .firstBaseline
         default:
             return nil
         }
+        control.translatesAutoresizingMaskIntoConstraints = false
+        control.setContentHuggingPriority(.defaultLow, for: .horizontal) // let the control fill the row
+        row.addArrangedSubview(control)
         return row
     }
 
