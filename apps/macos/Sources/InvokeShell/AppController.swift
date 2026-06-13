@@ -1524,14 +1524,26 @@ public final class AppController: NSObject, NSApplicationDelegate {
     /// runner's Node `devCapabilities`. Shared by the resident calculator and any running extension.
     /// Default-deny per-extension consent for the powerful runAppleScript capability. Returns true if
     /// the current extension may run AppleScript (already granted, or the user allows it now). Runs a
-    /// The trust unit for capability consent is the EXTENSION, not the individual command —
-    /// "ext.apple-notes.index" and "ext.apple-notes.add-text" share one grant, so the user isn't
-    /// re-prompted for every command of the same extension. (Built-in command ids pass through.)
-    private var currentExtGrantKey: String {
-        let parts = currentExtId.split(separator: ".")
-        if currentExtId.hasPrefix("ext."), parts.count >= 2 { return "ext.\(parts[1])" }
-        return currentExtId
+    /// The trust unit for capability consent / trust is the EXTENSION, not the individual command —
+    /// "ext.apple-notes.index" and "ext.apple-notes.add-text" share one key, so the user isn't
+    /// re-prompted (or re-trusted) for every command. (Built-in command ids pass through.) This is also
+    /// the key used for the trust toggle and the Settings extension-group id.
+    static func extGrantKey(forId id: String) -> String {
+        let parts = id.split(separator: ".")
+        if id.hasPrefix("ext."), parts.count >= 2 { return "ext.\(parts[1])" }
+        return id
     }
+
+    /// A directory/manifest name used as the "<key>" segment of an "ext.<key>.<cmd>" command id must not
+    /// contain the "." separator: extGrantKey() splits on "." and takes parts[1], so a dotted key would
+    /// be truncated mid-key and let two distinct extensions collapse to ONE trust/consent grant key (a
+    /// later, untrusted extension could then inherit an earlier one's trust). import.ts already forbids
+    /// "." in imported ids; this also guards bundled/manually-added directories. The real on-disk name is
+    /// still used for file paths — only the id/key segment is sanitized.
+    static func sanitizeKeySegment(_ name: String) -> String {
+        name.replacingOccurrences(of: ".", with: "-")
+    }
+    private var currentExtGrantKey: String { Self.extGrantKey(forId: currentExtId) }
 
     /// blocking dialog on the main thread (handleCapability is invoked on main).
     private func ensureAppleScriptGrant() -> Bool {
@@ -1849,8 +1861,11 @@ public final class AppController: NSObject, NSApplicationDelegate {
                       let cmds = json["commands"] as? [[String: Any]] else { continue }
                 let prefsSpec = (json["preferences"] as? [[String: Any]]) ?? []
                 // Namespace the extension key by root so an imported ext can't collide ids (frecency/
-                // alias/hotkey/grouping) with a bundled example of the same name.
-                let extKey = root == "imported" ? "imported-\(name)" : name
+                // alias/hotkey/grouping) with a bundled example of the same name. The KEY uses a
+                // dot-sanitized name (the "." separator must not appear mid-key, see sanitizeKeySegment);
+                // file paths below still use the real on-disk `name`.
+                let keyName = Self.sanitizeKeySegment(name)
+                let extKey = root == "imported" ? "imported-\(keyName)" : keyName
                 // Manifest icon (Raycast convention: a filename under the extension's assets/, or a
                 // path relative to the extension dir). Per-command icon wins over the extension's.
                 func resolveIcon(_ named: Any?) -> String? {
@@ -1976,7 +1991,9 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 guard let data = fm.contents(atPath: rootDir + "/" + name + "/package.json"),
                       let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
                       let title = json["title"] as? String else { continue }
-                let extKey = root == "imported" ? "imported-\(name)" : name
+                // Same dot-sanitized key as the command discovery above, so the prefs group id matches
+                // the launcher's grant key / the Settings group id (see sanitizeKeySegment).
+                let extKey = root == "imported" ? "imported-\(Self.sanitizeKeySegment(name))" : Self.sanitizeKeySegment(name)
                 let fields = parsePrefs((json["preferences"] as? [[String: Any]]) ?? [])
                 let commands: [ExtensionCommandDetail] = ((json["commands"] as? [[String: Any]]) ?? []).compactMap { c in
                     guard let cname = c["name"] as? String else { return nil }
@@ -2018,7 +2035,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
         selectedIndex = 0
         if !palette.isVisible { palette.show() } // launched from an open palette → don't re-center it
         renderExtensionLoading() // placeholder until the first commit (avoids an empty collapse-flash)
-        h.launch(repoRoot: repoRoot, entryRelPath: entryRelPath, command: command, preferences: preferences)
+        h.launch(repoRoot: repoRoot, entryRelPath: entryRelPath, command: command, preferences: preferences,
+                 trusted: AppSettings.shared.isTrusted(Self.extGrantKey(forId: id)))
     }
 
     /// Running no-view extension processes, keyed so each can remove itself on exit (no retain cycle:
@@ -2043,7 +2061,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
         h.onCapability = { [weak self] m, p in self?.handleCapability(m, p) ?? .null }
         h.onTerminate = { [weak self] in DispatchQueue.main.async { self?.noViewHosts[key] = nil } }
         noViewHosts[key] = h
-        h.launch(repoRoot: repoRoot, entryRelPath: entryRelPath, command: command, preferences: preferences, mode: "no-view")
+        h.launch(repoRoot: repoRoot, entryRelPath: entryRelPath, command: command, preferences: preferences,
+                 mode: "no-view", trusted: AppSettings.shared.isTrusted(Self.extGrantKey(forId: id)))
     }
 
     // MARK: - Required-preferences onboarding (Raycast parity)

@@ -266,6 +266,7 @@ export const Toast = {
 };
 
 export const LaunchType = { UserInitiated: "userInitiated", Background: "background" } as const;
+export const PopToRootType = { Immediate: "immediate", Suspended: "suspended", Default: "default" } as const;
 
 /* ----------------------------------------------------- host RPC bridge (stubs) */
 type RpcSender = (method: string, params: unknown) => Promise<unknown>;

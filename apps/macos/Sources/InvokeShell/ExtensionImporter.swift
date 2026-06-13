@@ -11,6 +11,7 @@ public struct ImportReport: Codable {
     public let deniedBuiltins: [String]
     public let blocking: Bool
     public let verdict: String      // "runnable" | "degraded" | "needs-work"
+    public let trusted: Bool?       // the check was run as-if-trusted (denied builtins count as available)
     public let installed: Bool
     public let dest: String
     public let installedDeps: [String]?   // third-party deps installed during import
@@ -26,17 +27,19 @@ public final class ExtensionImporter {
     public init(repoRoot: String) { self.repoRoot = repoRoot }
 
     /// `install: false` runs the compatibility check only; `true` also copies it into imported/.
-    public func run(path: String, install: Bool) async -> Result<ImportReport, ImportError> {
+    /// `trusted: true` recomputes the verdict as-if the extension will run unsandboxed (so denied
+    /// builtins like fs/child_process count as available, not as a degradation).
+    public func run(path: String, install: Bool, trusted: Bool = false) async -> Result<ImportReport, ImportError> {
         await withCheckedContinuation { cont in
             DispatchQueue.global(qos: .userInitiated).async {
-                cont.resume(returning: self.runSync(path: path, install: install))
+                cont.resume(returning: self.runSync(path: path, install: install, trusted: trusted))
             }
         }
     }
 
-    private func runSync(path: String, install: Bool) -> Result<ImportReport, ImportError> {
+    private func runSync(path: String, install: Bool, trusted: Bool) -> Result<ImportReport, ImportError> {
         func shq(_ s: String) -> String { "'" + s.replacingOccurrences(of: "'", with: "'\\''") + "'" }
-        let flags = install ? "--json" : "--check --json"
+        let flags = (install ? "--json" : "--check --json") + (trusted ? " --trusted" : "")
         let script = "cd \(shq(repoRoot)) && exec node --import tsx runtime/node-host/src/import.ts \(shq(path)) \(flags)"
 
         let proc = Process()

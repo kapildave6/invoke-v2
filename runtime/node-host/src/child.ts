@@ -47,7 +47,15 @@ async function main(): Promise<void> {
   // From here on the extension is loaded with Node built-ins denied by default — the only path
   // to host capability is the allowlisted RPC above (PLAN.md §4.4). Lock down LAST so infra keeps
   // the access it already acquired, and the untrusted bundle below inherits none of it.
-  lockdown();
+  //
+  // EXCEPTION: an extension the user has explicitly TRUSTED (Settings → Extensions → Trust) runs
+  // WITHOUT the sandbox — full Node (child_process/fs/net), like Raycast. This is opt-in per extension;
+  // everything else stays sandboxed. The host sets INVOKE_TRUSTED=1 only for trusted extensions.
+  if (process.env.INVOKE_TRUSTED !== "1") {
+    lockdown();
+  } else {
+    send({ kind: "log", level: "warn", args: ["[invoke] running UNSANDBOXED (user-trusted extension)"] });
+  }
 
   const mod = (await import(pathToFileURL(entry).href)) as { default?: unknown };
   const Command = mod.default;

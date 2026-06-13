@@ -147,6 +147,9 @@ async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const checkOnly = args.includes("--check");
   const jsonOut = args.includes("--json");
+  // --trusted: the user intends to run this extension UNSANDBOXED, so denied builtins (fs,
+  // child_process, …) are actually available — recompute the verdict accordingly.
+  const trusted = args.includes("--trusted");
   const nameIdx = args.indexOf("--name");
   const nameFlag = args.find((a) => a.startsWith("--name="))?.split("=")[1] ?? (nameIdx >= 0 ? args[nameIdx + 1] : undefined);
   const nameValueIdx = nameIdx >= 0 ? nameIdx + 1 : -1; // -1 → don't exclude anything
@@ -158,7 +161,15 @@ async function main(): Promise<void> {
 
   const manifest = readManifest(src);
   // For a monorepo subfolder the basename is the extension dir; manifest.name is preferred.
-  const id = (nameFlag ?? manifest.name ?? path.basename(src)).replace(/[^a-zA-Z0-9._-]/g, "-");
+  // The id becomes a SEGMENT of the host command id "ext.<id>.<command>" and of the per-extension
+  // trust/consent grant key, both of which split on ".". A dot in the id would therefore (a) make the
+  // launcher's grant-key derivation disagree with what was stored, silently dropping trust, and worse
+  // (b) let two distinct extensions whose ids share a pre-dot prefix collapse to ONE grant key — a
+  // later, untrusted extension could inherit an earlier one's trust. So "." is NOT allowed here.
+  const id = (nameFlag ?? manifest.name ?? path.basename(src))
+    .replace(/[^a-zA-Z0-9_-]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "") || "extension";
   const commands = manifest.commands ?? [];
 
   // What our shim actually provides (introspected from the real exports).
@@ -198,7 +209,13 @@ async function main(): Promise<void> {
   });
 
   const blocking = missingApi.size > 0 || unresolvedEntries > 0;
-  const verdict = blocking ? "needs-work" : deniedBuiltins.size > 0 ? "degraded" : "runnable";
+  // A TRUSTED extension runs unsandboxed, so denied builtins are actually available — they no longer
+  // degrade the verdict. Missing/unresolved APIs still block regardless of trust (they don't exist).
+  const verdict = blocking
+    ? "needs-work"
+    : (deniedBuiltins.size > 0 && !trusted)
+      ? "degraded"
+      : "runnable";
 
   // Install (unless --check): copy the source into imported/<id>/ (resolves @raycast/api from the
   // repo node_modules), with a per-file automatic-JSX pragma codemod so it needn't `import React`.
@@ -287,6 +304,7 @@ async function main(): Promise<void> {
       deniedBuiltins: [...deniedBuiltins],
       blocking,
       verdict,
+      trusted,
       installed,
       dest: destRel,
       installedDeps,
@@ -305,7 +323,7 @@ async function main(): Promise<void> {
   console.log(`\n  compatibility:`);
   console.log(`    @raycast/api    : ${missingApi.size === 0 ? "all imports supported ✓" : "MISSING (fatal — fails module load): " + [...missingApi].join(", ")}`);
   console.log(`    @raycast/utils  : ${missingUtils.size === 0 ? "ok ✓" : "MISSING: " + [...missingUtils].join(", ")}`);
-  console.log(`    sandbox         : ${deniedBuiltins.size === 0 ? "no denied builtins ✓" : "uses denied builtins (need a host capability): " + [...deniedBuiltins].join(", ")}`);
+  console.log(`    sandbox         : ${deniedBuiltins.size === 0 ? "no denied builtins ✓" : trusted ? "uses " + [...deniedBuiltins].join(", ") + " — available (TRUSTED: runs unsandboxed)" : "uses denied builtins (need a host capability): " + [...deniedBuiltins].join(", ")}`);
   console.log(`    verdict         : ${verdict === "needs-work" ? "⚠️  needs work before it runs" : verdict === "degraded" ? "loads; degraded where it touches denied builtins" : "👍 looks runnable"}`);
   if (installed) {
     console.log(`\n✓ installed to ${destRel}`);

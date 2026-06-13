@@ -56,7 +56,7 @@ public final class ExtensionHost {
     /// Launch `<repoRoot>/<entryRelPath>`. `mode` is "view" (renders + streams mutations) or "no-view"
     /// (runs the command's default export as a headless action, then the process exits).
     /// `preferences` is the JSON the extension reads via getPreferenceValues() (INVOKE_PREFERENCES).
-    public func launch(repoRoot: String, entryRelPath: String, command: String, preferences: String = "{}", mode: String = "view") {
+    public func launch(repoRoot: String, entryRelPath: String, command: String, preferences: String = "{}", mode: String = "view", trusted: Bool = false) {
         var fds: [Int32] = [0, 0]
         guard socketpair(AF_UNIX, SOCK_STREAM, 0, &fds) == 0 else {
             log("socketpair failed: \(String(cString: strerror(errno)))")
@@ -87,6 +87,7 @@ public final class ExtensionHost {
         env["INVOKE_COMMAND"] = command
         env["INVOKE_PREFERENCES"] = preferences
         env["INVOKE_MODE"] = mode
+        env["INVOKE_TRUSTED"] = trusted ? "1" : "0"
         let envp = env.map { "\($0.key)=\($0.value)" }
 
         var childPid: pid_t = 0

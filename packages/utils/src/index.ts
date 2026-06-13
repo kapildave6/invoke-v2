@@ -87,6 +87,43 @@ export async function runAppleScript(source: string): Promise<string> {
  * HOST-mediated, consent-gated, read-only capability (the sandboxed child has no fs) — the query runs
  * in the Swift host with ATTACH and non-SELECT statements denied (PLAN.md §4.4). */
 
+/* ------------------------------------------------------------------ useExec
+ * Run a local command and surface its output (Raycast's @raycast/utils useExec). This spawns a
+ * subprocess via node:child_process — only available to a USER-TRUSTED, unsandboxed extension; in a
+ * sandboxed extension the child_process import is denied and this resolves to an error state. The
+ * import is lazy so merely loading @invoke/utils never trips the sandbox. */
+export interface UseExecOptions {
+  cwd?: string;
+  env?: Record<string, string>;
+  shell?: boolean | string;
+  input?: string;
+  parseOutput?: (args: { stdout: string; stderr: string }) => unknown;
+}
+export function useExec<T = string>(
+  command: string,
+  args: string[] = [],
+  options: UseExecOptions = {},
+): AsyncState<T> {
+  return usePromise<T>(async () => {
+    const cp = (await import("node:child_process")) as typeof import("node:child_process");
+    return new Promise<T>((resolve, reject) => {
+      const child = cp.execFile(
+        command,
+        args,
+        { cwd: options.cwd, env: options.env ? { ...process.env, ...options.env } : undefined,
+          shell: options.shell, maxBuffer: 32 * 1024 * 1024, encoding: "utf8" },
+        (err, stdout, stderr) => {
+          if (err) return reject(err);
+          const out = typeof stdout === "string" ? stdout : String(stdout);
+          const errOut = typeof stderr === "string" ? stderr : String(stderr);
+          resolve((options.parseOutput ? options.parseOutput({ stdout: out, stderr: errOut }) : out) as T);
+        },
+      );
+      if (options.input != null && child.stdin) { child.stdin.write(options.input); child.stdin.end(); }
+    });
+  }, [command, JSON.stringify(args)]);
+}
+
 /** Run a read-only SQL query against a local SQLite file via the host. Resolves to the rows. */
 export async function executeSQL<T = unknown>(databasePath: string, query: string): Promise<T[]> {
   const api = await import("@invoke/api");

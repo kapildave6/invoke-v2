@@ -357,6 +357,19 @@ struct CommandDetailPane: View {
                             Divider()
                         }
 
+                        // Trust: let the user opt an extension OUT of the sandbox (full system access).
+                        // Only for extensions (ext.*), not built-ins; keyed by the extension group id.
+                        if info.type == "Extension", info.id.hasPrefix("ext.") {
+                            section("Trust") {
+                                Toggle("Run without sandbox (full system access)", isOn: Binding(
+                                    get: { settings.isTrusted(info.id) },
+                                    set: { settings.setTrusted(info.id, $0) }))
+                                Text("Off: the extension is sandboxed — no filesystem, subprocess, or network access (recommended). On: it runs with full Node access (needed for CLI-backed extensions like 1Password). Only trust extensions whose code you trust. Takes effect next time the command runs.")
+                                    .font(.caption).foregroundColor(.secondary).fixedSize(horizontal: false, vertical: true)
+                            }
+                            Divider()
+                        }
+
                         if info.supportsBinding {
                             section("Keyboard") {
                                 LabeledRow("Alias") { AliasField(commandId: info.id).frame(maxWidth: 150) }
@@ -822,6 +835,7 @@ struct ImportPane: View {
     @State private var report: ImportReport?
     @State private var error = ""
     @State private var busy = false
+    @State private var trust = false   // run the imported extension unsandboxed (full system access)
 
     var body: some View {
         Form {
@@ -832,6 +846,14 @@ struct ImportPane: View {
                 }
                 Text("A local folder (package.json + src/), or a github.com URL — a repo, or a monorepo subfolder like github.com/raycast/extensions/tree/main/extensions/apple-notes. Dependency-light extensions (just @raycast/api / @raycast/utils) work best.")
                     .font(.caption).foregroundColor(.secondary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Toggle("Trust this extension (run without sandbox — full system access)", isOn: $trust)
+                        // Re-running the check as-if-trusted reclassifies denied builtins (fs, child_process,
+                        // …) as available, so the verdict reflects what will actually work once trusted.
+                        .onChange(of: trust) { _, _ in if report != nil { Task { await go(install: false) } } }
+                    Text("Leave OFF unless the extension needs the filesystem, a CLI, or the network (e.g. 1Password's `op`) AND you trust its code. Trusted extensions bypass the sandbox entirely.")
+                        .font(.caption).foregroundColor(.secondary)
+                }
                 HStack {
                     Button("Check Compatibility") { Task { await go(install: false) } }.disabled(path.isEmpty || busy)
                     Button("Import") { Task { await go(install: true) } }
@@ -860,7 +882,7 @@ struct ImportPane: View {
             }
             LabeledContent("Verdict") {
                 switch r.verdict {
-                case "runnable": Text("👍 Looks runnable").foregroundColor(.green)
+                case "runnable": Text(trust ? "👍 Looks runnable (trusted)" : "👍 Looks runnable").foregroundColor(.green)
                 case "degraded": Text("Loads, degraded (denied builtins)").foregroundColor(.orange)
                 default: Text("⚠️ Needs work before it runs").foregroundColor(.red)
                 }
@@ -872,7 +894,14 @@ struct ImportPane: View {
                 LabeledContent("Unsupported utils") { Text(r.missingUtils.joined(separator: ", ")).foregroundColor(.red) }
             }
             if !r.deniedBuiltins.isEmpty {
-                LabeledContent("Denied builtins") { Text(r.deniedBuiltins.joined(separator: ", ")).foregroundColor(.orange) }
+                LabeledContent(trust ? "Builtins (via trust)" : "Denied builtins") {
+                    Text(r.deniedBuiltins.joined(separator: ", "))
+                        .foregroundColor(trust ? .green : .orange)
+                }
+                if trust {
+                    Text("Available because this extension is trusted (runs unsandboxed). Without trust, these would be blocked and any feature using them would fail.")
+                        .font(.caption).foregroundColor(.secondary)
+                }
             }
             if let deps = r.installedDeps, !deps.isEmpty {
                 LabeledContent("Installed dependencies") { Text(deps.joined(separator: ", ")).foregroundColor(.secondary) }
@@ -882,8 +911,11 @@ struct ImportPane: View {
                     .font(.callout).foregroundColor(.orange)
             }
             if r.installed {
-                Text("✓ Imported to \(r.dest). Relaunch Invoke to use it (Extensions group).")
-                    .font(.callout).foregroundColor(.green)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("✓ Imported to \(r.dest)\(trust ? " (trusted — runs without sandbox)" : ""). Relaunch Invoke to load it (Extensions group).")
+                        .font(.callout).foregroundColor(.green)
+                    Button("Relaunch Invoke") { relaunchInvoke() }
+                }
             }
         } header: { Text("Compatibility") }
     }
@@ -900,13 +932,35 @@ struct ImportPane: View {
     private func go(install: Bool) async {
         busy = true
         error = ""
-        let result = await ExtensionImporter(repoRoot: repoRoot).run(path: path, install: install)
+        let result = await ExtensionImporter(repoRoot: repoRoot).run(path: path, install: install, trusted: trust)
         busy = false
         switch result {
-        case .success(let r): report = r
+        case .success(let r):
+            report = r
+            // On a real install, persist the user's trust choice under EXACTLY the key the launcher
+            // reads. Imported extensions install to imported/<id> and surface as command ids
+            // "ext.imported-<id>.<cmd>"; the launcher trusts via extGrantKey(commandId). Derive the key
+            // through that same canonicalization (not by hand) so the two can never disagree — even if
+            // <id> were unusual. (import.ts also forbids "." in <id>, so the collapse is unambiguous.)
+            // Checks (install == false) never change trust.
+            if install, r.installed {
+                AppSettings.shared.setTrusted(AppController.extGrantKey(forId: "ext.imported-\(r.id).command"), trust)
+            }
         case .failure(let e): error = e.message; report = nil
         }
     }
+}
+
+/// Relaunch the running app bundle: spawn a detached shell that waits for us to quit, then re-opens
+/// the bundle, and terminate. Used after importing an extension (the command list is built at launch).
+func relaunchInvoke() {
+    let bundlePath = Bundle.main.bundlePath
+    func shq(_ s: String) -> String { "'" + s.replacingOccurrences(of: "'", with: "'\\''") + "'" }
+    let task = Process()
+    task.executableURL = URL(fileURLWithPath: "/bin/sh")
+    task.arguments = ["-c", "sleep 0.6; open \(shq(bundlePath))"]
+    try? task.run()
+    NSApp.terminate(nil)
 }
 
 // MARK: - Extension preferences
