@@ -52,30 +52,18 @@ async function main(): Promise<void> {
   const mod = (await import(pathToFileURL(entry).href)) as { default?: unknown };
   const Command = mod.default;
   if (typeof Command !== "function") {
-    send({ kind: "log", level: "error", args: [`extension ${entry} has no default export component`] });
+    send({ kind: "log", level: "error", args: [`extension ${entry} has no default export`] });
     process.exit(1);
   }
 
-  const surface = createSurface({
-    onCommit: (commit, ops) => send({ kind: "mutations", commit, ops }),
-  });
-
-  surface.render(createElement(Command as React.FC));
-  send({ kind: "ready", command: command ?? "" });
-
+  // rpcResult must be handled in BOTH modes — a no-view action awaits showHUD/runAppleScript RPCs.
+  // searchText/invoke only matter once a view surface exists.
+  let surface: ReturnType<typeof createSurface> | null = null;
   const decoder = new FrameDecoder();
   sock.on("data", (chunk: Buffer) => {
     for (const raw of decoder.push(chunk)) {
       const msg = raw as ChildBound;
       switch (msg.kind) {
-        case "searchText": {
-          const h = surface.handlerForProp("onSearchTextChange");
-          if (h) surface.invokeHandler(h, [msg.text]);
-          break;
-        }
-        case "invoke":
-          surface.invokeHandler(msg.handler, msg.args);
-          break;
         case "rpcResult": {
           const cb = pendingRpc.get(msg.id);
           if (cb) {
@@ -84,9 +72,35 @@ async function main(): Promise<void> {
           }
           break;
         }
+        case "searchText": {
+          const h = surface?.handlerForProp("onSearchTextChange");
+          if (h && surface) surface.invokeHandler(h, [msg.text]);
+          break;
+        }
+        case "invoke":
+          surface?.invokeHandler(msg.handler, msg.args);
+          break;
       }
     }
   });
+
+  // no-view: run the command's default export as a headless action (no UI), then exit.
+  if (process.env.INVOKE_MODE === "no-view") {
+    send({ kind: "ready", command: command ?? "" });
+    try {
+      await (Command as (props: unknown) => unknown)({ arguments: {}, launchType: "userInitiated", launchContext: {} });
+    } catch (e) {
+      send({ kind: "log", level: "error", args: [String(e)] });
+    }
+    process.exit(0);
+  }
+
+  // view: render the component and stream its mutations.
+  surface = createSurface({
+    onCommit: (commit, ops) => send({ kind: "mutations", commit, ops }),
+  });
+  surface.render(createElement(Command as React.FC));
+  send({ kind: "ready", command: command ?? "" });
   sock.on("close", () => process.exit(0));
 }
 

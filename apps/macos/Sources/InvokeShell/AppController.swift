@@ -1856,22 +1856,37 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 }
                 let extIconPath = resolveIcon(json["icon"])
                 for c in cmds {
-                    guard let cname = c["name"] as? String,
-                          ((c["mode"] as? String) ?? "view") == "view" else { continue }
+                    guard let cname = c["name"] as? String else { continue }
+                    let cmode = (c["mode"] as? String) ?? "view"
+                    // `view` renders a UI surface; `no-view` runs an action headlessly. `menu-bar` isn't
+                    // supported yet.
+                    guard cmode == "view" || cmode == "no-view" else { continue }
                     let ctitle = (c["title"] as? String) ?? cname
                     guard let rel = ["tsx", "ts", "jsx", "js"].lazy
                         .map({ "\(root)/\(name)/src/\(cname).\($0)" })
                         .first(where: { fm.fileExists(atPath: repoRoot + "/" + $0) }) else { continue }
                     let cmdId = "ext.\(extKey).\(cname)"
-                    out.append(RootCommand(id: cmdId, title: ctitle, subtitle: title, runTitle: "Open",
-                                           icon: "puzzlepiece.extension.fill", iconPath: resolveIcon(c["icon"]) ?? extIconPath,
-                                           keywords: [name, cname, title.lowercased()],
-                                           closesPalette: false) { [weak self] in
-                        guard let self else { return }
-                        // Resolve preferences at launch (defaults merged with the user's saved values).
-                        let prefs = self.resolvePreferencesJSON(extKey: extKey, spec: prefsSpec)
-                        self.launchExtension(id: cmdId, title: ctitle, entryRelPath: rel, command: cname, preferences: prefs)
-                    })
+                    let iconPath = resolveIcon(c["icon"]) ?? extIconPath
+                    if cmode == "no-view" {
+                        out.append(RootCommand(id: cmdId, title: ctitle, subtitle: title, runTitle: "Run",
+                                               icon: "bolt.fill", iconPath: iconPath,
+                                               keywords: [name, cname, title.lowercased()],
+                                               closesPalette: true) { [weak self] in
+                            guard let self else { return }
+                            let prefs = self.resolvePreferencesJSON(extKey: extKey, spec: prefsSpec)
+                            self.runNoViewExtension(id: cmdId, title: ctitle, entryRelPath: rel, command: cname, preferences: prefs)
+                        })
+                    } else {
+                        out.append(RootCommand(id: cmdId, title: ctitle, subtitle: title, runTitle: "Open",
+                                               icon: "puzzlepiece.extension.fill", iconPath: iconPath,
+                                               keywords: [name, cname, title.lowercased()],
+                                               closesPalette: false) { [weak self] in
+                            guard let self else { return }
+                            // Resolve preferences at launch (defaults merged with the user's saved values).
+                            let prefs = self.resolvePreferencesJSON(extKey: extKey, spec: prefsSpec)
+                            self.launchExtension(id: cmdId, title: ctitle, entryRelPath: rel, command: cname, preferences: prefs)
+                        })
+                    }
                 }
             }
         }
@@ -1978,6 +1993,29 @@ public final class AppController: NSObject, NSApplicationDelegate {
         if !palette.isVisible { palette.show() } // launched from an open palette → don't re-center it
         renderExtensionLoading() // placeholder until the first commit (avoids an empty collapse-flash)
         h.launch(repoRoot: repoRoot, entryRelPath: entryRelPath, command: command, preferences: preferences)
+    }
+
+    /// Running no-view extension processes, keyed so each can remove itself on exit (no retain cycle:
+    /// the onTerminate closure captures the key, not the host).
+    private var noViewHosts: [UUID: ExtensionHost] = [:]
+
+    /// Run a `no-view` command: a headless action (no UI surface). The child runs the command's default
+    /// export as a function; its host capabilities (runAppleScript, showHUD, clipboard, …) are fulfilled
+    /// over RPC, and the process exits when the action finishes. captureTarget() first so AppleScript /
+    /// paste hit the app that was frontmost before Invoke was summoned.
+    private func runNoViewExtension(id: String, title: String, entryRelPath: String, command: String, preferences: String) {
+        frecency.bump("cmd:\(id)")
+        captureTarget()
+        currentExtId = id
+        currentExtTitle = title
+        let key = UUID()
+        let h = ExtensionHost()
+        h.onLog = { msg in print("[invoke:ext] \(msg)") }
+        h.onCapability = { [weak self] m, p in self?.handleCapability(m, p) ?? .null }
+        h.onTerminate = { [weak self] in DispatchQueue.main.async { self?.noViewHosts[key] = nil } }
+        noViewHosts[key] = h
+        afterLaunch() // an action command: tear the palette down, the action runs in the background
+        h.launch(repoRoot: repoRoot, entryRelPath: entryRelPath, command: command, preferences: preferences, mode: "no-view")
     }
 
     /// A one-row "Loading…" surface shown between launch and the extension's first render commit.
