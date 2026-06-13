@@ -269,14 +269,21 @@ export const LaunchType = { UserInitiated: "userInitiated", Background: "backgro
 
 /* ----------------------------------------------------- host RPC bridge (stubs) */
 type RpcSender = (method: string, params: unknown) => Promise<unknown>;
-let _rpc: RpcSender | null = null;
+// Store the bridge on globalThis, NOT a module-level variable. @invoke/api can be instantiated more
+// than once in a child (the extension reaches it via the @raycast/api compat shim, whose "@invoke/api"
+// can resolve to a different module URL than the one child.ts wired __setHostBridge onto). A per-module
+// `_rpc` then leaves the extension's instance unwired — so e.g. showToast threw "can only run inside
+// the Invoke runtime" even though executeSQL (a different instance) worked. A process-global is shared
+// by every instance.
+const BRIDGE_KEY = "__invokeHostRpc__";
 /** Wired up by the runtime child (runtime/node-host) so APIs can reach the host. */
 export function __setHostBridge(send: RpcSender): void {
-  _rpc = send;
+  (globalThis as Record<string, unknown>)[BRIDGE_KEY] = send;
 }
 async function rpc(method: string, params: unknown): Promise<unknown> {
-  if (!_rpc) throw new Error(`@invoke/api: ${method} can only run inside the Invoke runtime`);
-  return _rpc(method, params);
+  const send = (globalThis as Record<string, unknown>)[BRIDGE_KEY] as RpcSender | undefined;
+  if (!send) throw new Error(`@invoke/api: ${method} can only run inside the Invoke runtime`);
+  return send(method, params);
 }
 
 export const Clipboard = {
