@@ -337,6 +337,20 @@ export const environment = {
   appearance: "dark" as "dark" | "light",
   launchType: LaunchType.UserInitiated as string,
   commandName: process.env.INVOKE_COMMAND ?? "",
+  commandMode: process.env.INVOKE_MODE ?? "view",
+  // The extension's assets/ dir and a writable per-extension support dir (host-provided). Extensions
+  // commonly reference these AT MODULE LOAD — e.g. join(environment.assetsPath, "img.png") — so they
+  // must be real strings, never undefined, or the module throws and the command can't start.
+  assetsPath: process.env.INVOKE_ASSETS_PATH ?? "",
+  supportPath: process.env.INVOKE_SUPPORT_PATH ?? "",
+  isDevelopment: false,
+  raycastVersion: "1.103.6",
+  textSize: "medium" as "medium" | "large",
+  // Raycast gates some features (e.g. AI) on environment.canAccess(API); we don't expose those yet.
+  canAccess: (_api: unknown): boolean => false,
+  // Extension/owner identity — host sets these when known; "" until then. Used by createDeeplink.
+  extensionName: process.env.INVOKE_EXTENSION ?? "",
+  ownerOrAuthorName: process.env.INVOKE_OWNER ?? "",
 };
 
 export function getPreferenceValues<T = Record<string, unknown>>(): T {
@@ -355,12 +369,50 @@ function unsupported(name: string): never {
   throw new Error(`@invoke/api: ${name} is not supported in Invoke yet`);
 }
 
+/** Per-extension key/value cache. Raycast's Cache API is SYNCHRONOUS, so reads/writes hit an in-memory
+ *  map; writes also fire-and-forget to the host's persisted store, and the constructor kicks off a
+ *  best-effort warm load so values survive across launches. Memory-only if no host is present. */
 export class Cache {
-  get(_key: string): string | undefined { return undefined; }
-  set(_key: string, _value: string): void { unsupported("Cache.set"); }
-  has(_key: string): boolean { return false; }
-  remove(_key: string): boolean { return false; }
-  clear(): void {}
+  private ns: string;
+  private store = new Map<string, string>();
+  constructor(options?: { namespace?: string; capacity?: number }) {
+    this.ns = options?.namespace ?? "";
+    void this.warm();
+  }
+  private hostKey(key: string): string { return `${this.ns} ${key}`; }
+  private async warm(): Promise<void> {
+    try {
+      const all = (await rpc("cache.allItems", {})) as Record<string, string> | undefined;
+      const prefix = `${this.ns} `;
+      for (const [k, v] of Object.entries(all ?? {})) {
+        if (!k.startsWith(prefix)) continue;
+        const bare = k.slice(prefix.length);
+        if (!this.store.has(bare)) this.store.set(bare, v); // never clobber a fresh in-session write
+      }
+    } catch {
+      /* no host / cache unavailable — stay memory-only */
+    }
+  }
+  get(key: string): string | undefined { return this.store.get(key); }
+  has(key: string): boolean { return this.store.has(key); }
+  set(key: string, value: string): void {
+    this.store.set(key, value);
+    void rpc("cache.set", { key: this.hostKey(key), value }).catch(() => {});
+  }
+  remove(key: string): boolean {
+    const had = this.store.delete(key);
+    void rpc("cache.remove", { key: this.hostKey(key) }).catch(() => {});
+    return had;
+  }
+  clear(): void {
+    this.store.clear();
+    void rpc("cache.clear", { namespace: this.ns }).catch(() => {});
+  }
+  /** Raycast's Cache.subscribe (reactive listeners). Not wired — returns a no-op unsubscribe. */
+  subscribe(_subscriber?: (key: string | undefined, data: string | undefined) => void): () => void {
+    return () => {};
+  }
+  get isEmpty(): boolean { return this.store.size === 0; }
 }
 export const AI = { ask: (_prompt: string, _opts?: unknown): Promise<string> => unsupported("AI.ask") };
 export const OAuth = { PKCEClient: class { constructor(_opts?: unknown) { unsupported("OAuth.PKCEClient"); } } };
@@ -370,11 +422,43 @@ export async function getFrontmostApplication(): Promise<unknown> { return unsup
 export async function getDefaultApplication(_path: string): Promise<unknown> { return unsupported("getDefaultApplication"); }
 export async function trash(_paths: string | string[]): Promise<void> { return unsupported("trash"); }
 export async function showInFinder(_path: string): Promise<void> { return unsupported("showInFinder"); }
+export async function getSelectedFinderItems(): Promise<unknown[]> { return unsupported("getSelectedFinderItems"); }
+/** Launch another command. Host wiring pending — throws only if actually called. */
+export async function launchCommand(_options: {
+  name: string; type?: string; extensionName?: string; ownerOrAuthorName?: string;
+  arguments?: Record<string, unknown>; context?: unknown; fallbackText?: string;
+}): Promise<void> { return unsupported("launchCommand"); }
+/** Update the current command's root-list subtitle. Host wiring pending — no-op so callers don't break. */
+export async function updateCommandMetadata(_metadata: { subtitle?: string | null }): Promise<void> {}
+/** Read the active browser tab via a companion browser extension. Not wired yet; throws only if called. */
+export const BrowserExtension = {
+  getContent: (_options?: unknown): Promise<string> => unsupported("BrowserExtension.getContent"),
+  getTabs: (): Promise<unknown[]> => unsupported("BrowserExtension.getTabs"),
+};
 export async function popToRoot(_opts?: unknown): Promise<void> { await closeMainWindow(); }
-export async function openExtensionPreferences(): Promise<void> {}
-export async function openCommandPreferences(): Promise<void> {}
-export async function confirmAlert(_opts: unknown): Promise<boolean> { return false; }
-export function captureException(_error: unknown): void {}
+export async function openExtensionPreferences(): Promise<void> { await rpc("preferences.open", { scope: "extension" }); }
+export async function openCommandPreferences(): Promise<void> { await rpc("preferences.open", { scope: "command" }); }
+export async function confirmAlert(options: {
+  title: string;
+  message?: string;
+  icon?: unknown;
+  primaryAction?: { title?: string; style?: string };
+  dismissAction?: { title?: string };
+  rememberUserChoice?: boolean;
+}): Promise<boolean> {
+  return (await rpc("confirmAlert", {
+    title: options?.title ?? "",
+    message: options?.message,
+    primaryTitle: options?.primaryAction?.title,
+    primaryStyle: options?.primaryAction?.style,
+    dismissTitle: options?.dismissAction?.title,
+  })) as boolean;
+}
+export function captureException(error: unknown): void {
+  const e = error as { message?: string; stack?: string } | undefined;
+  // Fire-and-forget diagnostic; must never throw (it's called from extensions' error paths).
+  void rpc("captureException", { message: e?.message ?? String(error), stack: e?.stack }).catch(() => {});
+}
 /** Declarative `Action.Push` is host-handled; programmatic push/pop is not wired yet (no-op). */
 export function useNavigation(): { push: (view: ReactNode) => void; pop: () => void } {
   return { push: () => {}, pop: () => {} };
@@ -407,5 +491,33 @@ export const Keyboard = {
   } as Record<string, unknown>,
 };
 export const Image = { Mask: { Circle: "circle", RoundedRectangle: "roundedRectangle" } as const };
+
+/* ------------------------------------------- legacy v1 @raycast/api aliases (compat)
+ * Many older extensions import the pre-namespacing flat names. The modern forms already
+ * exist above; these aliases keep those imports from failing at module load. Declared here
+ * so every referenced symbol (Action, Toast, Image, LocalStorage, Clipboard, …) is defined. */
+export const OpenInBrowserAction = Action.OpenInBrowser;
+export const CopyToClipboardAction = Action.CopyToClipboard;
+export const PasteAction = Action.Paste;
+export const OpenAction = Action.Open;
+export const PushAction = Action.Push;
+export const SubmitFormAction = Action.SubmitForm;
+export const ToastStyle = Toast.Style;
+export const ImageMask = Image.Mask;
+export const getLocalStorageItem = LocalStorage.getItem;
+export const setLocalStorageItem = LocalStorage.setItem;
+export const removeLocalStorageItem = LocalStorage.removeItem;
+export const allLocalStorageItems = LocalStorage.allItems;
+export const clearLocalStorage = LocalStorage.clear;
+export const copyTextToClipboard = Clipboard.copy;
+export const pasteText = Clipboard.paste;
+// v1 exposed resolved preferences as a module object; the modern API is getPreferenceValues().
+export const preferences = getPreferenceValues();
+// Trivial helper some v1 extensions import from the api package.
+export function randomId(): string {
+  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+// v1 imperative search reset — no imperative search handle yet, so a harmless no-op keeps the import alive.
+export async function clearSearchBar(_options?: { forceScrollToTop?: boolean }): Promise<void> {}
 
 export type { ReactNode };

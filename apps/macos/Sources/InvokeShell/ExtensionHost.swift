@@ -56,7 +56,7 @@ public final class ExtensionHost {
     /// Launch `<repoRoot>/<entryRelPath>`. `mode` is "view" (renders + streams mutations) or "no-view"
     /// (runs the command's default export as a headless action, then the process exits).
     /// `preferences` is the JSON the extension reads via getPreferenceValues() (INVOKE_PREFERENCES).
-    public func launch(repoRoot: String, entryRelPath: String, command: String, preferences: String = "{}", mode: String = "view", trusted: Bool = false) {
+    public func launch(repoRoot: String, entryRelPath: String, command: String, preferences: String = "{}", mode: String = "view", trusted: Bool = false, assetsPath: String = "", supportPath: String = "") {
         var fds: [Int32] = [0, 0]
         guard socketpair(AF_UNIX, SOCK_STREAM, 0, &fds) == 0 else {
             log("socketpair failed: \(String(cString: strerror(errno)))")
@@ -88,6 +88,11 @@ public final class ExtensionHost {
         env["INVOKE_PREFERENCES"] = preferences
         env["INVOKE_MODE"] = mode
         env["INVOKE_TRUSTED"] = trusted ? "1" : "0"
+        // Raycast's environment.assetsPath (the extension's assets/ dir) and environment.supportPath (a
+        // writable per-extension dir). Many extensions read these AT MODULE LOAD (e.g. join(assetsPath,
+        // "x.png")) — an undefined value would throw and the process would exit before its first render.
+        env["INVOKE_ASSETS_PATH"] = assetsPath
+        env["INVOKE_SUPPORT_PATH"] = supportPath
         let envp = env.map { "\($0.key)=\($0.value)" }
 
         var childPid: pid_t = 0

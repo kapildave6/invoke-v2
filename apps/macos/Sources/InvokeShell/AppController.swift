@@ -2016,6 +2016,21 @@ public final class AppController: NSObject, NSApplicationDelegate {
     }
 
     /// Launch a discovered extension into a full palette surface (.extension mode), in its own process.
+    /// Raycast's environment.assetsPath (the extension's assets/ dir, where manifest images live) and
+    /// environment.supportPath (a writable per-extension dir). entryRelPath is "<root>/<ext>/src/<cmd>.ext",
+    /// so the extension dir is everything before "/src/". supportPath is created if missing.
+    private func extensionPaths(id: String, entryRelPath: String) -> (assets: String, support: String) {
+        let extDirRel = entryRelPath.components(separatedBy: "/src/").first ?? entryRelPath
+        let assets = repoRoot + "/" + extDirRel + "/assets"
+        let key = Self.extGrantKey(forId: id)
+        let fm = FileManager.default
+        let base = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+        let support = base?.appendingPathComponent("com.invoke.app/extensions/\(key)", isDirectory: true).path
+            ?? (NSTemporaryDirectory() + "invoke-ext/\(key)")
+        try? fm.createDirectory(atPath: support, withIntermediateDirectories: true)
+        return (assets, support)
+    }
+
     private func launchExtension(id: String, title: String, entryRelPath: String, command: String, preferences: String) {
         teardownExtension()
         let h = ExtensionHost()
@@ -2035,8 +2050,10 @@ public final class AppController: NSObject, NSApplicationDelegate {
         selectedIndex = 0
         if !palette.isVisible { palette.show() } // launched from an open palette → don't re-center it
         renderExtensionLoading() // placeholder until the first commit (avoids an empty collapse-flash)
+        let paths = extensionPaths(id: id, entryRelPath: entryRelPath)
         h.launch(repoRoot: repoRoot, entryRelPath: entryRelPath, command: command, preferences: preferences,
-                 trusted: AppSettings.shared.isTrusted(Self.extGrantKey(forId: id)))
+                 trusted: AppSettings.shared.isTrusted(Self.extGrantKey(forId: id)),
+                 assetsPath: paths.assets, supportPath: paths.support)
     }
 
     /// Running no-view extension processes, keyed so each can remove itself on exit (no retain cycle:
@@ -2061,8 +2078,10 @@ public final class AppController: NSObject, NSApplicationDelegate {
         h.onCapability = { [weak self] m, p in self?.handleCapability(m, p) ?? .null }
         h.onTerminate = { [weak self] in DispatchQueue.main.async { self?.noViewHosts[key] = nil } }
         noViewHosts[key] = h
+        let paths = extensionPaths(id: id, entryRelPath: entryRelPath)
         h.launch(repoRoot: repoRoot, entryRelPath: entryRelPath, command: command, preferences: preferences,
-                 mode: "no-view", trusted: AppSettings.shared.isTrusted(Self.extGrantKey(forId: id)))
+                 mode: "no-view", trusted: AppSettings.shared.isTrusted(Self.extGrantKey(forId: id)),
+                 assetsPath: paths.assets, supportPath: paths.support)
     }
 
     // MARK: - Required-preferences onboarding (Raycast parity)
