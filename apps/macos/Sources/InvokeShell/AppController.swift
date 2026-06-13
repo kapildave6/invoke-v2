@@ -1955,9 +1955,12 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 else if let s = p["default"] as? String { def = s }
                 else if let n = p["default"] as? NSNumber { def = n.stringValue }
                 else { def = "" }
-                let options: [PrefOption] = (p["data"] as? [[String: Any]] ?? []).compactMap { o in
+                let ptype = (p["type"] as? String) ?? "textfield"
+                var options: [PrefOption] = (p["data"] as? [[String: Any]] ?? []).compactMap { o in
                     (o["value"] as? String).map { PrefOption(value: $0, title: (o["title"] as? String) ?? $0) }
                 }
+                // An appPicker is a dropdown of installed apps (Raycast parity), not a text field.
+                if ptype == "appPicker" { options = appIndex.allApps().map { PrefOption(value: $0.name, title: $0.name) } }
                 return ExtensionPreference(name: pname, title: (p["title"] as? String) ?? "",
                                            label: (p["label"] as? String) ?? "",
                                            description: (p["description"] as? String) ?? "",

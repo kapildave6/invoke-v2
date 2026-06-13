@@ -990,10 +990,10 @@ private struct PrefField: View {
                         }
                     }
                 }
-            case "dropdown":
+            case "dropdown", "appPicker":
                 // Commit only on a real user selection. A custom binding's setter fires on UI changes
                 // but NOT on the programmatic seed assignment, so opening the pane never persists an
-                // unchosen (clamped) default.
+                // unchosen (clamped) default. (appPicker's options are the installed apps.)
                 Picker(pref.title, selection: Binding(get: { text }, set: { text = $0; commit() })) {
                     ForEach(pref.options) { Text($0.title).tag($0.value) }
                 }
