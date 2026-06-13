@@ -1905,6 +1905,20 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 if let o = override { dict[name] = (o == "true") }
                 else if let b = p["default"] as? Bool { dict[name] = b }
                 else if let s = p["default"] as? String { dict[name] = (s == "true") }
+            } else if type == "appPicker" {
+                // Raycast's appPicker yields an Application object {name, path, bundleId}; our stored
+                // value / manifest default is the app NAME. Resolve it to an object so extensions that
+                // read e.g. `preferences.browser.name` work (a bare string makes `.name` undefined).
+                let appName = override ?? (p["default"] as? String) ?? ""
+                if !appName.isEmpty {
+                    var appObj: [String: Any] = ["name": appName]
+                    if let entry = appIndex.search(appName, limit: 5)
+                        .first(where: { $0.name.caseInsensitiveCompare(appName) == .orderedSame }) {
+                        appObj["path"] = entry.path
+                        if let bid = Bundle(path: entry.path)?.bundleIdentifier { appObj["bundleId"] = bid }
+                    }
+                    dict[name] = appObj
+                }
             } else if let o = override {
                 // A saved value (even empty) is an intentional override; only fall back when unset (nil).
                 dict[name] = o
