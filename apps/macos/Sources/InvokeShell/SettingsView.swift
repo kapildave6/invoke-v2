@@ -374,8 +374,8 @@ struct CommandDetailPane: View {
 
                         if !info.capabilities.isEmpty {
                             section("Capabilities") {
-                                ForEach(info.capabilities) { cap in
-                                    VStack(alignment: .leading, spacing: 2) {
+                                ForEach(Array(info.capabilities.enumerated()), id: \.element.id) { idx, cap in
+                                    VStack(alignment: .leading, spacing: 3) {
                                         Text(cap.title).fontWeight(.medium)
                                         if !cap.description.isEmpty {
                                             Text(cap.description).font(.caption).foregroundColor(.secondary)
@@ -383,6 +383,7 @@ struct CommandDetailPane: View {
                                         }
                                     }
                                     .frame(maxWidth: .infinity, alignment: .leading)
+                                    if idx < info.capabilities.count - 1 { Divider().padding(.vertical, 4) }
                                 }
                             }
                             Divider()
@@ -390,8 +391,8 @@ struct CommandDetailPane: View {
 
                         if !info.commands.isEmpty {
                             section("Commands") {
-                                ForEach(info.commands) { c in
-                                    VStack(alignment: .leading, spacing: 2) {
+                                ForEach(Array(info.commands.enumerated()), id: \.element.id) { idx, c in
+                                    VStack(alignment: .leading, spacing: 3) {
                                         Text(c.title).fontWeight(.medium)
                                         if !c.description.isEmpty {
                                             Text(c.description).font(.caption).foregroundColor(.secondary)
@@ -399,6 +400,7 @@ struct CommandDetailPane: View {
                                         }
                                     }
                                     .frame(maxWidth: .infinity, alignment: .leading)
+                                    if idx < info.commands.count - 1 { Divider().padding(.vertical, 4) }
                                 }
                             }
                         }
@@ -421,12 +423,16 @@ struct CommandDetailPane: View {
     /// checkboxes show their `label`).
     @ViewBuilder private func prefsView(_ fields: [ExtensionPreference], extID: String) -> some View {
         ForEach(fields) { f in
-            if !f.title.isEmpty {
-                Text(f.title).font(.caption).foregroundColor(.secondary).padding(.top, 2)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+            // Raycast layout: the field's label on its own line, the control full-width on the next.
+            VStack(alignment: .leading, spacing: 4) {
+                if !f.title.isEmpty {
+                    Text(f.title).font(.callout).foregroundColor(.primary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                if f.type == "checkbox" { CheckboxPref(extID: extID, pref: f) }
+                else { PrefField(extID: extID, pref: f) }
             }
-            if f.type == "checkbox" { CheckboxPref(extID: extID, pref: f) }
-            else { PrefField(extID: extID, pref: f) }
+            .padding(.top, 6)
         }
     }
 
@@ -982,7 +988,7 @@ private struct PrefField: View {
                 // must not delete/re-add the item). Status comes from a non-secret presence marker.
                 HStack(spacing: 8) {
                     SecureField(secretIsSet ? "Configured — type to replace" : pref.title, text: $text)
-                        .focused($focused).onSubmit(commit)
+                        .focused($focused).onSubmit(commit).textFieldStyle(.roundedBorder)
                     if secretIsSet {
                         Button("Remove") {
                             text = ""
@@ -994,11 +1000,16 @@ private struct PrefField: View {
                 // Commit only on a real user selection. A custom binding's setter fires on UI changes
                 // but NOT on the programmatic seed assignment, so opening the pane never persists an
                 // unchosen (clamped) default. (appPicker's options are the installed apps.)
+                // labelsHidden + full width: the field's title is the caption ABOVE (prefsView), so the
+                // control sits on its own line full-width — Raycast layout, no duplicated inline label.
                 Picker(pref.title, selection: Binding(get: { text }, set: { text = $0; commit() })) {
                     ForEach(pref.options) { Text($0.title).tag($0.value) }
                 }
+                .labelsHidden()
+                .frame(maxWidth: .infinity, alignment: .leading)
             default:
                 TextField(pref.title, text: $text).focused($focused).onSubmit(commit)
+                    .textFieldStyle(.roundedBorder).frame(maxWidth: .infinity)
             }
             if !pref.description.isEmpty { Text(pref.description).font(.caption).foregroundColor(.secondary) }
         }
