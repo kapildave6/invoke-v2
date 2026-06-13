@@ -14,7 +14,21 @@
  * Platform APIs (Clipboard, environment, showToast, …) below are typed stubs that
  * route over the host RPC channel; in production the native host fulfils them.
  */
-import { createElement, type ReactNode, type ReactElement } from "react";
+import { createElement, createContext, useContext, type ReactNode, type ReactElement } from "react";
+
+// Push targets render EAGERLY (the host lifts the target subtree into the action's children and
+// snapshots it on push). Real extensions often have mutually-recursive targets — a List item whose
+// actions push a Detail, whose actions push the same Detail … — which would recurse forever when
+// rendered eagerly. Cap the eager render depth: one level pre-renders (so a normal list→detail push
+// works), deeper targets render as nothing until pushed. (A fully-lazy render-on-push is the longer-
+// term fix; this stops the infinite recursion that drops the whole view.)
+const PushDepthContext = createContext(0);
+const MAX_EAGER_PUSH_DEPTH = 1;
+function PushTarget({ element }: { element: ReactNode }): ReactElement | null {
+  const depth = useContext(PushDepthContext);
+  if (depth >= MAX_EAGER_PUSH_DEPTH) return null;
+  return createElement(PushDepthContext.Provider, { value: depth + 1 }, element);
+}
 
 /* ------------------------------------------------------------------ host tags */
 const T = {
@@ -30,11 +44,17 @@ const T = {
   Detail: "detail",
   Metadata: "metadata",
   MetadataLabel: "metadata-label",
+  MetadataTagList: "metadata-taglist",
+  MetadataTagListItem: "metadata-taglist-item",
+  MetadataSeparator: "metadata-separator",
+  MetadataLink: "metadata-link",
   Form: "form",
   FormTextField: "form-textfield",
   FormTextArea: "form-textarea",
   FormCheckbox: "form-checkbox",
   FormDropdown: "form-dropdown",
+  FormDropdownItem: "form-dropdown-item",
+  FormDropdownSection: "form-dropdown-section",
   ActionPanel: "action-panel",
   ActionPanelSection: "action-panel-section",
   Action: "action",
@@ -108,12 +128,21 @@ Grid.Dropdown = host(T.ListDropdown);
 Grid.EmptyView = host(T.EmptyView, ["actions"]);
 
 /* ------------------------------------------------------------------ Detail */
-type DetailType = ReturnType<typeof host> & {
-  Metadata: ReturnType<typeof host> & { Label: ReturnType<typeof host> };
+type MetadataType = ReturnType<typeof host> & {
+  Label: ReturnType<typeof host>;
+  TagList: ReturnType<typeof host> & { Item: ReturnType<typeof host> };
+  Separator: ReturnType<typeof host>;
+  Link: ReturnType<typeof host>;
 };
+type DetailType = ReturnType<typeof host> & { Metadata: MetadataType };
 export const Detail = host(T.Detail, ["actions", "metadata"]) as DetailType;
-const Metadata = host(T.Metadata) as ReturnType<typeof host> & { Label: ReturnType<typeof host> };
+const Metadata = host(T.Metadata) as MetadataType;
 Metadata.Label = host(T.MetadataLabel);
+const TagList = host(T.MetadataTagList) as ReturnType<typeof host> & { Item: ReturnType<typeof host> };
+TagList.Item = host(T.MetadataTagListItem, ["onAction"]);
+Metadata.TagList = TagList;
+Metadata.Separator = host(T.MetadataSeparator);
+Metadata.Link = host(T.MetadataLink);
 Detail.Metadata = Metadata;
 
 /* ------------------------------------------------------------------ Form */
@@ -121,21 +150,26 @@ type FormType = ReturnType<typeof host> & {
   TextField: ReturnType<typeof host>;
   TextArea: ReturnType<typeof host>;
   Checkbox: ReturnType<typeof host>;
-  Dropdown: ReturnType<typeof host>;
+  Dropdown: ReturnType<typeof host> & { Item: ReturnType<typeof host>; Section: ReturnType<typeof host> };
 };
 export const Form = host(T.Form, ["actions"]) as FormType;
 Form.TextField = host(T.FormTextField);
 Form.TextArea = host(T.FormTextArea);
 Form.Checkbox = host(T.FormCheckbox);
-Form.Dropdown = host(T.FormDropdown);
+const Dropdown = host(T.FormDropdown) as FormType["Dropdown"];
+Dropdown.Item = host(T.FormDropdownItem);
+Dropdown.Section = host(T.FormDropdownSection);
+Form.Dropdown = Dropdown;
 
 /* ------------------------------------------------------------------ Actions */
 type ActionType = ((props: CommonActionProps) => ReactElement) & {
   CopyToClipboard: (props: { content: string } & CommonActionProps) => ReactElement;
   Paste: (props: { content: string } & CommonActionProps) => ReactElement;
   OpenInBrowser: (props: { url: string } & CommonActionProps) => ReactElement;
+  Open: (props: { target: string; application?: string } & CommonActionProps) => ReactElement;
   Push: (props: { target: ReactNode } & CommonActionProps) => ReactElement;
   SubmitForm: (props: { onSubmit: (values: Record<string, unknown>) => void } & CommonActionProps) => ReactElement;
+  Style: { Regular: "regular"; Destructive: "destructive" };
 };
 const makeAction = (variant: string) =>
   host(T.Action, ["target"]) as unknown as (p: Record<string, unknown>) => ReactElement;
@@ -146,19 +180,36 @@ export const Action = ActionImpl as ActionType;
 Action.CopyToClipboard = (props) => createElement(T.Action, { variant: "copy", ...props });
 Action.Paste = (props) => createElement(T.Action, { variant: "paste", ...props });
 Action.OpenInBrowser = (props) => createElement(T.Action, { variant: "open-in-browser", ...props });
+// Action.Open — open a file/URL/app target with the default (or a specific) application.
+Action.Open = (props) => {
+  const { target, application, onOpen, ...rest } = props as {
+    target?: string; application?: string; onOpen?: () => void;
+  } & Record<string, unknown>;
+  return createElement(T.Action, { variant: "open", target, application, onAction: onOpen, ...rest });
+};
 Action.Push = (props) => {
   const { target, ...rest } = props;
-  return createElement(T.Action, { variant: "push", ...rest }, target);
+  // Render the target through PushTarget so deep/recursive targets don't render eagerly (and recurse).
+  return createElement(T.Action, { variant: "push", ...rest }, createElement(PushTarget, { element: target }));
 };
+Action.Style = { Regular: "regular", Destructive: "destructive" } as const;
 // Form submit: the host gathers the field values and passes them to onAction (PLAN.md §5.3).
 Action.SubmitForm = (props) => {
   const { onSubmit, ...rest } = props as { onSubmit?: (v: Record<string, unknown>) => void } & Record<string, unknown>;
   return createElement(T.Action, { variant: "submit-form", onAction: onSubmit, ...rest });
 };
 
-type ActionPanelType = ReturnType<typeof host> & { Section: ReturnType<typeof host> };
+type ActionPanelType = ReturnType<typeof host> & {
+  Section: ReturnType<typeof host>;
+  Submenu: ReturnType<typeof host>;
+};
 export const ActionPanel = host(T.ActionPanel) as ActionPanelType;
 ActionPanel.Section = host(T.ActionPanelSection);
+// Submenu (e.g. "Open Links"). We don't render a true nested menu yet, so treat it as a section — its
+// child actions surface inline. The important thing is it's a DEFINED component: a bare
+// <ActionPanel.Submenu> (undefined) throws while serializing a List.Item's `actions`, which silently
+// drops the whole item.
+ActionPanel.Submenu = host(T.ActionPanelSection);
 
 /* ------------------------------------------------------------------ MenuBarExtra */
 type MenuBarType = ReturnType<typeof host> & { Item: ReturnType<typeof host> };
@@ -174,6 +225,26 @@ export const Icon = {
   Window: "window",
   Calendar: "calendar",
   MagnifyingGlass: "magnifying-glass",
+  // Additional names extensions reference (apple-notes et al.). Undefined values don't crash, but
+  // defining them lets the renderer pick a real glyph instead of nothing.
+  Hashtag: "hashtag",
+  Link: "link",
+  Lock: "lock",
+  Person: "person",
+  Plus: "plus",
+  Trash: "trash",
+  Eye: "eye",
+  Gear: "gear",
+  Stars: "stars",
+  CheckCircle: "check-circle",
+  ArrowClockwise: "arrow-clockwise",
+  ArrowCounterClockwise: "arrow-counter-clockwise",
+  ArrowNe: "arrow-ne",
+  NewDocument: "new-document",
+  Pin: "pin",
+  Document: "document",
+  Folder: "folder",
+  Tag: "tag",
 } as const;
 
 export const Color = {
@@ -299,7 +370,32 @@ export function useNavigation(): { push: (view: ReactNode) => void; pop: () => v
   return { push: () => {}, pop: () => {} };
 }
 export const Alert = { ActionStyle: { Default: "default", Destructive: "destructive", Cancel: "cancel" } as const };
-export const Keyboard = { Shortcut: {} as Record<string, unknown> };
+// Keyboard.Shortcut.Common — Raycast's predefined shortcuts. Extensions read e.g.
+// Keyboard.Shortcut.Common.Open, so this MUST be a populated object (a bare {} makes `.Common.Open`
+// throw and takes the whole view down). Values mirror Raycast's defaults.
+type Shortcut = { modifiers: string[]; key: string };
+export const Keyboard = {
+  Shortcut: {
+    Common: {
+      Copy: { modifiers: ["cmd", "shift"], key: "c" },
+      CopyDeeplink: { modifiers: ["cmd", "shift"], key: "c" },
+      CopyName: { modifiers: ["cmd", "shift"], key: "." },
+      CopyPath: { modifiers: ["cmd", "shift"], key: "," },
+      Duplicate: { modifiers: ["cmd"], key: "d" },
+      Edit: { modifiers: ["cmd"], key: "e" },
+      MoveDown: { modifiers: ["cmd", "shift"], key: "arrowDown" },
+      MoveUp: { modifiers: ["cmd", "shift"], key: "arrowUp" },
+      New: { modifiers: ["cmd"], key: "n" },
+      Open: { modifiers: ["cmd"], key: "o" },
+      OpenWith: { modifiers: ["cmd", "shift"], key: "o" },
+      Pin: { modifiers: ["cmd", "shift"], key: "p" },
+      Refresh: { modifiers: ["cmd"], key: "r" },
+      Remove: { modifiers: ["ctrl"], key: "x" },
+      RemoveAll: { modifiers: ["ctrl", "shift"], key: "x" },
+      ToggleQuickLook: { modifiers: ["cmd"], key: "y" },
+    } as Record<string, Shortcut>,
+  } as Record<string, unknown>,
+};
 export const Image = { Mask: { Circle: "circle", RoundedRectangle: "roundedRectangle" } as const };
 
 export type { ReactNode };

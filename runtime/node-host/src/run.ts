@@ -116,6 +116,31 @@ function devCapabilities(opts: { preferences: Record<string, unknown>; storePath
         return null;
       case "localStorage.allItems":
         return { ...store };
+      case "executeSQL": {
+        // Dev-only mirror of the Swift host capability: copy the (WAL) db + sidecars to temp and query
+        // the copy via node:sqlite, so `npm run dev:ext` can exercise useSQL extensions headlessly.
+        const dbPath = String(params.db ?? "");
+        const query = String(params.query ?? "");
+        if (!dbPath || !query) return [];
+        const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "invoke-dev-sql-"));
+        try {
+          const { DatabaseSync } = (await import("node:sqlite")) as {
+            DatabaseSync: new (p: string) => { prepare: (q: string) => { all: () => unknown[] }; close: () => void };
+          };
+          const dest = path.join(tmp, path.basename(dbPath));
+          fs.copyFileSync(dbPath, dest);
+          for (const s of ["-wal", "-shm"]) if (fs.existsSync(dbPath + s)) fs.copyFileSync(dbPath + s, dest + s);
+          const db = new DatabaseSync(dest);
+          const rows = db.prepare(query).all();
+          db.close();
+          return rows;
+        } catch (e) {
+          console.error("  [dev executeSQL] error:", (e as Error).message);
+          return [];
+        } finally {
+          fs.rmSync(tmp, { recursive: true, force: true });
+        }
+      }
       default:
         return null;
     }

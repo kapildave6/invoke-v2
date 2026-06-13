@@ -41,6 +41,8 @@ export const ALLOWED_RPC: ReadonlySet<string> = new Set([
   "localStorage.removeItem",
   "localStorage.clear",
   "localStorage.allItems",
+  "runAppleScript",
+  "executeSQL",
 ]);
 
 export function isAllowedRpcMethod(method: string): boolean {

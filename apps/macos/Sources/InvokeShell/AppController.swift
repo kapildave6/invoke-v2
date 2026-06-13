@@ -1721,8 +1721,29 @@ public final class AppController: NSObject, NSApplicationDelegate {
     /// constrained by sqlAuthorizer. Returns a human-readable message on failure; `isOpenFailure`
     /// distinguishes a file-open denial (usually macOS TCC) from a SQL/query error.
     private static func runReadOnlySQL(path: String, query: String) -> Result<[[String: JSONValue]], SQLError> {
+        let fm = FileManager.default
+        // NoteStore.sqlite is a WAL-mode database that Notes is actively writing: the live note rows sit
+        // in the -wal sidecar, not yet checkpointed into the main file. Reading the original read-only
+        // sees only the (often empty) main file. So copy the db + its -wal/-shm sidecars into a private
+        // temp dir and query the COPY — SQLite applies the WAL there and sees everything. (This is what
+        // Raycast's useSQL does.) Copying needs read access to the original, i.e. Full Disk Access.
+        let tmpDir = (NSTemporaryDirectory() as NSString).appendingPathComponent("invoke-sql-\(UUID().uuidString)")
+        try? fm.createDirectory(atPath: tmpDir, withIntermediateDirectories: true)
+        defer { try? fm.removeItem(atPath: tmpDir) }
+        let dest = (tmpDir as NSString).appendingPathComponent((path as NSString).lastPathComponent)
+        do {
+            try fm.copyItem(atPath: path, toPath: dest)
+        } catch {
+            return .failure(SQLError(message: error.localizedDescription, isOpenFailure: true))
+        }
+        for suffix in ["-wal", "-shm"] where fm.fileExists(atPath: path + suffix) {
+            try? fm.copyItem(atPath: path + suffix, toPath: dest + suffix)
+        }
+
         var db: OpaquePointer?
-        let openRC = sqlite3_open_v2(path, &db, SQLITE_OPEN_READONLY, nil)
+        // Read-write open of the THROWAWAY copy so SQLite can apply/checkpoint the copied WAL; the
+        // authorizer below still denies every non-SELECT statement, so queries stay read-only.
+        let openRC = sqlite3_open_v2(dest, &db, SQLITE_OPEN_READWRITE, nil)
         defer { sqlite3_close(db) }
         guard openRC == SQLITE_OK else {
             let msg = db.map { String(cString: sqlite3_errmsg($0)) } ?? "cannot open database"
