@@ -418,16 +418,38 @@ public final class PaletteView: NSView {
         return out
     }
 
-    /// A scrollable wrapping label of attributed markdown.
+    /// A scrollable rendering of markdown: text blocks become wrapping attributed labels, and image
+    /// syntax (`![alt](url)`) becomes an actual NSImageView (local path / file:// / data: load
+    /// synchronously; http(s) loads async). Foundation's AttributedString(markdown:) drops images
+    /// entirely, so we split them out and render them ourselves (Raycast's Detail shows them inline).
     private func markdownScroll(_ md: String) -> NSScrollView {
-        let body = NSTextField(labelWithAttributedString: Self.attributedMarkdown(md))
-        body.isSelectable = true
-        body.lineBreakMode = .byWordWrapping
-        body.maximumNumberOfLines = 0
-        body.translatesAutoresizingMaskIntoConstraints = false
+        let stack = NSStackView()
+        stack.orientation = .vertical
+        stack.alignment = .leading
+        stack.spacing = 10
+        stack.translatesAutoresizingMaskIntoConstraints = false
+
+        for seg in Self.splitMarkdownImages(md) {
+            switch seg {
+            case .text(let t):
+                if t.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { continue }
+                let body = NSTextField(labelWithAttributedString: Self.attributedMarkdown(t))
+                body.isSelectable = true
+                body.lineBreakMode = .byWordWrapping
+                body.maximumNumberOfLines = 0
+                body.translatesAutoresizingMaskIntoConstraints = false
+                body.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+                stack.addArrangedSubview(body)
+                body.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
+            case .image(let url, let alt):
+                let view = Self.detailImageView(url: url, alt: alt, fillWidthOf: stack)
+                stack.addArrangedSubview(view)
+            }
+        }
+
         let doc = FlippedDocView()
         doc.translatesAutoresizingMaskIntoConstraints = false
-        doc.addSubview(body)
+        doc.addSubview(stack)
         let scroll = NSScrollView()
         scroll.drawsBackground = false
         scroll.hasVerticalScroller = true
@@ -436,12 +458,89 @@ public final class PaletteView: NSView {
         scroll.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             doc.widthAnchor.constraint(equalTo: scroll.contentView.widthAnchor),
-            body.leadingAnchor.constraint(equalTo: doc.leadingAnchor, constant: 16),
-            body.trailingAnchor.constraint(equalTo: doc.trailingAnchor, constant: -16),
-            body.topAnchor.constraint(equalTo: doc.topAnchor, constant: 14),
-            body.bottomAnchor.constraint(equalTo: doc.bottomAnchor, constant: -14),
+            stack.leadingAnchor.constraint(equalTo: doc.leadingAnchor, constant: 16),
+            stack.trailingAnchor.constraint(equalTo: doc.trailingAnchor, constant: -16),
+            stack.topAnchor.constraint(equalTo: doc.topAnchor, constant: 14),
+            stack.bottomAnchor.constraint(equalTo: doc.bottomAnchor, constant: -14),
         ])
         return scroll
+    }
+
+    private enum MDSegment { case text(String); case image(url: String, alt: String) }
+
+    /// Split markdown into ordered text / image segments. Image URLs that contain spaces aren't matched
+    /// (CommonMark requires `<...>` for those); the common case — `![alt](/abs/path.png)` — is handled.
+    private static func splitMarkdownImages(_ md: String) -> [MDSegment] {
+        guard let re = try? NSRegularExpression(pattern: "!\\[([^\\]]*)\\]\\(([^)\\s]+)(?:\\s+\"[^\"]*\")?\\)") else {
+            return [.text(md)]
+        }
+        let ns = md as NSString
+        var segs: [MDSegment] = []
+        var last = 0
+        for m in re.matches(in: md, range: NSRange(location: 0, length: ns.length)) {
+            if m.range.location > last {
+                segs.append(.text(ns.substring(with: NSRange(location: last, length: m.range.location - last))))
+            }
+            let altR = m.range(at: 1)
+            let alt = altR.location != NSNotFound ? ns.substring(with: altR) : ""
+            segs.append(.image(url: ns.substring(with: m.range(at: 2)), alt: alt))
+            last = m.range.location + m.range.length
+        }
+        if last < ns.length { segs.append(.text(ns.substring(from: last))) }
+        return segs.isEmpty ? [.text(md)] : segs
+    }
+
+    /// An NSImageView that fills the available width up to the image's natural size, preserving aspect.
+    /// Unresolvable references fall back to the alt text so the user at least sees something.
+    private static func detailImageView(url: String, alt: String, fillWidthOf stack: NSStackView) -> NSView {
+        let iv = NSImageView()
+        iv.imageScaling = .scaleProportionallyUpOrDown
+        iv.imageAlignment = .alignTopLeft
+        iv.translatesAutoresizingMaskIntoConstraints = false
+        iv.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        iv.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
+        func apply(_ image: NSImage) {
+            iv.image = image
+            let w = max(1, image.size.width), h = max(1, image.size.height)
+            let fill = iv.widthAnchor.constraint(equalTo: stack.widthAnchor)
+            fill.priority = .defaultHigh // fill the width when allowed…
+            NSLayoutConstraint.activate([
+                iv.heightAnchor.constraint(equalTo: iv.widthAnchor, multiplier: h / w),     // keep aspect
+                iv.widthAnchor.constraint(lessThanOrEqualToConstant: w),                     // …never upscale
+                iv.widthAnchor.constraint(lessThanOrEqualTo: stack.widthAnchor),             // …never overflow
+                fill,
+            ])
+        }
+
+        if let image = loadDetailImageSync(url) {
+            apply(image)
+            return iv
+        }
+        if let u = URL(string: url), u.scheme == "http" || u.scheme == "https" {
+            URLSession.shared.dataTask(with: u) { data, _, _ in
+                guard let data, let image = NSImage(data: data) else { return }
+                DispatchQueue.main.async { apply(image) }
+            }.resume()
+            return iv // grows from ~0 height to the image's aspect once loaded
+        }
+        let fallback = NSTextField(labelWithString: alt.isEmpty ? "🖼 (image unavailable)" : "🖼 \(alt)")
+        fallback.textColor = .secondaryLabelColor
+        fallback.translatesAutoresizingMaskIntoConstraints = false
+        return fallback
+    }
+
+    /// Load a Detail image from a local path, file:// URL, or data: URI. Returns nil for http(s)
+    /// (loaded asynchronously by the caller) or anything unreadable.
+    private static func loadDetailImageSync(_ url: String) -> NSImage? {
+        if url.hasPrefix("data:") {
+            guard let comma = url.firstIndex(of: ","), url[..<comma].contains("base64"),
+                  let data = Data(base64Encoded: String(url[url.index(after: comma)...])) else { return nil }
+            return NSImage(data: data)
+        }
+        if url.hasPrefix("file://") { return URL(string: url).flatMap { NSImage(contentsOf: $0) } }
+        if url.hasPrefix("/") { return NSImage(contentsOfFile: url) }
+        return nil
     }
 
     private func renderDetailSurface(_ node: ViewNode) {
