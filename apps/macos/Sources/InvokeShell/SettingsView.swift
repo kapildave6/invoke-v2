@@ -8,13 +8,15 @@ public struct CommandInfo: Identifiable {
     public let id: String
     public let title: String
     public let subtitle: String
-    public let icon: String        // SF Symbol
+    public let icon: String        // SF Symbol (fallback)
+    public let iconPath: String?   // absolute path to the extension's real manifest icon, preferred
     public let supportsBinding: Bool // false for the calculator (a typed-fallback, not a runnable command)
-    public init(id: String, title: String, subtitle: String, icon: String = "command", supportsBinding: Bool = true) {
+    public init(id: String, title: String, subtitle: String, icon: String = "command", iconPath: String? = nil, supportsBinding: Bool = true) {
         self.id = id
         self.title = title
         self.subtitle = subtitle
         self.icon = icon
+        self.iconPath = iconPath
         self.supportsBinding = supportsBinding
     }
 }
@@ -24,29 +26,44 @@ public struct ExtensionGroup: Identifiable {
     public let id: String
     public let name: String
     public let icon: String
+    public let iconPath: String?   // the extension's real manifest icon, preferred over the SF symbol
     public let commands: [CommandInfo]
-    public init(id: String, name: String, icon: String, commands: [CommandInfo]) {
-        self.id = id; self.name = name; self.icon = icon; self.commands = commands
+    public init(id: String, name: String, icon: String, iconPath: String? = nil, commands: [CommandInfo]) {
+        self.id = id; self.name = name; self.icon = icon; self.iconPath = iconPath; self.commands = commands
     }
 }
 
-/// A colored rounded-tile command icon (white glyph), matching the palette's command tiles — colored
-/// stably per group so Settings and the palette agree.
+/// A command icon: the extension's real manifest image when available (Raycast parity), otherwise a
+/// colored rounded tile with a white SF-symbol glyph (keyed stably per group, matching the palette).
 struct CommandTileIcon: View {
     let symbol: String
     let colorKey: String
+    var iconPath: String? = nil
     var size: CGFloat = 20
     private static let tones: [Color] = [.blue, .red, .orange, .purple, .green, .teal, .pink, .indigo, .brown]
+    private static var imageCache: [String: NSImage] = [:]
     private var color: Color {
         var h: UInt64 = 5381
         for b in colorKey.utf8 { h = (h &* 33) &+ UInt64(b) } // djb2 — same keying as PaletteView
         return Self.tones[Int(h % UInt64(Self.tones.count))]
     }
+    private static func image(_ path: String) -> NSImage? {
+        if let cached = imageCache[path] { return cached }
+        guard FileManager.default.fileExists(atPath: path), let img = NSImage(contentsOfFile: path) else { return nil }
+        imageCache[path] = img
+        return img
+    }
     var body: some View {
-        RoundedRectangle(cornerRadius: size * 0.25, style: .continuous)
-            .fill(color)
-            .frame(width: size, height: size)
-            .overlay(Image(systemName: symbol).font(.system(size: size * 0.55, weight: .semibold)).foregroundColor(.white))
+        if let iconPath, let img = Self.image(iconPath) {
+            Image(nsImage: img).resizable().interpolation(.high).aspectRatio(contentMode: .fit)
+                .frame(width: size, height: size)
+                .clipShape(RoundedRectangle(cornerRadius: size * 0.22, style: .continuous))
+        } else {
+            RoundedRectangle(cornerRadius: size * 0.25, style: .continuous)
+                .fill(color)
+                .frame(width: size, height: size)
+                .overlay(Image(systemName: symbol).font(.system(size: size * 0.55, weight: .semibold)).foregroundColor(.white))
+        }
     }
 }
 
@@ -219,7 +236,7 @@ struct CommandsPane: View {
                     Image(systemName: expanded.contains(group.id) ? "chevron.down" : "chevron.right")
                         .font(.caption2).foregroundColor(.secondary).frame(width: 12)
                 }.buttonStyle(.plain)
-                CommandTileIcon(symbol: group.icon, colorKey: group.name)
+                CommandTileIcon(symbol: group.icon, colorKey: group.name, iconPath: group.iconPath)
                 Text(group.name).fontWeight(.medium)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -250,7 +267,7 @@ struct CommandsPane: View {
                 // Reserve the disclosure-chevron slot (12pt) so a standalone command's icon lines up
                 // with a group's icon; indented children sit one icon-width further right.
                 Color.clear.frame(width: 12, height: 1)
-                CommandTileIcon(symbol: c.icon, colorKey: groupKey)
+                CommandTileIcon(symbol: c.icon, colorKey: groupKey, iconPath: c.iconPath)
                 Text(c.title)
                 if !c.subtitle.isEmpty && !indented {
                     Text(c.subtitle).foregroundColor(.secondary).font(.callout)
@@ -323,7 +340,7 @@ struct CommandDetailPane: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 0) {
                         HStack(spacing: 10) {
-                            CommandTileIcon(symbol: info.icon, colorKey: info.colorKey, size: 30)
+                            CommandTileIcon(symbol: info.icon, colorKey: info.colorKey, iconPath: info.iconPath, size: 30)
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(info.title).font(.headline)
                                 Text(info.type).font(.caption).foregroundColor(.secondary)
@@ -455,7 +472,7 @@ struct CommandDetailPane: View {
 
     /// Resolve the selected id (a command or an extension) to all the manifest detail to display.
     private struct Info {
-        let id: String; let title: String; let icon: String; let type: String
+        let id: String; let title: String; let icon: String; let iconPath: String?; let type: String
         let supportsBinding: Bool; let colorKey: String
         let description: String; let fields: [ExtensionPreference]; let prefExtID: String
         let capabilities: [ExtensionCapability]; let commands: [ExtensionCommandDetail]; let isClipboard: Bool
@@ -465,7 +482,7 @@ struct CommandDetailPane: View {
         // Extension (group) selected → its description, extension-level prefs, capabilities, command list.
         if let g = groups.first(where: { $0.id == sel }) {
             let pg = prefGroup(forGroupOrCommand: sel)
-            return Info(id: sel, title: g.name, icon: g.icon, type: "Extension", supportsBinding: false, colorKey: g.name,
+            return Info(id: sel, title: g.name, icon: g.icon, iconPath: g.iconPath, type: "Extension", supportsBinding: false, colorKey: g.name,
                         description: pg?.description ?? "", fields: pg?.fields ?? [], prefExtID: pg?.id ?? sel,
                         capabilities: pg?.capabilities ?? [], commands: pg?.commands ?? [], isClipboard: false)
         }
@@ -475,7 +492,7 @@ struct CommandDetailPane: View {
                 let pg = prefGroup(forGroupOrCommand: sel)
                 let cname = sel.split(separator: ".").last.map(String.init) ?? sel
                 let cd = pg?.commands.first { $0.id == cname }
-                return Info(id: c.id, title: c.title, icon: c.icon, type: "Command", supportsBinding: c.supportsBinding, colorKey: g.name,
+                return Info(id: c.id, title: c.title, icon: c.icon, iconPath: c.iconPath, type: "Command", supportsBinding: c.supportsBinding, colorKey: g.name,
                             description: cd?.description ?? "", fields: cd?.fields ?? [], prefExtID: pg?.id ?? g.id,
                             capabilities: [], commands: [], isClipboard: c.id == "clipboard.history")
             }

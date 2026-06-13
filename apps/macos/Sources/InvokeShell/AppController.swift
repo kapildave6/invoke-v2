@@ -2433,10 +2433,12 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 m = Self.extensionMeta(for: c.id)
             }
             if metas[m.id] == nil { metas[m.id] = m; order.append(m.id) }
-            kids[m.id, default: []].append(CommandInfo(id: c.id, title: c.title, subtitle: "", icon: c.icon))
+            kids[m.id, default: []].append(CommandInfo(id: c.id, title: c.title, subtitle: "", icon: c.icon, iconPath: c.iconPath))
         }
-        var groups = order.map { id in
-            ExtensionGroup(id: id, name: metas[id]!.name, icon: metas[id]!.icon, commands: kids[id] ?? [])
+        var groups = order.map { id -> ExtensionGroup in
+            // The group's icon image is the extension's manifest icon (commands of an extension share it).
+            let groupIcon = kids[id]?.compactMap(\.iconPath).first
+            return ExtensionGroup(id: id, name: metas[id]!.name, icon: metas[id]!.icon, iconPath: groupIcon, commands: kids[id] ?? [])
         }
         groups.append(ExtensionGroup(id: "calculator", name: "Calculator", icon: "function",
             commands: [CommandInfo(id: "calculator", title: "Calculate", subtitle: "", icon: "function", supportsBinding: false)]))
