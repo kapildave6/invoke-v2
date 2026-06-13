@@ -2085,7 +2085,18 @@ public final class AppController: NSObject, NSApplicationDelegate {
             case "checkbox":
                 fields.append(ViewNode(id: fid, type: "form-checkbox",
                                        props: ["id": .string(name), "label": .string(ptitle), "value": .bool(current == "true")]))
-            default: // textfield, appPicker, password → a text field (type the app name for appPicker)
+            case "appPicker":
+                // Like Raycast: a dropdown of installed apps (with icons), value = app name.
+                let node = ViewNode(id: fid, type: "form-dropdown",
+                                    props: ["id": .string(name), "title": .string(ptitle), "value": .string(current)])
+                var itemId = fid * 1000
+                node.children = appIndex.allApps().map { app in
+                    itemId += 1
+                    return ViewNode(id: itemId, type: "form-dropdown-item",
+                                    props: ["title": .string(app.name), "value": .string(app.name), "iconPath": .string(app.path)])
+                }
+                fields.append(node)
+            default: // textfield, password → a text field
                 fields.append(formField(fid, fieldId: name, type: "form-textfield", title: ptitle,
                                         placeholder: (p["description"] as? String) ?? "", value: current))
             }

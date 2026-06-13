@@ -693,12 +693,13 @@ public final class PaletteView: NSView {
         label.alignment = .right
         label.font = .systemFont(ofSize: 13)
         label.textColor = .secondaryLabelColor
-        label.lineBreakMode = .byTruncatingTail
+        label.lineBreakMode = .byWordWrapping // wrap long preference titles instead of truncating to "…"
+        label.maximumNumberOfLines = 3
         label.translatesAutoresizingMaskIntoConstraints = false
         label.setContentHuggingPriority(.required, for: .horizontal)
         label.setContentCompressionResistancePriority(.required, for: .horizontal)
         row.addArrangedSubview(label)
-        NSLayoutConstraint.activate([label.widthAnchor.constraint(equalToConstant: 120)])
+        NSLayoutConstraint.activate([label.widthAnchor.constraint(equalToConstant: 150)])
 
         let control: NSView
         switch f.type {
@@ -766,6 +767,11 @@ public final class PaletteView: NSView {
                         let title = c.props["title"]?.stringValue ?? c.props["value"]?.stringValue ?? ""
                         let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
                         item.representedObject = c.props["value"]?.stringValue ?? title
+                        if let iconPath = c.props["iconPath"]?.stringValue, !iconPath.isEmpty {
+                            let img = NSWorkspace.shared.icon(forFile: iconPath)
+                            img.size = NSSize(width: 16, height: 16)
+                            item.image = img
+                        }
                         pop.menu?.addItem(item)
                         values.append(item.representedObject as? String ?? title)
                     } else if c.type == "form-dropdown-section" {

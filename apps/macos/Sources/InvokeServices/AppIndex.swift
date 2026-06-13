@@ -16,6 +16,9 @@ public final class AppIndexService {
 
     public var count: Int { apps.count }
 
+    /// All indexed apps, sorted by name (for an appPicker preference dropdown).
+    public func allApps() -> [AppEntry] { apps }
+
     /// Build the index from the conventional app locations.
     public func build() {
         let fm = FileManager.default
