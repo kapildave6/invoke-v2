@@ -17,6 +17,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private let host = ExtensionHost()
     private let hotkey = GlobalHotkey()
     private let appIndex = AppIndexService()
+    private let hud = HUDOverlay() // standalone HUD for showHUD / headless no-view command feedback
     private let frecency = Frecency()
     private let clipboard = ClipboardHistory()
     private let windowManager = WindowManager()
@@ -1558,7 +1559,12 @@ public final class AppController: NSObject, NSApplicationDelegate {
             let title = arg("title")?.stringValue ?? ""
             let message = arg("message")?.stringValue
             let text = message.map { "\(title) — \($0)" } ?? title
-            if !text.isEmpty { palette.showToast(text) }
+            if !text.isEmpty {
+                // showHUD is a standalone overlay; a toast shows in the palette when it's visible, but a
+                // no-view command's palette is already closed — fall back to the HUD so it's still seen.
+                if method == "hud.show" || !palette.isVisible { hud.show(text) }
+                else { palette.showToast(text) }
+            }
             return .null
         case "open":
             if let target = arg("target")?.stringValue { openTarget(target) }
