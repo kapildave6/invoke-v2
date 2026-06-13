@@ -1523,9 +1523,18 @@ public final class AppController: NSObject, NSApplicationDelegate {
     /// runner's Node `devCapabilities`. Shared by the resident calculator and any running extension.
     /// Default-deny per-extension consent for the powerful runAppleScript capability. Returns true if
     /// the current extension may run AppleScript (already granted, or the user allows it now). Runs a
+    /// The trust unit for capability consent is the EXTENSION, not the individual command —
+    /// "ext.apple-notes.index" and "ext.apple-notes.add-text" share one grant, so the user isn't
+    /// re-prompted for every command of the same extension. (Built-in command ids pass through.)
+    private var currentExtGrantKey: String {
+        let parts = currentExtId.split(separator: ".")
+        if currentExtId.hasPrefix("ext."), parts.count >= 2 { return "ext.\(parts[1])" }
+        return currentExtId
+    }
+
     /// blocking dialog on the main thread (handleCapability is invoked on main).
     private func ensureAppleScriptGrant() -> Bool {
-        let id = currentExtId
+        let id = currentExtGrantKey
         guard !id.isEmpty else { return false }
         if AppSettings.shared.appleScriptGrants.contains(id) { return true }
         let alert = NSAlert()
@@ -1654,7 +1663,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     /// NOT silently authorize the same extension to later read Messages chat.db, Safari history, etc.
     /// (confused-deputy file disclosure). Blocking dialog on the main thread.
     private func ensureSQLGrant(dbPath: String) -> Bool {
-        let id = currentExtId
+        let id = currentExtGrantKey
         guard !id.isEmpty else { return false }
         let key = id + "\u{0}" + dbPath // NUL separates the parts; a filesystem path can't contain NUL
         if AppSettings.shared.sqlGrants.contains(key) { return true }
@@ -2058,6 +2067,15 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 selectedIndex = 0
                 renderExtension()
             }
+        case "open":
+            // Action.Open: open a file/URL/app target (e.g. apple-notes' "Open in Notes" →
+            // applenotes://showNote?…). Falls back to its onOpen handler if no target.
+            if let target = n.props["target"]?.stringValue, !target.isEmpty {
+                openTarget(target)
+            } else if let handler = n.props["onAction"]?.stringValue {
+                extHost?.invoke(handler: handler)
+            }
+            afterLaunch()
         case "open-in-browser":
             if let url = n.props["url"]?.stringValue { openTarget(url) }
             afterLaunch()
