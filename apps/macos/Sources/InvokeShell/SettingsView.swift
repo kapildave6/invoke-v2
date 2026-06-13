@@ -84,6 +84,14 @@ struct GeneralPane: View {
                 Text("⌥Space is the only fixed shortcut. Every other hotkey — Clipboard History (⌘⇧V), Window Management (⌃⌥arrows), and any command — is set per command in Extensions.")
                     .font(.caption).foregroundStyle(.secondary)
             }
+            Section {
+                Button("Relaunch Invoke") { relaunchInvoke() }
+            } header: {
+                Text("Maintenance")
+            } footer: {
+                Text("Quits and reopens Invoke. Needed after importing an extension or changing its trust, since the command list is built at launch.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
         }
         .formStyle(.grouped)
         .frame(minWidth: 540, maxWidth: .infinity, minHeight: 380, maxHeight: .infinity)
