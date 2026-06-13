@@ -275,3 +275,199 @@ export function useForm<T extends Record<string, unknown>>(props: UseFormProps<T
 
   return { values, setValue, errors, itemProps, handleSubmit, reset, focus: () => {} };
 }
+
+/* ============================================================ @raycast/utils parity helpers
+ * Pure-JS ports (no host changes): icon generators return Image.ImageLike descriptors;
+ * useLocalStorage/useFrecencySorting/withCache wrap the existing host LocalStorage RPC. */
+
+/** Type of the `mutate` fn returned by Raycast's data hooks. Type-only — used for prop annotations. */
+export type MutatePromise<T, U = undefined> = (
+  asyncUpdate?: Promise<U>,
+  options?: {
+    optimisticUpdate?: (data: T) => T;
+    rollbackOnError?: boolean | ((data: T) => T);
+    shouldRevalidateAfter?: boolean;
+  },
+) => Promise<U>;
+
+export interface FaviconOptions { fallback?: string; size?: number; mask?: string }
+/** Image.ImageLike descriptor resolving a site's favicon (via Google's public S2 endpoint). */
+export function getFavicon(
+  url: string,
+  options: FaviconOptions = {},
+): { source: string; fallback?: string; mask?: string } {
+  const size = options.size ?? 64;
+  let domain = url;
+  try {
+    domain = new URL(url.includes("://") ? url : `https://${url}`).hostname;
+  } catch {
+    /* keep the raw value */
+  }
+  return {
+    source: `https://www.google.com/s2/favicons?sz=${size}&domain=${encodeURIComponent(domain)}`,
+    fallback: options.fallback,
+    mask: options.mask,
+  };
+}
+
+const AVATAR_COLORS = ["#EB5757", "#F2994A", "#F2C94C", "#27AE60", "#2F80ED", "#9B51E0", "#56CCF2", "#BB6BD9"];
+function hashStr(s: string): number {
+  let h = 0;
+  for (const ch of s) h = (h * 31 + ch.charCodeAt(0)) | 0;
+  return Math.abs(h);
+}
+/** Image.ImageLike for a generated initials avatar (colored circle + initials), as a data: SVG URL. */
+export function getAvatarIcon(
+  name: string,
+  options: { background?: string; gradient?: boolean } = {},
+): { source: string; mask?: string } {
+  const initials = (name.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("") || "?").toUpperCase();
+  const bg = options.background ?? AVATAR_COLORS[hashStr(name) % AVATAR_COLORS.length];
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128"><rect width="128" height="128" fill="${bg}"/><text x="64" y="64" font-family="-apple-system,Helvetica,sans-serif" font-size="56" fill="#fff" text-anchor="middle" dominant-baseline="central">${initials}</text></svg>`;
+  return { source: `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`, mask: "circle" };
+}
+
+/** Image.ImageLike of a circular progress ring (progress 0..1), as a data: SVG URL. */
+export function getProgressIcon(
+  progress: number,
+  color = "#FF6363",
+  options: { background?: string; backgroundOpacity?: number } = {},
+): { source: string } {
+  const p = Math.max(0, Math.min(1, progress));
+  const r = 45;
+  const circ = 2 * Math.PI * r;
+  const dash = circ * p;
+  const bg = options.background ?? "#000000";
+  const bgOp = options.backgroundOpacity ?? 0.1;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100"><circle cx="50" cy="50" r="${r}" fill="none" stroke="${bg}" stroke-opacity="${bgOp}" stroke-width="10"/><circle cx="50" cy="50" r="${r}" fill="none" stroke="${color}" stroke-width="10" stroke-dasharray="${dash} ${circ}" stroke-linecap="round" transform="rotate(-90 50 50)"/></svg>`;
+  return { source: `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}` };
+}
+
+/** Hook over the host LocalStorage RPC: `{ value, setValue, removeValue, isLoading }`, JSON-(de)serialized. */
+export function useLocalStorage<T>(key: string, initialValue?: T) {
+  const api = useRef<typeof import("@invoke/api") | undefined>(undefined);
+  const state = usePromise<T | undefined>(async () => {
+    const a = (api.current ??= await import("@invoke/api"));
+    const raw = await a.LocalStorage.getItem<string>(key);
+    return raw == null ? initialValue : (JSON.parse(raw) as T);
+  }, [key]);
+  const setValue = useCallback(
+    async (value: T) => {
+      const a = (api.current ??= await import("@invoke/api"));
+      await a.LocalStorage.setItem(key, JSON.stringify(value));
+      state.revalidate();
+    },
+    [key], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const removeValue = useCallback(
+    async () => {
+      const a = (api.current ??= await import("@invoke/api"));
+      await a.LocalStorage.removeItem(key);
+      state.revalidate();
+    },
+    [key], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  return { value: state.data, setValue, removeValue, isLoading: state.isLoading };
+}
+
+export interface FrecencySortingOptions<T> {
+  namespace?: string;
+  key?: (item: T) => string;
+  sortUnvisited?: (a: T, b: T) => number;
+}
+/** Sort `data` by frecency (frequency × recency); rankings persist per-item in LocalStorage. */
+export function useFrecencySorting<T>(
+  data: T[] = [],
+  options: FrecencySortingOptions<T> = {},
+): { data: T[]; visitItem: (item: T) => Promise<void>; resetRanking: (item: T) => Promise<void> } {
+  const keyOf = options.key ?? ((item: T) => String((item as { id?: unknown }).id ?? JSON.stringify(item)));
+  const storageKey = `frecency-${options.namespace ?? "default"}`;
+  type Entry = { lastVisited: number; visitCount: number };
+  const { value, setValue } = useLocalStorage<Record<string, Entry>>(storageKey, {});
+  const table = value ?? {};
+  const score = (entry?: Entry): number => {
+    if (!entry) return 0;
+    const ageDays = (Date.now() - entry.lastVisited) / 86_400_000;
+    return entry.visitCount * (1 / (1 + ageDays));
+  };
+  const sorted = [...data].sort((a, b) => {
+    const diff = score(table[keyOf(b)]) - score(table[keyOf(a)]);
+    return diff !== 0 ? diff : options.sortUnvisited ? options.sortUnvisited(a, b) : 0;
+  });
+  const visitItem = useCallback(
+    async (item: T) => {
+      const k = keyOf(item);
+      await setValue({ ...table, [k]: { lastVisited: Date.now(), visitCount: (table[k]?.visitCount ?? 0) + 1 } });
+    },
+    [table], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const resetRanking = useCallback(
+    async (item: T) => {
+      const next = { ...table };
+      delete next[keyOf(item)];
+      await setValue(next);
+    },
+    [table], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  return { data: sorted, visitItem, resetRanking };
+}
+
+/** Wrap an async fn so its result is cached in LocalStorage (with optional maxAge). Adds `.clearCache()`. */
+export function withCache<A extends unknown[], T>(
+  fn: (...args: A) => Promise<T>,
+  options: { maxAge?: number; validate?: (data: T) => boolean } = {},
+): ((...args: A) => Promise<T>) & { clearCache: () => Promise<void> } {
+  const ns = "withCache:";
+  const wrapped = (async (...args: A): Promise<T> => {
+    const a = await import("@invoke/api");
+    const cacheKey = ns + JSON.stringify(args);
+    const raw = await a.LocalStorage.getItem<string>(cacheKey);
+    if (raw) {
+      try {
+        const { value, expiresAt } = JSON.parse(raw) as { value: T; expiresAt: number };
+        if ((!expiresAt || Date.now() < expiresAt) && (!options.validate || options.validate(value))) return value;
+      } catch {
+        /* corrupt entry — recompute */
+      }
+    }
+    const value = await fn(...args);
+    await a.LocalStorage.setItem(
+      cacheKey,
+      JSON.stringify({ value, expiresAt: options.maxAge ? Date.now() + options.maxAge : 0 }),
+    );
+    return value;
+  }) as ((...args: A) => Promise<T>) & { clearCache: () => Promise<void> };
+  wrapped.clearCache = async () => {
+    const a = await import("@invoke/api");
+    const all = await a.LocalStorage.allItems<Record<string, unknown>>();
+    await Promise.all(
+      Object.keys(all).filter((k) => k.startsWith(ns)).map((k) => a.LocalStorage.removeItem(k)),
+    );
+  };
+  return wrapped;
+}
+
+/** Build a Raycast deeplink string (synchronous, pure). */
+export function createDeeplink(opts: {
+  type?: string;
+  command?: string;
+  extensionName?: string;
+  ownerOrAuthorName?: string;
+  arguments?: Record<string, unknown>;
+  context?: Record<string, unknown>;
+  fallbackText?: string;
+}): string {
+  const protocol = "raycast://";
+  if (opts.type === "script-command") return `${protocol}script-commands/${opts.command ?? ""}`;
+  const params = new URLSearchParams();
+  if (opts.arguments) params.set("arguments", JSON.stringify(opts.arguments));
+  if (opts.context) params.set("context", JSON.stringify(opts.context));
+  if (opts.fallbackText) params.set("fallbackText", opts.fallbackText);
+  const qs = params.toString();
+  return `${protocol}extensions/${opts.ownerOrAuthorName ?? ""}/${opts.extensionName ?? ""}/${opts.command ?? ""}${qs ? `?${qs}` : ""}`;
+}
+
+/** Windows-only PowerShell runner — not available on macOS. Stub so imports survive module load. */
+export async function runPowerShellScript(_script: string, _options?: unknown): Promise<string> {
+  throw new Error("@invoke/utils: runPowerShellScript is Windows-only and not available on macOS");
+}

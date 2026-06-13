@@ -40,6 +40,10 @@ public final class ExtensionHost {
         "localStorage.removeItem", "localStorage.clear", "localStorage.allItems",
         "runAppleScript", // gated OS-automation capability (Raycast's @raycast/utils runAppleScript)
         "executeSQL",     // gated read-only SQLite capability (Raycast's @raycast/utils useSQL/executeSQL)
+        "confirmAlert",     // modal confirm dialog (Raycast's confirmAlert)
+        "preferences.open", // open Settings to this extension (open{Extension,Command}Preferences)
+        "captureException", // diagnostic log (Raycast's captureException)
+        "cache.set", "cache.remove", "cache.clear", "cache.allItems", // persisted per-extension Cache
     ]
 
     private var pid: pid_t = -1

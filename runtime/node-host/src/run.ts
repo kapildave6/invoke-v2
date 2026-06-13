@@ -67,6 +67,8 @@ function devCapabilities(opts: { preferences: Record<string, unknown>; storePath
   const opened: string[] = [];
   const toasts: Array<Record<string, unknown>> = [];
   let lastCopy = "";
+  // Dev-only Cache store (the Swift host persists this per-extension; here it's process-local).
+  let cache: Record<string, string> = {};
 
   const handler = async (method: string, raw: unknown): Promise<unknown> => {
     const params = (raw ?? {}) as Record<string, any>;
@@ -116,6 +118,29 @@ function devCapabilities(opts: { preferences: Record<string, unknown>; storePath
         return null;
       case "localStorage.allItems":
         return { ...store };
+      case "confirmAlert":
+        // No UI in the dev runner — log and confirm so confirm-gated flows can be exercised headlessly.
+        console.log(`  ⚠ confirmAlert "${params.title ?? ""}" → true (dev auto-confirm)`);
+        return true;
+      case "preferences.open":
+        console.log(`  ⚙ preferences.open (${params.scope ?? "extension"}) [no-op in dev]`);
+        return null;
+      case "captureException":
+        console.error(`  ✗ captureException: ${params.message ?? ""}`);
+        return null;
+      case "cache.set":
+        cache[String(params.key)] = String(params.value ?? "");
+        return null;
+      case "cache.remove":
+        delete cache[String(params.key)];
+        return null;
+      case "cache.clear": {
+        const ns = `${params.namespace ?? ""}\u0000`;
+        for (const k of Object.keys(cache)) if (k.startsWith(ns)) delete cache[k];
+        return null;
+      }
+      case "cache.allItems":
+        return { ...cache };
       case "executeSQL": {
         // Dev-only mirror of the Swift host capability: copy the (WAL) db + sidecars to temp and query
         // the copy via node:sqlite, so `npm run dev:ext` can exercise useSQL extensions headlessly.

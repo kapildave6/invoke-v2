@@ -1671,6 +1671,36 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 }
                 return .array([])
             }
+        case "confirmAlert":
+            // Modal confirm dialog (Raycast's confirmAlert). handleCapability runs on the main queue, so
+            // runModal() blocks here and the child's `await confirmAlert(...)` resolves with the choice.
+            let alert = NSAlert()
+            alert.messageText = arg("title")?.stringValue ?? ""
+            if let m = arg("message")?.stringValue, !m.isEmpty { alert.informativeText = m }
+            if arg("primaryStyle")?.stringValue == "destructive" { alert.alertStyle = .critical }
+            alert.addButton(withTitle: arg("primaryTitle")?.stringValue ?? "OK")
+            alert.addButton(withTitle: arg("dismissTitle")?.stringValue ?? "Cancel")
+            return .bool(alert.runModal() == .alertFirstButtonReturn)
+        case "preferences.open":
+            // open{Extension,Command}Preferences — summon Settings on this extension. Edited prefs apply on
+            // the next command launch (they arrive via INVOKE_PREFERENCES at spawn), matching Raycast.
+            openSettings(tab: .commands)
+            return .null
+        case "captureException":
+            // Diagnostic only (no UI). The message body isn't logged — it may carry user content.
+            print("[invoke:ext] captureException from \(currentExtId)")
+            return .null
+        case "cache.set":
+            cacheStorageSet(arg("key")?.stringValue ?? "", value: arg("value")?.stringValue ?? "")
+            return .null
+        case "cache.remove":
+            cacheStorageRemove(arg("key")?.stringValue ?? "")
+            return .null
+        case "cache.clear":
+            cacheStorageClear(namespace: arg("namespace")?.stringValue ?? "")
+            return .null
+        case "cache.allItems":
+            return .object(cacheStorageAll().mapValues { JSONValue.string($0) })
         default:
             return .null
         }
@@ -1843,6 +1873,19 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private func extStorageSet(_ key: String, value: String) { var d = extStorageAll(); d[key] = value; UserDefaults.standard.set(d, forKey: extStorageDefaultsKey()) }
     private func extStorageRemove(_ key: String) { var d = extStorageAll(); d[key] = nil; UserDefaults.standard.set(d, forKey: extStorageDefaultsKey()) }
     private func extStorageClear() { UserDefaults.standard.removeObject(forKey: extStorageDefaultsKey()) }
+
+    // Per-extension Cache (Raycast's Cache), namespaced by extension id. Keys arrive already prefixed
+    // with the Cache instance's namespace ("<namespace>\0<key>"); cache.clear removes one namespace.
+    private func cacheStorageDefaultsKey() -> String { "invoke.ext.cache.\(currentExtId)" }
+    private func cacheStorageAll() -> [String: String] { (UserDefaults.standard.dictionary(forKey: cacheStorageDefaultsKey()) as? [String: String]) ?? [:] }
+    private func cacheStorageSet(_ key: String, value: String) { var d = cacheStorageAll(); d[key] = value; UserDefaults.standard.set(d, forKey: cacheStorageDefaultsKey()) }
+    private func cacheStorageRemove(_ key: String) { var d = cacheStorageAll(); d[key] = nil; UserDefaults.standard.set(d, forKey: cacheStorageDefaultsKey()) }
+    private func cacheStorageClear(namespace: String) {
+        let prefix = namespace + "\u{0}"
+        var d = cacheStorageAll()
+        for k in d.keys where k.hasPrefix(prefix) { d[k] = nil }
+        UserDefaults.standard.set(d, forKey: cacheStorageDefaultsKey())
+    }
 
     /// Scan the bundled `examples/*` and `invoke import`-ed `imported/*` for extension manifests and
     /// surface their `view` commands in the root (the calculator is excluded — it's the resident card

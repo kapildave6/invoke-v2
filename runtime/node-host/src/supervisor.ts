@@ -43,6 +43,13 @@ export const ALLOWED_RPC: ReadonlySet<string> = new Set([
   "localStorage.allItems",
   "runAppleScript",
   "executeSQL",
+  "confirmAlert",
+  "preferences.open",
+  "captureException",
+  "cache.set",
+  "cache.remove",
+  "cache.clear",
+  "cache.allItems",
 ]);
 
 export function isAllowedRpcMethod(method: string): boolean {

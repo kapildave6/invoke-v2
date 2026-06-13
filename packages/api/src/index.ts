@@ -379,11 +379,11 @@ export class Cache {
     this.ns = options?.namespace ?? "";
     void this.warm();
   }
-  private hostKey(key: string): string { return `${this.ns} ${key}`; }
+  private hostKey(key: string): string { return `${this.ns}\u0000${key}`; }
   private async warm(): Promise<void> {
     try {
       const all = (await rpc("cache.allItems", {})) as Record<string, string> | undefined;
-      const prefix = `${this.ns} `;
+      const prefix = `${this.ns}\u0000`;
       for (const [k, v] of Object.entries(all ?? {})) {
         if (!k.startsWith(prefix)) continue;
         const bare = k.slice(prefix.length);
