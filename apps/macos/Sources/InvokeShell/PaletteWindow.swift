@@ -23,7 +23,9 @@ public final class PaletteWindow: NSObject {
     private let commandLabel = NSTextField(labelWithString: "")
     private let primaryActionLabel = NSTextField(labelWithString: "")
     private var primaryGroup: NSStackView!
+    private var enterCaps: NSStackView!   // the ↵ / ⌘↵ chip next to the primary action
     private var actionBarDivider: NSView!
+    private var isFormSurface = false     // a form submits on ⌘Return (Return is a newline in a textarea)
 
     private var keyMonitor: Any?
     private let actionPanel = ActionPanel()
@@ -239,7 +241,7 @@ public final class PaletteWindow: NSObject {
         primaryActionLabel.font = .systemFont(ofSize: 12, weight: .medium)
         primaryActionLabel.textColor = .labelColor
         primaryActionLabel.translatesAutoresizingMaskIntoConstraints = false
-        let enterCaps = NSStackView(views: Keycap.chips(for: "↵"))
+        enterCaps = NSStackView(views: Keycap.chips(for: "↵"))
         enterCaps.spacing = 3
         enterCaps.setHuggingPriority(.required, for: .horizontal)
         primaryGroup = NSStackView(views: [primaryActionLabel, enterCaps])
@@ -305,6 +307,15 @@ public final class PaletteWindow: NSObject {
             gridColumns = max(1, Int(n))
         } else {
             gridColumns = 0
+        }
+        // A form submits on ⌘Return (plain Return is a newline in a multi-line field), so advertise ⌘↵
+        // in the bottom bar and route ⌘Return to submit while a form is shown.
+        func containsForm(_ n: ViewNode) -> Bool { n.type == "form" || n.children.contains(where: containsForm) }
+        let formNow = containsForm(tree.root)
+        if formNow != isFormSurface {
+            isFormSurface = formNow
+            enterCaps.arrangedSubviews.forEach { $0.removeFromSuperview() }
+            Keycap.chips(for: formNow ? "⌘↵" : "↵").forEach { enterCaps.addArrangedSubview($0) }
         }
         // Skip the resize (a full layout pass over every cell) when it was only a selection move.
         if paletteView.render(tree, selectedIndex: selectedIndex) { resizeToFit() }
@@ -468,9 +479,10 @@ public final class PaletteWindow: NSObject {
                 self.actionPanel.isShown ? self.actionPanel.dismiss() : self.showActionMenu() // ⌘K toggles
                 return nil
             }
-            if event.keyCode == 36 || event.keyCode == 76 {        // ⌘Return / ⌘keypad-Enter → secondary
+            if event.keyCode == 36 || event.keyCode == 76 {        // ⌘Return / ⌘keypad-Enter
                 if self.actionPanel.isShown { return nil }          // panel owns Return while it's open
-                self.onActivate?(true); return nil                 // (doCommandBy doesn't deliver ⌘Return reliably)
+                if self.isFormSurface { self.paletteView.onSubmit?(); return nil } // ⌘Return submits a form
+                self.onActivate?(true); return nil                 // otherwise → secondary action
             }
             return event
         }
