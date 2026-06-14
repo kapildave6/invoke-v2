@@ -379,11 +379,23 @@ export async function showToast(
     ? { style: optsOrStyle, title: title ?? "", message }
     : { style: optsOrStyle.style ?? Toast.Style.Success, title: optsOrStyle.title, message: optsOrStyle.message };
   await rpc("toast.show", opts);
-  const handle: ToastHandle = {
-    style: opts.style, title: opts.title, message: opts.message,
-    hide: async () => { await rpc("toast.show", { style: handle.style, title: "", message: "" }); },
-    show: async () => { await rpc("toast.show", { style: handle.style, title: handle.title, message: handle.message }); },
+  // Mutating .style/.title/.message must RE-SHOW the toast (Raycast's live-updating pattern:
+  // an "Animated/Loading…" toast updated to Success/Failure). Setters were plain assignments before, so
+  // the update was invisible. Debounce via microtask so setting all three fires a single re-show.
+  const state = { style: opts.style, title: opts.title, message: opts.message as string | undefined };
+  let pending = false;
+  const reshow = (): void => {
+    if (pending) return;
+    pending = true;
+    queueMicrotask(() => { pending = false; void rpc("toast.show", { ...state }).catch(() => {}); });
   };
+  const handle = {
+    get style() { return state.style; }, set style(v: string) { state.style = v; reshow(); },
+    get title() { return state.title; }, set title(v: string) { state.title = v; reshow(); },
+    get message() { return state.message; }, set message(v: string | undefined) { state.message = v; reshow(); },
+    hide: async () => { await rpc("toast.show", { style: state.style, title: "", message: "" }); },
+    show: async () => { await rpc("toast.show", { ...state }); },
+  } as ToastHandle;
   return handle;
 }
 export async function showHUD(title: string): Promise<void> {

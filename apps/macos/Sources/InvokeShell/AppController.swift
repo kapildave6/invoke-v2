@@ -2060,17 +2060,19 @@ public final class AppController: NSObject, NSApplicationDelegate {
         }
     }
 
-    // Per-extension LocalStorage, namespaced by extension id in UserDefaults.
-    private func extStorageDefaultsKey() -> String { "invoke.ext.ls.\(currentExtId)" }
+    // Per-EXTENSION LocalStorage (shared across all of an extension's commands, Raycast semantics),
+    // keyed by the extension grant key — NOT currentExtId (the command id), which would isolate each
+    // command's storage and break cross-command data sharing (e.g. Perry's manage-databases ↔ search).
+    private func extStorageDefaultsKey() -> String { "invoke.ext.ls.\(currentExtGrantKey)" }
     private func extStorageAll() -> [String: String] { (UserDefaults.standard.dictionary(forKey: extStorageDefaultsKey()) as? [String: String]) ?? [:] }
     private func extStorageGet(_ key: String) -> String? { extStorageAll()[key] }
     private func extStorageSet(_ key: String, value: String) { var d = extStorageAll(); d[key] = value; UserDefaults.standard.set(d, forKey: extStorageDefaultsKey()) }
     private func extStorageRemove(_ key: String) { var d = extStorageAll(); d[key] = nil; UserDefaults.standard.set(d, forKey: extStorageDefaultsKey()) }
     private func extStorageClear() { UserDefaults.standard.removeObject(forKey: extStorageDefaultsKey()) }
 
-    // Per-extension Cache (Raycast's Cache), namespaced by extension id. Keys arrive already prefixed
-    // with the Cache instance's namespace ("<namespace>\0<key>"); cache.clear removes one namespace.
-    private func cacheStorageDefaultsKey() -> String { "invoke.ext.cache.\(currentExtId)" }
+    // Per-EXTENSION Cache (shared across an extension's commands, like LocalStorage above). Keys arrive
+    // already prefixed with the Cache instance's namespace ("<namespace>\0<key>"); cache.clear removes one.
+    private func cacheStorageDefaultsKey() -> String { "invoke.ext.cache.\(currentExtGrantKey)" }
     private func cacheStorageAll() -> [String: String] { (UserDefaults.standard.dictionary(forKey: cacheStorageDefaultsKey()) as? [String: String]) ?? [:] }
     private func cacheStorageSet(_ key: String, value: String) { var d = cacheStorageAll(); d[key] = value; UserDefaults.standard.set(d, forKey: cacheStorageDefaultsKey()) }
     private func cacheStorageRemove(_ key: String) { var d = cacheStorageAll(); d[key] = nil; UserDefaults.standard.set(d, forKey: cacheStorageDefaultsKey()) }
