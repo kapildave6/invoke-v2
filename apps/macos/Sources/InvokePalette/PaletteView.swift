@@ -610,6 +610,10 @@ public final class PaletteView: NSView {
             // bounded by the palette — otherwise a large image makes the scroll grow to its natural size
             // and spill off-screen instead of scaling down to fit.
             mdScroll.widthAnchor.constraint(equalTo: stack.widthAnchor, constant: -sidebarReserve),
+            // Pin the scroll's HEIGHT to the detail viewport too. With the stack's .top alignment the
+            // scroll otherwise grows to its content height (a tall image), overflowing the window instead
+            // of clipping + scrolling within the 420 viewport.
+            mdScroll.heightAnchor.constraint(equalTo: h.heightAnchor),
         ])
     }
 
