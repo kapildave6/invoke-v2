@@ -59,6 +59,8 @@ public final class PaletteWindow: NSObject {
     /// Mouse: single-click selects a row (by item index); double-click activates it.
     public var onSelectRow: ((Int) -> Void)?
     public var onActivateRow: ((Int) -> Void)?
+    /// A Form field changed (live onChange): (onChange handler id, new value).
+    public var onFormFieldChange: ((String, String) -> Void)?
 
     private let filterButton = NSPopUpButton(frame: .zero, pullsDown: false)
     private let searchDropdown = SearchBarDropdown() // world-class engine picker (extension List.Dropdown)
@@ -127,6 +129,7 @@ public final class PaletteWindow: NSObject {
         paletteView.onSelect = { [weak self] i in self?.onSelectRow?(i) }
         paletteView.onActivate = { [weak self] i in self?.onActivateRow?(i) }
         paletteView.onSubmit = { [weak self] in self?.onActivate?(false) } // Return in a Form field → submit
+        paletteView.onFormFieldChange = { [weak self] h, v in self?.onFormFieldChange?(h, v) }
 
         filterButton.translatesAutoresizingMaskIntoConstraints = false
         filterButton.isBordered = false // borderless, subtle — fits the translucent theme

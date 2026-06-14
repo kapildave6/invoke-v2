@@ -798,6 +798,24 @@ public final class PaletteView: NSView {
     private var formControls: [(id: String, value: () -> String)] = []
     private weak var firstFormResponder: NSView? // focus this when a form renders (the first field)
     private var formResponderViews: [NSView] = []  // form controls in order, for the Tab key-view loop
+    // Live onChange: control → (field id, onChange handler id); and field id → control (to restore focus
+    // after a controlled re-render). Cleared and rebuilt each renderFormSurface.
+    private var formFieldInfo: [ObjectIdentifier: (id: String, onChange: String?)] = [:]
+    private var formFieldViewById: [String: NSView] = [:]
+    /// Fired live as a Form field's value changes (args: onChange handler id, new value). The shell
+    /// invokes the handler in the extension so controlled forms (e.g. live-computed results) update.
+    public var onFormFieldChange: ((String, String) -> Void)?
+
+    /// The field id of the form field that currently has focus (so a re-render can restore it instead of
+    /// jumping back to the first field). For an NSTextField, the first responder is its field editor.
+    private func focusedFormFieldId() -> String? {
+        guard let fr = window?.firstResponder else { return nil }
+        if let tv = fr as? NSTextView { return formFieldInfo[ObjectIdentifier(tv)]?.id }
+        if let editor = fr as? NSText, let d = editor.delegate as AnyObject? {
+            return formFieldInfo[ObjectIdentifier(d)]?.id
+        }
+        return nil
+    }
     public func currentFormValues() -> [String: String] {
         var out: [String: String] = [:]
         for c in formControls { out[c.id] = c.value() }
@@ -827,8 +845,11 @@ public final class PaletteView: NSView {
     private var preservedFormValues: [String: String] = [:]
 
     private func renderFormSurface(_ node: ViewNode) {
+        let prevFocusId = focusedFormFieldId() // restore focus here after the (controlled) rebuild
         preservedFormValues = currentFormValues() // snapshot before we tear the controls down
         formControls.removeAll()
+        formFieldInfo.removeAll()
+        formFieldViewById.removeAll()
         firstFormResponder = nil
         formResponderViews.removeAll()
         let form = NSStackView()
@@ -875,9 +896,18 @@ public final class PaletteView: NSView {
         for i in 0..<max(0, formResponderViews.count - 1) {
             formResponderViews[i].nextKeyView = formResponderViews[i + 1]
         }
-        // Focus the first field so the user can type/Tab immediately (not the hidden search box).
+        // Restore focus to the field being edited (so a live-onChange re-render doesn't yank focus back
+        // to the first field), caret at end; otherwise focus the first field for immediate typing.
         DispatchQueue.main.async { [weak self] in
-            if let v = self?.firstFormResponder { self?.window?.makeFirstResponder(v) }
+            guard let self else { return }
+            if let fid = prevFocusId, let v = self.formFieldViewById[fid] {
+                self.window?.makeFirstResponder(v)
+                if let tf = v as? NSTextField {
+                    tf.currentEditor()?.selectedRange = NSRange(location: (tf.stringValue as NSString).length, length: 0)
+                }
+            } else if let v = self.firstFormResponder {
+                self.window?.makeFirstResponder(v)
+            }
         }
     }
 
@@ -942,6 +972,9 @@ public final class PaletteView: NSView {
             // submit the form and dismiss the palette when moving between fields.
             tf.cell?.sendsActionOnEndEditing = false
             formControls.append((id, { [weak tf] in tf?.stringValue ?? "" }))
+            tf.delegate = self // controlTextDidChange → live onChange
+            formFieldInfo[ObjectIdentifier(tf)] = (id, f.props["onChange"]?.handlerRef)
+            formFieldViewById[id] = tf
             if firstFormResponder == nil { firstFormResponder = tf }
             formResponderViews.append(tf)
             control = tf
@@ -974,6 +1007,9 @@ public final class PaletteView: NSView {
             s.translatesAutoresizingMaskIntoConstraints = false
             NSLayoutConstraint.activate([s.heightAnchor.constraint(equalToConstant: 96)])
             formControls.append((id, { [weak tv] in tv?.string ?? "" }))
+            tv.delegate = self // textDidChange → live onChange
+            formFieldInfo[ObjectIdentifier(tv)] = (id, f.props["onChange"]?.handlerRef)
+            formFieldViewById[id] = tv
             if firstFormResponder == nil { firstFormResponder = tv }
             formResponderViews.append(tv)
             control = s
@@ -1198,7 +1234,11 @@ public final class PaletteView: NSView {
         title.font = .systemFont(ofSize: 14)
         title.textColor = .labelColor
         title.lineBreakMode = .byTruncatingTail
-        title.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+        title.maximumNumberOfLines = 1
+        // Let a long title TRUNCATE within the fixed palette width rather than stretch the row (and the
+        // window) past the edge — e.g. office-quotes' very long quotes. Kept above the subtitle (.defaultLow)
+        // so when both exist the subtitle truncates first.
+        title.setContentCompressionResistancePriority(.init(490), for: .horizontal)
         h.addArrangedSubview(title)
 
         if let sub = node.props["subtitle"]?.stringValue, !sub.isEmpty {
@@ -1382,5 +1422,23 @@ public final class PaletteView: NSView {
         case "wifi-disabled": return "wifi.slash"
         default: return "app"
         }
+    }
+}
+
+// Live Form onChange: forward each keystroke to the extension's onChange handler (controlled forms,
+// e.g. a live-computed result, depend on this). The shell invokes the handler in the child.
+extension PaletteView: NSTextFieldDelegate {
+    public func controlTextDidChange(_ obj: Notification) {
+        guard let tf = obj.object as? NSTextField,
+              let h = formFieldInfo[ObjectIdentifier(tf)]?.onChange else { return }
+        onFormFieldChange?(h, tf.stringValue)
+    }
+}
+
+extension PaletteView: NSTextViewDelegate {
+    public func textDidChange(_ notification: Notification) {
+        guard let tv = notification.object as? NSTextView,
+              let h = formFieldInfo[ObjectIdentifier(tv)]?.onChange else { return }
+        onFormFieldChange?(h, tv.string)
     }
 }
