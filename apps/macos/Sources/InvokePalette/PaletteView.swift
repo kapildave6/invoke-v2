@@ -548,6 +548,7 @@ public final class PaletteView: NSView {
         let iv = NSImageView()
         iv.imageScaling = .scaleProportionallyUpOrDown
         iv.imageAlignment = .alignTopLeft
+        iv.animates = true // animate GIFs — without this only the (often blank) first frame shows
         iv.translatesAutoresizingMaskIntoConstraints = false
         iv.setContentHuggingPriority(.defaultLow, for: .horizontal)
         iv.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
