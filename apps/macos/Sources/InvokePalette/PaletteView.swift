@@ -757,9 +757,11 @@ public final class PaletteView: NSView {
             thumb.addSubview(iv)
             iv.layer?.cornerRadius = 6; iv.wantsLayer = true; iv.layer?.masksToBounds = true
             NSLayoutConstraint.activate([iv.leadingAnchor.constraint(equalTo: thumb.leadingAnchor), iv.trailingAnchor.constraint(equalTo: thumb.trailingAnchor), iv.topAnchor.constraint(equalTo: thumb.topAnchor), iv.bottomAnchor.constraint(equalTo: thumb.bottomAnchor)])
-        } else if let src = imageSource(node.props["content"] ?? node.props["icon"]), let img = loadLocalImage(src) {
-            // A real image asset (data:/file/relative-to-assetsPath), e.g. a grid thumbnail gif.
-            let iv = NSImageView(image: img); iv.imageScaling = .scaleProportionallyUpOrDown; iv.animates = true
+        } else if let src = imageSource(node.props["content"] ?? node.props["icon"]),
+                  loadLocalImage(src) != nil || src.hasPrefix("http://") || src.hasPrefix("https://") {
+            // A real image asset: data:/file/relative-to-assetsPath (sync), or a remote http(s) URL
+            // (loaded async — e.g. glyph-search's remote SVGs, getFavicon URLs).
+            let iv = NSImageView(); iv.imageScaling = .scaleProportionallyUpOrDown; iv.animates = true
             iv.translatesAutoresizingMaskIntoConstraints = false
             iv.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
             iv.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
@@ -767,6 +769,7 @@ public final class PaletteView: NSView {
             thumb.addSubview(iv)
             iv.layer?.cornerRadius = 6; iv.wantsLayer = true; iv.layer?.masksToBounds = true
             NSLayoutConstraint.activate([iv.leadingAnchor.constraint(equalTo: thumb.leadingAnchor), iv.trailingAnchor.constraint(equalTo: thumb.trailingAnchor), iv.topAnchor.constraint(equalTo: thumb.topAnchor), iv.bottomAnchor.constraint(equalTo: thumb.bottomAnchor)])
+            if let img = loadLocalImage(src) { iv.image = img } else { loadRemoteImage(src, into: iv) }
         } else if let sym = node.props["icon"]?.stringValue ?? node.props["content"]?.stringValue,
                   let img = NSImage(systemSymbolName: sym, accessibilityDescription: nil) ?? NSImage(systemSymbolName: sfSymbol(for: sym), accessibilityDescription: nil) {
             let iv = NSImageView(image: img); iv.contentTintColor = .secondaryLabelColor; iv.imageScaling = .scaleProportionallyDown; iv.translatesAutoresizingMaskIntoConstraints = false
@@ -845,6 +848,21 @@ public final class PaletteView: NSView {
             path = (assetsPath as NSString).appendingPathComponent(source)
         }
         return NSImage(contentsOfFile: path)
+    }
+
+    /// Load a remote http(s) image into an image view asynchronously, caching by URL (grids re-render on
+    /// every arrow keypress — don't refetch). Used for grid thumbnails, list icons (getFavicon), etc.
+    private func loadRemoteImage(_ url: String, into iv: NSImageView) {
+        if let cached = imageCache[url] { iv.image = cached; return }
+        guard let u = URL(string: url) else { return }
+        URLSession.shared.dataTask(with: u) { [weak self, weak iv] data, _, _ in
+            guard let data, let img = NSImage(data: data) else { return }
+            DispatchQueue.main.async {
+                if self?.imageCache.count ?? 0 > 400 { self?.imageCache.removeAll() }
+                self?.imageCache[url] = img
+                if let iv, iv.superview != nil { iv.image = img }
+            }
+        }.resume()
     }
 
     /// Live value readers for the currently-rendered form, by field id (read at submit time).
@@ -1394,6 +1412,17 @@ public final class PaletteView: NSView {
             iv.translatesAutoresizingMaskIntoConstraints = false
             iv.widthAnchor.constraint(equalToConstant: 20).isActive = true
             iv.heightAnchor.constraint(equalToConstant: 20).isActive = true
+            return iv
+        }
+        // Image icon — an Image.ImageLike (`{ source }`, data:/file/relative, or remote http(s)), e.g.
+        // getFavicon / getAvatarIcon. Loaded sync when local, async when remote.
+        if let src = imageSource(node.props["icon"]),
+           loadLocalImage(src) != nil || src.hasPrefix("http://") || src.hasPrefix("https://") {
+            let iv = NSImageView(); iv.imageScaling = .scaleProportionallyUpOrDown
+            iv.translatesAutoresizingMaskIntoConstraints = false
+            iv.widthAnchor.constraint(equalToConstant: 18).isActive = true
+            iv.heightAnchor.constraint(equalToConstant: 18).isActive = true
+            if let img = loadLocalImage(src) { iv.image = img } else { loadRemoteImage(src, into: iv) }
             return iv
         }
         // SF Symbol: try the name directly (e.g. "house"), else map the Icon enum.
