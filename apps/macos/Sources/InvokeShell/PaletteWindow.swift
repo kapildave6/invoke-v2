@@ -459,6 +459,7 @@ public final class PaletteWindow: NSObject {
 
     /// Show the type-filter dropdown (clipboard mode) with the given options/selection.
     public func setFilter(options: [String], selected: String) {
+        onExtDropdownChange = nil; extDropdownValues = []; extDropdownSig = "" // not an extension dropdown
         filterButton.removeAllItems()
         filterButton.addItems(withTitles: options)
         filterButton.selectItem(withTitle: selected)
@@ -474,8 +475,47 @@ public final class PaletteWindow: NSObject {
         searchTrailingDefault.isActive = true
     }
 
+    // An extension List/Grid's search-bar Dropdown accessory (Raycast's <List.Dropdown>). Reuses the
+    // same NSPopUpButton as the clipboard filter (they're never shown together) but carries per-item
+    // VALUES + icons and fires onExtDropdownChange with the selected value.
+    public var onExtDropdownChange: ((String) -> Void)?
+    private var extDropdownValues: [String] = []
+    private var extDropdownSig = ""
+
+    public func setSearchDropdown(items: [(title: String, value: String, iconPath: String?)], selected: String, onChange: @escaping (String) -> Void) {
+        onExtDropdownChange = onChange
+        let sig = items.map { "\($0.title)=\($0.value)" }.joined(separator: "\u{1}")
+        if sig != extDropdownSig { // rebuild only when the option set changed (avoids flicker on re-render)
+            extDropdownSig = sig
+            extDropdownValues = items.map(\.value)
+            filterButton.removeAllItems()
+            for it in items {
+                filterButton.addItem(withTitle: it.title)
+                if let mi = filterButton.lastItem, let p = it.iconPath, p.hasPrefix("/"), let img = NSImage(contentsOfFile: p) {
+                    img.size = NSSize(width: 16, height: 16); mi.image = img
+                }
+            }
+        }
+        if let idx = extDropdownValues.firstIndex(of: selected) { filterButton.selectItem(at: idx) }
+        filterButton.isHidden = false
+        searchTrailingDefault.isActive = false
+        searchTrailingWithFilter.isActive = true
+    }
+
+    public func hideSearchDropdown() {
+        onExtDropdownChange = nil
+        extDropdownValues = []
+        extDropdownSig = ""
+        hideFilter()
+    }
+
     @objc private func filterChanged() {
-        if let title = filterButton.titleOfSelectedItem { onFilterChange?(title) }
+        if let onChange = onExtDropdownChange {
+            let idx = filterButton.indexOfSelectedItem
+            if idx >= 0, idx < extDropdownValues.count { onChange(extDropdownValues[idx]) }
+        } else if let title = filterButton.titleOfSelectedItem {
+            onFilterChange?(title)
+        }
     }
 
     /// Briefly show a feedback capsule (e.g. "Copied to Clipboard"), then fade it out.

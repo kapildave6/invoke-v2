@@ -85,9 +85,15 @@ public final class PaletteView: NSView {
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError("not used") }
 
+    /// True when the current surface is list-like (root, extension List/Grid, split) — those keep a
+    /// CONSTANT height (Raycast parity: the palette doesn't shrink between "results" and "No Results").
+    /// Detail/Form size to their content.
+    private var fixedHeightSurface = false
+
     /// Height the rendered content wants (capped — beyond it the list scrolls). Drives the window.
     public func fittingHeight() -> CGFloat {
         layoutSubtreeIfNeeded()
+        if fixedHeightSurface { return maxContentHeight } // don't shrink list-like surfaces
         return min(stack.fittingSize.height + 16, maxContentHeight)
     }
 
@@ -116,16 +122,22 @@ public final class PaletteView: NSView {
         // (bad constraint, unknown selector, …) must NOT abort Invoke — it degrades to an error surface.
         if let reason = InvokeCatchException({
             if let detail = surfaces.first(where: { $0.type == "detail" }) {
+                self.fixedHeightSurface = false
                 self.renderDetailSurface(detail)
             } else if let form = surfaces.first(where: { $0.type == "form" }) {
+                self.fixedHeightSurface = false
                 self.renderFormSurface(form)
             } else if let grid = surfaces.first(where: { $0.type == "grid" }) {
+                self.fixedHeightSurface = true
                 self.renderGrid(grid, selectedIndex: selectedIndex)
                 self.scrollSelectedIntoView()
             } else if let list = surfaces.first(where: { $0.type == "list" }),
                       case .bool(true)? = list.props["showDetail"] {
+                self.fixedHeightSurface = true
                 self.renderSplit(list: list, selectedIndex: selectedIndex) // master–detail (e.g. Clipboard History)
             } else {
+                // Root list + extension Lists: a constant height (don't shrink for "No Results").
+                self.fixedHeightSurface = surfaces.contains { $0.type == "list" } || tree.root.children.contains { $0.type == "list" }
                 self.appendRows(for: tree.root, selectedIndex: selectedIndex)
                 self.scrollSelectedIntoView()
             }

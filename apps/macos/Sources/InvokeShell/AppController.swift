@@ -338,7 +338,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         teardownExtension()
         mode = .root
         pendingQuicklink = nil
-        palette.hideFilter()
+        palette.hideSearchDropdown() // drop the extension's engine dropdown (also hides the filter)
         palette.setPlaceholder(Self.defaultPlaceholder)
         lastQuery = ""
         palette.clearSearch()
@@ -1183,7 +1183,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         teardownExtension()
         mode = .root
         pendingQuicklink = nil
-        palette.hideFilter()
+        palette.hideSearchDropdown() // also hides the filter; clears any extension engine dropdown
         palette.setPlaceholder(Self.defaultPlaceholder)
         palette.clearSearch()
         lastQuery = ""
@@ -2110,6 +2110,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private func launchExtension(id: String, title: String, entryRelPath: String, command: String, preferences: String, arguments: String = "{}") {
         teardownExtension()
         palette.clearArguments() // leaving the root list for the extension view — drop argument chips
+        extDropdownMountSig = "" // re-fire the engine dropdown's onChange-on-mount for this launch
         let h = ExtensionHost()
         h.onLog = { msg in print("[invoke:ext] \(msg)") }
         h.onCommit = { [weak self] _ in self?.extReceivedCommit = true; self?.onExtensionCommit() }
@@ -2398,7 +2399,54 @@ public final class AppController: NSObject, NSApplicationDelegate {
         if selectedIndex >= count { selectedIndex = max(0, count - 1) }
         palette.render(activeTree, selectedIndex: selectedIndex)
         updateActionBar()
+        updateExtensionDropdown()
+        // Honor the surface's own searchBarPlaceholder (Raycast) instead of the generic "Search <title>…".
+        if navDepth == 0, let surface = extensionSurfaceNode(),
+           let ph = surface.props["searchBarPlaceholder"]?.stringValue, !ph.isEmpty {
+            palette.setPlaceholder(ph)
+        }
     }
+
+    /// Surface an extension List/Grid's search-bar Dropdown accessory (<List.Dropdown>) as the search-bar
+    /// dropdown, wiring its selection to the extension's onChange handler (which re-renders the list).
+    private func updateExtensionDropdown() {
+        guard mode == .extensionView, let surface = extensionSurfaceNode() else { palette.hideSearchDropdown(); return }
+        func findDropdown(_ n: ViewNode) -> ViewNode? {
+            if n.type == "list-dropdown" { return n }
+            for c in n.children { if let d = findDropdown(c) { return d } }
+            return nil
+        }
+        guard let dd = findDropdown(surface) else { palette.hideSearchDropdown(); return }
+        var items: [(title: String, value: String, iconPath: String?)] = []
+        func collect(_ n: ViewNode) {
+            for c in n.children {
+                if c.type == "list-dropdown-item" {
+                    let title = c.props["title"]?.stringValue ?? c.props["value"]?.stringValue ?? ""
+                    let value = c.props["value"]?.stringValue ?? title
+                    items.append((title, value, c.props["iconPath"]?.stringValue))
+                } else { collect(c) } // descend into list-dropdown-section
+            }
+        }
+        collect(dd)
+        guard !items.isEmpty else { palette.hideSearchDropdown(); return }
+        // Raycast's Dropdown is controlled via `value` OR uncontrolled via `defaultValue`.
+        let current = dd.props["value"]?.stringValue ?? dd.props["defaultValue"]?.stringValue ?? items.first?.value ?? ""
+        let handler = dd.props["onChange"]?.handlerRef
+        palette.setSearchDropdown(items: items, selected: current) { [weak self] value in
+            guard let self, let handler else { return }
+            self.extHost?.invoke(handler: handler, args: [.string(value)]) // re-renders via the next commit
+        }
+        // Fire onChange ONCE when the dropdown first appears, to initialize the extension's selection
+        // state (Raycast fires onChange with defaultValue on mount; otherwise the default engine's URL
+        // stays empty and search is broken until the user re-picks). The signature is the option VALUES
+        // only — selecting an engine changes state, not the options, so this never re-fires in a loop.
+        let mountSig = items.map(\.value).joined(separator: "\u{1}")
+        if mountSig != extDropdownMountSig {
+            extDropdownMountSig = mountSig
+            if let handler { extHost?.invoke(handler: handler, args: [.string(current)]) }
+        }
+    }
+    private var extDropdownMountSig = ""
 
     /// The current extension's top-level surface node (list/grid/detail/form) — used to find the
     /// ActionPanel when the surface has no selectable rows (Detail/Form), and to detect form submits.
