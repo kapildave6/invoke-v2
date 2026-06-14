@@ -855,15 +855,29 @@ public final class PaletteView: NSView {
         return NSImage(contentsOfFile: path)
     }
 
-    /// Load a remote http(s) image into an image view asynchronously, caching by URL (grids re-render on
-    /// every arrow keypress — don't refetch). Used for grid thumbnails, list icons (getFavicon), etc.
+    /// Shared session for remote images with a PERSISTENT on-disk HTTP cache (survives relaunch) and more
+    /// concurrent connections — so a grid of hundreds of remote images (e.g. glyph-search) loads fast and
+    /// is instant on the next launch, instead of N throttled refetches every time.
+    private static let imageSession: URLSession = {
+        let cfg = URLSessionConfiguration.default
+        let dir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first?
+            .appendingPathComponent("com.invoke.app/img", isDirectory: true)
+        cfg.urlCache = URLCache(memoryCapacity: 32 * 1024 * 1024, diskCapacity: 256 * 1024 * 1024, directory: dir)
+        cfg.requestCachePolicy = .returnCacheDataElseLoad // prefer the disk cache; only hit the network on a miss
+        cfg.httpMaximumConnectionsPerHost = 12
+        return URLSession(configuration: cfg)
+    }()
+
+    /// Load a remote http(s) image into an image view asynchronously. Decoded images are cached in memory
+    /// by URL (grids re-render on every arrow keypress — don't re-decode), and the bytes are cached on disk
+    /// by `imageSession` (don't re-download across renders/launches).
     private func loadRemoteImage(_ url: String, into iv: NSImageView) {
         if let cached = imageCache[url] { iv.image = cached; return }
         guard let u = URL(string: url) else { return }
-        URLSession.shared.dataTask(with: u) { [weak self, weak iv] data, _, _ in
+        Self.imageSession.dataTask(with: u) { [weak self, weak iv] data, _, _ in
             guard let data, let img = NSImage(data: data) else { return }
             DispatchQueue.main.async {
-                if self?.imageCache.count ?? 0 > 400 { self?.imageCache.removeAll() }
+                if self?.imageCache.count ?? 0 > 1000 { self?.imageCache.removeAll() }
                 self?.imageCache[url] = img
                 if let iv, iv.superview != nil { iv.image = img }
             }
