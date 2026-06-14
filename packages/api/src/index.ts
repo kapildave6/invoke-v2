@@ -39,6 +39,8 @@ const T = {
   ListItem: "list-item",
   ListItemDetail: "list-item-detail",
   ListDropdown: "list-dropdown",
+  ListDropdownItem: "list-dropdown-item",
+  ListDropdownSection: "list-dropdown-section",
   EmptyView: "empty-view",
   Grid: "grid",
   GridSection: "grid-section",
@@ -100,10 +102,14 @@ export interface CommonActionProps {
 }
 
 /* ------------------------------------------------------------------ List */
+type DropdownType = ReturnType<typeof host> & {
+  Item: ReturnType<typeof host>;
+  Section: ReturnType<typeof host>;
+};
 type ListType = ReturnType<typeof host> & {
   Section: ReturnType<typeof host>;
   Item: ReturnType<typeof host> & { Detail: ReturnType<typeof host> };
-  Dropdown: ReturnType<typeof host>;
+  Dropdown: DropdownType;
   EmptyView: ReturnType<typeof host>;
 };
 export const List = host(T.List, ["searchBarAccessory", "actions"]) as ListType;
@@ -113,20 +119,25 @@ const ListItem = host(T.ListItem, ["actions", "detail"]) as ReturnType<typeof ho
 };
 ListItem.Detail = host(T.ListItemDetail, ["metadata"]);
 List.Item = ListItem;
-List.Dropdown = host(T.ListDropdown);
+// The search-bar Dropdown accessory has Item/Section children (Raycast). Without these defined,
+// an extension rendering <List.Dropdown.Item> renders <undefined> → "Element type is invalid".
+const ListDropdown = host(T.ListDropdown) as DropdownType;
+ListDropdown.Item = host(T.ListDropdownItem);
+ListDropdown.Section = host(T.ListDropdownSection);
+List.Dropdown = ListDropdown;
 List.EmptyView = host(T.EmptyView, ["actions"]);
 
 /* ------------------------------------------------------------------ Grid */
 type GridType = ReturnType<typeof host> & {
   Section: ReturnType<typeof host>;
   Item: ReturnType<typeof host>;
-  Dropdown: ReturnType<typeof host>;
+  Dropdown: DropdownType;
   EmptyView: ReturnType<typeof host>;
 };
 export const Grid = host(T.Grid, ["searchBarAccessory", "actions"]) as GridType;
 Grid.Section = host(T.GridSection);
 Grid.Item = host(T.GridItem, ["actions"]);
-Grid.Dropdown = host(T.ListDropdown);
+Grid.Dropdown = ListDropdown; // Raycast: Grid.Dropdown === List.Dropdown
 Grid.EmptyView = host(T.EmptyView, ["actions"]);
 
 /* ------------------------------------------------------------------ Detail */
@@ -247,6 +258,30 @@ export const Icon = {
   Document: "document",
   Folder: "folder",
   Tag: "tag",
+  // Names 1Password (and similar) reference for item categories etc.
+  AppWindowGrid3x3: "app-window-grid-3x3",
+  Car: "car",
+  Code: "code",
+  CodeBlock: "code-block",
+  CreditCard: "credit-card",
+  Crypto: "crypto",
+  Envelope: "envelope",
+  Fingerprint: "fingerprint",
+  Gift: "gift",
+  HardDrive: "hard-drive",
+  Heartbeat: "heartbeat",
+  Key: "key",
+  Paperclip: "paperclip",
+  Repeat: "repeat",
+  Shield: "shield",
+  StarCircle: "star-circle",
+  Switch: "switch",
+  Terminal: "terminal",
+  Text: "text",
+  Tree: "tree",
+  Wallet: "wallet",
+  Wifi: "wifi",
+  WifiDisabled: "wifi-disabled",
 } as const;
 
 export const Color = {
