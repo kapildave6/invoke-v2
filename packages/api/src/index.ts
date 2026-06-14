@@ -329,8 +329,25 @@ export const Clipboard = {
   readText: () => rpc("clipboard.readText", {}) as Promise<string | undefined>,
 };
 
-export async function showToast(opts: { style: string; title: string; message?: string }): Promise<void> {
+export interface ToastHandle { style: string; title: string; message?: string; hide: () => Promise<void>; show: () => Promise<void>; }
+/// Raycast's showToast has two call forms — the object form `showToast({ style, title, message })`
+/// and the positional overload `showToast(style, title, message?)`. Support both, and return a mutable
+/// handle so extensions can update `.style`/`.title`/`.message` (re-shown) or `.hide()` it.
+export async function showToast(
+  optsOrStyle: { style?: string; title: string; message?: string } | string,
+  title?: string,
+  message?: string,
+): Promise<ToastHandle> {
+  const opts = typeof optsOrStyle === "string"
+    ? { style: optsOrStyle, title: title ?? "", message }
+    : { style: optsOrStyle.style ?? Toast.Style.Success, title: optsOrStyle.title, message: optsOrStyle.message };
   await rpc("toast.show", opts);
+  const handle: ToastHandle = {
+    style: opts.style, title: opts.title, message: opts.message,
+    hide: async () => { await rpc("toast.show", { style: handle.style, title: "", message: "" }); },
+    show: async () => { await rpc("toast.show", { style: handle.style, title: handle.title, message: handle.message }); },
+  };
+  return handle;
 }
 export async function showHUD(title: string): Promise<void> {
   await rpc("hud.show", { title });

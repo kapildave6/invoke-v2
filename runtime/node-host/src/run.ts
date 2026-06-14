@@ -176,7 +176,14 @@ function devCapabilities(opts: { preferences: Record<string, unknown>; storePath
 
 /** Run the host-side equivalent of activating an item's first action (what a keypress does). */
 async function activateFirstItem(tree: ViewTree, proc: ExtensionProcess, caps: ReturnType<typeof devCapabilities>): Promise<void> {
-  const item = collect(tree.root, "list-item")[0] ?? collect(tree.root, "grid-item")[0];
+  // Prefer the selected item's action; fall back to the surface's TOP-LEVEL action (e.g. a List/Form
+  // whose ActionPanel sits on the surface itself, not on an item — like Coffee's "Set Schedule").
+  const item =
+    collect(tree.root, "list-item")[0] ??
+    collect(tree.root, "grid-item")[0] ??
+    collect(tree.root, "list")[0] ??
+    collect(tree.root, "form")[0] ??
+    collect(tree.root, "detail")[0];
   if (!item) {
     console.log("  (no item to activate)");
     return;
