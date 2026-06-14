@@ -814,7 +814,14 @@ public final class PaletteView: NSView {
         return true
     }
 
+    /// Live field values captured before the last form rebuild, by id. A controlled form re-renders on
+    /// the extension's state changes; Invoke doesn't echo per-keystroke edits back to React, so the
+    /// node's `value` lags behind what the user typed. Re-seeding the rebuilt field from this snapshot
+    /// preserves the user's input instead of wiping it (the "fields empty on save" bug).
+    private var preservedFormValues: [String: String] = [:]
+
     private func renderFormSurface(_ node: ViewNode) {
+        preservedFormValues = currentFormValues() // snapshot before we tear the controls down
         formControls.removeAll()
         firstFormResponder = nil
         formResponderViews.removeAll()
@@ -869,13 +876,21 @@ public final class PaletteView: NSView {
     }
 
     private func formFieldRow(_ f: ViewNode) -> NSView? {
-        // Non-field rows: a full-width description line and a divider (no label gutter).
+        // Form.Description: a label-gutter row (title on the left, description text on the right) — same
+        // 150px gutter as the fields, so it aligns like Raycast's "Edit search / Specify the title…".
         if f.type == "form-description" {
-            let lbl = NSTextField(wrappingLabelWithString: f.props["text"]?.stringValue ?? f.props["title"]?.stringValue ?? "")
-            lbl.font = .systemFont(ofSize: 12)
-            lbl.textColor = .secondaryLabelColor
-            lbl.translatesAutoresizingMaskIntoConstraints = false
-            return lbl
+            let r = NSStackView(); r.orientation = .horizontal; r.spacing = 12; r.alignment = .firstBaseline
+            r.translatesAutoresizingMaskIntoConstraints = false
+            let gutter = NSTextField(labelWithString: f.props["title"]?.stringValue ?? "")
+            gutter.alignment = .right; gutter.font = .systemFont(ofSize: 13); gutter.textColor = .secondaryLabelColor
+            gutter.translatesAutoresizingMaskIntoConstraints = false
+            gutter.setContentHuggingPriority(.required, for: .horizontal)
+            let text = NSTextField(wrappingLabelWithString: f.props["text"]?.stringValue ?? "")
+            text.font = .systemFont(ofSize: 13); text.textColor = .secondaryLabelColor
+            text.translatesAutoresizingMaskIntoConstraints = false
+            r.addArrangedSubview(gutter); r.addArrangedSubview(text)
+            gutter.widthAnchor.constraint(equalToConstant: 150).isActive = true
+            return r
         }
         if f.type == "form-separator" {
             let box = NSBox(); box.boxType = .separator
@@ -907,8 +922,14 @@ public final class PaletteView: NSView {
         let control: NSView
         switch f.type {
         case "form-textfield":
-            let tf = NSTextField(string: f.props["value"]?.stringValue ?? f.props["defaultValue"]?.stringValue ?? "")
+            // Seed from the node value, falling back to the value the user had typed before a re-render
+            // (controlled forms don't echo edits back, so the node value can lag — preserve user input).
+            let seeded = f.props["value"]?.stringValue ?? f.props["defaultValue"]?.stringValue ?? ""
+            let tf = NSTextField(string: seeded.isEmpty ? (preservedFormValues[id] ?? "") : seeded)
             tf.placeholderString = f.props["placeholder"]?.stringValue
+            tf.bezelStyle = .roundedBezel // rounded bordered field (Raycast)
+            tf.isBezeled = true
+            tf.font = .systemFont(ofSize: 13)
             tf.target = self
             tf.action = #selector(formFieldEnter) // Return in a single-line field submits the form
             // Only Return fires the action — NOT Tab/click-away (end-editing), which would otherwise

@@ -2110,7 +2110,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private func launchExtension(id: String, title: String, entryRelPath: String, command: String, preferences: String, arguments: String = "{}") {
         teardownExtension()
         palette.clearArguments() // leaving the root list for the extension view — drop argument chips
-        extDropdownMountSig = "" // re-fire the engine dropdown's onChange-on-mount for this launch
+        extDropdownMountSig = ""; extDropdownValue = nil // re-fire engine dropdown onChange-on-mount; forget last pick
         let h = ExtensionHost()
         h.onLog = { msg in print("[invoke:ext] \(msg)") }
         h.onCommit = { [weak self] _ in self?.extReceivedCommit = true; self?.onExtensionCommit() }
@@ -2440,11 +2440,15 @@ public final class AppController: NSObject, NSApplicationDelegate {
         }
         collect(dd)
         guard !items.isEmpty else { palette.hideSearchDropdown(); return }
-        // Raycast's Dropdown is controlled via `value` OR uncontrolled via `defaultValue`.
-        let current = dd.props["value"]?.stringValue ?? dd.props["defaultValue"]?.stringValue ?? items.first?.value ?? ""
+        // Raycast's Dropdown is controlled (`value`) OR uncontrolled (`defaultValue`). For an uncontrolled
+        // dropdown the extension tracks the selection in its OWN state (not the value prop), so on each
+        // re-render `defaultValue` is unchanged — if we reset to it, the user's pick reverts and they can't
+        // change the engine. So prefer the controlled value, then the user's last pick, then defaultValue.
+        let current = dd.props["value"]?.stringValue ?? extDropdownValue ?? dd.props["defaultValue"]?.stringValue ?? items.first?.value ?? ""
         let handler = dd.props["onChange"]?.handlerRef
         palette.setSearchDropdown(items: items, selected: current) { [weak self] value in
             guard let self, let handler else { return }
+            self.extDropdownValue = value // remember the user's pick (uncontrolled dropdowns don't echo it back)
             self.extHost?.invoke(handler: handler, args: [.string(value)]) // re-renders via the next commit
         }
         // Fire onChange ONCE when the dropdown first appears, to initialize the extension's selection
@@ -2458,6 +2462,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         }
     }
     private var extDropdownMountSig = ""
+    private var extDropdownValue: String?  // the user's last engine pick (uncontrolled dropdown)
 
     /// The current extension's top-level surface node (list/grid/detail/form) — used to find the
     /// ActionPanel when the surface has no selectable rows (Detail/Form), and to detect form submits.
