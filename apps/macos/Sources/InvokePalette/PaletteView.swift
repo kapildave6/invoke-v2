@@ -564,6 +564,8 @@ public final class PaletteView: NSView {
                 iv.heightAnchor.constraint(equalTo: iv.widthAnchor, multiplier: h / w),     // keep aspect
                 iv.widthAnchor.constraint(lessThanOrEqualToConstant: w),                     // …never upscale
                 iv.widthAnchor.constraint(lessThanOrEqualTo: stack.widthAnchor),             // …never overflow
+                iv.widthAnchor.constraint(lessThanOrEqualToConstant: 660),                   // hard backstop (palette is 750-wide)
+                iv.heightAnchor.constraint(lessThanOrEqualToConstant: 340),                  // …and never taller than the viewport
                 fill,
             ])
         }
@@ -1027,7 +1029,22 @@ public final class PaletteView: NSView {
         }
         control.translatesAutoresizingMaskIntoConstraints = false
         control.setContentHuggingPriority(.defaultLow, for: .horizontal) // let the control fill the row
-        row.addArrangedSubview(control)
+        // Inline validation error (Raycast shows it in red under the field). useForm sets this on a
+        // failed submit; without rendering it, Save "does nothing" with no feedback.
+        if let err = f.props["error"]?.stringValue, !err.isEmpty {
+            let col = NSStackView(views: [control])
+            col.orientation = .vertical; col.alignment = .leading; col.spacing = 4
+            col.translatesAutoresizingMaskIntoConstraints = false
+            let errLabel = NSTextField(wrappingLabelWithString: err)
+            errLabel.font = .systemFont(ofSize: 11); errLabel.textColor = .systemRed
+            errLabel.translatesAutoresizingMaskIntoConstraints = false
+            col.addArrangedSubview(errLabel)
+            control.widthAnchor.constraint(equalTo: col.widthAnchor).isActive = true
+            errLabel.widthAnchor.constraint(lessThanOrEqualTo: col.widthAnchor).isActive = true
+            row.addArrangedSubview(col)
+        } else {
+            row.addArrangedSubview(control)
+        }
         return row
     }
 
