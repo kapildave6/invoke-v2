@@ -223,6 +223,7 @@ async function main(): Promise<void> {
   proc.on("commit", (_c: number, t: ViewTree) => (latest = t));
   proc.on("log", (m) => console.log(`  [ext ${m.level}]`, ...m.args));
   proc.on("denied", (method: string) => console.log(`  ⛔ denied ${method}`));
+  proc.on("sandboxDenial", (module: string) => console.log(`  ⛔ sandbox denied "${module}" — extension needs Trust (run unsandboxed)`));
 
   await new Promise<void>((res) => proc.once("ready", () => res()));
 

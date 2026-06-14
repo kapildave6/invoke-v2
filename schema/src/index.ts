@@ -47,6 +47,8 @@ export type HostBound =
   | { kind: "log"; level: "info" | "warn" | "error"; args: unknown[] }
   /** an extension called a host API (Clipboard.copy, showToast, …) */
   | { kind: "rpc"; id: number; method: string; params: unknown }
+  /** a SANDBOXED extension failed because it imported a denied Node built-in (module = e.g. "fs") */
+  | { kind: "sandboxDenial"; module: string }
   | { kind: "done" };
 
 /** host → child */

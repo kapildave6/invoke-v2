@@ -22,6 +22,7 @@ public struct HostBound: Codable {
     public let id: Int?
     public let method: String?
     public let params: JSONValue?
+    public let module: String?  // sandboxDenial: the denied Node built-in
 }
 
 /// host → child envelope.

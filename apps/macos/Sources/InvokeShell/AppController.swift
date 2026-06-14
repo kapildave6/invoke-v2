@@ -50,6 +50,11 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private var currentExtId = ""
     private var currentExtTitle = ""
     private var extReceivedCommit = false // did the current extension render at least once?
+    // Bumped on every extension launch; the onTerminate closure captures its launch's generation so a
+    // dead child's termination can't tear down a freshly relaunched one (e.g. after Trust & Relaunch).
+    private var extLaunchGen = 0
+    private struct LaunchInfo { let id, title, entryRelPath, command, preferences: String; let noView: Bool }
+    private var lastLaunch: LaunchInfo? // the most recent launch, replayed by Trust & Relaunch
     private var nativeFormTitle = ""
     private var nativeFormSubmit: (([String: String]) -> Void)? // called with field values on submit
     private var repoRoot = ""
@@ -2080,7 +2085,11 @@ public final class AppController: NSObject, NSApplicationDelegate {
         h.onLog = { msg in print("[invoke:ext] \(msg)") }
         h.onCommit = { [weak self] _ in self?.extReceivedCommit = true; self?.onExtensionCommit() }
         h.onCapability = { [weak self] m, p in self?.handleCapability(m, p) ?? .null }
-        h.onTerminate = { [weak self] in self?.onExtensionTerminated(id: id) }
+        extLaunchGen += 1
+        let gen = extLaunchGen
+        lastLaunch = LaunchInfo(id: id, title: title, entryRelPath: entryRelPath, command: command, preferences: preferences, noView: false)
+        h.onTerminate = { [weak self] in self?.onExtensionTerminated(id: id, gen: gen) }
+        h.onSandboxDenial = { [weak self] module in self?.handleSandboxDenial(id: id, title: title, module: module) }
         extHost = h
         currentExtId = id
         currentExtTitle = title
@@ -2120,6 +2129,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
         h.onLog = { msg in print("[invoke:ext] \(msg)") }
         h.onCapability = { [weak self] m, p in self?.handleCapability(m, p) ?? .null }
         h.onTerminate = { [weak self] in DispatchQueue.main.async { self?.noViewHosts[key] = nil } }
+        lastLaunch = LaunchInfo(id: id, title: title, entryRelPath: entryRelPath, command: command, preferences: preferences, noView: true)
+        h.onSandboxDenial = { [weak self] module in self?.handleSandboxDenial(id: id, title: title, module: module) }
         noViewHosts[key] = h
         let paths = extensionPaths(id: id, entryRelPath: entryRelPath)
         h.launch(repoRoot: repoRoot, entryRelPath: entryRelPath, command: command, preferences: preferences,
@@ -2225,12 +2236,44 @@ public final class AppController: NSObject, NSApplicationDelegate {
     /// The current extension's child process died unexpectedly (crashed / failed to start — e.g. a
     /// missing npm dep or a denied syscall). Return to root with a clear message instead of leaving a
     /// dead view (and never crash: writes to its closed socket are already SIGPIPE-safe).
-    private func onExtensionTerminated(id: String) {
-        guard mode == .extensionView, currentExtId == id else { return }
+    private func onExtensionTerminated(id: String, gen: Int) {
+        // Ignore a stale termination from a prior launch (e.g. the dead child whose Trust & Relaunch
+        // already started a fresh one) — only the current generation may tear the view down.
+        guard mode == .extensionView, currentExtId == id, gen == extLaunchGen else { return }
         let name = currentExtTitle
         let started = extReceivedCommit
         exitToRoot()
         if !started { palette.showToast("Couldn’t start “\(name)” — it may need an unsupported dependency") }
+    }
+
+    /// A sandboxed extension died because it imported a denied Node built-in. Offer to trust it (run
+    /// unsandboxed, full Node like Raycast) and relaunch — the one-click M2 flow. Runs on the main queue;
+    /// the modal blocks here, and the dead child's onTerminate is gen-guarded so it can't nuke the relaunch.
+    private func handleSandboxDenial(id: String, title: String, module: String) {
+        let key = Self.extGrantKey(forId: id)
+        // Already trusted → this is a genuine failure, not a sandbox block; let onTerminate report it.
+        if AppSettings.shared.isTrusted(key) { return }
+        let alert = NSAlert()
+        alert.messageText = "“\(title)” needs full system access"
+        alert.informativeText = "It tried to use Node’s “\(module)”, which the sandbox blocks. Trusted extensions run without the sandbox — full filesystem, subprocess, and network access. Only trust extensions whose code you trust."
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "Trust & Relaunch")
+        alert.addButton(withTitle: "Cancel")
+        let trust = alert.runModal() == .alertFirstButtonReturn
+        guard trust else {
+            if mode == .extensionView { exitToRoot() } // clear the dead view; user declined
+            return
+        }
+        AppSettings.shared.setTrusted(key, true)
+        guard let info = lastLaunch, info.id == id else {
+            if mode == .extensionView { exitToRoot() }
+            return
+        }
+        if info.noView {
+            runNoViewExtension(id: info.id, title: info.title, entryRelPath: info.entryRelPath, command: info.command, preferences: info.preferences)
+        } else {
+            launchExtension(id: info.id, title: info.title, entryRelPath: info.entryRelPath, command: info.command, preferences: info.preferences)
+        }
     }
 
     private func teardownExtension() {

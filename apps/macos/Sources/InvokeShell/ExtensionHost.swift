@@ -30,6 +30,9 @@ public final class ExtensionHost {
     /// Fired on the MAIN queue when the child process ends WITHOUT an intentional terminate() — e.g. it
     /// crashed or failed to start (missing dep, denied syscall). Lets the controller recover gracefully.
     public var onTerminate: (() -> Void)?
+    /// Fired on the MAIN queue when a SANDBOXED child failed because it imported a denied Node built-in
+    /// (arg: the module name, e.g. "fs"). Lets the controller offer "Trust & relaunch".
+    public var onSandboxDenial: ((String) -> Void)?
 
     /// The capability allowlist — mirrors the Node supervisor's ALLOWED_RPC. Denial is enforced HERE
     /// in the host, so even a child crafting a raw RPC frame gets nothing it isn't granted (PLAN §4.4).
@@ -151,6 +154,9 @@ public final class ExtensionHost {
             }
         case "log":
             log("[ext log]")
+        case "sandboxDenial":
+            let module = msg.module ?? "a Node built-in"
+            DispatchQueue.main.async { self.onSandboxDenial?(module) }
         case "rpc":
             guard let id = msg.id, let method = msg.method else { break }
             let params = msg.params

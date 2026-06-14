@@ -31,6 +31,28 @@ const [entry, command] = process.argv.slice(2);
 const sock = new net.Socket({ fd: 3, readable: true, writable: true });
 const send = (msg: HostBound): void => void sock.write(encodeFrame(msg));
 
+/** If `e` is a sandbox denial, return the denied module name (e.g. "fs", "process.binding"). */
+function sandboxDeniedModule(e: unknown): string | undefined {
+  const m = String((e as { message?: string })?.message ?? e);
+  if (!m.includes("[invoke:sandbox]")) return undefined;
+  const quoted = m.match(/"([^"]+)"/); // import of Node built-in "fs"  |  require("fs")
+  if (quoted) return quoted[1].replace(/^node:/, "");
+  const proc = m.match(/process\.([A-Za-z0-9_]+)/);
+  return proc ? `process.${proc[1]}` : "a Node built-in";
+}
+
+/** Exit only after the socket flushes queued frames, so a final signal (sandboxDenial) isn't truncated
+ *  by process.exit(). Falls back to a hard timeout if the write never drains. */
+function exitAfterFlush(code: number): void {
+  const t = setTimeout(() => process.exit(code), 500) as unknown as { unref?: () => void };
+  t.unref?.();
+  try {
+    sock.write(encodeFrame({ kind: "done" }), () => process.exit(code));
+  } catch {
+    process.exit(code);
+  }
+}
+
 // Route @invoke/api platform calls (Clipboard.copy, showToast, …) to the host.
 let rpcSeq = 0;
 const pendingRpc = new Map<number, (r: { result?: unknown; error?: string }) => void>();
@@ -98,7 +120,11 @@ async function main(): Promise<void> {
     try {
       await (Command as (props: unknown) => unknown)({ arguments: {}, launchType: "userInitiated", launchContext: {} });
     } catch (e) {
+      const denied = sandboxDeniedModule(e);
+      if (denied) send({ kind: "sandboxDenial", module: denied });
       send({ kind: "log", level: "error", args: [String(e)] });
+      exitAfterFlush(1);
+      return;
     }
     process.exit(0);
   }
@@ -113,6 +139,8 @@ async function main(): Promise<void> {
 }
 
 main().catch((e: unknown) => {
+  const denied = sandboxDeniedModule(e);
+  if (denied) send({ kind: "sandboxDenial", module: denied });
   send({ kind: "log", level: "error", args: [String(e)] });
-  process.exit(1);
+  exitAfterFlush(1);
 });

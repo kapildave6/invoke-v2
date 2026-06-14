@@ -69,6 +69,8 @@ export interface ExtensionEvents {
   rpc: [HostBound & { kind: "rpc" }];
   /** An extension attempted a host method outside the allowlist; it was rejected. */
   denied: [string];
+  /** A sandboxed extension failed because it imported a denied Node built-in (arg: module name). */
+  sandboxDenial: [string];
   exit: [number | null];
 }
 
@@ -111,6 +113,11 @@ export class ExtensionProcess extends EventEmitter {
         break;
       case "log":
         this.emit("log", msg);
+        break;
+      case "sandboxDenial":
+        // Mirror of the Swift host: a sandboxed child needs full Node access. The macOS host offers
+        // "Trust & relaunch"; the dev runner just surfaces it (see run.ts).
+        this.emit("sandboxDenial", (msg as HostBound & { module?: string }).module ?? "a Node built-in");
         break;
       case "rpc": {
         // Route every host call through the capability allowlist (§4.4) before performing it.
