@@ -134,12 +134,20 @@ type GridType = ReturnType<typeof host> & {
   Item: ReturnType<typeof host>;
   Dropdown: DropdownType;
   EmptyView: ReturnType<typeof host>;
+  ItemSize: { Small: "small"; Medium: "medium"; Large: "large" };
+  Inset: { Small: "small"; Medium: "medium"; Large: "large" };
+  Fit: { Contain: "contain"; Fill: "fill" };
 };
 export const Grid = host(T.Grid, ["searchBarAccessory", "actions"]) as GridType;
 Grid.Section = host(T.GridSection);
 Grid.Item = host(T.GridItem, ["actions"]);
 Grid.Dropdown = ListDropdown; // Raycast: Grid.Dropdown === List.Dropdown
 Grid.EmptyView = host(T.EmptyView, ["actions"]);
+// Grid enums — extensions read e.g. Grid.ItemSize.Large at render; a missing enum throws and the
+// whole command renders blank. Values mirror Raycast's string constants.
+Grid.ItemSize = { Small: "small", Medium: "medium", Large: "large" } as const;
+Grid.Inset = { Small: "small", Medium: "medium", Large: "large" } as const;
+Grid.Fit = { Contain: "contain", Fill: "fill" } as const;
 
 /* ------------------------------------------------------------------ Detail */
 type MetadataType = ReturnType<typeof host> & {
