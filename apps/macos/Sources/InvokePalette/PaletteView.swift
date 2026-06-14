@@ -137,9 +137,9 @@ public final class PaletteView: NSView {
                 self.renderGrid(grid, selectedIndex: selectedIndex)
                 self.scrollSelectedIntoView()
             } else if let list = surfaces.first(where: { $0.type == "list" }),
-                      case .bool(true)? = list.props["showDetail"] {
+                      Self.isTrue(list.props["showDetail"]) || Self.isTrue(list.props["isShowingDetail"]) {
                 self.fixedHeightSurface = true
-                self.renderSplit(list: list, selectedIndex: selectedIndex) // master–detail (e.g. Clipboard History)
+                self.renderSplit(list: list, selectedIndex: selectedIndex) // master–detail (Clipboard, List.Item.Detail)
             } else {
                 // Root list + extension Lists: a constant height (don't shrink for "No Results").
                 self.fixedHeightSurface = surfaces.contains { $0.type == "list" } || tree.root.children.contains { $0.type == "list" }
@@ -310,10 +310,63 @@ public final class PaletteView: NSView {
         return row
     }
 
+    static func isTrue(_ v: JSONValue?) -> Bool { if case .bool(true)? = v { return true }; return false }
+
+    /// Render an extension's `list-item-detail` (markdown + a `metadata` child) into the split's right pane.
+    private func extensionDetailPane(_ node: ViewNode) -> NSView {
+        let pane = NSView()
+        pane.translatesAutoresizingMaskIntoConstraints = false
+        let stack = NSStackView()
+        stack.orientation = .vertical
+        stack.alignment = .width
+        stack.spacing = 8
+        stack.translatesAutoresizingMaskIntoConstraints = false
+
+        if let md = node.props["markdown"]?.stringValue, !md.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            let scroll = markdownScroll(md)
+            stack.addArrangedSubview(scroll)
+            scroll.heightAnchor.constraint(equalToConstant: 160).isActive = true
+            scroll.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
+        }
+        if let meta = node.children.first(where: { $0.type == "metadata" }) {
+            for child in meta.children {
+                switch child.type {
+                case "metadata-label", "metadata-link":
+                    let value = child.props["text"]?.stringValue ?? child.props["target"]?.stringValue ?? "—"
+                    stack.addArrangedSubview(metadataRow(label: child.props["title"]?.stringValue ?? "", value: value))
+                case "metadata-taglist":
+                    let tags = child.children.compactMap { $0.props["text"]?.stringValue ?? $0.title }.joined(separator: ", ")
+                    stack.addArrangedSubview(metadataRow(label: child.props["title"]?.stringValue ?? "", value: tags))
+                case "metadata-separator":
+                    let sep = NSBox(); sep.boxType = .separator; sep.translatesAutoresizingMaskIntoConstraints = false
+                    stack.addArrangedSubview(sep)
+                    sep.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
+                default: break
+                }
+            }
+        }
+        pane.addSubview(stack)
+        NSLayoutConstraint.activate([
+            stack.topAnchor.constraint(equalTo: pane.topAnchor, constant: 12),
+            stack.leadingAnchor.constraint(equalTo: pane.leadingAnchor, constant: 16),
+            stack.trailingAnchor.constraint(equalTo: pane.trailingAnchor, constant: -16),
+            stack.bottomAnchor.constraint(lessThanOrEqualTo: pane.bottomAnchor, constant: -12),
+        ])
+        return pane
+    }
+
+    /// Right pane of the master–detail split. An extension's `List.Item.Detail` (markdown + a `metadata`
+    /// child of label/separator/link/taglist nodes) renders like a Detail; otherwise the built-in
+    /// clipboard/snippet format (thumb / detailText / metadata prop-array).
     private func detailPane(_ node: ViewNode?) -> NSView {
         let pane = NSView()
         pane.translatesAutoresizingMaskIntoConstraints = false
         guard let node else { return pane }
+
+        // Extension List.Item.Detail child → render its markdown + metadata children.
+        if let lid = node.children.first(where: { $0.type == "list-item-detail" }) {
+            return extensionDetailPane(lid)
+        }
 
         let contentView: NSView
         if let b64 = node.props["thumb"]?.stringValue,

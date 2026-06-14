@@ -91,18 +91,54 @@ export function useFetch<T = unknown, U = T>(
   return { ...state, data };
 }
 
-/** Process-local cached state (production: backed by the host's Cache, PLAN.md §5.5). */
+/* Cached state shared across hook instances AND persisted across launches (Raycast parity — Raycast
+ * backs this with its Cache). The in-process Map keeps every instance of a key in sync synchronously;
+ * a host LocalStorage entry persists it. On first mount of a key we hydrate from the host (one async
+ * re-render); writes update the Map (sync), notify all instances, and write through to the host. */
 const cacheStore = new Map<string, unknown>();
+const cacheSubs = new Map<string, Set<() => void>>();
+const cacheHydrated = new Set<string>();
+const CACHED_STATE_PREFIX = "__cachedState__:";
+function notifyCachedState(key: string): void { cacheSubs.get(key)?.forEach((fn) => fn()); }
+
 export function useCachedState<T>(key: string, initial: T): [T, (v: T | ((p: T) => T)) => void] {
-  const [value, setValue] = useState<T>(() => (cacheStore.has(key) ? (cacheStore.get(key) as T) : initial));
+  const [, bump] = useState(0);
+  useEffect(() => {
+    let subs = cacheSubs.get(key);
+    if (!subs) { subs = new Set(); cacheSubs.set(key, subs); }
+    const cb = () => bump((n) => n + 1);
+    subs.add(cb);
+    if (!cacheHydrated.has(key)) {
+      cacheHydrated.add(key);
+      void (async () => {
+        try {
+          const api = await import("@invoke/api");
+          const raw = await api.LocalStorage.getItem<string>(CACHED_STATE_PREFIX + key);
+          if (raw != null && !cacheStore.has(key)) { // don't clobber a fresh in-session write
+            cacheStore.set(key, JSON.parse(raw));
+            notifyCachedState(key);
+          }
+        } catch { /* no host — in-memory only */ }
+      })();
+    }
+    return () => { subs?.delete(cb); };
+  }, [key]);
+
+  const value = (cacheStore.has(key) ? cacheStore.get(key) : initial) as T;
   const set = useCallback(
-    (v: T | ((p: T) => T)) =>
-      setValue((prev) => {
-        const next = typeof v === "function" ? (v as (p: T) => T)(prev) : v;
-        cacheStore.set(key, next);
-        return next;
-      }),
-    [key],
+    (v: T | ((p: T) => T)) => {
+      const prev = (cacheStore.has(key) ? cacheStore.get(key) : initial) as T;
+      const next = typeof v === "function" ? (v as (p: T) => T)(prev) : v;
+      cacheStore.set(key, next);
+      notifyCachedState(key); // sync every instance of this key in-process
+      void (async () => {
+        try {
+          const api = await import("@invoke/api");
+          await api.LocalStorage.setItem(CACHED_STATE_PREFIX + key, JSON.stringify(next));
+        } catch { /* no host — in-memory only */ }
+      })();
+    },
+    [key], // eslint-disable-line react-hooks/exhaustive-deps
   );
   return [value, set];
 }
