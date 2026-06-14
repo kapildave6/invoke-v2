@@ -114,11 +114,16 @@ async function main(): Promise<void> {
     }
   });
 
+  // Raycast LaunchProps: command arguments (search-bar fields) the host collected, plus launch metadata.
+  let launchArguments: Record<string, unknown> = {};
+  try { launchArguments = JSON.parse(process.env.INVOKE_ARGUMENTS || "{}"); } catch { launchArguments = {}; }
+  const launchProps = { arguments: launchArguments, launchType: "userInitiated", launchContext: {} };
+
   // no-view: run the command's default export as a headless action (no UI), then exit.
   if (process.env.INVOKE_MODE === "no-view") {
     send({ kind: "ready", command: command ?? "" });
     try {
-      await (Command as (props: unknown) => unknown)({ arguments: {}, launchType: "userInitiated", launchContext: {} });
+      await (Command as (props: unknown) => unknown)(launchProps);
     } catch (e) {
       const denied = sandboxDeniedModule(e);
       if (denied) send({ kind: "sandboxDenial", module: denied });
@@ -133,7 +138,7 @@ async function main(): Promise<void> {
   surface = createSurface({
     onCommit: (commit, ops) => send({ kind: "mutations", commit, ops }),
   });
-  surface.render(createElement(Command as React.FC));
+  surface.render(createElement(Command as React.ComponentType<typeof launchProps>, launchProps));
   send({ kind: "ready", command: command ?? "" });
   sock.on("close", () => process.exit(0));
 }

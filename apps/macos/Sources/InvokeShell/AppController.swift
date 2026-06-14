@@ -53,7 +53,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     // Bumped on every extension launch; the onTerminate closure captures its launch's generation so a
     // dead child's termination can't tear down a freshly relaunched one (e.g. after Trust & Relaunch).
     private var extLaunchGen = 0
-    private struct LaunchInfo { let id, title, entryRelPath, command, preferences: String; let noView: Bool }
+    private struct LaunchInfo { let id, title, entryRelPath, command, preferences: String; let noView: Bool; var arguments: String = "{}" }
     private var lastLaunch: LaunchInfo? // the most recent launch, replayed by Trust & Relaunch
     private var nativeFormTitle = ""
     private var nativeFormSubmit: (([String: String]) -> Void)? // called with field values on submit
@@ -1936,6 +1936,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
                         .first(where: { fm.fileExists(atPath: repoRoot + "/" + $0) }) else { continue }
                     let cmdId = "ext.\(extKey).\(cname)"
                     let iconPath = resolveIcon(c["icon"]) ?? extIconPath
+                    // Raycast command arguments (collected before the command runs; distinct from prefs).
+                    let argSpec = (c["arguments"] as? [[String: Any]]) ?? []
                     if cmode == "no-view" {
                         out.append(RootCommand(id: cmdId, title: ctitle, subtitle: title, runTitle: "Run",
                                                icon: "bolt.fill", iconPath: iconPath,
@@ -1944,8 +1946,9 @@ public final class AppController: NSObject, NSApplicationDelegate {
                             // closesPalette:false so a first-run prefs-onboarding form can open in the
                             // palette; the no-view action itself tears the palette down when it runs.
                             guard let self else { return }
-                            self.launchExtensionCommand(extKey: extKey, extTitle: title, spec: prefsSpec) { prefs in
-                                self.runNoViewExtension(id: cmdId, title: ctitle, entryRelPath: rel, command: cname, preferences: prefs)
+                            self.launchExtensionCommand(extKey: extKey, extTitle: title, spec: prefsSpec,
+                                                        argSpec: argSpec, commandTitle: ctitle) { prefs, args in
+                                self.runNoViewExtension(id: cmdId, title: ctitle, entryRelPath: rel, command: cname, preferences: prefs, arguments: args)
                             }
                         })
                     } else {
@@ -1954,8 +1957,9 @@ public final class AppController: NSObject, NSApplicationDelegate {
                                                keywords: [name, cname, title.lowercased()],
                                                closesPalette: false) { [weak self] in
                             guard let self else { return }
-                            self.launchExtensionCommand(extKey: extKey, extTitle: title, spec: prefsSpec) { prefs in
-                                self.launchExtension(id: cmdId, title: ctitle, entryRelPath: rel, command: cname, preferences: prefs)
+                            self.launchExtensionCommand(extKey: extKey, extTitle: title, spec: prefsSpec,
+                                                        argSpec: argSpec, commandTitle: ctitle) { prefs, args in
+                                self.launchExtension(id: cmdId, title: ctitle, entryRelPath: rel, command: cname, preferences: prefs, arguments: args)
                             }
                         })
                     }
@@ -2079,7 +2083,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         return (assets, support)
     }
 
-    private func launchExtension(id: String, title: String, entryRelPath: String, command: String, preferences: String) {
+    private func launchExtension(id: String, title: String, entryRelPath: String, command: String, preferences: String, arguments: String = "{}") {
         teardownExtension()
         let h = ExtensionHost()
         h.onLog = { msg in print("[invoke:ext] \(msg)") }
@@ -2087,7 +2091,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         h.onCapability = { [weak self] m, p in self?.handleCapability(m, p) ?? .null }
         extLaunchGen += 1
         let gen = extLaunchGen
-        lastLaunch = LaunchInfo(id: id, title: title, entryRelPath: entryRelPath, command: command, preferences: preferences, noView: false)
+        lastLaunch = LaunchInfo(id: id, title: title, entryRelPath: entryRelPath, command: command, preferences: preferences, noView: false, arguments: arguments)
         h.onTerminate = { [weak self] in self?.onExtensionTerminated(id: id, gen: gen) }
         h.onSandboxDenial = { [weak self] module in self?.handleSandboxDenial(id: id, title: title, module: module) }
         extHost = h
@@ -2105,7 +2109,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         let paths = extensionPaths(id: id, entryRelPath: entryRelPath)
         h.launch(repoRoot: repoRoot, entryRelPath: entryRelPath, command: command, preferences: preferences,
                  trusted: AppSettings.shared.isTrusted(Self.extGrantKey(forId: id)),
-                 assetsPath: paths.assets, supportPath: paths.support)
+                 assetsPath: paths.assets, supportPath: paths.support, arguments: arguments)
     }
 
     /// Running no-view extension processes, keyed so each can remove itself on exit (no retain cycle:
@@ -2116,7 +2120,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     /// export as a function; its host capabilities (runAppleScript, showHUD, clipboard, …) are fulfilled
     /// over RPC, and the process exits when the action finishes. captureTarget() first so AppleScript /
     /// paste hit the app that was frontmost before Invoke was summoned.
-    private func runNoViewExtension(id: String, title: String, entryRelPath: String, command: String, preferences: String) {
+    private func runNoViewExtension(id: String, title: String, entryRelPath: String, command: String, preferences: String, arguments: String = "{}") {
         frecency.bump("cmd:\(id)")
         captureTarget()
         afterLaunch() // an action command: tear the palette down first; the action runs in the background.
@@ -2129,13 +2133,13 @@ public final class AppController: NSObject, NSApplicationDelegate {
         h.onLog = { msg in print("[invoke:ext] \(msg)") }
         h.onCapability = { [weak self] m, p in self?.handleCapability(m, p) ?? .null }
         h.onTerminate = { [weak self] in DispatchQueue.main.async { self?.noViewHosts[key] = nil } }
-        lastLaunch = LaunchInfo(id: id, title: title, entryRelPath: entryRelPath, command: command, preferences: preferences, noView: true)
+        lastLaunch = LaunchInfo(id: id, title: title, entryRelPath: entryRelPath, command: command, preferences: preferences, noView: true, arguments: arguments)
         h.onSandboxDenial = { [weak self] module in self?.handleSandboxDenial(id: id, title: title, module: module) }
         noViewHosts[key] = h
         let paths = extensionPaths(id: id, entryRelPath: entryRelPath)
         h.launch(repoRoot: repoRoot, entryRelPath: entryRelPath, command: command, preferences: preferences,
                  mode: "no-view", trusted: AppSettings.shared.isTrusted(Self.extGrantKey(forId: id)),
-                 assetsPath: paths.assets, supportPath: paths.support)
+                 assetsPath: paths.assets, supportPath: paths.support, arguments: arguments)
     }
 
     // MARK: - Required-preferences onboarding (Raycast parity)
@@ -2209,17 +2213,66 @@ public final class AppController: NSObject, NSApplicationDelegate {
         }
     }
 
+    /// Collect a command's Raycast `arguments` (the fields Raycast shows in the search bar) via an
+    /// in-palette form, then run `then` with them serialized as JSON ({name: value}). Empty optional
+    /// args are passed as "" (matching Raycast); required args are validated by the form.
+    private func presentArgumentsForm(title: String, argSpec: [[String: Any]], then: @escaping (String) -> Void) {
+        var fields: [ViewNode] = []
+        var fid = 200
+        for a in argSpec {
+            guard let name = a["name"] as? String else { continue }
+            let atype = (a["type"] as? String) ?? "text"
+            let placeholder = (a["placeholder"] as? String) ?? name
+            let required = (a["required"] as? Bool) ?? false
+            fid += 1
+            if atype == "dropdown" {
+                let node = ViewNode(id: fid, type: "form-dropdown",
+                                    props: ["id": .string(name), "title": .string(placeholder), "value": .string("")])
+                var itemId = fid * 1000
+                node.children = ((a["data"] as? [[String: Any]]) ?? []).compactMap { o in
+                    guard let v = o["value"] as? String else { return nil }
+                    itemId += 1
+                    return ViewNode(id: itemId, type: "form-dropdown-item",
+                                    props: ["title": .string((o["title"] as? String) ?? v), "value": .string(v)])
+                }
+                fields.append(node)
+            } else { // text, password → a text field; mark required so the form validates it
+                let node = formField(fid, fieldId: name, type: "form-textfield",
+                                     title: placeholder, placeholder: placeholder, value: "")
+                if required { node.props["required"] = .bool(true) }
+                fields.append(node)
+            }
+        }
+        enterNativeForm(title: title, fields: fields) { vals in
+            var obj: [String: Any] = [:]
+            for a in argSpec { if let name = a["name"] as? String { obj[name] = vals[name] ?? "" } }
+            let data = (try? JSONSerialization.data(withJSONObject: obj)) ?? Data("{}".utf8)
+            then(String(decoding: data, as: UTF8.self))
+        }
+    }
+
     /// Launch an extension command, first showing the required-preferences onboarding if it isn't
-    /// configured yet. `launch` performs the actual view/no-view launch with the resolved prefs JSON.
+    /// configured yet, then (if the command declares `arguments`) the arguments form. `launch` performs
+    /// the actual view/no-view launch with the resolved prefs JSON and the collected arguments JSON.
     private func launchExtensionCommand(extKey: String, extTitle: String, spec: [[String: Any]],
-                                        launch: @escaping (String) -> Void) {
+                                        argSpec: [[String: Any]] = [], commandTitle: String = "",
+                                        launch: @escaping (_ prefs: String, _ argsJSON: String) -> Void) {
+        let withArgs: (String) -> Void = { [weak self] prefs in
+            guard let self else { return }
+            if argSpec.isEmpty {
+                launch(prefs, "{}")
+            } else {
+                self.presentArgumentsForm(title: commandTitle.isEmpty ? extTitle : commandTitle,
+                                          argSpec: argSpec) { argsJSON in launch(prefs, argsJSON) }
+            }
+        }
         if needsPrefsOnboarding(extKey: extKey, spec: spec) {
             presentPrefsOnboarding(extKey: extKey, extTitle: extTitle, spec: spec) { [weak self] in
                 guard let self else { return }
-                launch(self.resolvePreferencesJSON(extKey: extKey, spec: spec))
+                withArgs(self.resolvePreferencesJSON(extKey: extKey, spec: spec))
             }
         } else {
-            launch(resolvePreferencesJSON(extKey: extKey, spec: spec))
+            withArgs(resolvePreferencesJSON(extKey: extKey, spec: spec))
         }
     }
 
@@ -2270,9 +2323,9 @@ public final class AppController: NSObject, NSApplicationDelegate {
             return
         }
         if info.noView {
-            runNoViewExtension(id: info.id, title: info.title, entryRelPath: info.entryRelPath, command: info.command, preferences: info.preferences)
+            runNoViewExtension(id: info.id, title: info.title, entryRelPath: info.entryRelPath, command: info.command, preferences: info.preferences, arguments: info.arguments)
         } else {
-            launchExtension(id: info.id, title: info.title, entryRelPath: info.entryRelPath, command: info.command, preferences: info.preferences)
+            launchExtension(id: info.id, title: info.title, entryRelPath: info.entryRelPath, command: info.command, preferences: info.preferences, arguments: info.arguments)
         }
     }
 
