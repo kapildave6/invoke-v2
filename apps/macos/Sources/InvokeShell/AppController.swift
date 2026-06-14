@@ -2134,6 +2134,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         if !palette.isVisible { palette.show() } // launched from an open palette → don't re-center it
         renderExtensionLoading() // placeholder until the first commit (avoids an empty collapse-flash)
         let paths = extensionPaths(id: id, entryRelPath: entryRelPath)
+        palette.setAssetsPath(paths.assets) // resolve the extension's relative image sources (icons, grid thumbs)
         h.launch(repoRoot: repoRoot, entryRelPath: entryRelPath, command: command, preferences: preferences,
                  trusted: AppSettings.shared.isTrusted(Self.extGrantKey(forId: id)),
                  assetsPath: paths.assets, supportPath: paths.support, arguments: arguments)
@@ -2378,6 +2379,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         currentExtTitle = ""
         navDepth = 0
         activeFrame = 0
+        palette.setAssetsPath("")
     }
 
     /// The child changed the active navigation frame (push/pop). Display that frame's tree.

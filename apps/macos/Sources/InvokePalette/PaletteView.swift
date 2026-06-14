@@ -85,15 +85,20 @@ public final class PaletteView: NSView {
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError("not used") }
 
-    /// True when the current surface is list-like (root, extension List/Grid, split) — those keep a
-    /// CONSTANT height (Raycast parity: the palette doesn't shrink between "results" and "No Results").
-    /// Detail/Form size to their content.
+    /// Set false only for the few compact root states (no query → just the search field + a couple of
+    /// suggestion rows) where Raycast itself stays compact. Every browsing/extension surface keeps the
+    /// CONSTANT full height (see fittingHeight) so the window never resizes between states.
     private var fixedHeightSurface = false
+    /// When true, the palette uses the full constant height regardless of content (set for extension
+    /// views, lists, grids, detail, forms, loading, and pushed views — i.e. essentially always).
+    public var forceConstantHeight = true
 
-    /// Height the rendered content wants (capped — beyond it the list scrolls). Drives the window.
+    /// Height the rendered content wants. The palette keeps a CONSTANT height across every surface and
+    /// state (root, extension List/Grid/Detail/Form, pushed views, loading, "No Results") — Raycast
+    /// parity: the window never resizes between states. Content beyond this scrolls.
     public func fittingHeight() -> CGFloat {
         layoutSubtreeIfNeeded()
-        if fixedHeightSurface { return maxContentHeight } // don't shrink list-like surfaces
+        if forceConstantHeight || fixedHeightSurface { return maxContentHeight }
         return min(stack.fittingSize.height + 16, maxContentHeight)
     }
 
@@ -480,7 +485,7 @@ public final class PaletteView: NSView {
                 stack.addArrangedSubview(body)
                 body.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
             case .image(let url, let alt):
-                Self.appendDetailImage(url: url, alt: alt, to: stack)
+                appendDetailImage(url: url, alt: alt, to: stack)
             }
         }
 
@@ -531,7 +536,7 @@ public final class PaletteView: NSView {
     /// the image's natural size, preserving aspect. The view is added to `stack` BEFORE any stack-relative
     /// constraint is activated — activating a constraint between two views with no common ancestor throws
     /// an NSException and aborts the app, so insertion must come first.
-    private static func appendDetailImage(url: String, alt: String, to stack: NSStackView) {
+    private func appendDetailImage(url: String, alt: String, to stack: NSStackView) {
         func addFallback() {
             let lbl = NSTextField(labelWithString: alt.isEmpty ? "🖼 (image unavailable)" : "🖼 \(alt)")
             lbl.textColor = .secondaryLabelColor
@@ -562,7 +567,7 @@ public final class PaletteView: NSView {
             ])
         }
 
-        if let image = loadDetailImageSync(url) {
+        if let image = loadLocalImage(url) {
             stack.addArrangedSubview(iv) // in the hierarchy BEFORE stack-relative constraints
             apply(image)
             return
@@ -576,19 +581,6 @@ public final class PaletteView: NSView {
             return
         }
         addFallback()
-    }
-
-    /// Load a Detail image from a local path, file:// URL, or data: URI. Returns nil for http(s)
-    /// (loaded asynchronously by the caller) or anything unreadable.
-    private static func loadDetailImageSync(_ url: String) -> NSImage? {
-        if url.hasPrefix("data:") {
-            guard let comma = url.firstIndex(of: ","), url[..<comma].contains("base64"),
-                  let data = Data(base64Encoded: String(url[url.index(after: comma)...])) else { return nil }
-            return NSImage(data: data)
-        }
-        if url.hasPrefix("file://") { return URL(string: url).flatMap { NSImage(contentsOf: $0) } }
-        if url.hasPrefix("/") { return NSImage(contentsOfFile: url) }
-        return nil
     }
 
     private func renderDetailSurface(_ node: ViewNode) {
@@ -705,6 +697,16 @@ public final class PaletteView: NSView {
             thumb.addSubview(iv)
             iv.layer?.cornerRadius = 6; iv.wantsLayer = true; iv.layer?.masksToBounds = true
             NSLayoutConstraint.activate([iv.leadingAnchor.constraint(equalTo: thumb.leadingAnchor), iv.trailingAnchor.constraint(equalTo: thumb.trailingAnchor), iv.topAnchor.constraint(equalTo: thumb.topAnchor), iv.bottomAnchor.constraint(equalTo: thumb.bottomAnchor)])
+        } else if let src = imageSource(node.props["content"] ?? node.props["icon"]), let img = loadLocalImage(src) {
+            // A real image asset (data:/file/relative-to-assetsPath), e.g. a grid thumbnail gif.
+            let iv = NSImageView(image: img); iv.imageScaling = .scaleProportionallyUpOrDown; iv.animates = true
+            iv.translatesAutoresizingMaskIntoConstraints = false
+            iv.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+            iv.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
+            iv.setContentHuggingPriority(.defaultLow, for: .horizontal)
+            thumb.addSubview(iv)
+            iv.layer?.cornerRadius = 6; iv.wantsLayer = true; iv.layer?.masksToBounds = true
+            NSLayoutConstraint.activate([iv.leadingAnchor.constraint(equalTo: thumb.leadingAnchor), iv.trailingAnchor.constraint(equalTo: thumb.trailingAnchor), iv.topAnchor.constraint(equalTo: thumb.topAnchor), iv.bottomAnchor.constraint(equalTo: thumb.bottomAnchor)])
         } else if let sym = node.props["icon"]?.stringValue ?? node.props["content"]?.stringValue,
                   let img = NSImage(systemSymbolName: sym, accessibilityDescription: nil) ?? NSImage(systemSymbolName: sfSymbol(for: sym), accessibilityDescription: nil) {
             let iv = NSImageView(image: img); iv.contentTintColor = .secondaryLabelColor; iv.imageScaling = .scaleProportionallyDown; iv.translatesAutoresizingMaskIntoConstraints = false
@@ -753,6 +755,36 @@ public final class PaletteView: NSView {
         if imageCache.count > 400 { imageCache.removeAll() } // bound memory across many grids
         imageCache[b64] = img
         return img
+    }
+
+    /// The current extension's assets/ directory — set by the shell when an extension is shown, so
+    /// relative image sources (Raycast's `{ source: "icon.png" }`) resolve against it. "" otherwise.
+    public var assetsPath = ""
+
+    /// Extract an image source string from an Image.ImageLike value (a bare string, or `{ source }`).
+    private func imageSource(_ v: JSONValue?) -> String? {
+        if case .string(let s)? = v { return s }
+        if case .object(let o)? = v, case .string(let s)? = o["source"] { return s }
+        return nil
+    }
+
+    /// Load a local image from a data: URI, file:// URL, absolute path, or a path RELATIVE to the
+    /// current extension's assetsPath. Returns nil for http(s) (caller loads async) or unreadable input.
+    private func loadLocalImage(_ source: String) -> NSImage? {
+        if source.hasPrefix("data:") {
+            guard let comma = source.firstIndex(of: ","), source[..<comma].contains("base64"),
+                  let data = Data(base64Encoded: String(source[source.index(after: comma)...])) else { return nil }
+            return NSImage(data: data)
+        }
+        if source.hasPrefix("http://") || source.hasPrefix("https://") { return nil }
+        var path = source
+        if source.hasPrefix("file://") {
+            path = URL(string: source)?.path ?? source
+        } else if !source.hasPrefix("/") { // relative → the extension's assets dir
+            guard !assetsPath.isEmpty else { return nil }
+            path = (assetsPath as NSString).appendingPathComponent(source)
+        }
+        return NSImage(contentsOfFile: path)
     }
 
     /// Live value readers for the currently-rendered form, by field id (read at submit time).

@@ -60,8 +60,10 @@ public final class PaletteWindow: NSObject {
     public var onActivateRow: ((Int) -> Void)?
 
     private let filterButton = NSPopUpButton(frame: .zero, pullsDown: false)
+    private let searchDropdown = SearchBarDropdown() // world-class engine picker (extension List.Dropdown)
     private var searchTrailingDefault: NSLayoutConstraint!
     private var searchTrailingWithFilter: NSLayoutConstraint!
+    private var searchTrailingWithDropdown: NSLayoutConstraint!
 
     // Inline command-argument chips (Raycast parity): when the highlighted command declares arguments,
     // the search row shows [query] [icon] [field per arg], left-aligned right after the query text.
@@ -153,16 +155,25 @@ public final class PaletteWindow: NSObject {
         argBar.setContentHuggingPriority(.required, for: .horizontal)
         argBar.isHidden = true
 
+        searchDropdown.isHidden = true
+        searchDropdown.hostContentView = blur // present the popover inside the palette content
+
         blur.addSubview(searchField)
         blur.addSubview(argBar)
         blur.addSubview(filterButton)
+        blur.addSubview(searchDropdown)
         blur.addSubview(searchSeparator)
         blur.addSubview(paletteView)
         blur.addSubview(actionBar)
 
         searchTrailingDefault = searchField.trailingAnchor.constraint(equalTo: blur.trailingAnchor, constant: -16)
         searchTrailingWithFilter = searchField.trailingAnchor.constraint(equalTo: filterButton.leadingAnchor, constant: -10)
+        searchTrailingWithDropdown = searchField.trailingAnchor.constraint(equalTo: searchDropdown.leadingAnchor, constant: -10)
         searchTrailingDefault.isActive = true
+        NSLayoutConstraint.activate([
+            searchDropdown.trailingAnchor.constraint(equalTo: blur.trailingAnchor, constant: -14),
+            searchDropdown.centerYAnchor.constraint(equalTo: searchField.centerYAnchor),
+        ])
         // While args are shown, the query field hugs its content (so chips sit right after it). Inactive
         // by default; setArguments activates it and keeps its constant in sync with the typed text.
         searchWidthConstraint = searchField.widthAnchor.constraint(equalToConstant: 80)
@@ -328,6 +339,9 @@ public final class PaletteWindow: NSObject {
     /// Scroll the current surface to the bottom (AI Chat keeps the streaming answer in view).
     public func scrollToBottom() { paletteView.scrollContentToBottom() }
 
+    /// The active extension's assets/ dir, so relative image sources resolve (forwarded to the view).
+    public func setAssetsPath(_ path: String) { paletteView.assetsPath = path }
+
     public func render(_ tree: ViewTree, selectedIndex: Int) {
         // Any re-render (including async extension-commit / AI-answer callbacks) invalidates the tree the
         // ⌘K panel's captured actions point at — close it so it can't act on a stale node. No-op if hidden.
@@ -462,7 +476,7 @@ public final class PaletteWindow: NSObject {
 
     /// Show the type-filter dropdown (clipboard mode) with the given options/selection.
     public func setFilter(options: [String], selected: String) {
-        onExtDropdownChange = nil; extDropdownValues = []; extDropdownSig = "" // not an extension dropdown
+        searchDropdown.hide(); searchTrailingWithDropdown.isActive = false // not an extension dropdown
         filterButton.removeAllItems()
         filterButton.addItems(withTitles: options)
         filterButton.selectItem(withTitle: selected)
@@ -471,65 +485,32 @@ public final class PaletteWindow: NSObject {
         searchTrailingWithFilter.isActive = true
     }
 
+    /// Hide BOTH search-bar accessories (clipboard filter + extension engine dropdown) — the single
+    /// "clear the search-bar trailing control" path used by every mode transition.
     public func hideFilter() {
-        guard !filterButton.isHidden else { return }
         filterButton.isHidden = true
+        searchDropdown.hide()
         searchTrailingWithFilter.isActive = false
+        searchTrailingWithDropdown.isActive = false
         searchTrailingDefault.isActive = true
     }
 
-    // An extension List/Grid's search-bar Dropdown accessory (Raycast's <List.Dropdown>). Reuses the
-    // same NSPopUpButton as the clipboard filter (they're never shown together) but carries per-item
-    // VALUES + icons and fires onExtDropdownChange with the selected value.
-    public var onExtDropdownChange: ((String) -> Void)?
-    private var extDropdownValues: [String] = []
-    private var extDropdownSig = ""
-
+    /// Show an extension List/Grid's search-bar Dropdown accessory (Raycast's <List.Dropdown>) as the
+    /// world-class custom dropdown (SearchBarDropdown): a styled pill + searchable favicon popover.
     public func setSearchDropdown(items: [(title: String, value: String, iconPath: String?)], selected: String, onChange: @escaping (String) -> Void) {
-        onExtDropdownChange = onChange
-        let sig = items.map { "\($0.title)=\($0.value)" }.joined(separator: "\u{1}")
-        if sig != extDropdownSig { // rebuild only when the option set changed (avoids flicker on re-render)
-            extDropdownSig = sig
-            extDropdownValues = items.map(\.value)
-            filterButton.removeAllItems()
-            for it in items {
-                filterButton.addItem(withTitle: it.title)
-                if let mi = filterButton.lastItem, let p = it.iconPath { Self.loadMenuIcon(p, into: mi) }
-            }
-        }
-        if let idx = extDropdownValues.firstIndex(of: selected) { filterButton.selectItem(at: idx) }
-        filterButton.isHidden = false
+        filterButton.isHidden = true
+        searchDropdown.configure(
+            items: items.map { SearchBarDropdown.Item(title: $0.title, value: $0.value, iconRef: $0.iconPath) },
+            selected: selected, onSelect: onChange)
         searchTrailingDefault.isActive = false
-        searchTrailingWithFilter.isActive = true
+        searchTrailingWithFilter.isActive = false
+        searchTrailingWithDropdown.isActive = true
     }
 
-    public func hideSearchDropdown() {
-        onExtDropdownChange = nil
-        extDropdownValues = []
-        extDropdownSig = ""
-        hideFilter()
-    }
-
-    /// Set a 16×16 menu-item icon from a local path, file://, or http(s) URL (favicons load async,
-    /// cached). Anything else (e.g. an SF-symbol name) is ignored — the item just shows its title.
-    private static var faviconCache: [String: NSImage] = [:]
-    private static func loadMenuIcon(_ ref: String, into item: NSMenuItem) {
-        func apply(_ image: NSImage) { image.size = NSSize(width: 16, height: 16); item.image = image }
-        if let cached = faviconCache[ref] { apply(cached); return }
-        if ref.hasPrefix("/"), let img = NSImage(contentsOfFile: ref) { faviconCache[ref] = img; apply(img); return }
-        if ref.hasPrefix("file://"), let u = URL(string: ref), let img = NSImage(contentsOf: u) { faviconCache[ref] = img; apply(img); return }
-        guard ref.hasPrefix("http"), let u = URL(string: ref) else { return }
-        URLSession.shared.dataTask(with: u) { data, _, _ in
-            guard let data, let img = NSImage(data: data) else { return }
-            DispatchQueue.main.async { Self.faviconCache[ref] = img; apply(img) }
-        }.resume()
-    }
+    public func hideSearchDropdown() { hideFilter() } // hideFilter clears both accessories
 
     @objc private func filterChanged() {
-        if let onChange = onExtDropdownChange {
-            let idx = filterButton.indexOfSelectedItem
-            if idx >= 0, idx < extDropdownValues.count { onChange(extDropdownValues[idx]) }
-        } else if let title = filterButton.titleOfSelectedItem {
+        if let title = filterButton.titleOfSelectedItem {
             onFilterChange?(title)
         }
     }
