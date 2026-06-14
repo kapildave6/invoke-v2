@@ -181,21 +181,25 @@ const hostConfig = {
     parent.children.push(child);
     pending.push({ op: "appendChild", parent: parent.id, child: child.id });
   },
+  // Container-level ops use ROOT as the parent: every frame's host-side tree is independent with its
+  // own ROOT, and the FRAME is carried by the mutations message envelope (committingFrame), not the
+  // container node id. (Using c.id here pointed appends at a node that doesn't exist in frame >0's tree,
+  // leaving pushed views empty.) c.id is still the frame id, used only to tag the commit.
   appendChildToContainer: (c: Container, child: Instance | TextInstance) => {
     c.children.push(child);
-    pending.push({ op: "appendChild", parent: c.id, child: child.id });
+    pending.push({ op: "appendChild", parent: ROOT, child: child.id });
   },
   insertBefore: (parent: Instance, child: Instance | TextInstance, before: Instance | TextInstance) => {
     pending.push({ op: "insertBefore", parent: parent.id, child: child.id, before: before.id });
   },
-  insertInContainerBefore: (c: Container, child: Instance | TextInstance, before: Instance | TextInstance) => {
-    pending.push({ op: "insertBefore", parent: c.id, child: child.id, before: before.id });
+  insertInContainerBefore: (_c: Container, child: Instance | TextInstance, before: Instance | TextInstance) => {
+    pending.push({ op: "insertBefore", parent: ROOT, child: child.id, before: before.id });
   },
   removeChild: (parent: Instance, child: Instance | TextInstance) => {
     pending.push({ op: "removeChild", parent: parent.id, child: child.id });
   },
-  removeChildFromContainer: (c: Container, child: Instance | TextInstance) => {
-    pending.push({ op: "removeChild", parent: c.id, child: child.id });
+  removeChildFromContainer: (_c: Container, child: Instance | TextInstance) => {
+    pending.push({ op: "removeChild", parent: ROOT, child: child.id });
   },
   commitTextUpdate: (t: TextInstance, _old: string, next: string) => {
     pending.push({ op: "updateText", id: t.id, text: next });
