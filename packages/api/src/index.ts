@@ -14,22 +14,23 @@
  * Platform APIs (Clipboard, environment, showToast, …) below are typed stubs that
  * route over the host RPC channel; in production the native host fulfils them.
  */
-import { createElement, createContext, useContext, type ReactNode, type ReactElement } from "react";
+import { createElement, type ReactNode, type ReactElement } from "react";
 
-// Action.Push targets are NOT rendered eagerly. The host lifts the target subtree into the action's
-// children and snapshots it on push, but eagerly rendering every target on a list mounts them all —
-// which (a) recurses forever for mutually-recursive targets (a List item that pushes a Detail whose
-// actions push a Detail …) and (b) runs each target's mount effects in the background. For apple-notes
-// that means a getNoteBody AppleScript per row just from *searching*, spamming the macOS Automation
-// prompt. So render the target as nothing here; it should be rendered lazily on push instead.
-// (Render-on-push isn't wired yet, so in-app `Action.Push` navigation is a no-op for now — extensions
-// that need to open something use Action.Open/OpenInBrowser, which work.)
-const PushDepthContext = createContext(0);
-const MAX_EAGER_PUSH_DEPTH = 0;
-function PushTarget({ element }: { element: ReactNode }): ReactElement | null {
-  const depth = useContext(PushDepthContext);
-  if (depth >= MAX_EAGER_PUSH_DEPTH) return null;
-  return createElement(PushDepthContext.Provider, { value: depth + 1 }, element);
+/* ----------------------------------------------------- navigation (render-on-push)
+ * Targets are NEVER rendered eagerly (eagerly mounting every row's push target recurses and runs
+ * mount effects in the background — e.g. apple-notes firing a getNoteBody AppleScript per row just
+ * from searching). Instead a push renders the target ON DEMAND as a new navigation frame: the runtime
+ * child mounts it as a fresh reconciler root and streams it, the host stacks it, and Esc pops. The
+ * runtime wires the controller via __setNavController (same process-global pattern as __setHostBridge),
+ * so both useNavigation().push/pop and Action.Push share one render-on-push path. */
+type NavController = { push: (view: ReactNode) => void; pop: () => void };
+const NAV_KEY = "__invokeNav__";
+/** Wired up by the runtime child (runtime/node-host) so navigation reaches the frame stack. */
+export function __setNavController(c: NavController): void {
+  (globalThis as Record<string, unknown>)[NAV_KEY] = c;
+}
+function navController(): NavController | undefined {
+  return (globalThis as Record<string, unknown>)[NAV_KEY] as NavController | undefined;
 }
 
 /* ------------------------------------------------------------------ host tags */
@@ -201,9 +202,17 @@ Action.Open = (props) => {
   return createElement(T.Action, { variant: "open", target, application, onAction: onOpen, ...rest });
 };
 Action.Push = (props) => {
-  const { target, ...rest } = props;
-  // Render the target through PushTarget so deep/recursive targets don't render eagerly (and recurse).
-  return createElement(T.Action, { variant: "push", ...rest }, createElement(PushTarget, { element: target }));
+  const { target, onPush, ...rest } = props as { target?: ReactNode; onPush?: () => void } & Record<string, unknown>;
+  // Render-on-push: the action is a normal invokable action whose handler pushes the target as a new
+  // navigation frame (rendered on demand). The target is never mounted until actually pushed.
+  return createElement(T.Action, {
+    variant: "push",
+    ...rest,
+    onAction: () => {
+      navController()?.push(target as ReactNode);
+      onPush?.();
+    },
+  });
 };
 Action.Style = { Regular: "regular", Destructive: "destructive" } as const;
 // Form submit: the host gathers the field values and passes them to onAction (PLAN.md §5.3).
@@ -520,9 +529,11 @@ export function captureException(error: unknown): void {
   // Fire-and-forget diagnostic; must never throw (it's called from extensions' error paths).
   void rpc("captureException", { message: e?.message ?? String(error), stack: e?.stack }).catch(() => {});
 }
-/** Declarative `Action.Push` is host-handled; programmatic push/pop is not wired yet (no-op). */
+/** Programmatic navigation. Backed by the runtime's render-on-push frame stack (__setNavController);
+ *  push(view) mounts `view` as a new frame, pop() unwinds it. Falls back to no-ops outside the runtime. */
 export function useNavigation(): { push: (view: ReactNode) => void; pop: () => void } {
-  return { push: () => {}, pop: () => {} };
+  const nav = navController();
+  return { push: (view) => nav?.push(view), pop: () => nav?.pop() };
 }
 export const Alert = { ActionStyle: { Default: "default", Destructive: "destructive", Cancel: "cancel" } as const };
 // Keyboard.Shortcut.Common — Raycast's predefined shortcuts. Extensions read e.g.

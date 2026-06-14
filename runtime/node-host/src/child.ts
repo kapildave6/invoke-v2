@@ -14,9 +14,9 @@
  */
 import net from "node:net";
 import { pathToFileURL } from "node:url";
-import { createElement } from "react";
+import { createElement, type ReactNode } from "react";
 import { createSurface } from "@invoke/reconciler";
-import { __setHostBridge } from "@invoke/api";
+import { __setHostBridge, __setNavController } from "@invoke/api";
 import {
   type ChildBound,
   type HostBound,
@@ -89,11 +89,15 @@ async function main(): Promise<void> {
   // rpcResult must be handled in BOTH modes — a no-view action awaits showHUD/runAppleScript RPCs.
   // searchText/invoke only matter once a view surface exists.
   let surface: ReturnType<typeof createSurface> | null = null;
+  let navPop: () => void = () => {}; // assigned once the view surface + nav controller exist
   const decoder = new FrameDecoder();
   sock.on("data", (chunk: Buffer) => {
     for (const raw of decoder.push(chunk)) {
       const msg = raw as ChildBound;
       switch (msg.kind) {
+        case "navPop":
+          navPop(); // Esc on a pushed view
+          break;
         case "rpcResult": {
           const cb = pendingRpc.get(msg.id);
           if (cb) {
@@ -134,10 +138,25 @@ async function main(): Promise<void> {
     process.exit(0);
   }
 
-  // view: render the component and stream its mutations.
+  // view: render the component and stream its mutations (each tagged with its navigation frame).
   surface = createSurface({
-    onCommit: (commit, ops) => send({ kind: "mutations", commit, ops }),
+    onCommit: (commit, ops, frame) => send({ kind: "mutations", commit, ops, frame }),
   });
+  // Render-on-push navigation: push(view) mounts `view` as a new frame; pop unwinds. `navDepth` is the
+  // stack depth (for the host's back-chevron + Esc routing); the active frame id says which tree to show.
+  let navDepth = 0;
+  const doPush = (view: ReactNode): void => {
+    const frame = surface!.pushFrame(view);
+    navDepth++;
+    send({ kind: "nav", depth: navDepth, frame });
+  };
+  navPop = (): void => {
+    if (navDepth === 0) return;
+    const frame = surface!.popFrame();
+    navDepth--;
+    send({ kind: "nav", depth: navDepth, frame });
+  };
+  __setNavController({ push: doPush, pop: navPop });
   surface.render(createElement(Command as React.ComponentType<typeof launchProps>, launchProps));
   send({ kind: "ready", command: command ?? "" });
   sock.on("close", () => process.exit(0));

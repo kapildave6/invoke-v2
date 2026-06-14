@@ -231,6 +231,7 @@ async function main(): Promise<void> {
   proc.on("log", (m) => console.log(`  [ext ${m.level}]`, ...m.args));
   proc.on("denied", (method: string) => console.log(`  ⛔ denied ${method}`));
   proc.on("sandboxDenial", (module: string) => console.log(`  ⛔ sandbox denied "${module}" — extension needs Trust (run unsandboxed)`));
+  proc.on("nav", (depth: number, frame: number) => console.log(`  ⤷ nav depth=${depth} frame=${frame}`));
 
   await new Promise<void>((res) => proc.once("ready", () => res()));
 

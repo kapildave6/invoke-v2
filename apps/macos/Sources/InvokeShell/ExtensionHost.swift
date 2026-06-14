@@ -17,8 +17,19 @@ import InvokeRenderer
 /// DispatchIO with backpressure, a warm pool, crash-restart, and the RPC capability allowlist
 /// (which today lives in the Node supervisor; here we just unblock the child's awaited calls).
 public final class ExtensionHost {
-    /// The host-side view-model tree the mutation stream is applied to. Mutated on the main queue.
+    /// The host-side view-model tree for the BASE navigation frame (frame 0). Mutated on the main queue.
     public let tree = ViewTree()
+    /// Pushed navigation frames (render-on-push): frame id → its own tree. Lower frames stay mounted in
+    /// the child (state preserved); the host stacks their trees and displays the active one.
+    private var extraFrames: [Int: ViewTree] = [:]
+    /// The tree for a given navigation frame (0 = base `tree`); created on first mutation.
+    public func frameTree(_ frame: Int) -> ViewTree {
+        if frame == 0 { return tree }
+        if let t = extraFrames[frame] { return t }
+        let t = ViewTree(); extraFrames[frame] = t; return t
+    }
+    /// Fired on the MAIN queue when the active navigation frame changes (args: depth, active frame id).
+    public var onNav: ((Int, Int) -> Void)?
 
     /// Fired on the MAIN queue after each commit is applied (arg: commit sequence number).
     public var onCommit: ((Int) -> Void)?
@@ -151,10 +162,15 @@ public final class ExtensionHost {
         case "mutations":
             let ops = msg.ops ?? []
             let commit = msg.commit ?? 0
+            let frame = msg.frame ?? 0
             DispatchQueue.main.async {
-                self.tree.apply(ops)
+                self.frameTree(frame).apply(ops)
                 self.onCommit?(commit)
             }
+        case "nav":
+            let depth = msg.depth ?? 0
+            let frame = msg.frame ?? 0
+            DispatchQueue.main.async { self.onNav?(depth, frame) }
         case "log":
             log("[ext log]")
         case "sandboxDenial":
@@ -189,6 +205,13 @@ public final class ExtensionHost {
     /// `args` carries e.g. the collected Form values to a submit handler.
     public func invoke(handler: String, args: [JSONValue] = []) {
         guard let data = try? jsonEncoder.encode(ChildBound.invoke(handler, args)) else { return }
+        write(FrameCodec.encode(data))
+    }
+
+    /// Host → child: pop the top navigation frame (Esc on a pushed view). The child unmounts it and
+    /// replies with a `nav` message reflecting the new active frame.
+    public func navPop() {
+        guard let data = try? jsonEncoder.encode(ChildBound.navPop()) else { return }
         write(FrameCodec.encode(data))
     }
 

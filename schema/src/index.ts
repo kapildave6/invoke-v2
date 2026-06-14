@@ -43,7 +43,11 @@ export function isHandlerRef(v: unknown): v is HandlerRef {
 /** child → host */
 export type HostBound =
   | { kind: "ready"; command: string }
-  | { kind: "mutations"; commit: number; ops: Mutation[] }
+  /** `frame` is the navigation frame these ops belong to (0 = base command; >0 = pushed views). */
+  | { kind: "mutations"; commit: number; ops: Mutation[]; frame: number }
+  /** the active navigation changed. `depth` (0 = base; N = N pushed views) drives the back-chevron and
+   *  Esc routing; `frame` is the id of the now-active frame's tree to display. */
+  | { kind: "nav"; depth: number; frame: number }
   | { kind: "log"; level: "info" | "warn" | "error"; args: unknown[] }
   /** an extension called a host API (Clipboard.copy, showToast, …) */
   | { kind: "rpc"; id: number; method: string; params: unknown }
@@ -55,6 +59,8 @@ export type HostBound =
 export type ChildBound =
   | { kind: "searchText"; text: string }
   | { kind: "invoke"; handler: string; args: unknown[] }
+  /** the user pressed Esc on a pushed view — pop the top navigation frame. */
+  | { kind: "navPop" }
   | { kind: "rpcResult"; id: number; result?: unknown; error?: string };
 
 /* --------------------------------------------------------------------------

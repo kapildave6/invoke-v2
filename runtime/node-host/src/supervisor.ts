@@ -71,11 +71,15 @@ export interface ExtensionEvents {
   denied: [string];
   /** A sandboxed extension failed because it imported a denied Node built-in (arg: module name). */
   sandboxDenial: [string];
+  /** The active navigation frame changed (args: depth, active frame id). */
+  nav: [number, number];
   exit: [number | null];
 }
 
 export class ExtensionProcess extends EventEmitter {
-  readonly tree: ViewTree = createViewTree();
+  readonly tree: ViewTree = createViewTree(); // base navigation frame (frame 0)
+  private frameTrees = new Map<number, ViewTree>([[0, this.tree]]); // render-on-push frames
+  private activeFrame = 0;
   private child: ChildProcess;
   private sock: NodeJS.ReadWriteStream;
   private decoder = new FrameDecoder();
@@ -108,8 +112,14 @@ export class ExtensionProcess extends EventEmitter {
         break;
       case "mutations":
         if (process.env.INVOKE_DEBUG) console.error(`[commit ${msg.commit}] ${msg.ops.length} ops:`, JSON.stringify(msg.ops));
-        applyMutations(this.tree, msg.ops);
-        this.emit("commit", msg.commit, this.tree);
+        {
+          const frame = (msg as HostBound & { frame?: number }).frame ?? 0;
+          let ft = this.frameTrees.get(frame);
+          if (!ft) { ft = createViewTree(); this.frameTrees.set(frame, ft); }
+          applyMutations(ft, msg.ops);
+          // Emit the ACTIVE frame's tree so consumers always render what's on top.
+          this.emit("commit", msg.commit, this.frameTrees.get(this.activeFrame) ?? this.tree);
+        }
         break;
       case "log":
         this.emit("log", msg);
@@ -119,6 +129,14 @@ export class ExtensionProcess extends EventEmitter {
         // "Trust & relaunch"; the dev runner just surfaces it (see run.ts).
         this.emit("sandboxDenial", (msg as HostBound & { module?: string }).module ?? "a Node built-in");
         break;
+      case "nav": {
+        // Render-on-push: the active navigation frame changed; show that frame's tree.
+        const navMsg = msg as HostBound & { depth?: number; frame?: number };
+        this.activeFrame = navMsg.frame ?? 0;
+        this.emit("nav", navMsg.depth ?? 0, this.activeFrame);
+        this.emit("commit", 0, this.frameTrees.get(this.activeFrame) ?? this.tree);
+        break;
+      }
       case "rpc": {
         // Route every host call through the capability allowlist (§4.4) before performing it.
         this.emit("rpc", msg);

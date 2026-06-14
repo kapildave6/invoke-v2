@@ -61,18 +61,15 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private var selectedIndex = 0
     private var rootTree: ViewTree?
     private var lastQuery = ""
-    /// Pushed extension surfaces (Action.Push / useNavigation). The base is the extension's root
-    /// surface; each push renders the target subtree, Esc pops back.
-    private var navStack: [ViewNode] = []
+    /// Navigation (render-on-push): the child mounts each pushed view as its own frame and streams it;
+    /// the host displays the active frame's tree. `navDepth` (0 = base) drives the back-chevron + Esc
+    /// routing; `activeFrame` is the frame id whose tree is shown. Lower frames stay mounted (state kept).
+    private var navDepth = 0
+    private var activeFrame = 0
 
     private var activeTree: ViewTree {
         if mode == .extensionView, let extHost {
-            if let top = navStack.last { // render the pushed surface
-                let t = ViewTree()
-                t.root.children = [top]
-                return t
-            }
-            return extHost.tree
+            return extHost.frameTree(activeFrame)
         }
         return rootTree ?? host.tree
     }
@@ -121,10 +118,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
             guard let self else { return }
             if self.pendingQuicklink != nil {
                 self.cancelQuicklinkInput() // back to the quicklink list, not all the way to root
-            } else if !self.navStack.isEmpty {
-                self.navStack.removeLast() // pop a pushed view, stay in the extension
-                self.selectedIndex = 0
-                self.renderExtension()
+            } else if self.navDepth > 0 {
+                self.extHost?.navPop() // pop a pushed view; the child unmounts it and sends `nav` back
             } else if self.mode != .root {
                 self.exitToRoot()
             } else {
@@ -1016,8 +1011,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
         case .quicklinks: label = pendingQuicklink?.name ?? "Quicklinks"
         case .extensionView:
             // Show the pushed view's title with a back chevron when navigated in.
-            if let top = navStack.last {
-                label = "‹ " + (top.props["navigationTitle"]?.stringValue ?? currentExtTitle)
+            if navDepth > 0 {
+                label = "‹ " + (extensionSurfaceNode()?.props["navigationTitle"]?.stringValue ?? currentExtTitle)
             } else {
                 label = currentExtTitle
             }
@@ -2124,6 +2119,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         lastLaunch = LaunchInfo(id: id, title: title, entryRelPath: entryRelPath, command: command, preferences: preferences, noView: false, arguments: arguments)
         h.onTerminate = { [weak self] in self?.onExtensionTerminated(id: id, gen: gen) }
         h.onSandboxDenial = { [weak self] module in self?.handleSandboxDenial(id: id, title: title, module: module) }
+        h.onNav = { [weak self] depth, frame in self?.onExtNav(depth: depth, frame: frame) }
         extHost = h
         currentExtId = id
         currentExtTitle = title
@@ -2379,15 +2375,17 @@ public final class AppController: NSObject, NSApplicationDelegate {
         extHost = nil
         currentExtId = ""
         currentExtTitle = ""
-        navStack.removeAll()
+        navDepth = 0
+        activeFrame = 0
     }
 
-    /// Detached deep copy of a view subtree (props/text are value types; children copied recursively),
-    /// so a pushed page can't be mutated by subsequent commits to the live extension tree.
-    private static func deepCopy(_ n: ViewNode) -> ViewNode {
-        let copy = ViewNode(id: n.id, type: n.type, text: n.text, props: n.props)
-        copy.children = n.children.map { deepCopy($0) }
-        return copy
+    /// The child changed the active navigation frame (push/pop). Display that frame's tree.
+    private func onExtNav(depth: Int, frame: Int) {
+        guard mode == .extensionView else { return }
+        navDepth = depth
+        activeFrame = frame
+        selectedIndex = 0
+        renderExtension()
     }
 
     private func onExtensionCommit() {
@@ -2430,16 +2428,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
             return
         }
         switch n.props["variant"]?.stringValue {
-        case "push":
-            // The pushed view is the action's lifted child surface. SNAPSHOT it (deep copy) — the live
-            // node is a reference into the extension's mutable tree, so a later re-render (search/async
-            // commit) would otherwise detach it or silently rewrite the page you navigated into. A
-            // pushed page is frozen (Raycast semantics).
-            if let target = n.children.first(where: { ["detail", "form", "grid", "list"].contains($0.type) }) {
-                navStack.append(Self.deepCopy(target))
-                selectedIndex = 0
-                renderExtension()
-            }
+        // Note: Action.Push now carries an onAction handler (handled above) that drives render-on-push
+        // navigation in the child; there is no host-side snapshot branch anymore.
         case "open":
             // Action.Open: open a file/URL/app target (e.g. apple-notes' "Open in Notes" →
             // applenotes://showNote?…). Falls back to its onOpen handler if no target.

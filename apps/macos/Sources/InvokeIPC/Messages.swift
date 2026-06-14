@@ -23,6 +23,8 @@ public struct HostBound: Codable {
     public let method: String?
     public let params: JSONValue?
     public let module: String?  // sandboxDenial: the denied Node built-in
+    public let frame: Int?      // mutations: the navigation frame the ops belong to (0 = base)
+    public let depth: Int?      // nav: active navigation depth (0 = base, N = N pushed views)
 }
 
 /// host → child envelope.
@@ -38,5 +40,9 @@ public struct ChildBound: Codable {
     /// `args` defaults to `[]` so the child's `fn(...args)` spread never throws on undefined.
     public static func invoke(_ h: String, _ args: [JSONValue] = []) -> ChildBound {
         ChildBound(kind: "invoke", text: nil, handler: h, args: args)
+    }
+    /// Esc on a pushed view — ask the child to pop the top navigation frame.
+    public static func navPop() -> ChildBound {
+        ChildBound(kind: "navPop", text: nil, handler: nil, args: nil)
     }
 }
