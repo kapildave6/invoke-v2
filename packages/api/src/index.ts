@@ -109,18 +109,22 @@ type DropdownType = ReturnType<typeof host> & {
   Item: ReturnType<typeof host>;
   Section: ReturnType<typeof host>;
 };
+type ListItemDetailType = ReturnType<typeof host> & { Metadata: MetadataType };
 type ListType = ReturnType<typeof host> & {
   Section: ReturnType<typeof host>;
-  Item: ReturnType<typeof host> & { Detail: ReturnType<typeof host> };
+  Item: ReturnType<typeof host> & { Detail: ListItemDetailType };
   Dropdown: DropdownType;
   EmptyView: ReturnType<typeof host>;
 };
 export const List = host(T.List, ["searchBarAccessory", "actions"]) as ListType;
 List.Section = host(T.ListSection);
 const ListItem = host(T.ListItem, ["actions", "detail"]) as ReturnType<typeof host> & {
-  Detail: ReturnType<typeof host>;
+  Detail: ListItemDetailType;
 };
-ListItem.Detail = host(T.ListItemDetail, ["metadata"]);
+ListItem.Detail = host(T.ListItemDetail, ["metadata"]) as ListItemDetailType;
+// List.Item.Detail.Metadata is the SAME namespace as Detail.Metadata (Label/TagList/Separator/Link).
+// Assigned after Metadata is defined below (extensions read List.Item.Detail.Metadata.Label at render;
+// an undefined namespace throws and the whole command renders blank).
 List.Item = ListItem;
 // The search-bar Dropdown accessory has Item/Section children (Raycast). Without these defined,
 // an extension rendering <List.Dropdown.Item> renders <undefined> → "Element type is invalid".
@@ -168,6 +172,7 @@ Metadata.TagList = TagList;
 Metadata.Separator = host(T.MetadataSeparator);
 Metadata.Link = host(T.MetadataLink);
 Detail.Metadata = Metadata;
+ListItem.Detail.Metadata = Metadata; // List.Item.Detail.Metadata === Detail.Metadata (Raycast)
 
 /* ------------------------------------------------------------------ Form */
 type FormType = ReturnType<typeof host> & {
