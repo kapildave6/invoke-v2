@@ -268,12 +268,13 @@ private final class DropdownOverlay: NSObject, NSTextFieldDelegate {
     }
 }
 
-/// One dropdown row: favicon + title, with a rounded selection highlight (Raycast).
+/// One dropdown row: favicon + title, with a rounded accent-blue selection highlight (Raycast).
 private final class DropdownRow: NSView {
     var onClick: (() -> Void)?
     var onHover: (() -> Void)?
     private let highlight = NSView()
     private let iconView = NSImageView()
+    private let label = NSTextField(labelWithString: "")
     private var tracking: NSTrackingArea?
 
     init(item: SearchBarDropdown.Item, height: CGFloat) {
@@ -283,7 +284,8 @@ private final class DropdownRow: NSView {
 
         highlight.wantsLayer = true
         highlight.layer?.cornerRadius = 6
-        highlight.layer?.backgroundColor = NSColor.selectedContentBackgroundColor.withAlphaComponent(0.85).cgColor
+        // Vivid accent fill like Raycast (always on, not the dimmed inactive selection color).
+        highlight.layer?.backgroundColor = NSColor.controlAccentColor.cgColor
         highlight.isHidden = true
         highlight.translatesAutoresizingMaskIntoConstraints = false
         addSubview(highlight)
@@ -292,7 +294,7 @@ private final class DropdownRow: NSView {
         iconView.translatesAutoresizingMaskIntoConstraints = false
         FaviconLoader.load(item.iconRef, into: iconView)
 
-        let label = NSTextField(labelWithString: item.title)
+        label.stringValue = item.title
         label.font = .systemFont(ofSize: 13)
         label.textColor = .labelColor
         label.lineBreakMode = .byTruncatingTail
@@ -316,7 +318,10 @@ private final class DropdownRow: NSView {
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-    func setSelected(_ s: Bool) { highlight.isHidden = !s }
+    func setSelected(_ s: Bool) {
+        highlight.isHidden = !s
+        label.textColor = s ? .white : .labelColor // white on the accent fill (Raycast)
+    }
 
     override func updateTrackingAreas() {
         super.updateTrackingAreas()

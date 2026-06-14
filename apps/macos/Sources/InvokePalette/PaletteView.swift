@@ -824,7 +824,9 @@ public final class PaletteView: NSView {
         form.spacing = 12
         form.translatesAutoresizingMaskIntoConstraints = false
         var fields: [ViewNode] = []
-        let fieldTypes: Set<String> = ["form-textfield", "form-textarea", "form-checkbox", "form-dropdown"]
+        // Includes form-description / form-separator so they render in document order (they're not
+        // interactive fields, but they're part of the form's visual layout — Raycast parity).
+        let fieldTypes: Set<String> = ["form-textfield", "form-textarea", "form-checkbox", "form-dropdown", "form-description", "form-separator"]
         func collect(_ n: ViewNode) {
             // A field owns its own children (e.g. a dropdown's items) — don't treat those as fields.
             if fieldTypes.contains(n.type) { fields.append(n); return }
@@ -867,6 +869,20 @@ public final class PaletteView: NSView {
     }
 
     private func formFieldRow(_ f: ViewNode) -> NSView? {
+        // Non-field rows: a full-width description line and a divider (no label gutter).
+        if f.type == "form-description" {
+            let lbl = NSTextField(wrappingLabelWithString: f.props["text"]?.stringValue ?? f.props["title"]?.stringValue ?? "")
+            lbl.font = .systemFont(ofSize: 12)
+            lbl.textColor = .secondaryLabelColor
+            lbl.translatesAutoresizingMaskIntoConstraints = false
+            return lbl
+        }
+        if f.type == "form-separator" {
+            let box = NSBox(); box.boxType = .separator
+            box.translatesAutoresizingMaskIntoConstraints = false
+            box.heightAnchor.constraint(equalToConstant: 1).isActive = true
+            return box
+        }
         let id = f.props["id"]?.stringValue ?? ""
         // Raycast-style row: a fixed-width, right-aligned label gutter on the left and the control
         // filling the rest on the right (vs. the old stacked, left-aligned layout).

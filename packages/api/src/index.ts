@@ -57,6 +57,8 @@ const T = {
   FormTextField: "form-textfield",
   FormTextArea: "form-textarea",
   FormCheckbox: "form-checkbox",
+  FormDescription: "form-description",
+  FormSeparator: "form-separator",
   FormDropdown: "form-dropdown",
   FormDropdownItem: "form-dropdown-item",
   FormDropdownSection: "form-dropdown-section",
@@ -172,12 +174,22 @@ type FormType = ReturnType<typeof host> & {
   TextField: ReturnType<typeof host>;
   TextArea: ReturnType<typeof host>;
   Checkbox: ReturnType<typeof host>;
+  Description: ReturnType<typeof host>;
+  Separator: ReturnType<typeof host>;
+  PasswordField: ReturnType<typeof host>;
+  DatePicker: ReturnType<typeof host>;
   Dropdown: ReturnType<typeof host> & { Item: ReturnType<typeof host>; Section: ReturnType<typeof host> };
 };
 export const Form = host(T.Form, ["actions"]) as FormType;
 Form.TextField = host(T.FormTextField);
 Form.TextArea = host(T.FormTextArea);
 Form.Checkbox = host(T.FormCheckbox);
+// A form's static text and divider (Raycast). Without these defined, a form using <Form.Description>
+// or <Form.Separator> renders <undefined> → "Element type is invalid" and the whole view fails.
+Form.Description = host(T.FormDescription);
+Form.Separator = host(T.FormSeparator);
+Form.PasswordField = host(T.FormTextField); // a password field renders as a (secure) text field
+Form.DatePicker = host(T.FormTextField);    // no native date picker yet — degrade to a text field
 const Dropdown = host(T.FormDropdown) as FormType["Dropdown"];
 Dropdown.Item = host(T.FormDropdownItem);
 Dropdown.Section = host(T.FormDropdownSection);
