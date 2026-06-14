@@ -45,11 +45,11 @@ const API_SUPPORTED = new Set([
   "preferences", "randomId", "clearSearchBar",
   // M1 host-wired (RPC): real dialog / persisted cache / settings / diagnostic
   "Cache", "confirmAlert", "captureException", "openExtensionPreferences", "openCommandPreferences",
+  "useNavigation", // M3 render-on-push navigation
 ]);
 
 // `@raycast/api` exports that exist but are stubbed/no-op (run, but degraded).
 const API_DEGRADED = new Map([
-  ["useNavigation", "useNavigation().push/pop are no-ops; use declarative Action.Push"],
   // M1 load-stubs — import succeeds; throw (or no-op) only if actually called
   ["launchCommand", "loads; throws if called (inter-command launch not wired)"],
   ["getSelectedFinderItems", "loads; throws if called (Finder selection not wired)"],
