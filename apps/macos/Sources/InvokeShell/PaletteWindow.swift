@@ -332,9 +332,12 @@ public final class PaletteWindow: NSObject {
         // Any re-render (including async extension-commit / AI-answer callbacks) invalidates the tree the
         // ⌘K panel's captured actions point at — close it so it can't act on a stale node. No-op if hidden.
         actionPanel.dismiss()
-        // Track grid columns so arrow keys can navigate the grid in 2D (rows = ±columns).
-        if let grid = tree.root.children.first(where: { $0.type == "grid" }), case .number(let n)? = grid.props["columns"] {
-            gridColumns = max(1, Int(n))
+        // Track grid columns so arrow keys can navigate the grid in 2D (rows = ±columns). Mirror
+        // PaletteView.renderGrid's fallback (5) when the grid sets `itemSize` instead of `columns` —
+        // otherwise gridColumns stays 0 and Left/Right don't move (e.g. dotween-eases).
+        if let grid = tree.root.children.first(where: { $0.type == "grid" }) {
+            if case .number(let n)? = grid.props["columns"] { gridColumns = max(1, Int(n)) }
+            else { gridColumns = 5 }
         } else {
             gridColumns = 0
         }
