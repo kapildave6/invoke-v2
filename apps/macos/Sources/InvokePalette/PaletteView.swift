@@ -802,6 +802,10 @@ public final class PaletteView: NSView {
     // after a controlled re-render). Cleared and rebuilt each renderFormSurface.
     private var formFieldInfo: [ObjectIdentifier: (id: String, onChange: String?)] = [:]
     private var formFieldViewById: [String: NSView] = [:]
+    // The last field the user edited. render() clears the old field views (resigning first responder)
+    // BEFORE renderFormSurface runs, so the live first responder is gone by then — this survives the
+    // clear and is the field to re-focus after a controlled re-render.
+    private var lastEditedFieldId: String?
     /// Fired live as a Form field's value changes (args: onChange handler id, new value). The shell
     /// invokes the handler in the extension so controlled forms (e.g. live-computed results) update.
     public var onFormFieldChange: ((String, String) -> Void)?
@@ -845,7 +849,9 @@ public final class PaletteView: NSView {
     private var preservedFormValues: [String: String] = [:]
 
     private func renderFormSurface(_ node: ViewNode) {
-        let prevFocusId = focusedFormFieldId() // restore focus here after the (controlled) rebuild
+        // render() already cleared the old fields (resigning first responder), so prefer the last-edited
+        // field id, falling back to the live first responder if somehow still set.
+        let prevFocusId = lastEditedFieldId ?? focusedFormFieldId()
         preservedFormValues = currentFormValues() // snapshot before we tear the controls down
         formControls.removeAll()
         formFieldInfo.removeAll()
@@ -1429,16 +1435,16 @@ public final class PaletteView: NSView {
 // e.g. a live-computed result, depend on this). The shell invokes the handler in the child.
 extension PaletteView: NSTextFieldDelegate {
     public func controlTextDidChange(_ obj: Notification) {
-        guard let tf = obj.object as? NSTextField,
-              let h = formFieldInfo[ObjectIdentifier(tf)]?.onChange else { return }
-        onFormFieldChange?(h, tf.stringValue)
+        guard let tf = obj.object as? NSTextField, let info = formFieldInfo[ObjectIdentifier(tf)] else { return }
+        lastEditedFieldId = info.id // re-focus this field after the controlled re-render
+        if let h = info.onChange { onFormFieldChange?(h, tf.stringValue) }
     }
 }
 
 extension PaletteView: NSTextViewDelegate {
     public func textDidChange(_ notification: Notification) {
-        guard let tv = notification.object as? NSTextView,
-              let h = formFieldInfo[ObjectIdentifier(tv)]?.onChange else { return }
-        onFormFieldChange?(h, tv.string)
+        guard let tv = notification.object as? NSTextView, let info = formFieldInfo[ObjectIdentifier(tv)] else { return }
+        lastEditedFieldId = info.id
+        if let h = info.onChange { onFormFieldChange?(h, tv.string) }
     }
 }
