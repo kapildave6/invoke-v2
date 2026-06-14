@@ -45,12 +45,50 @@ export function usePromise<T>(fn: () => Promise<T>, deps: unknown[] = []): Async
   return { data, isLoading, error, revalidate };
 }
 
-export function useFetch<T = unknown>(url: string, init?: RequestInit): AsyncState<T> {
-  return usePromise<T>(async () => {
-    const res = await fetch(url, init);
-    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-    return (await res.json()) as T;
-  }, [url]);
+/** Options for useFetch — mirrors the parts of Raycast's @raycast/utils useFetch extensions rely on. */
+export interface UseFetchOptions<T = unknown, U = T> {
+  method?: string;
+  headers?: Record<string, string>;
+  body?: BodyInit;
+  signal?: AbortSignal;
+  /** Turn the Response into the raw result. Default: `res.json()`. (Lets callers parse XML/text.) */
+  parseResponse?: (response: Response) => Promise<T> | T;
+  /** Map the parsed result to the exposed `data` (Raycast returns `{ data, hasMore? }`). */
+  mapResult?: (result: T) => { data: U; hasMore?: boolean };
+  /** Keep the last successful data while a new request is in flight (no flicker). */
+  keepPreviousData?: boolean;
+  /** Skip fetching until true (default true). */
+  execute?: boolean;
+  initialData?: U;
+  onError?: (error: Error) => void;
+  onData?: (data: U) => void;
+}
+
+export function useFetch<T = unknown, U = T>(
+  url: string,
+  options: UseFetchOptions<T, U> = {},
+): AsyncState<U> {
+  const { parseResponse, mapResult, keepPreviousData, execute, initialData, onError, onData, method, headers, body, signal } = options;
+  const shouldExecute = execute === undefined ? true : execute;
+  const last = useRef<U | undefined>(initialData);
+
+  const state = usePromise<U>(async () => {
+    if (!shouldExecute) return (keepPreviousData ? last.current : initialData) as U;
+    const res = await fetch(url, { method, headers, body, signal });
+    // A custom parseResponse owns status handling (Raycast extensions often return an error string for
+    // non-2xx); only throw on a bad status when there's no custom parser.
+    if (!res.ok && !parseResponse) throw new Error(`${res.status} ${res.statusText}`);
+    const parsed = parseResponse ? await parseResponse(res) : ((await res.json()) as T);
+    const mapped = (mapResult ? mapResult(parsed).data : (parsed as unknown as U));
+    last.current = mapped;
+    return mapped;
+  }, [url, shouldExecute]);
+
+  // keepPreviousData / initialData: surface the last good value while loading or after an error.
+  const data = state.data ?? (keepPreviousData ? last.current : initialData);
+  useEffect(() => { if (state.error) onError?.(state.error); }, [state.error]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (state.data !== undefined) onData?.(state.data); }, [state.data]); // eslint-disable-line react-hooks/exhaustive-deps
+  return { ...state, data };
 }
 
 /** Process-local cached state (production: backed by the host's Cache, PLAN.md §5.5). */
