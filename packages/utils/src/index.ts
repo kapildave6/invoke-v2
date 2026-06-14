@@ -509,3 +509,26 @@ export function createDeeplink(opts: {
 export async function runPowerShellScript(_script: string, _options?: unknown): Promise<string> {
   throw new Error("@invoke/utils: runPowerShellScript is Windows-only and not available on macOS");
 }
+
+export interface UseAIOptions {
+  creativity?: number | string;
+  model?: string;
+  /** Skip until true (default true). */
+  execute?: boolean;
+  stream?: boolean;
+  onData?: (data: string) => void;
+  onError?: (error: Error) => void;
+}
+/** Raycast's useAI — runs an AI completion for `prompt`, exposing { data, isLoading, error, revalidate }.
+ *  Backed by the host's Anthropic client via AI.ask (full result; streaming lands later). */
+export function useAI(prompt: string, options: UseAIOptions = {}): AsyncState<string> & { data: string } {
+  const execute = options.execute === undefined ? true : options.execute;
+  const state = usePromise<string>(async () => {
+    if (!execute) return "";
+    const api = await import("@invoke/api");
+    return api.AI.ask(prompt, { model: options.model, creativity: options.creativity });
+  }, [prompt, execute]);
+  useEffect(() => { if (state.error) options.onError?.(state.error); }, [state.error]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (state.data) options.onData?.(state.data); }, [state.data]); // eslint-disable-line react-hooks/exhaustive-deps
+  return { ...state, data: state.data ?? "" };
+}

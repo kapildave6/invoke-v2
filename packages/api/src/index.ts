@@ -509,7 +509,15 @@ export class Cache {
   }
   get isEmpty(): boolean { return this.store.size === 0; }
 }
-export const AI = { ask: (_prompt: string, _opts?: unknown): Promise<string> => unsupported("AI.ask") };
+export interface AIAskOptions { model?: string; creativity?: number | string; system?: string }
+export const AI = {
+  /** Single-prompt completion via the host's Anthropic client (Raycast's AI.ask). Resolves to the text. */
+  ask: (prompt: string, opts?: AIAskOptions): Promise<string> =>
+    rpc("ai.ask", { prompt, model: opts?.model, creativity: opts?.creativity, system: opts?.system }) as Promise<string>,
+  // AI.Model.* — Raycast exposes named model constants; return the key so any access is a harmless string
+  // (the host maps unknown models to its configured default), never an undefined-member crash.
+  Model: new Proxy({} as Record<string, string>, { get: (_t, k) => String(k) }),
+};
 export const OAuth = { PKCEClient: class { constructor(_opts?: unknown) { unsupported("OAuth.PKCEClient"); } } };
 /** A macOS application (Raycast's Application). */
 export interface Application { name: string; path: string; bundleId?: string; localizedName?: string }

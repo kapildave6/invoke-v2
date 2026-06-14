@@ -1593,6 +1593,42 @@ public final class AppController: NSObject, NSApplicationDelegate {
     /// confirmAlert (async): show the in-palette confirmation modal and reply with the choice. Replaces
     /// the old blocking NSAlert (a separate window that stole focus → the palette auto-hid and the list
     /// vanished). Stays in-palette so the underlying list re-renders after the delete resolves.
+    /// Capabilities whose result isn't ready synchronously (a modal click, a network round-trip). Returns
+    /// true if this method was taken (the reply is deferred); false to fall back to the sync handler.
+    private func handleAsyncCapability(_ method: String, _ params: JSONValue?, reply: @escaping (JSONValue) -> Void) -> Bool {
+        func arg(_ key: String) -> JSONValue? { if case .object(let o)? = params { return o[key] }; return nil }
+        switch method {
+        case "confirmAlert":
+            presentConfirmAlert(params, reply: reply)
+            return true
+        case "ai.ask":
+            // Raycast's AI.ask / useAI — a single-prompt completion via the host's Anthropic client.
+            let prompt = arg("prompt")?.stringValue ?? ""
+            guard !prompt.isEmpty else { reply(.string("")); return true }
+            guard ai.hasKey else {
+                palette.showToast("Set your Anthropic API key in Settings → Advanced to use AI")
+                reply(.string(""))
+                return true
+            }
+            let system = arg("system")?.stringValue ?? "You are a helpful assistant."
+            Task { [weak self] in
+                guard let self else { return }
+                let result = await self.ai.complete(system: system, user: prompt, maxTokens: 2000)
+                await MainActor.run {
+                    switch result {
+                    case .success(let out): reply(.string(out))
+                    case .failure(let err):
+                        self.palette.showToast("AI: \(err.message)")
+                        reply(.string(""))
+                    }
+                }
+            }
+            return true
+        default:
+            return false
+        }
+    }
+
     private func presentConfirmAlert(_ params: JSONValue?, reply: @escaping (JSONValue) -> Void) {
         func arg(_ key: String) -> JSONValue? { if case .object(let o)? = params { return o[key] }; return nil }
         palette.presentConfirm(
@@ -2247,8 +2283,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         h.onCommit = { [weak self] _ in self?.extReceivedCommit = true; self?.onExtensionCommit() }
         h.onCapability = { [weak self] m, p in self?.handleCapability(m, p) ?? .null }
         h.onCapabilityAsync = { [weak self] method, params, reply in
-            guard let self, method == "confirmAlert" else { return false }
-            self.presentConfirmAlert(params, reply: reply); return true
+            self?.handleAsyncCapability(method, params, reply: reply) ?? false
         }
         extLaunchGen += 1
         let gen = extLaunchGen
@@ -2296,8 +2331,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         h.onLog = { msg in print("[invoke:ext] \(msg)") }
         h.onCapability = { [weak self] m, p in self?.handleCapability(m, p) ?? .null }
         h.onCapabilityAsync = { [weak self] method, params, reply in
-            guard let self, method == "confirmAlert" else { return false }
-            self.presentConfirmAlert(params, reply: reply); return true
+            self?.handleAsyncCapability(method, params, reply: reply) ?? false
         }
         h.onTerminate = { [weak self] in DispatchQueue.main.async { self?.noViewHosts[key] = nil } }
         lastLaunch = LaunchInfo(id: id, title: title, entryRelPath: entryRelPath, command: command, preferences: preferences, noView: true, arguments: arguments)

@@ -64,6 +64,7 @@ public final class ExtensionHost {
         // selection / application / finder / filesystem APIs (remediation 04)
         "selection.read", "app.list", "app.frontmost", "app.default",
         "finder.reveal", "finder.selection", "fs.trash",
+        "ai.ask", // Raycast AI.ask / useAI (host Anthropic client)
     ]
 
     private var pid: pid_t = -1

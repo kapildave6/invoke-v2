@@ -58,6 +58,7 @@ export const ALLOWED_RPC: ReadonlySet<string> = new Set([
   "finder.reveal",
   "finder.selection",
   "fs.trash",
+  "ai.ask", // Raycast AI.ask / useAI (host Anthropic client)
 ]);
 
 export function isAllowedRpcMethod(method: string): boolean {
