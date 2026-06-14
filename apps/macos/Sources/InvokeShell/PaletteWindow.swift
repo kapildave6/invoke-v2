@@ -370,6 +370,17 @@ public final class PaletteWindow: NSObject {
         }
         // Skip the resize (a full layout pass over every cell) when it was only a selection move.
         if paletteView.render(tree, selectedIndex: selectedIndex) { resizeToFit() }
+        // Arrow-key selection only works while the SEARCH FIELD holds first responder (its field editor
+        // routes moveUp/moveDown to onMove). A pushed Form focuses a form field instead; on pop back to a
+        // list/grid nothing restored search focus, so arrows went dead until reopened. Re-focus the search
+        // field for non-form surfaces — but only when it isn't already being edited (currentEditor != nil),
+        // or re-focusing would reselect the text and break typing.
+        if !formNow {
+            DispatchQueue.main.async { [weak self] in
+                guard let self, self.searchField.currentEditor() == nil else { return }
+                self.panel.makeFirstResponder(self.searchField)
+            }
+        }
     }
 
     /// Compact Mode (PLAN.md §4.3): size the window to its content — search bar + results + action
