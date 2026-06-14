@@ -827,7 +827,12 @@ public final class PaletteView: NSView {
     /// Extract an image source string from an Image.ImageLike value (a bare string, or `{ source }`).
     private func imageSource(_ v: JSONValue?) -> String? {
         if case .string(let s)? = v { return s }
-        if case .object(let o)? = v, case .string(let s)? = o["source"] { return s }
+        if case .object(let o)? = v {
+            if case .string(let s)? = o["source"] { return s }
+            // Grid.Item / List.Item content can wrap the ImageLike: { value: <ImageLike>, tooltip }.
+            if case .object(let inner)? = o["value"], case .string(let s)? = inner["source"] { return s }
+            if case .string(let s)? = o["value"] { return s }
+        }
         return nil
     }
 
