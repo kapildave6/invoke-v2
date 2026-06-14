@@ -112,6 +112,7 @@ final class ConfirmModal: NSObject {
     }
 
     func cancel() { resolve(false) }
+    func confirm() { resolve(true) }
 
     private func resolve(_ value: Bool) {
         guard isShown else { return }

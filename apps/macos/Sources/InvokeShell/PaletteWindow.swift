@@ -373,10 +373,12 @@ public final class PaletteWindow: NSObject {
     /// bar — so there's no dead space, growing/shrinking as results change (capped, then it scrolls).
     private func resizeToFit() {
         let vf = activeScreen()?.visibleFrame
+        // FIXED height (clamped to the display): the palette is ALWAYS the same size across every
+        // surface/state — root, list, detail, form, pushed views — so it never resizes or jumps
+        // (consistency the user explicitly asked for). _ = fittingHeight keeps the layout pass.
         let maxH = min(540, (vf?.height ?? 540) - 40)
-        let searchH = searchField.fittingSize.height
-        let contentH = paletteView.fittingHeight()
-        let targetH = min(max(14 + searchH + 19 + 8 + contentH + 12 + 38, 96), maxH)
+        _ = paletteView.fittingHeight()
+        let targetH = maxH
         // Width is FIXED (clamped on tiny screens) and re-pinned every render — a long row must
         // truncate within it, never widen the window.
         let targetW = min(Self.paletteWidth, (vf?.width ?? Self.paletteWidth + 40) - 40)
@@ -587,8 +589,11 @@ public final class PaletteWindow: NSObject {
     /// active screen, with width/height clamped to the display so it can never run off a monitor.
     private func repositionToActiveScreen() {
         guard let vf = activeScreen()?.visibleFrame else { panel.center(); return }
-        let width = min(panel.frame.width, vf.width - 40)
-        let height = min(panel.frame.height, vf.height - 40)
+        // Use the FIXED palette size (not panel.frame, which may be a stale/initial height) so the window
+        // lands at its final spot in one shot — resizeToFit then sees the size unchanged and never nudges
+        // it. This keeps both size AND position identical across every summon and surface.
+        let width = min(Self.paletteWidth, vf.width - 40)
+        let height = min(540, vf.height - 40)
         let x = vf.midX - width / 2
         let y = vf.maxY - min(160, (vf.height - height) * 0.22) - height
         panel.setFrame(NSRect(x: x, y: y, width: width, height: height), display: false)
@@ -612,6 +617,13 @@ public final class PaletteWindow: NSObject {
         guard keyMonitor == nil else { return }
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             guard let self, self.panel.isKeyWindow else { return event }
+            // The confirm modal is MODAL: while it's up, Return confirms, Esc cancels, and every other
+            // key is swallowed so it can't reach the list/search underneath (e.g. Enter editing a row).
+            if self.confirmModal.isShown {
+                if event.keyCode == 36 || event.keyCode == 76 { self.confirmModal.confirm(); return nil }
+                if event.keyCode == 53 { self.confirmModal.cancel(); return nil }
+                return nil
+            }
             // Tab cycles form fields ourselves (consume it), so AppKit's key-view machinery can't walk
             // focus out of the borderless panel.
             if event.keyCode == 48 { // Tab
