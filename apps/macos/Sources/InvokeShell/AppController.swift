@@ -2402,8 +2402,9 @@ public final class AppController: NSObject, NSApplicationDelegate {
         palette.render(activeTree, selectedIndex: selectedIndex)
         updateActionBar()
         updateExtensionDropdown()
-        // Honor the surface's own searchBarPlaceholder (Raycast) instead of the generic "Search <title>…".
-        if navDepth == 0, let surface = extensionSurfaceNode(),
+        // Honor the active surface's own searchBarPlaceholder (Raycast) — for the base AND pushed views —
+        // instead of the generic "Search <title>…" (which doubled to "Search Search Websites…").
+        if let surface = extensionSurfaceNode(),
            let ph = surface.props["searchBarPlaceholder"]?.stringValue, !ph.isEmpty {
             palette.setPlaceholder(ph)
         }
