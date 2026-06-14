@@ -491,9 +491,7 @@ public final class PaletteWindow: NSObject {
             filterButton.removeAllItems()
             for it in items {
                 filterButton.addItem(withTitle: it.title)
-                if let mi = filterButton.lastItem, let p = it.iconPath, p.hasPrefix("/"), let img = NSImage(contentsOfFile: p) {
-                    img.size = NSSize(width: 16, height: 16); mi.image = img
-                }
+                if let mi = filterButton.lastItem, let p = it.iconPath { Self.loadMenuIcon(p, into: mi) }
             }
         }
         if let idx = extDropdownValues.firstIndex(of: selected) { filterButton.selectItem(at: idx) }
@@ -507,6 +505,21 @@ public final class PaletteWindow: NSObject {
         extDropdownValues = []
         extDropdownSig = ""
         hideFilter()
+    }
+
+    /// Set a 16×16 menu-item icon from a local path, file://, or http(s) URL (favicons load async,
+    /// cached). Anything else (e.g. an SF-symbol name) is ignored — the item just shows its title.
+    private static var faviconCache: [String: NSImage] = [:]
+    private static func loadMenuIcon(_ ref: String, into item: NSMenuItem) {
+        func apply(_ image: NSImage) { image.size = NSSize(width: 16, height: 16); item.image = image }
+        if let cached = faviconCache[ref] { apply(cached); return }
+        if ref.hasPrefix("/"), let img = NSImage(contentsOfFile: ref) { faviconCache[ref] = img; apply(img); return }
+        if ref.hasPrefix("file://"), let u = URL(string: ref), let img = NSImage(contentsOf: u) { faviconCache[ref] = img; apply(img); return }
+        guard ref.hasPrefix("http"), let u = URL(string: ref) else { return }
+        URLSession.shared.dataTask(with: u) { data, _, _ in
+            guard let data, let img = NSImage(data: data) else { return }
+            DispatchQueue.main.async { Self.faviconCache[ref] = img; apply(img) }
+        }.resume()
     }
 
     @objc private func filterChanged() {

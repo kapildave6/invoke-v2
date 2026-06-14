@@ -2418,12 +2418,20 @@ public final class AppController: NSObject, NSApplicationDelegate {
         }
         guard let dd = findDropdown(surface) else { palette.hideSearchDropdown(); return }
         var items: [(title: String, value: String, iconPath: String?)] = []
+        // An item's icon can be a resolved local path (iconPath), a getFavicon descriptor ({source: url}),
+        // or a plain string (SF-symbol name or url). Return a path/url the dropdown can load.
+        func iconRef(_ n: ViewNode) -> String? {
+            if let p = n.props["iconPath"]?.stringValue, !p.isEmpty { return p }
+            if case .object(let icon)? = n.props["icon"], case .string(let src)? = icon["source"], !src.isEmpty { return src }
+            if let s = n.props["icon"]?.stringValue, !s.isEmpty { return s }
+            return nil
+        }
         func collect(_ n: ViewNode) {
             for c in n.children {
                 if c.type == "list-dropdown-item" {
                     let title = c.props["title"]?.stringValue ?? c.props["value"]?.stringValue ?? ""
                     let value = c.props["value"]?.stringValue ?? title
-                    items.append((title, value, c.props["iconPath"]?.stringValue))
+                    items.append((title, value, iconRef(c)))
                 } else { collect(c) } // descend into list-dropdown-section
             }
         }
