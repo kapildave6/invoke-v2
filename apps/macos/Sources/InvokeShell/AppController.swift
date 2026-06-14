@@ -1744,9 +1744,124 @@ public final class AppController: NSObject, NSApplicationDelegate {
             return .null
         case "cache.allItems":
             return .object(cacheStorageAll().mapValues { JSONValue.string($0) })
+
+        // --- selection / application / finder / filesystem (remediation 04) ---
+        case "app.frontmost":
+            if let t = pasteTarget {
+                return Self.applicationJSON(name: t.localizedName ?? "", path: t.bundleURL?.path ?? "", bundleId: t.bundleIdentifier)
+            }
+            if let f = NSWorkspace.shared.frontmostApplication {
+                return Self.applicationJSON(name: f.localizedName ?? "", path: f.bundleURL?.path ?? "", bundleId: f.bundleIdentifier)
+            }
+            return .null
+        case "app.list":
+            var urls: [URL] = []
+            if let p = arg("path")?.stringValue, !p.isEmpty {
+                let u = p.contains("://") ? URL(string: p) : URL(fileURLWithPath: (p as NSString).expandingTildeInPath)
+                if let u { urls = NSWorkspace.shared.urlsForApplications(toOpen: u) }
+            } else {
+                let dirs = ["/Applications", "/System/Applications", "/System/Applications/Utilities",
+                            (NSHomeDirectory() as NSString).appendingPathComponent("Applications")]
+                var seen = Set<String>()
+                for d in dirs {
+                    for i in (try? FileManager.default.contentsOfDirectory(atPath: d)) ?? [] where i.hasSuffix(".app") {
+                        let path = (d as NSString).appendingPathComponent(i)
+                        if seen.insert(path).inserted { urls.append(URL(fileURLWithPath: path)) }
+                    }
+                }
+            }
+            return .array(urls.map { Self.applicationJSON(url: $0) })
+        case "app.default":
+            guard let p = arg("path")?.stringValue, !p.isEmpty else { return .null }
+            let url = p.contains("://") ? URL(string: p) : URL(fileURLWithPath: (p as NSString).expandingTildeInPath)
+            guard let url, let appURL = NSWorkspace.shared.urlForApplication(toOpen: url) else { return .null }
+            return Self.applicationJSON(url: appURL)
+        case "finder.reveal":
+            let path = ((arg("path")?.stringValue ?? "") as NSString).expandingTildeInPath
+            guard !path.isEmpty, FileManager.default.fileExists(atPath: path) else { return .null }
+            NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
+            return .null
+        case "finder.selection":
+            // Reuse the gated AppleScript path: get Finder's selection as POSIX paths (newline-joined).
+            guard ensureAppleScriptGrant() else { return .array([]) }
+            let script = "tell application \"Finder\" to set _s to selection as alias list\n"
+                + "set _o to \"\"\nrepeat with _i in _s\nset _o to _o & POSIX path of _i & linefeed\nend repeat\nreturn _o"
+            var fErr: NSDictionary?
+            let fResult = NSAppleScript(source: script)?.executeAndReturnError(&fErr)
+            if let fErr {
+                if ((fErr[NSAppleScript.errorNumber] as? NSNumber)?.intValue ?? 0) == -1743 { presentPermissionHelp(.automation) }
+                return .array([])
+            }
+            let paths = (fResult?.stringValue ?? "").split(separator: "\n").map(String.init).filter { !$0.isEmpty }
+            return .array(paths.map { JSONValue.object(["path": .string($0)]) })
+        case "selection.read":
+            // Read the captured app's focused element's selected text via Accessibility (no clipboard
+            // mutation). Invoke is frontmost while the palette is open, so query pasteTarget's pid directly.
+            guard AXIsProcessTrusted() else {
+                Self.promptAccessibility()
+                palette.showToast("Enable Accessibility for Invoke to read the selection")
+                return .string("")
+            }
+            guard let pid = pasteTarget?.processIdentifier else { return .string("") }
+            var focused: AnyObject?
+            guard AXUIElementCopyAttributeValue(AXUIElementCreateApplication(pid), kAXFocusedUIElementAttribute as CFString, &focused) == .success,
+                  let el = focused else { return .string("") }
+            var sel: AnyObject?
+            // swiftlint:disable:next force_cast
+            let ok = AXUIElementCopyAttributeValue(el as! AXUIElement, kAXSelectedTextAttribute as CFString, &sel) == .success
+            return .string((ok ? sel as? String : nil) ?? "")
+        case "fs.trash":
+            var rawPaths: [String] = []
+            if case .array(let a)? = arg("paths") { rawPaths = a.compactMap { $0.stringValue } }
+            let expanded = rawPaths.map { ($0 as NSString).expandingTildeInPath }.filter { !$0.isEmpty }
+            guard !expanded.isEmpty else { return .null }
+            // Domain guard: never trash root / system / library / the app bundle, even with consent.
+            for path in expanded {
+                let p = URL(fileURLWithPath: path).resolvingSymlinksInPath().path
+                if p == "/" || p.hasPrefix("/System") || p.hasPrefix("/Library") || p.hasPrefix(Bundle.main.bundlePath) {
+                    palette.showToast("Refused to trash a protected path")
+                    return .string("refused: protected path")
+                }
+            }
+            guard ensureTrashGrant(paths: expanded) else { return .string("denied") }
+            var failures: [String] = []
+            for path in expanded {
+                do { try FileManager.default.trashItem(at: URL(fileURLWithPath: path), resultingItemURL: nil) }
+                catch { failures.append((path as NSString).lastPathComponent) }
+            }
+            if !failures.isEmpty { presentPermissionHelp(.fullDiskAccess) }
+            return failures.isEmpty ? .null : .string("failed to trash: \(failures.joined(separator: ", "))")
         default:
             return .null
         }
+    }
+
+    private static func applicationJSON(name: String, path: String, bundleId: String?) -> JSONValue {
+        var o: [String: JSONValue] = ["name": .string(name), "path": .string(path), "localizedName": .string(name)]
+        if let bundleId { o["bundleId"] = .string(bundleId) }
+        return .object(o)
+    }
+    private static func applicationJSON(url: URL) -> JSONValue {
+        let name = (FileManager.default.displayName(atPath: url.path) as NSString).deletingPathExtension
+        return applicationJSON(name: name, path: url.path, bundleId: Bundle(url: url)?.bundleIdentifier)
+    }
+
+    /// Default-deny per-extension consent for moving files to the Trash (the only destructive API in the
+    /// group). Recoverable, so a single per-extension grant is proportionate; the dialog names the items.
+    private func ensureTrashGrant(paths: [String]) -> Bool {
+        let id = currentExtGrantKey
+        guard !id.isEmpty else { return false }
+        if AppSettings.shared.trashGrants.contains(id) { return true }
+        let alert = NSAlert()
+        alert.messageText = "Allow “\(currentExtTitle)” to move files to the Trash?"
+        let names = paths.prefix(5).map { ($0 as NSString).lastPathComponent }.joined(separator: ", ")
+        alert.informativeText = "It wants to trash: \(names)\(paths.count > 5 ? " …" : "").\nItems go to the Trash (recoverable). Only allow extensions you trust."
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "Allow")
+        alert.addButton(withTitle: "Don’t Allow")
+        let allow = alert.runModal() == .alertFirstButtonReturn
+        if allow { AppSettings.shared.trashGrants.insert(id) }
+        return allow
     }
 
     /// Default-deny consent for the read-only SQLite capability, scoped to the specific

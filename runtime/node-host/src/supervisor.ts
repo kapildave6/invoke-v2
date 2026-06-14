@@ -50,6 +50,14 @@ export const ALLOWED_RPC: ReadonlySet<string> = new Set([
   "cache.remove",
   "cache.clear",
   "cache.allItems",
+  // selection / application / finder / filesystem APIs (remediation 04)
+  "selection.read",
+  "app.list",
+  "app.frontmost",
+  "app.default",
+  "finder.reveal",
+  "finder.selection",
+  "fs.trash",
 ]);
 
 export function isAllowedRpcMethod(method: string): boolean {

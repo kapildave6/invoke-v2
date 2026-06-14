@@ -61,6 +61,9 @@ public final class ExtensionHost {
         "preferences.open", // open Settings to this extension (open{Extension,Command}Preferences)
         "captureException", // diagnostic log (Raycast's captureException)
         "cache.set", "cache.remove", "cache.clear", "cache.allItems", // persisted per-extension Cache
+        // selection / application / finder / filesystem APIs (remediation 04)
+        "selection.read", "app.list", "app.frontmost", "app.default",
+        "finder.reveal", "finder.selection", "fs.trash",
     ]
 
     private var pid: pid_t = -1

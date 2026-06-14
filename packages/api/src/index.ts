@@ -511,13 +511,26 @@ export class Cache {
 }
 export const AI = { ask: (_prompt: string, _opts?: unknown): Promise<string> => unsupported("AI.ask") };
 export const OAuth = { PKCEClient: class { constructor(_opts?: unknown) { unsupported("OAuth.PKCEClient"); } } };
-export async function getSelectedText(): Promise<string> { return unsupported("getSelectedText"); }
-export async function getApplications(_path?: string): Promise<unknown[]> { return unsupported("getApplications"); }
-export async function getFrontmostApplication(): Promise<unknown> { return unsupported("getFrontmostApplication"); }
-export async function getDefaultApplication(_path: string): Promise<unknown> { return unsupported("getDefaultApplication"); }
-export async function trash(_paths: string | string[]): Promise<void> { return unsupported("trash"); }
-export async function showInFinder(_path: string): Promise<void> { return unsupported("showInFinder"); }
-export async function getSelectedFinderItems(): Promise<unknown[]> { return unsupported("getSelectedFinderItems"); }
+/** A macOS application (Raycast's Application). */
+export interface Application { name: string; path: string; bundleId?: string; localizedName?: string }
+/** The highlighted text in the frontmost app (host-read via Accessibility; "" if none/unavailable). */
+export async function getSelectedText(): Promise<string> { return (await rpc("selection.read", {})) as string; }
+/** Installed apps, or (with a path/URL) the apps that can open it. */
+export async function getApplications(path?: string): Promise<Application[]> { return (await rpc("app.list", { path })) as Application[]; }
+/** The app that was frontmost when the command was invoked. */
+export async function getFrontmostApplication(): Promise<Application> { return (await rpc("app.frontmost", {})) as Application; }
+/** The default app that opens the file/URL at `path`. */
+export async function getDefaultApplication(path: string): Promise<Application> { return (await rpc("app.default", { path })) as Application; }
+/** Move one or more paths to the Trash (recoverable; host-gated per extension). */
+export async function trash(paths: string | string[]): Promise<void> {
+  await rpc("fs.trash", { paths: Array.isArray(paths) ? paths : [paths] });
+}
+/** Reveal and select a path in Finder. */
+export async function showInFinder(path: string): Promise<void> { await rpc("finder.reveal", { path }); }
+/** The items currently selected in the frontmost Finder window. */
+export async function getSelectedFinderItems(): Promise<{ path: string }[]> {
+  return (await rpc("finder.selection", {})) as { path: string }[];
+}
 /** Launch another command. Host wiring pending — throws only if actually called. */
 export async function launchCommand(_options: {
   name: string; type?: string; extensionName?: string; ownerOrAuthorName?: string;

@@ -47,6 +47,7 @@ public final class AppSettings: ObservableObject {
     /// capability). Default-deny: an extension must be granted before runAppleScript executes.
     @Published public var appleScriptGrants: Set<String> { didSet { d.set(Array(appleScriptGrants), forKey: "appleScriptGrants") } }
     @Published public var sqlGrants: Set<String> { didSet { d.set(Array(sqlGrants), forKey: "sqlGrants") } }
+    @Published public var trashGrants: Set<String> { didSet { d.set(Array(trashGrants), forKey: "trashGrants") } }
     /// Extensions the user has explicitly TRUSTED to run WITHOUT the sandbox (full Node: child_process,
     /// fs, network). Default-deny: an extension is sandboxed unless its key is here. Keyed by extension
     /// key (e.g. "imported-1password"). This is the user opting into full access for code they trust.
@@ -75,6 +76,7 @@ public final class AppSettings: ObservableObject {
         favorites = Set((d.array(forKey: "favoriteCommands") as? [String]) ?? [])
         appleScriptGrants = Set((d.array(forKey: "appleScriptGrants") as? [String]) ?? [])
         sqlGrants = Set((d.array(forKey: "sqlGrants") as? [String]) ?? [])
+        trashGrants = Set((d.array(forKey: "trashGrants") as? [String]) ?? [])
         trustedExtensions = Set((d.array(forKey: "trustedExtensions") as? [String]) ?? [])
         launchAtLogin = d.bool(forKey: "launchAtLogin")
     }

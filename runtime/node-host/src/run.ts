@@ -141,6 +141,30 @@ function devCapabilities(opts: { preferences: Record<string, unknown>; storePath
       }
       case "cache.allItems":
         return { ...cache };
+      // selection / application / finder / filesystem (remediation 04) — dev-runner parity.
+      case "app.frontmost":
+        return { name: "", path: "" };
+      case "app.list": {
+        const apps: Array<{ name: string; path: string }> = [];
+        for (const d of ["/Applications", "/System/Applications"]) {
+          try {
+            for (const e of fs.readdirSync(d)) if (e.endsWith(".app")) apps.push({ name: e.replace(/\.app$/, ""), path: `${d}/${e}` });
+          } catch { /* dir missing */ }
+        }
+        return apps;
+      }
+      case "app.default":
+        return null;
+      case "finder.reveal":
+        console.log(`  ↗ reveal ${params.path}`);
+        return null;
+      case "finder.selection":
+        return [];
+      case "selection.read":
+        return "";
+      case "fs.trash":
+        console.log(`  🗑 trash (dev no-op) ${JSON.stringify(params.paths ?? [])}`);
+        return null;
       case "executeSQL": {
         // Dev-only mirror of the Swift host capability: copy the (WAL) db + sidecars to temp and query
         // the copy via node:sqlite, so `npm run dev:ext` can exercise useSQL extensions headlessly.
