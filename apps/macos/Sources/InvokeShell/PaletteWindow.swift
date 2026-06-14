@@ -29,6 +29,7 @@ public final class PaletteWindow: NSObject {
 
     private var keyMonitor: Any?
     private let actionPanel = ActionPanel()
+    private let confirmModal = ConfirmModal()
     private var gridColumns = 0 // >0 when a grid surface is shown → arrows navigate it in 2D
 
     // Toast capsule (action feedback, e.g. "Copied to Clipboard").
@@ -509,6 +510,20 @@ public final class PaletteWindow: NSObject {
 
     public func hideSearchDropdown() { hideFilter() } // hideFilter clears both accessories
 
+    /// Show the Raycast-style confirmation modal in-palette (confirmAlert). `then(true)` on the primary
+    /// action, `then(false)` on cancel/Esc/click-outside. Keeps the palette visible (suppressAutoHide)
+    /// so the underlying list stays put and re-renders after the action resolves.
+    public func presentConfirm(title: String, message: String?, primaryTitle: String, destructive: Bool,
+                               dismissTitle: String, then: @escaping (Bool) -> Void) {
+        guard let content = panel.contentView else { then(false); return }
+        suppressAutoHide = true
+        confirmModal.present(in: content, title: title, message: message, primaryTitle: primaryTitle,
+                             destructive: destructive, dismissTitle: dismissTitle) { [weak self] result in
+            self?.suppressAutoHide = false
+            then(result)
+        }
+    }
+
     @objc private func filterChanged() {
         if let title = filterButton.titleOfSelectedItem {
             onFilterChange?(title)
@@ -604,7 +619,9 @@ public final class PaletteWindow: NSObject {
                 return event
             }
             if event.keyCode == 53 { // Esc — works even when a form field (not the search box) has focus
-                if self.actionPanel.isShown { self.actionPanel.dismiss() } else { self.onCancel?() }
+                if self.confirmModal.isShown { self.confirmModal.cancel() }
+                else if self.actionPanel.isShown { self.actionPanel.dismiss() }
+                else { self.onCancel?() }
                 return nil
             }
             guard event.modifierFlags.contains(.command) else { return event }

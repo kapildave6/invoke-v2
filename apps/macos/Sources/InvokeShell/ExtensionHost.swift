@@ -36,6 +36,9 @@ public final class ExtensionHost {
     /// Fired on the MAIN queue when the extension invokes an allowlisted host capability; the returned
     /// JSONValue is sent back to the child as the RPC result (open/clipboard/localStorage/…).
     public var onCapability: ((_ method: String, _ params: JSONValue?) -> JSONValue)?
+    /// Like onCapability but may defer the reply (return true to claim the method and call `reply` later
+    /// — used for capabilities that await user input, e.g. confirmAlert's in-palette modal). Tried first.
+    public var onCapabilityAsync: ((_ method: String, _ params: JSONValue?, _ reply: @escaping (JSONValue) -> Void) -> Bool)?
     /// Diagnostic log sink (main queue).
     public var onLog: ((String) -> Void)?
     /// Fired on the MAIN queue when the child process ends WITHOUT an intentional terminate() — e.g. it
@@ -185,8 +188,15 @@ public final class ExtensionHost {
                 log("[rpc DENIED] \(method)")
                 break
             }
-            // Fulfil on the main queue (AppKit), then reply with the result to the child.
+            // Fulfil on the main queue (AppKit), then reply with the result to the child. An ASYNC
+            // capability (e.g. confirmAlert shows an in-palette modal and resolves on a later click)
+            // takes the reply closure and defers replyRPC; if it doesn't handle the method, fall back to
+            // the synchronous onCapability.
             DispatchQueue.main.async {
+                if let asyncH = self.onCapabilityAsync,
+                   asyncH(method, params, { [weak self] result in self?.replyRPC(id: id, result: result) }) {
+                    return // handled async; the reply is deferred until the modal resolves
+                }
                 let result = self.onCapability?(method, params) ?? .null
                 self.replyRPC(id: id, result: result)
             }

@@ -532,17 +532,22 @@ export async function confirmAlert(options: {
   title: string;
   message?: string;
   icon?: unknown;
-  primaryAction?: { title?: string; style?: string };
-  dismissAction?: { title?: string };
+  primaryAction?: { title?: string; style?: string; onAction?: () => void };
+  dismissAction?: { title?: string; onAction?: () => void };
   rememberUserChoice?: boolean;
 }): Promise<boolean> {
-  return (await rpc("confirmAlert", {
+  const confirmed = (await rpc("confirmAlert", {
     title: options?.title ?? "",
     message: options?.message,
     primaryTitle: options?.primaryAction?.title,
     primaryStyle: options?.primaryAction?.style,
     dismissTitle: options?.dismissAction?.title,
   })) as boolean;
+  // Raycast also invokes the action's onAction callback (many extensions wire the work there, not on
+  // the boolean — e.g. a delete handler). Fire the matching one, then return the boolean too.
+  if (confirmed) options?.primaryAction?.onAction?.();
+  else options?.dismissAction?.onAction?.();
+  return confirmed;
 }
 export function captureException(error: unknown): void {
   const e = error as { message?: string; stack?: string } | undefined;

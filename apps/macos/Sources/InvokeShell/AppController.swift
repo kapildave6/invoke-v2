@@ -1588,6 +1588,20 @@ public final class AppController: NSObject, NSApplicationDelegate {
         return allow
     }
 
+    /// confirmAlert (async): show the in-palette confirmation modal and reply with the choice. Replaces
+    /// the old blocking NSAlert (a separate window that stole focus → the palette auto-hid and the list
+    /// vanished). Stays in-palette so the underlying list re-renders after the delete resolves.
+    private func presentConfirmAlert(_ params: JSONValue?, reply: @escaping (JSONValue) -> Void) {
+        func arg(_ key: String) -> JSONValue? { if case .object(let o)? = params { return o[key] }; return nil }
+        palette.presentConfirm(
+            title: arg("title")?.stringValue ?? "",
+            message: arg("message")?.stringValue,
+            primaryTitle: arg("primaryTitle")?.stringValue ?? "OK",
+            destructive: arg("primaryStyle")?.stringValue == "destructive",
+            dismissTitle: arg("dismissTitle")?.stringValue ?? "Cancel"
+        ) { result in reply(.bool(result)) }
+    }
+
     private func handleCapability(_ method: String, _ params: JSONValue?) -> JSONValue {
         func arg(_ key: String) -> JSONValue? {
             if case .object(let o)? = params { return o[key] }
@@ -2115,6 +2129,10 @@ public final class AppController: NSObject, NSApplicationDelegate {
         h.onLog = { msg in print("[invoke:ext] \(msg)") }
         h.onCommit = { [weak self] _ in self?.extReceivedCommit = true; self?.onExtensionCommit() }
         h.onCapability = { [weak self] m, p in self?.handleCapability(m, p) ?? .null }
+        h.onCapabilityAsync = { [weak self] method, params, reply in
+            guard let self, method == "confirmAlert" else { return false }
+            self.presentConfirmAlert(params, reply: reply); return true
+        }
         extLaunchGen += 1
         let gen = extLaunchGen
         lastLaunch = LaunchInfo(id: id, title: title, entryRelPath: entryRelPath, command: command, preferences: preferences, noView: false, arguments: arguments)
@@ -2160,6 +2178,10 @@ public final class AppController: NSObject, NSApplicationDelegate {
         let h = ExtensionHost()
         h.onLog = { msg in print("[invoke:ext] \(msg)") }
         h.onCapability = { [weak self] m, p in self?.handleCapability(m, p) ?? .null }
+        h.onCapabilityAsync = { [weak self] method, params, reply in
+            guard let self, method == "confirmAlert" else { return false }
+            self.presentConfirmAlert(params, reply: reply); return true
+        }
         h.onTerminate = { [weak self] in DispatchQueue.main.async { self?.noViewHosts[key] = nil } }
         lastLaunch = LaunchInfo(id: id, title: title, entryRelPath: entryRelPath, command: command, preferences: preferences, noView: true, arguments: arguments)
         h.onSandboxDenial = { [weak self] module in self?.handleSandboxDenial(id: id, title: title, module: module) }
