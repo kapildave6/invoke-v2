@@ -49,6 +49,7 @@ const API_SUPPORTED = new Set([
   // selection / application / finder / filesystem (remediation 04)
   "getSelectedText", "getApplications", "getFrontmostApplication", "getDefaultApplication",
   "trash", "showInFinder", "getSelectedFinderItems",
+  "AI", // AI.ask (remediation 05)
 ]);
 
 // `@raycast/api` exports that exist but are stubbed/no-op (run, but degraded).
@@ -61,7 +62,6 @@ const API_DEGRADED = new Map([
 
 // `@raycast/api` exports that are stubbed to THROW — hard blockers.
 const API_BLOCKING = new Map([
-  ["AI", "AI.ask throws — Invoke AI not yet wired"],
   ["OAuth", "OAuth.PKCEClient throws — OAuth not yet wired"],
 ]);
 
@@ -76,7 +76,7 @@ const UTILS_SUPPORTED = new Set([
   "useForm", "showFailureToast", "runAppleScript", "executeSQL", "FormValidation",
   // M1 pure-JS parity helpers
   "getFavicon", "getAvatarIcon", "getProgressIcon", "MutatePromise",
-  "useLocalStorage", "useFrecencySorting", "withCache", "createDeeplink",
+  "useLocalStorage", "useFrecencySorting", "withCache", "createDeeplink", "useAI",
 ]);
 
 // `@raycast/utils` exports that run but are degraded / trusted-only.

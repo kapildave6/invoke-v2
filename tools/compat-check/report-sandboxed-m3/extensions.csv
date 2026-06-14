@@ -33,9 +33,9 @@ agent-ecosystem-map,Agent Ecosystem Map,UNSUPPORTED,agent-ecosystem-map,3,view,d
 agent-usage,Agent Usage,UNSUPPORTED,agent-usage,2,view|menu-bar,"unsupported command mode(s): agent-usage-menubar: mode ""menu-bar"" | denied Node built-ins in sandbox: fs, module, child_process, http, https",launchCommand: loads; throws if called (inter-command launch not wired) | useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox | declares background `interval` command(s) — not scheduled,,assert child_process crypto fs http https module os path url util
 ai-agency,AI Agency,UNSUPPORTED,ai-agency,2,view|no-view,"denied Node built-ins in sandbox: fs, child_process",,,child_process fs path util
 ai-by-vercel,AI by Vercel,SUPPORTED,ai-by-vercel,2,view,,,,
-ai-code-namer,AI Code Namer,UNSUPPORTED,ai-code-namer,9,view,AI: AI.ask throws — Invoke AI not yet wired,,,
+ai-code-namer,AI Code Namer,SUPPORTED,ai-code-namer,9,view,,,,
 ai-gen,OpenAI Generator,UNSUPPORTED,ai-gen,4,view,denied Node built-ins in sandbox: fs,,,fs path url
-ai-git-assistant,AI Git Assistant,UNSUPPORTED,ai-git-assistant,2,view,AI: AI.ask throws — Invoke AI not yet wired | denied Node built-ins in sandbox: child_process,,,child_process
+ai-git-assistant,AI Git Assistant,UNSUPPORTED,ai-git-assistant,2,view,denied Node built-ins in sandbox: child_process,,,child_process
 ai-humanizer,Humanize AI Text,SUPPORTED,ai-humanizer,1,view,,,,
 ai-screenshot,AI Screenshot,UNSUPPORTED,ai-screenshot,1,view,denied Node built-ins in sandbox: fs,,,fs path
 ai-stats,AI Stats,SUPPORTED,ai-stats,1,view,,,,
@@ -74,7 +74,7 @@ animated-window-manager,Animated Window Manager,UNSUPPORTED,animated-window-mana
 anki,Anki,SUPPORTED,anki,4,view,,,,path
 anna-s-archive,Anna's Archive,SUPPORTED,anna-s-archive,1,view,,,,
 annotely,Annotely,UNSUPPORTED,annotely,3,no-view|view,"denied Node built-ins in sandbox: fs, child_process, http",,,child_process fs http os path util
-anonaddy,Addy,UNSUPPORTED,anonaddy,5,view|no-view,AI: AI.ask throws — Invoke AI not yet wired,BrowserExtension: loads; throws if called (browser bridge not wired) | launchCommand: loads; throws if called (inter-command launch not wired),,
+anonaddy,Addy,DEGRADED,anonaddy,5,view|no-view,,BrowserExtension: loads; throws if called (browser bridge not wired) | launchCommand: loads; throws if called (inter-command launch not wired),,
 another-boring-piece,Art Wallpapers,UNSUPPORTED,another-boring-piece,4,view|no-view,denied Node built-ins in sandbox: fs,declares background `interval` command(s) — not scheduled,,crypto fs path
 antd-open-browser,Antd,UNSUPPORTED,antd-open-browser,1,view,denied Node built-ins in sandbox: fs,,,fs path
 antigravity,Antigravity,UNSUPPORTED,antigravity,6,view|no-view,"denied Node built-ins in sandbox: fs, child_process, http",,,child_process fs http os path url util
@@ -92,7 +92,7 @@ app-icon-generator,App Icon Generator,UNSUPPORTED,app-icon-generator,1,view,deni
 app-keeper-manager,App Keeper Manager,UNSUPPORTED,app-keeper-manager,1,view,denied Node built-ins in sandbox: child_process,,,child_process
 app-store-connect,App Store Connect,UNSUPPORTED,app-store-connect,6,view,denied Node built-ins in sandbox: fs,,,fs
 app-tag-manager,App Tag Manager,UNSUPPORTED,app-tag-manager,3,view,denied Node built-ins in sandbox: child_process,,,child_process util
-app-updates,App Updates,UNSUPPORTED,app-updates,4,view|menu-bar,"AI: AI.ask throws — Invoke AI not yet wired | unsupported command mode(s): menu-bar: mode ""menu-bar"", brew-maintenance: mode ""menu-bar"" | denied Node built-ins in sandbox: child_process, fs",launchCommand: loads; throws if called (inter-command launch not wired) | declares background `interval` command(s) — not scheduled,,child_process fs os util
+app-updates,App Updates,UNSUPPORTED,app-updates,4,view|menu-bar,"unsupported command mode(s): menu-bar: mode ""menu-bar"", brew-maintenance: mode ""menu-bar"" | denied Node built-ins in sandbox: child_process, fs",launchCommand: loads; throws if called (inter-command launch not wired) | declares background `interval` command(s) — not scheduled,,child_process fs os util
 appcleaner,App Cleaner,UNSUPPORTED,appcleaner,1,view,"denied Node built-ins in sandbox: child_process, fs",updateCommandMetadata: loads; no-op (command metadata updates not wired),,child_process events fs path
 append-clipboard,Append Clipboard,DEGRADED,append-clipboard,3,no-view,,declares command `arguments[]` — not passed by runtime yet,,
 append-to-file,Append Text to File,UNSUPPORTED,append-to-file,5,view|no-view,"denied Node built-ins in sandbox: fs, child_process",,,assert child_process crypto fs os path util
@@ -101,10 +101,10 @@ apple-books,Apple Books,SUPPORTED,apple-books,1,view,,,,
 apple-developer-docs,Apple Developer Docs,SUPPORTED,apple-developer-docs,1,view,,,,
 apple-devices,Apple Devices,SUPPORTED,apple-devices,1,view,,,,
 apple-maps-search,Apple Maps Search,DEGRADED,apple-maps-search,3,no-view|view,,declares command `arguments[]` — not passed by runtime yet,,
-apple-notes,Apple Notes,UNSUPPORTED,apple-notes,7,view|no-view|menu-bar,"AI: AI.ask throws — Invoke AI not yet wired | unsupported command mode(s): menu-bar: mode ""menu-bar"" | declares AI tools[] (4) — AI extensions not supported",declares extension-level `ai` instructions — ignored | declares background `interval` command(s) — not scheduled | declares command `arguments[]` — not passed by runtime yet,@raycast/api:Tool (not in Invoke surface — needs review),os path
+apple-notes,Apple Notes,UNSUPPORTED,apple-notes,7,view|no-view|menu-bar,"unsupported command mode(s): menu-bar: mode ""menu-bar"" | declares AI tools[] (4) — AI extensions not supported",declares extension-level `ai` instructions — ignored | declares background `interval` command(s) — not scheduled | declares command `arguments[]` — not passed by runtime yet,@raycast/api:Tool (not in Invoke surface — needs review),os path
 apple-passwords,Apple Password,UNSUPPORTED,apple-passwords,2,view|no-view,"denied Node built-ins in sandbox: child_process, module, fs",,namespace import of @raycast/api (member usage unverified),assert child_process fs module os path
 apple-photos,Apple Photos,UNSUPPORTED,apple-photos,2,view|no-view,"denied Node built-ins in sandbox: child_process, fs",,,child_process fs os path util
-apple-reminders,Apple Reminders,UNSUPPORTED,apple-reminders,7,view|menu-bar|no-view,"AI: AI.ask throws — Invoke AI not yet wired | unsupported command mode(s): menu-bar: mode ""menu-bar"" | declares AI tools[] (8) — AI extensions not supported | denied Node built-ins in sandbox: child_process",launchCommand: loads; throws if called (inter-command launch not wired) | declares extension-level `ai` instructions — ignored | declares background `interval` command(s) — not scheduled | declares command `arguments[]` — not passed by runtime yet,@raycast/api:Tool (not in Invoke surface — needs review),child_process crypto util
+apple-reminders,Apple Reminders,UNSUPPORTED,apple-reminders,7,view|menu-bar|no-view,"unsupported command mode(s): menu-bar: mode ""menu-bar"" | declares AI tools[] (8) — AI extensions not supported | denied Node built-ins in sandbox: child_process",launchCommand: loads; throws if called (inter-command launch not wired) | declares extension-level `ai` instructions — ignored | declares background `interval` command(s) — not scheduled | declares command `arguments[]` — not passed by runtime yet,@raycast/api:Tool (not in Invoke surface — needs review),child_process crypto util
 apple-stocks-search,Apple Stocks Search,SUPPORTED,apple-stocks-search,1,view,,,,
 apply-inline-code,Apply Inline Code,SUPPORTED,apply-inline-code,2,no-view|view,,,,
 appwrite,Appwrite,SUPPORTED,appwrite,1,view,,,,
@@ -193,7 +193,7 @@ betterdiscord-store,BetterDiscord Store,SUPPORTED,betterdiscord-search,1,view,,,
 betterdisplay,BetterDisplay,UNSUPPORTED,betterdisplay,1,view,declares AI tools[] (14) — AI extensions not supported | denied Node built-ins in sandbox: child_process,declares extension-level `ai` instructions — ignored,@raycast/api:Tool (not in Invoke surface — needs review),child_process events util
 bettertouchtool,BetterTouchTool,DEGRADED,bettertouchtool,2,view,,useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox,,
 betterzip,BetterZip,UNSUPPORTED,betterzip,3,no-view,denied Node built-ins in sandbox: fs,,,fs path
-bhagavad-gita-quotes,Bhagavad Gita Quotes,UNSUPPORTED,bhagavad-gita-quotes,1,view,AI: AI.ask throws — Invoke AI not yet wired,,,
+bhagavad-gita-quotes,Bhagavad Gita Quotes,SUPPORTED,bhagavad-gita-quotes,1,view,,,,
 biaodian,Search Chinese Punctuation Marks,SUPPORTED,biaodian,1,view,,,,
 bibigpt-summarize-audiovideo-with-ai,BibiGPT AI Summarize Audio and Video,SUPPORTED,bibigpt-summarize-audiovideo-with-ai,1,view,,,,
 bible,Bible,DEGRADED,bible,1,view,,declares command `arguments[]` — not passed by runtime yet,,url
@@ -233,7 +233,7 @@ bobcontrol,Bob - Control Bob Translate,DEGRADED,bob,10,no-view,,declares command
 bonjour,Bonjour,UNSUPPORTED,bonjour,2,view|menu-bar,"unsupported command mode(s): menu: mode ""menu-bar"" | denied Node built-ins in sandbox: child_process",,,child_process
 bonk-price,BONK Price,UNSUPPORTED,bonk-price,1,menu-bar,"unsupported command mode(s): index: mode ""menu-bar""",declares background `interval` command(s) — not scheduled,,
 bookstack,BookStack,SUPPORTED,bookstack,3,view,,,,
-bootstrap-icons,Bootstrap Icons,UNSUPPORTED,bootstrap-icons,1,view,AI: AI.ask throws — Invoke AI not yet wired | declares AI tools[] (1) — AI extensions not supported | denied Node built-ins in sandbox: fs,,,fs path
+bootstrap-icons,Bootstrap Icons,UNSUPPORTED,bootstrap-icons,1,view,declares AI tools[] (1) — AI extensions not supported | denied Node built-ins in sandbox: fs,,,fs path
 bored,Bored,SUPPORTED,bored,1,view,,,,
 botpress,Botpress,SUPPORTED,botpress,1,view,,,,
 braid,Braid Design System,UNSUPPORTED,braid,2,view,denied Node built-ins in sandbox: fs,,,fs path url
@@ -273,7 +273,7 @@ cal-com-share-meeting-links,Cal.com,UNSUPPORTED,cal-com-share-meeting-links,5,vi
 calendar,Quick Calendar,SUPPORTED,calendar,1,view,,,,
 calendly,Calendly Share Meeting Links,UNSUPPORTED,calendly,1,view,OAuth: OAuth.PKCEClient throws — OAuth not yet wired,,,
 calibre-library,Calibre Library,UNSUPPORTED,calibre-search,2,view,"denied Node built-ins in sandbox: fs, child_process",declares command `arguments[]` — not passed by runtime yet,,child_process fs os path util
-caltask,CalTask,UNSUPPORTED,caltask,4,view|menu-bar,"AI: AI.ask throws — Invoke AI not yet wired | unsupported command mode(s): menu-bar: mode ""menu-bar"" | denied Node built-ins in sandbox: child_process, fs",launchCommand: loads; throws if called (inter-command launch not wired) | declares background `interval` command(s) — not scheduled,,child_process fs path
+caltask,CalTask,UNSUPPORTED,caltask,4,view|menu-bar,"unsupported command mode(s): menu-bar: mode ""menu-bar"" | denied Node built-ins in sandbox: child_process, fs",launchCommand: loads; throws if called (inter-command launch not wired) | declares background `interval` command(s) — not scheduled,,child_process fs path
 camper-calc,Camper Van Cost Tracker,SUPPORTED,camper-calc,1,view,,,,
 can-i-php,Can I PHP?,SUPPORTED,can-i-php,2,view,,,,
 can-i-use,Can I Use,SUPPORTED,can-i-use,1,view,,,,os path
@@ -353,7 +353,7 @@ claudecast,ClaudeCast,UNSUPPORTED,claudecast,10,view|no-view|menu-bar,"unsupport
 clean-agent-text,Clean Agent Text,SUPPORTED,clean-agent-text,1,no-view,,,,
 clean-keyboard,Clean Keyboard,UNSUPPORTED,clean-keyboard,1,view,denied Node built-ins in sandbox: child_process,,,child_process os
 clean-text,Clean Text,SUPPORTED,clean-text,3,view|no-view,,,,
-cleanshotx,CleanShot X,UNSUPPORTED,cleanshotx,23,no-view|view,AI: AI.ask throws — Invoke AI not yet wired | denied Node built-ins in sandbox: child_process,declares command `arguments[]` — not passed by runtime yet,,child_process crypto
+cleanshotx,CleanShot X,UNSUPPORTED,cleanshotx,23,no-view|view,denied Node built-ins in sandbox: child_process,declares command `arguments[]` — not passed by runtime yet,,child_process crypto
 clear-clipboard,Clear Clipboard,SUPPORTED,clear-clipboard,1,no-view,,,,
 climbing-grade-converter,Climbing Grade Converter,SUPPORTED,climbing-grade-converter,1,view,,,,
 cling,Cling File Search,UNSUPPORTED,cling,2,view,"denied Node built-ins in sandbox: child_process, fs",useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox | declares command `arguments[]` — not passed by runtime yet,,child_process fs os path
@@ -412,10 +412,10 @@ colima,Colima,UNSUPPORTED,colima,5,view,"denied Node built-ins in sandbox: child
 collected-notes,Collected Notes,SUPPORTED,collected-notes,2,view,,,,
 color-casket,Color Casket,DEGRADED,color-casket,2,view|no-view,,launchCommand: loads; throws if called (inter-command launch not wired),,
 color-hunt,Color Hunt,UNSUPPORTED,color-hunt,1,view,denied Node built-ins in sandbox: fs,,,fs path
-color-picker,Color Picker,UNSUPPORTED,color-picker,8,no-view|view|menu-bar,"AI: AI.ask throws — Invoke AI not yet wired | unsupported command mode(s): menu-bar: mode ""menu-bar""",launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet,@raycast/utils:useAI (not implemented in Invoke),
+color-picker,Color Picker,UNSUPPORTED,color-picker,8,no-view|view|menu-bar,"unsupported command mode(s): menu-bar: mode ""menu-bar""",launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet,,
 color-shades,Color Shades,DEGRADED,color-shades,2,view,,declares command `arguments[]` — not passed by runtime yet,,
 color-studio-picker,Color Studio Picker,DEGRADED,color-studio-picker,1,view,,declares command `arguments[]` — not passed by runtime yet,,
-colorify,Colorify - Generate Themes From Images,UNSUPPORTED,colorify,1,view,AI: AI.ask throws — Invoke AI not yet wired | denied Node built-ins in sandbox: fs,,,fs
+colorify,Colorify - Generate Themes From Images,UNSUPPORTED,colorify,1,view,denied Node built-ins in sandbox: fs,,,fs
 colorslurp,ColorSlurp,DEGRADED,colorslurp,7,no-view|view,,declares command `arguments[]` — not passed by runtime yet,,
 comet,Comet,UNSUPPORTED,comet,7,view|no-view,"declares AI tools[] (4) — AI extensions not supported | denied Node built-ins in sandbox: fs, child_process",declares extension-level `ai` instructions — ignored,namespace import of @raycast/api (member usage unverified),child_process fs path
 cometapi,CometAPI,SUPPORTED,cometapi,7,view,,,,
@@ -610,7 +610,7 @@ distraction-tracker,Distraction Tracker,SUPPORTED,distraction-tracker,2,view,,,,
 django-docs,Django Docs,DEGRADED,django-docs,2,view|no-view,,declares background `interval` command(s) — not scheduled,,
 djangopackages,Django Packages,SUPPORTED,djangopackages,1,view,,,,
 dlmoji,DLmoji,UNSUPPORTED,dlmoji,1,view,,,@raycast/api:Component (not in Invoke surface — needs review) | @raycast/api:Fragment (not in Invoke surface — needs review) | @raycast/api:checkEmojiOnly (not in Invoke surface — needs review),querystring
-dnb-book-lookup,DNB Book Lookup,UNSUPPORTED,dnb-book-lookup,1,view,AI: AI.ask throws — Invoke AI not yet wired,declares command `arguments[]` — not passed by runtime yet,,
+dnb-book-lookup,DNB Book Lookup,DEGRADED,dnb-book-lookup,1,view,,declares command `arguments[]` — not passed by runtime yet,,
 dns-lookup,DNS Lookup,SUPPORTED,dns-lookup,1,view,,,,
 do-not-disturb,Do Not Disturb,UNSUPPORTED,do-not-disturb,4,no-view,denied Node built-ins in sandbox: child_process,,,child_process
 doccheck,DocCheck,DEGRADED,doccheck,2,view,,declares command `arguments[]` — not passed by runtime yet,,
@@ -656,16 +656,16 @@ dropstab,DropsTab,DEGRADED,dropstab,6,view,,declares command `arguments[]` — n
 drug-search,Drug Search,SUPPORTED,drug-search,1,view,,,,
 drupal-org,Drupal.org,SUPPORTED,drupal-org,3,view,,,,
 drupal-toolbox,Drupal Toolbox,UNSUPPORTED,drupal-toolbox,1,view,denied Node built-ins in sandbox: child_process,,,child_process os util
-dtf,DTF,UNSUPPORTED,dtf,8,view|menu-bar,"AI: AI.ask throws — Invoke AI not yet wired | unsupported command mode(s): menu-bar: mode ""menu-bar"" | declares AI tools[] (6) — AI extensions not supported",launchCommand: loads; throws if called (inter-command launch not wired) | declares background `interval` command(s) — not scheduled | declares command `arguments[]` — not passed by runtime yet,@raycast/utils:useAI (not implemented in Invoke),
+dtf,DTF,UNSUPPORTED,dtf,8,view|menu-bar,"unsupported command mode(s): menu-bar: mode ""menu-bar"" | declares AI tools[] (6) — AI extensions not supported",launchCommand: loads; throws if called (inter-command launch not wired) | declares background `interval` command(s) — not scheduled | declares command `arguments[]` — not passed by runtime yet,,
 duan-raycast-extension,Duan: Shorten and Manage Links,DEGRADED,duan-raycast-extension,2,view,,launchCommand: loads; throws if called (inter-command launch not wired),,url
 dub,Dub,UNSUPPORTED,dub,2,view,OAuth: OAuth.PKCEClient throws — OAuth not yet wired | declares AI tools[] (6) — AI extensions not supported,declares extension-level `ai` instructions — ignored | declares command `arguments[]` — not passed by runtime yet,@raycast/utils:OAuthService (not implemented in Invoke) | @raycast/utils:withAccessToken (not implemented in Invoke),
 ducat,Ducat,DEGRADED,ducat,1,no-view,,declares command `arguments[]` — not passed by runtime yet,,
 duck-duck-go-search,DuckDuckGo Search,SUPPORTED,duck-duck-go-search,1,view,,,,
-duck-facts,Duck Facts,UNSUPPORTED,duck-facts,1,view,AI: AI.ask throws — Invoke AI not yet wired | declares AI tools[] (1) — AI extensions not supported,declares extension-level `ai` instructions — ignored,,
+duck-facts,Duck Facts,UNSUPPORTED,duck-facts,1,view,declares AI tools[] (1) — AI extensions not supported,declares extension-level `ai` instructions — ignored,,
 duckduckgo-email,DuckDuckGo Email,SUPPORTED,duckduckgo-email,1,no-view,,,,
 duckduckgo-image-search,DuckDuckGo Image Search,UNSUPPORTED,duckduckgo-image-search,1,view,denied Node built-ins in sandbox: fs,,,fs os path
 duden,Duden,SUPPORTED,duden,1,view,,,,
-dungeons-dragons,Dungeons & Dragons,UNSUPPORTED,dungeons-and-dragons,6,view,AI: AI.ask throws — Invoke AI not yet wired,declares command `arguments[]` — not passed by runtime yet,@raycast/utils:useAI (not implemented in Invoke),
+dungeons-dragons,Dungeons & Dragons,DEGRADED,dungeons-and-dragons,6,view,,declares command `arguments[]` — not passed by runtime yet,,
 dust-tt,Ask Dust,UNSUPPORTED,dust-tt,6,view,OAuth: OAuth.PKCEClient throws — OAuth not yet wired,launchCommand: loads; throws if called (inter-command launch not wired) | updateCommandMetadata: loads; no-op (command metadata updates not wired) | declares command `arguments[]` — not passed by runtime yet,@raycast/utils:OAuthService (not implemented in Invoke) | @raycast/utils:withAccessToken (not implemented in Invoke),
 dutch-article,Dutch Article (Het of De),SUPPORTED,dutch-article,1,view,,,,
 dynamic-font-size,Dynamic Font Size,SUPPORTED,dynamic-font-size,1,view,,,,
@@ -678,13 +678,13 @@ easy-invoice,Easy Invoice,UNSUPPORTED,easy-invoice,4,view,denied Node built-ins 
 easy-new-file,Easy New File,DEGRADED,easy-new-file,3,no-view|view,,launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet,,os path
 easy-ocr,Easy OCR,UNSUPPORTED,easy-ocr,1,no-view,"denied Node built-ins in sandbox: child_process, fs",,,child_process fs path util
 easydict,Easy Dictionary,UNSUPPORTED,easydict,2,view|no-view,"denied Node built-ins in sandbox: child_process, fs",declares command `arguments[]` — not passed by runtime yet,,child_process crypto events fs path querystring util
-easyvariable,Easy Variable,UNSUPPORTED,easyvariable,1,view,AI: AI.ask throws — Invoke AI not yet wired,,,
+easyvariable,Easy Variable,SUPPORTED,easyvariable,1,view,,,,
 ebird,eBird,SUPPORTED,ebird,1,view,,,,
 ecosia-search,Ecosia Search,SUPPORTED,ecosia-search,1,view,,,,
 edgestore-raycast,EdgeStore,UNSUPPORTED,edgestore-raycast,3,view,"denied Node built-ins in sandbox: https, fs",,,crypto fs https path
-effect-docs,Effect Docs,UNSUPPORTED,effect-docs,2,view,AI: AI.ask throws — Invoke AI not yet wired | declares AI tools[] (2) — AI extensions not supported,,@raycast/utils:useAI (not implemented in Invoke),
+effect-docs,Effect Docs,UNSUPPORTED,effect-docs,2,view,declares AI tools[] (2) — AI extensions not supported,,,
 ekstraklasa,Ekstraklasa,SUPPORTED,ekstraklasa,1,view,,,,
-element,Element,UNSUPPORTED,element,2,view,AI: AI.ask throws — Invoke AI not yet wired,,,
+element,Element,SUPPORTED,element,2,view,,,,
 elevenlabs-tts,ElevenLabs TTS,UNSUPPORTED,elevenlabs-tts,1,no-view,"denied Node built-ins in sandbox: child_process, fs",,,child_process events fs os path util
 elgato-key-light,Elgato Key Light,UNSUPPORTED,elgato-key-light,7,no-view|view,declares AI tools[] (7) — AI extensions not supported,,,crypto
 elixir,Elixir,SUPPORTED,elixir,2,view,,,,
@@ -695,7 +695,7 @@ ember-api-documentation,Ember.js API Documentation,SUPPORTED,ember-api-documenta
 emissions-calculator,Emissions Calculator,SUPPORTED,emissions-calculator,1,view,,,,
 emoji,Emoji Search,UNSUPPORTED,emoji,1,view,denied Node built-ins in sandbox: fs,,,fs path
 emoji-kitchen,Emoji Mashups,UNSUPPORTED,emoji-kitchen,1,view,declares AI tools[] (3) — AI extensions not supported | denied Node built-ins in sandbox: fs,declares extension-level `ai` instructions — ignored,,fs os path
-emojify,Emojify,UNSUPPORTED,emojify,2,view,AI: AI.ask throws — Invoke AI not yet wired,declares command `arguments[]` — not passed by runtime yet,,
+emojify,Emojify,DEGRADED,emojify,2,view,,declares command `arguments[]` — not passed by runtime yet,,
 emojis-com,emojis.com,UNSUPPORTED,emojis-com,1,view,denied Node built-ins in sandbox: fs,,,buffer fs os path
 empty-screenshots,Empty Screenshot Folder,UNSUPPORTED,empty-screenshots,1,no-view,denied Node built-ins in sandbox: fs,,,fs os path
 encoding-tools,Encoding Tools,UNSUPPORTED,encoding-tools,7,no-view,denied Node built-ins in sandbox: fs,,,crypto fs
@@ -758,7 +758,7 @@ fathom-analytics-stats,Fathom Analytics Stats,UNSUPPORTED,fathom-analytics-stats
 favoro,FAVORO,UNSUPPORTED,favoro,3,view|no-view,OAuth: OAuth.PKCEClient throws — OAuth not yet wired,,,
 fbi,FBI,SUPPORTED,fbi,2,view,,,,
 featurebase,Featurebase,SUPPORTED,featurebase,4,view,,,,
-feedbin,Feedbin,UNSUPPORTED,feedbin,6,view|menu-bar|no-view,"AI: AI.ask throws — Invoke AI not yet wired | unsupported command mode(s): unread-menu-bar: mode ""menu-bar""",launchCommand: loads; throws if called (inter-command launch not wired) | updateCommandMetadata: loads; no-op (command metadata updates not wired) | declares background `interval` command(s) — not scheduled | declares command `arguments[]` — not passed by runtime yet,@raycast/utils:useAI (not implemented in Invoke) | @raycast/utils:CachedPromiseOptions (not implemented in Invoke),
+feedbin,Feedbin,UNSUPPORTED,feedbin,6,view|menu-bar|no-view,"unsupported command mode(s): unread-menu-bar: mode ""menu-bar""",launchCommand: loads; throws if called (inter-command launch not wired) | updateCommandMetadata: loads; no-op (command metadata updates not wired) | declares background `interval` command(s) — not scheduled | declares command `arguments[]` — not passed by runtime yet,@raycast/utils:CachedPromiseOptions (not implemented in Invoke),
 feedly,Feedly,SUPPORTED,feedly,1,view,,,,
 feishu-document-creator,Feishu Document Creator,SUPPORTED,feishu-document-creator,4,no-view,,,,
 fetch-youtube-transcript,Fetch YouTube Transcript,UNSUPPORTED,fetch-youtube-transcript,1,no-view,"denied Node built-ins in sandbox: fs, child_process",declares command `arguments[]` — not passed by runtime yet,,child_process fs os path
@@ -887,11 +887,11 @@ ghq,ghq,UNSUPPORTED,ghq,1,view,denied Node built-ins in sandbox: fs,,,fs path
 gif-search,GIF Search,UNSUPPORTED,gif-search,1,view,denied Node built-ins in sandbox: fs,,,fs os path stream
 gift-stardew-valley,Gift Stardew Valley,SUPPORTED,gift-stardew-valley,1,view,,,,
 gistly,Gistly,DEGRADED,gistly,3,view,,declares command `arguments[]` — not passed by runtime yet,,
-git,Git,UNSUPPORTED,git,6,view,"AI: AI.ask throws — Invoke AI not yet wired | denied Node built-ins in sandbox: fs, child_process",launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet,,child_process crypto fs os path
+git,Git,UNSUPPORTED,git,6,view,"denied Node built-ins in sandbox: fs, child_process",launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet,,child_process crypto fs os path
 git-assistant,Git Assistant,UNSUPPORTED,git-assistant,1,view,"declares AI tools[] (21) — AI extensions not supported | denied Node built-ins in sandbox: child_process, fs",declares extension-level `ai` instructions — ignored,@raycast/api:Tool (not in Invoke surface — needs review),child_process fs os path util
 git-batch-tools,Git Batch Tools,UNSUPPORTED,git-batch-tools,2,view,"denied Node built-ins in sandbox: child_process, fs",,,child_process fs os path util
 git-branch-name-generator,Git Branch Name Generator,SUPPORTED,git-branch-name-generator,1,view,,,,
-git-buddy,Git Buddy,UNSUPPORTED,git-buddy,3,view,AI: AI.ask throws — Invoke AI not yet wired | denied Node built-ins in sandbox: child_process,launchCommand: loads; throws if called (inter-command launch not wired),,child_process path util
+git-buddy,Git Buddy,UNSUPPORTED,git-buddy,3,view,denied Node built-ins in sandbox: child_process,launchCommand: loads; throws if called (inter-command launch not wired),,child_process path util
 git-co-authors,Git Co-Authors,UNSUPPORTED,git-co-authors,4,view|no-view,"denied Node built-ins in sandbox: fs, child_process",,,child_process fs util
 git-commands,Git Commands,SUPPORTED,git-commands,1,view,,,,
 git-profile,Git Profile,UNSUPPORTED,git-profile,2,view,denied Node built-ins in sandbox: child_process,,,child_process crypto
@@ -940,7 +940,7 @@ goodreads,Goodreads,DEGRADED,goodreads,2,view,,declares command `arguments[]` �
 google-advanced-search,Google Advanced Search,SUPPORTED,google-advanced-search,1,view,,,,
 google-books,Google Books,UNSUPPORTED,google-books,1,view,denied Node built-ins in sandbox: fs,,,fs os path
 google-calendar,Google Calendar,UNSUPPORTED,google-calendar,5,view,declares AI tools[] (9) — AI extensions not supported,launchCommand: loads; throws if called (inter-command launch not wired),@raycast/api:Tool (not in Invoke surface — needs review) | @raycast/utils:OAuthService (not implemented in Invoke) | @raycast/utils:withAccessToken (not implemented in Invoke),crypto
-google-calendar-quickadd,Google Calendar Events Quick Add,UNSUPPORTED,google-calendar-quickadd,2,no-view|view,AI: AI.ask throws — Invoke AI not yet wired,declares command `arguments[]` — not passed by runtime yet,@raycast/api:Tool (not in Invoke surface — needs review) | @raycast/utils:OAuthService (not implemented in Invoke) | @raycast/utils:withAccessToken (not implemented in Invoke),
+google-calendar-quickadd,Google Calendar Events Quick Add,UNSUPPORTED,google-calendar-quickadd,2,no-view|view,,declares command `arguments[]` — not passed by runtime yet,@raycast/api:Tool (not in Invoke surface — needs review) | @raycast/utils:OAuthService (not implemented in Invoke) | @raycast/utils:withAccessToken (not implemented in Invoke),
 google-chrome,Google Chrome,UNSUPPORTED,google-chrome,10,view|no-view,"declares AI tools[] (7) — AI extensions not supported | denied Node built-ins in sandbox: fs, child_process",declares extension-level `ai` instructions — ignored,namespace import of @raycast/api (member usage unverified),child_process fs os path url
 google-chrome-profiles,Google Chrome Profiles,UNSUPPORTED,google-chrome-profiles,2,view|no-view,"denied Node built-ins in sandbox: fs, child_process",,,child_process crypto fs os path url
 google-cloud-run,Google Cloud Run,DEGRADED,google-cloud-run,1,view,,useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox,,
@@ -966,7 +966,7 @@ gradle-plugins,Gradle Plugins,SUPPORTED,gradle-plugins,1,view,,,,
 grafana,Grafana,SUPPORTED,grafana,7,view,,,,url
 grafbase,Grafbase,SUPPORTED,grafbase,1,view,,,,
 gram,Gram,UNSUPPORTED,gram,3,no-view|view,"denied Node built-ins in sandbox: fs, child_process",,,child_process fs os path url util
-grammari-x,Grammarix,UNSUPPORTED,grammari-x,4,view,AI: AI.ask throws — Invoke AI not yet wired,declares command `arguments[]` — not passed by runtime yet,,
+grammari-x,Grammarix,DEGRADED,grammari-x,4,view,,declares command `arguments[]` — not passed by runtime yet,,
 grammaring,Grammaring,SUPPORTED,grammaring,2,no-view|view,,,,
 granola,Granola,UNSUPPORTED,granola,7,view|no-view,declares AI tools[] (7) — AI extensions not supported | denied Node built-ins in sandbox: fs,,@raycast/api:Tool (not in Invoke surface — needs review),crypto fs os path
 graphcalc,GraphCalc,DEGRADED,graphcalc,1,view,,declares command `arguments[]` — not passed by runtime yet,,
@@ -1104,18 +1104,18 @@ improvmx,ImprovMX,DEGRADED,improvmx,6,view|no-view,,launchCommand: loads; throws
 in-the-time-zone,In the Timezone,SUPPORTED,in-the-time-zone,1,view,,,,
 inbound,Inbound,SUPPORTED,inbound,3,view,,,,
 inbox-ai,Inbox AI,UNSUPPORTED,inbox-ai,7,view,denied Node built-ins in sandbox: child_process,BrowserExtension: loads; throws if called (browser bridge not wired),,child_process os
-incident-io,Incident.io,UNSUPPORTED,incident-io,4,view|menu-bar,"AI: AI.ask throws — Invoke AI not yet wired | unsupported command mode(s): live-incidents: mode ""menu-bar""",declares background `interval` command(s) — not scheduled,,
+incident-io,Incident.io,UNSUPPORTED,incident-io,4,view|menu-bar,"unsupported command mode(s): live-incidents: mode ""menu-bar""",declares background `interval` command(s) — not scheduled,,
 incognito-clone,Incognito Clone,SUPPORTED,incognito-clone,2,no-view,,,,
 indiehackers,IndieHackers,DEGRADED,indiehackers,1,view,,declares command `arguments[]` — not passed by runtime yet,,
 inertiajs-documentation,InertiaJS Documentation,SUPPORTED,inertiajs-documentation,1,view,,,,
 infakt,InFakt,DEGRADED,infakt,5,view,,launchCommand: loads; throws if called (inter-command launch not wired),,
 infisical,Infisical,UNSUPPORTED,infisical,1,view,denied Node built-ins in sandbox: fs,,,fs os path
 infomaniak,Infomaniak,SUPPORTED,infomaniak,2,view,,,,
-ingredients-lister,Ingredients Lister,UNSUPPORTED,ingredients-lister,2,view,AI: AI.ask throws — Invoke AI not yet wired,declares command `arguments[]` — not passed by runtime yet,@raycast/utils:useAI (not implemented in Invoke),
+ingredients-lister,Ingredients Lister,DEGRADED,ingredients-lister,2,view,,declares command `arguments[]` — not passed by runtime yet,,
 initium,Initium,SUPPORTED,initium,1,view,,,,
 inkdrop,Inkdrop,SUPPORTED,inkdrop,2,view,,,,
 inkeep,Inkeep,UNSUPPORTED,inkeep,1,view,declares AI tools[] (1) — AI extensions not supported,declares extension-level `ai` instructions — ignored | declares command `arguments[]` — not passed by runtime yet,,
-inoreader,Inoreader,UNSUPPORTED,inoreader,4,view,AI: AI.ask throws — Invoke AI not yet wired | OAuth: OAuth.PKCEClient throws — OAuth not yet wired | denied Node built-ins in sandbox: child_process,,,child_process util
+inoreader,Inoreader,UNSUPPORTED,inoreader,4,view,OAuth: OAuth.PKCEClient throws — OAuth not yet wired | denied Node built-ins in sandbox: child_process,,,child_process util
 inpost-parcel-lockers,InPost Parcel Lockers,SUPPORTED,inpost-parcel-lockers,2,view,,,,
 input-source-switcher,Input Source Switcher,SUPPORTED,input-source-switcher,2,no-view|view,,,,
 input-switcher,Keyboard Layout Switcher,UNSUPPORTED,keyboard-layout-switcher,2,view|no-view,denied Node built-ins in sandbox: child_process,,,child_process util
@@ -1172,14 +1172,14 @@ jotform,Jotform,SUPPORTED,jotform,1,view,,,,
 jotoba,Jotoba — Japanese Dictionary,UNSUPPORTED,jotoba,1,view,denied Node built-ins in sandbox: fs,declares command `arguments[]` — not passed by runtime yet,,fs
 json-editor,JSON Editor,SUPPORTED,json-editor,1,view,,,,
 json-format,Format JSON,SUPPORTED,json-format,6,no-view|view,,,,
-json-resume,JSON Resume,UNSUPPORTED,json-resume,2,view,AI: AI.ask throws — Invoke AI not yet wired | declares AI tools[] (1) — AI extensions not supported | denied Node built-ins in sandbox: fs,launchCommand: loads; throws if called (inter-command launch not wired) | declares extension-level `ai` instructions — ignored,,fs path
+json-resume,JSON Resume,UNSUPPORTED,json-resume,2,view,declares AI tools[] (1) — AI extensions not supported | denied Node built-ins in sandbox: fs,launchCommand: loads; throws if called (inter-command launch not wired) | declares extension-level `ai` instructions — ignored,,fs path
 json-to-go,json-to-go,SUPPORTED,json-to-go,1,no-view,,,,
 json-to-toon-converter,JSON to TOON Converter,SUPPORTED,json-to-toon-converter,1,no-view,,,,
 json2ts,Json2TS,SUPPORTED,json2ts,1,view,,,,
 jsr,JSR,UNSUPPORTED,jsr,1,view,declares AI tools[] (11) — AI extensions not supported,declares extension-level `ai` instructions — ignored,,
 jsrepo,jsrepo,SUPPORTED,jsrepo,1,view,,,,os util
 jue-jin,Juejin,SUPPORTED,juejin,1,view,,,,
-jules-agents,Jules Agents,UNSUPPORTED,jules-agents,4,view|menu-bar,"AI: AI.ask throws — Invoke AI not yet wired | unsupported command mode(s): menu-bar: mode ""menu-bar"" | denied Node built-ins in sandbox: fs",launchCommand: loads; throws if called (inter-command launch not wired),,fs os path url
+jules-agents,Jules Agents,UNSUPPORTED,jules-agents,4,view|menu-bar,"unsupported command mode(s): menu-bar: mode ""menu-bar"" | denied Node built-ins in sandbox: fs",launchCommand: loads; throws if called (inter-command launch not wired),,fs os path url
 jump,Jump,UNSUPPORTED,jump,4,no-view|view,denied Node built-ins in sandbox: child_process,launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet,,child_process os
 jup-agg,Jupiter Aggregator,UNSUPPORTED,jupiter-aggregator,2,menu-bar|view,"unsupported command mode(s): menu-bar-token-price: mode ""menu-bar""",declares background `interval` command(s) — not scheduled,,
 jurassic-ninja-site-generator,Jurassic Ninja Site Generator,SUPPORTED,jurassic-ninja-site-generator,1,view,,,,
@@ -1245,11 +1245,11 @@ kutt,Kutt,SUPPORTED,kutt,2,view,,,,
 laby-net,Laby.net,SUPPORTED,laby-net,2,view,,,,
 lacinka,Lacinka,SUPPORTED,lacinka,1,no-view,,,,
 laliga,LaLiga,SUPPORTED,laliga,4,view,,,,
-language-detector,Language Detector,UNSUPPORTED,language-detector,3,no-view|view,AI: AI.ask throws — Invoke AI not yet wired,declares command `arguments[]` — not passed by runtime yet,,
+language-detector,Language Detector,DEGRADED,language-detector,3,no-view|view,,declares command `arguments[]` — not passed by runtime yet,,
 lapack-blas-documentation-search,LAPACK/BLAS Documentation Search,UNSUPPORTED,lapack-blas-documentation-search,1,view,denied Node built-ins in sandbox: fs,,,fs path
 laracasts,Laracasts,SUPPORTED,laracasts,1,view,,,,
 larajobs-search,Search LaraJobs,UNSUPPORTED,larajobs-search,2,view|menu-bar,"unsupported command mode(s): menu: mode ""menu-bar""",declares background `interval` command(s) — not scheduled,,
-laravel-artisan,Laravel Artisan,UNSUPPORTED,laravel-artisan,1,view,AI: AI.ask throws — Invoke AI not yet wired,,@raycast/utils:useAI (not implemented in Invoke),
+laravel-artisan,Laravel Artisan,SUPPORTED,laravel-artisan,1,view,,,,
 laravel-cloud,Laravel Cloud,UNSUPPORTED,laravel-cloud,10,view,declares AI tools[] (15) — AI extensions not supported,,@raycast/api:Tool (not in Invoke surface — needs review),
 laravel-docs,Laravel Docs,UNSUPPORTED,laravel-docs,1,view,denied Node built-ins in sandbox: fs,,,fs path
 laravel-forge,Laravel Forge,UNSUPPORTED,laravel-forge,2,view|menu-bar,"unsupported command mode(s): check-deploy-status: mode ""menu-bar"" | denied Node built-ins in sandbox: fs",launchCommand: loads; throws if called (inter-command launch not wired) | updateCommandMetadata: loads; no-op (command metadata updates not wired) | declares background `interval` command(s) — not scheduled | declares command `arguments[]` — not passed by runtime yet,,fs path
@@ -1279,7 +1279,7 @@ lazygit-keybindings,Lazygit Keybindings,SUPPORTED,lazygit-keybindings,1,view,,,,
 leader-key,Leader Key,UNSUPPORTED,leader-key,1,view,"denied Node built-ins in sandbox: fs, child_process",,,child_process fs os util
 leafcast,Leafcast,UNSUPPORTED,leafcast,8,view|no-view,declares AI tools[] (7) — AI extensions not supported,launchCommand: loads; throws if called (inter-command launch not wired) | declares extension-level `ai` instructions — ignored,,timers
 leap-new,Leap.new,UNSUPPORTED,leap-new,2,view|menu-bar,"unsupported command mode(s): menu-bar: mode ""menu-bar""",,,
-learning-snacks,Learning Snacks,UNSUPPORTED,learning-snacks,1,view,AI: AI.ask throws — Invoke AI not yet wired,,,
+learning-snacks,Learning Snacks,SUPPORTED,learning-snacks,1,view,,,,
 leave-time-calculator,Leave Time Calculator,DEGRADED,leave-time-calculator,2,no-view|view,,launchCommand: loads; throws if called (inter-command launch not wired) | updateCommandMetadata: loads; no-op (command metadata updates not wired) | declares background `interval` command(s) — not scheduled,,
 leetcode,LeetCode,SUPPORTED,leetcode,2,view,,,,
 lego-bricks,LEGO Bricks,SUPPORTED,lego-bricks,5,view,,,,
@@ -1306,7 +1306,7 @@ lightshot-gallery,Lightshot Gallery,SUPPORTED,lightshot-gallery,1,view,,,,
 ligue-1,Ligue 1,SUPPORTED,ligue-1,3,view,,,,
 linak-desk-controller,Linak Desk Controller,UNSUPPORTED,linak-controller,4,no-view|menu-bar,"unsupported command mode(s): menubar-move: mode ""menu-bar"" | declares AI tools[] (3) — AI extensions not supported | denied Node built-ins in sandbox: child_process",launchCommand: loads; throws if called (inter-command launch not wired) | declares extension-level `ai` instructions — ignored | declares command `arguments[]` — not passed by runtime yet,,child_process util
 linak-desk-controller,Linak Desk Controller,UNSUPPORTED,linak-desk-controller,4,no-view|menu-bar,"unsupported command mode(s): menubar-move: mode ""menu-bar"" | denied Node built-ins in sandbox: child_process",launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet,,child_process util
-linear,Linear,UNSUPPORTED,linear,14,view|menu-bar|no-view,"unsupported command mode(s): unread-notifications: mode ""menu-bar"" | declares AI tools[] (22) — AI extensions not supported | denied Node built-ins in sandbox: fs",launchCommand: loads; throws if called (inter-command launch not wired) | declares extension-level `ai` instructions — ignored | declares background `interval` command(s) — not scheduled | declares command `arguments[]` — not passed by runtime yet,@raycast/utils:OAuthService (not implemented in Invoke) | @raycast/utils:useAI (not implemented in Invoke) | @raycast/utils:withAccessToken (not implemented in Invoke),fs path
+linear,Linear,UNSUPPORTED,linear,14,view|menu-bar|no-view,"unsupported command mode(s): unread-notifications: mode ""menu-bar"" | declares AI tools[] (22) — AI extensions not supported | denied Node built-ins in sandbox: fs",launchCommand: loads; throws if called (inter-command launch not wired) | declares extension-level `ai` instructions — ignored | declares background `interval` command(s) — not scheduled | declares command `arguments[]` — not passed by runtime yet,@raycast/utils:OAuthService (not implemented in Invoke) | @raycast/utils:withAccessToken (not implemented in Invoke),fs path
 lingo-rep-raycast,"Lingorep - Translate, Repeat, Memorize",UNSUPPORTED,lingo-rep-raycast,1,view,OAuth: OAuth.PKCEClient throws — OAuth not yet wired,,@raycast/utils:OAuthService (not implemented in Invoke) | @raycast/utils:withAccessToken (not implemented in Invoke),
 linguee,Linguee,SUPPORTED,linguee,5,view,,,,
 link-bundles,Link Bundles,UNSUPPORTED,link-bundles,2,view,"denied Node built-ins in sandbox: fs, child_process",,,child_process fs path util
@@ -1339,18 +1339,18 @@ logos-launcher,Logos Launcher,UNSUPPORTED,logos-launcher,10,no-view|view,"denied
 logseq,Logseq,UNSUPPORTED,logseq,3,view,denied Node built-ins in sandbox: fs,,,fs path
 logsnag,LogSnag,SUPPORTED,logsnag,2,view,,,,
 logtail,Logtail,SUPPORTED,logtail,4,view,,,,
-lokalise,Lokalise,UNSUPPORTED,lokalise,3,view|no-view,AI: AI.ask throws — Invoke AI not yet wired | declares AI tools[] (5) — AI extensions not supported | denied Node built-ins in sandbox: fs,declares background `interval` command(s) — not scheduled,@raycast/api:Tool (not in Invoke surface — needs review),fs path
+lokalise,Lokalise,UNSUPPORTED,lokalise,3,view|no-view,declares AI tools[] (5) — AI extensions not supported | denied Node built-ins in sandbox: fs,declares background `interval` command(s) — not scheduled,@raycast/api:Tool (not in Invoke surface — needs review),fs path
 lol-esports,LoL Esports,UNSUPPORTED,lol-esports,2,view,declares AI tools[] (3) — AI extensions not supported,declares extension-level `ai` instructions — ignored,,
 lookaway,Lookaway,SUPPORTED,lookaway,9,no-view|view,,,,
 looksee,"LookSee - A MAC, OUI, IAB Lookup",DEGRADED,looksee,2,view,,declares command `arguments[]` — not passed by runtime yet,,
 looma-fm,Looma.fm,UNSUPPORTED,looma-fm,4,no-view,"denied Node built-ins in sandbox: child_process, fs",,,child_process fs path
 looped,Looped,UNSUPPORTED,looped,1,no-view,denied Node built-ins in sandbox: child_process,,,child_process util
-lorem-ipsum,Lorem Ipsum,UNSUPPORTED,lorem-ipsum,4,no-view,AI: AI.ask throws — Invoke AI not yet wired,declares command `arguments[]` — not passed by runtime yet,,
+lorem-ipsum,Lorem Ipsum,DEGRADED,lorem-ipsum,4,no-view,,declares command `arguments[]` — not passed by runtime yet,,
 lorem-picsum,Lorem Picsum,DEGRADED,lorem-picsum,2,no-view|view,,declares command `arguments[]` — not passed by runtime yet,,
 lotr,The Lord of the Rings,SUPPORTED,lotr,3,view,,,,
 lotus-mtg-companion,Lotus - MTG Companion,DEGRADED,lotus-mtg-companion,3,view,,launchCommand: loads; throws if called (inter-command launch not wired),,
 lucide-animated,Lucide Animated,SUPPORTED,lucide-animated,1,view,,,,
-lucide-icons,Lucide Icons Search,UNSUPPORTED,lucide-icons,1,view,AI: AI.ask throws — Invoke AI not yet wired,,@raycast/utils:useAI (not implemented in Invoke),
+lucide-icons,Lucide Icons Search,SUPPORTED,lucide-icons,1,view,,,,
 lucky-surf,Lucky Surf,DEGRADED,lucky-surf,1,no-view,,declares command `arguments[]` — not passed by runtime yet,,
 luma,Luma,UNSUPPORTED,luma,2,view,declares AI tools[] (2) — AI extensions not supported,declares extension-level `ai` instructions — ignored,,
 lume,Lume,SUPPORTED,lume,1,view,,,,
@@ -1406,7 +1406,7 @@ markdown-image-to-html,Markdown Image to HTML,DEGRADED,markdown-image-to-html,1,
 markdown-navigator,Markdown Navigator,UNSUPPORTED,markdown-navigator,1,view,"denied Node built-ins in sandbox: fs, child_process",,,child_process fs os path util
 markdown-preview,Markdown Preview,SUPPORTED,markdown-preview,1,view,,,,
 markdown-reference,Markdown Reference,SUPPORTED,markdown-reference,1,view,,,,
-markdown-slides,Markdown Slides,UNSUPPORTED,markdown-slides,4,view,AI: AI.ask throws — Invoke AI not yet wired | denied Node built-ins in sandbox: fs,launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet,@raycast/utils:useAI (not implemented in Invoke),fs path
+markdown-slides,Markdown Slides,UNSUPPORTED,markdown-slides,4,view,denied Node built-ins in sandbox: fs,launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet,,fs path
 markdown-styler,Markdown Styler,UNSUPPORTED,markdown-styler,1,view,denied Node built-ins in sandbox: fs,,,fs os path
 markdown-table-generator,Markdown Table Generator,DEGRADED,markdown-table-generator,1,no-view,,declares command `arguments[]` — not passed by runtime yet,,
 markdown-this,Markdown This,SUPPORTED,markdown-this,1,no-view,,,,
@@ -1431,8 +1431,8 @@ mbta-tracker,MBTA Tracker,SUPPORTED,mbta-tracker,2,view,,,,
 mcp,Model Context Protocol,UNSUPPORTED,mcp,1,view,"declares AI tools[] (2) — AI extensions not supported | denied Node built-ins in sandbox: fs, child_process",declares extension-level `ai` instructions — ignored,,child_process fs os path util
 md-to-excel,Markdown Table to Excel,SUPPORTED,md-to-excel,1,view,,,,
 media-converter,Media Converter,UNSUPPORTED,media-converter,4,view,"declares AI tools[] (2) — AI extensions not supported | denied Node built-ins in sandbox: fs, child_process, module",launchCommand: loads; throws if called (inter-command launch not wired) | declares extension-level `ai` instructions — ignored,@raycast/api:Tool (not in Invoke surface — needs review),assert child_process fs module os path querystring stream url util zlib
-medialister-marketplace-helper,Medialister Marketplace Helper,UNSUPPORTED,medialister-marketplace-helper,2,view,AI: AI.ask throws — Invoke AI not yet wired,,,
-meduza,Meduza,UNSUPPORTED,meduza,2,view,AI: AI.ask throws — Invoke AI not yet wired,,@raycast/utils:useAI (not implemented in Invoke),
+medialister-marketplace-helper,Medialister Marketplace Helper,SUPPORTED,medialister-marketplace-helper,2,view,,,,
+meduza,Meduza,SUPPORTED,meduza,2,view,,,,
 mem,Mem,SUPPORTED,mem,1,view,,,,
 mem0,Mem0,SUPPORTED,mem0,3,view,,,,
 memberstack,Memberstack,SUPPORTED,memberstack,1,view,,,,
@@ -1445,9 +1445,9 @@ mempool,Mempool,SUPPORTED,mempool,1,view,,,,
 menubar-calendar,Menubar Calendar,UNSUPPORTED,menubar-calendar,2,menu-bar|view,"unsupported command mode(s): index: mode ""menu-bar""",launchCommand: loads; throws if called (inter-command launch not wired) | declares background `interval` command(s) — not scheduled,,
 menubar-weather,Menubar Weather,UNSUPPORTED,menubar-weather,1,menu-bar,"unsupported command mode(s): menubar-weather: mode ""menu-bar""",updateCommandMetadata: loads; no-op (command metadata updates not wired) | declares background `interval` command(s) — not scheduled,,
 mercado-libre,Mercado Libre,SUPPORTED,mercado-libre,1,view,,,,
-mercury,Mercury,UNSUPPORTED,mercury,2,view,AI: AI.ask throws — Invoke AI not yet wired | declares AI tools[] (3) — AI extensions not supported,declares extension-level `ai` instructions — ignored,,
+mercury,Mercury,UNSUPPORTED,mercury,2,view,declares AI tools[] (3) — AI extensions not supported,declares extension-level `ai` instructions — ignored,,
 mermaid-to-image,Mermaid to Image,UNSUPPORTED,mermaid-to-image,1,view,"declares AI tools[] (1) — AI extensions not supported | denied Node built-ins in sandbox: fs, child_process",declares extension-level `ai` instructions — ignored,,child_process fs os path url util
-messages,Messages,UNSUPPORTED,messages,5,view|menu-bar|no-view,"AI: AI.ask throws — Invoke AI not yet wired | unsupported command mode(s): unread-messages: mode ""menu-bar"" | declares AI tools[] (3) — AI extensions not supported",launchCommand: loads; throws if called (inter-command launch not wired) | declares extension-level `ai` instructions — ignored | declares background `interval` command(s) — not scheduled,@raycast/api:Tool (not in Invoke surface — needs review),os path
+messages,Messages,UNSUPPORTED,messages,5,view|menu-bar|no-view,"unsupported command mode(s): unread-messages: mode ""menu-bar"" | declares AI tools[] (3) — AI extensions not supported",launchCommand: loads; throws if called (inter-command launch not wired) | declares extension-level `ai` instructions — ignored | declares background `interval` command(s) — not scheduled,@raycast/api:Tool (not in Invoke surface — needs review),os path
 meta-music,Meta Music,UNSUPPORTED,meta-music,1,view,declares AI tools[] (1) — AI extensions not supported | denied Node built-ins in sandbox: fs,declares extension-level `ai` instructions — ignored,@raycast/api:Tool (not in Invoke surface — needs review),fs os path
 metabase,Metabase,UNSUPPORTED,metabase,1,view,declares AI tools[] (4) — AI extensions not supported,declares extension-level `ai` instructions — ignored,@raycast/api:Tool (not in Invoke surface — needs review),
 metacritic,Metacritic,SUPPORTED,metacritic,1,view,,,,
@@ -1545,7 +1545,7 @@ must,Must,SUPPORTED,must,1,view,,,,
 mute-microphone,Toggle Audio Input (Microphone),UNSUPPORTED,mute-microphone,3,menu-bar|no-view,"unsupported command mode(s): mute-menu-bar: mode ""menu-bar"" | denied Node built-ins in sandbox: child_process",launchCommand: loads; throws if called (inter-command launch not wired) | declares background `interval` command(s) — not scheduled | declares command `arguments[]` — not passed by runtime yet,,child_process os path util
 mutedeck,MuteDeck,DEGRADED,mutedeck,4,view|no-view,,updateCommandMetadata: loads; no-op (command metadata updates not wired),,
 mxroute,MXroute,SUPPORTED,mxroute,1,view,,,,
-my-daily-log,My Daily Log,UNSUPPORTED,my-daily-log,6,view,denied Node built-ins in sandbox: fs,declares command `arguments[]` — not passed by runtime yet,@raycast/utils:useAI (not implemented in Invoke),fs path
+my-daily-log,My Daily Log,UNSUPPORTED,my-daily-log,6,view,denied Node built-ins in sandbox: fs,declares command `arguments[]` — not passed by runtime yet,,fs path
 myanimelist-search,Myanimelist Search,UNSUPPORTED,myanimelist-search,2,view,OAuth: OAuth.PKCEClient throws — OAuth not yet wired,,,crypto
 myidlers,MyIdlers,DEGRADED,my-idlers,2,view,,declares command `arguments[]` — not passed by runtime yet,,
 myip,MyIP,UNSUPPORTED,myip,2,view|menu-bar,"unsupported command mode(s): menubar: mode ""menu-bar""",declares background `interval` command(s) — not scheduled,,os
@@ -1622,7 +1622,7 @@ note-in-google-doc,Notes in Google Docs,UNSUPPORTED,note-in-google-doc,1,view,OA
 noteman,Noteman,UNSUPPORTED,noteman,4,view,denied Node built-ins in sandbox: fs,,,fs os path
 noteplan-3,NotePlan 3,UNSUPPORTED,noteplan-3,2,view,denied Node built-ins in sandbox: fs,,,fs os path
 notilight-controller,NotiLight Controller,SUPPORTED,notilight-controller,7,no-view,,,,
-notion,Notion,UNSUPPORTED,notion,4,view,AI: AI.ask throws — Invoke AI not yet wired | OAuth: OAuth.PKCEClient throws — OAuth not yet wired | declares AI tools[] (6) — AI extensions not supported,declares extension-level `ai` instructions — ignored | declares command `arguments[]` — not passed by runtime yet,@raycast/utils:withAccessToken (not implemented in Invoke) | @raycast/utils:OAuthService (not implemented in Invoke),
+notion,Notion,UNSUPPORTED,notion,4,view,OAuth: OAuth.PKCEClient throws — OAuth not yet wired | declares AI tools[] (6) — AI extensions not supported,declares extension-level `ai` instructions — ignored | declares command `arguments[]` — not passed by runtime yet,@raycast/utils:withAccessToken (not implemented in Invoke) | @raycast/utils:OAuthService (not implemented in Invoke),
 notion_researcher,Notion Researcher,SUPPORTED,notion_researcher,3,view,,,,
 notion-url-to-id,Notion URL to ID,UNSUPPORTED,notion-url-to-id,2,no-view|view,denied Node built-ins in sandbox: child_process,,,child_process util
 notis,Ask Notis,UNSUPPORTED,notis,3,view|menu-bar,"unsupported command mode(s): menu-bar-command: mode ""menu-bar"" | denied Node built-ins in sandbox: fs, child_process",launchCommand: loads; throws if called (inter-command launch not wired) | declares background `interval` command(s) — not scheduled | declares command `arguments[]` — not passed by runtime yet,,child_process fs os path util
@@ -1651,13 +1651,13 @@ nusmods,NUSMods,UNSUPPORTED,nusmods,1,view,,,@raycast/utils:useStreamJSON (not i
 nuxt,Nuxt,UNSUPPORTED,nuxt,6,no-view|view|menu-bar,"unsupported command mode(s): nuxt-dev-server: mode ""menu-bar"" | declares AI tools[] (8) — AI extensions not supported | denied Node built-ins in sandbox: child_process, fs",launchCommand: loads; throws if called (inter-command launch not wired) | useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox | declares background `interval` command(s) — not scheduled | declares command `arguments[]` — not passed by runtime yet,,child_process fs path
 nyc-train-tracker,NYC Train Tracker - Realtime Train Departures,SUPPORTED,nyc-train-tracker,1,view,,,,
 nzbget,NZBGet,SUPPORTED,nzbget,2,view,,,,path
-oblique-strategies,Oblique Strategies,UNSUPPORTED,oblique-strategies,3,view,,launchCommand: loads; throws if called (inter-command launch not wired),@raycast/utils:useAI (not implemented in Invoke),
-obs-clippings,Obsidian Clippings,UNSUPPORTED,obs-clippings,1,view,AI: AI.ask throws — Invoke AI not yet wired | denied Node built-ins in sandbox: fs,,,fs
+oblique-strategies,Oblique Strategies,DEGRADED,oblique-strategies,3,view,,launchCommand: loads; throws if called (inter-command launch not wired),,
+obs-clippings,Obsidian Clippings,UNSUPPORTED,obs-clippings,1,view,denied Node built-ins in sandbox: fs,,,fs
 obs-control,OBS Control,SUPPORTED,obs-control,8,view|no-view,,,,
 obsidian,Obsidian,UNSUPPORTED,obsidian,12,view|menu-bar,"unsupported command mode(s): obsidianMenuBar: mode ""menu-bar"" | declares AI tools[] (7) — AI extensions not supported | denied Node built-ins in sandbox: fs, child_process",declares command `arguments[]` — not passed by runtime yet,@raycast/api:Tool (not in Invoke surface — needs review),child_process fs os path
 obsidian-bookmarks,Obsidian Bookmarks,UNSUPPORTED,obsidian-bookmarks,3,view|no-view,denied Node built-ins in sandbox: fs,BrowserExtension: loads; throws if called (browser bridge not wired),@raycast/api:FileIcon (not in Invoke surface — needs review),fs os path url
 obsidian-link-opener,Obsidian Link Opener,UNSUPPORTED,obsidian-link-opener,3,view,denied Node built-ins in sandbox: fs,launchCommand: loads; throws if called (inter-command launch not wired),namespace import of @raycast/api (member usage unverified),fs os path
-obsidian-smart-capture,Obsidian Smart Capture,UNSUPPORTED,obsidian-smart-capture,1,view,AI: AI.ask throws — Invoke AI not yet wired | denied Node built-ins in sandbox: fs,,,fs os path
+obsidian-smart-capture,Obsidian Smart Capture,UNSUPPORTED,obsidian-smart-capture,1,view,denied Node built-ins in sandbox: fs,,,fs os path
 obsidian-tasks,Obsidian Tasks,UNSUPPORTED,obsidian-tasks,5,view|menu-bar,"unsupported command mode(s): menubar-item: mode ""menu-bar""",launchCommand: loads; throws if called (inter-command launch not wired),,path
 oci,Oracle Cloud,UNSUPPORTED,oci,4,view,denied Node built-ins in sandbox: fs,,,fs
 octoprint,OctoPrint,DEGRADED,octoprint,3,view,,declares command `arguments[]` — not passed by runtime yet,,
@@ -1711,9 +1711,9 @@ open-props,Open Props,SUPPORTED,open-props,2,view,,,,
 open-with-app,Open With App,SUPPORTED,open-with-app,1,view,,,,os
 openai-gpt,OpenAI GPT,UNSUPPORTED,openai-gpt,1,view,denied Node built-ins in sandbox: fs,,,fs path
 openai-speak,OpenAI Speak,UNSUPPORTED,openai-speak,1,no-view,"denied Node built-ins in sandbox: fs, child_process",,,child_process fs os path util
-openai-translator,OpenAI Translator,UNSUPPORTED,openai-translator,8,view|no-view,"AI: AI.ask throws — Invoke AI not yet wired | denied Node built-ins in sandbox: fs, child_process",launchCommand: loads; throws if called (inter-command launch not wired) | updateCommandMetadata: loads; no-op (command metadata updates not wired),,child_process fs stream
+openai-translator,OpenAI Translator,UNSUPPORTED,openai-translator,8,view|no-view,"denied Node built-ins in sandbox: fs, child_process",launchCommand: loads; throws if called (inter-command launch not wired) | updateCommandMetadata: loads; no-op (command metadata updates not wired),,child_process fs stream
 openclaw,OpenClaw,DEGRADED,openclaw,6,view|no-view,,declares command `arguments[]` — not passed by runtime yet,,
-opencode-sessions,OpenCode Sessions,UNSUPPORTED,opencode-sessions,1,view,"AI: AI.ask throws — Invoke AI not yet wired | denied Node built-ins in sandbox: fs, child_process",,@raycast/utils:useAI (not implemented in Invoke),child_process fs os path
+opencode-sessions,OpenCode Sessions,UNSUPPORTED,opencode-sessions,1,view,"denied Node built-ins in sandbox: fs, child_process",,,child_process fs os path
 openfortivpn,Openfortivpn,UNSUPPORTED,openfortivpn,2,view|no-view,"denied Node built-ins in sandbox: child_process, fs",,,child_process fs util
 openhue,OpenHue,UNSUPPORTED,openhue,4,view,"denied Node built-ins in sandbox: https, fs",,,fs https os path
 openrouter-manager,OpenRouter Manager,DEGRADED,openrouter-manager,4,view,,launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet,,
@@ -1804,7 +1804,7 @@ pdf-compression,PDF Compression,UNSUPPORTED,pdf-compression,1,no-view,denied Nod
 pdf-tools,PDF Tools,DEGRADED,pdf-tools,6,no-view,,declares command `arguments[]` — not passed by runtime yet,,path
 pdfsearch,PDFSearch,UNSUPPORTED,pdfsearch,2,view,denied Node built-ins in sandbox: fs,,,fs path
 pdsls,PDSls,DEGRADED,pdsls,4,view,,declares command `arguments[]` — not passed by runtime yet,,
-penflow-ai,Penflow AI,UNSUPPORTED,penflow-ai,1,view,AI: AI.ask throws — Invoke AI not yet wired,,,
+penflow-ai,Penflow AI,SUPPORTED,penflow-ai,1,view,,,,
 penpot,Penpot,SUPPORTED,penpot,2,view,,,,
 pera-explorer,Pera Algorand Explorer,UNSUPPORTED,pera-explorer,1,view,,,@raycast/utils:Response (not implemented in Invoke),
 percentage-calculator,Percentage Calculator,DEGRADED,percentage-calculator,1,view,,declares command `arguments[]` — not passed by runtime yet,,
@@ -1831,7 +1831,7 @@ pia-controls,Private Internet Access Controls,UNSUPPORTED,pia-controls,4,no-view
 pianoman,Pianoman,DEGRADED,pianoman,1,view,,declares command `arguments[]` — not passed by runtime yet,,
 picgo,PicGo,UNSUPPORTED,picgo,4,view,denied Node built-ins in sandbox: fs,,,fs path process
 pick-random-raycast-extension,Pick Random,DEGRADED,pick-random,3,no-view,,declares command `arguments[]` — not passed by runtime yet,,
-pick-your-wallpaper,Pick Your Wallpaper,UNSUPPORTED,pick-your-wallpaper,2,view|no-view,"AI: AI.ask throws — Invoke AI not yet wired | declares AI tools[] (3) — AI extensions not supported | denied Node built-ins in sandbox: child_process, fs",declares extension-level `ai` instructions — ignored,@raycast/api:Tool (not in Invoke surface — needs review),child_process fs path util zlib
+pick-your-wallpaper,Pick Your Wallpaper,UNSUPPORTED,pick-your-wallpaper,2,view|no-view,"declares AI tools[] (3) — AI extensions not supported | denied Node built-ins in sandbox: child_process, fs",declares extension-level `ai` instructions — ignored,@raycast/api:Tool (not in Invoke surface — needs review),child_process fs path util zlib
 pie-for-pi-hole,Pie for Pi-Hole,UNSUPPORTED,pie-for-pihole,16,view|no-view,"denied Node built-ins in sandbox: http, https, fs",,,crypto fs http https os path
 pieces-raycast,Pieces for Raycast,UNSUPPORTED,pieces-raycast,9,no-view|view,"denied Node built-ins in sandbox: fs, child_process",launchCommand: loads; throws if called (inter-command launch not wired) | BrowserExtension: loads; throws if called (browser bridge not wired),@raycast/api:Preferences (not in Invoke surface — needs review),child_process crypto events fs os path url util
 pika,Pika,UNSUPPORTED,pika,2,view,denied Node built-ins in sandbox: fs,,,fs
@@ -1842,7 +1842,7 @@ pinch-svg,Pinch SVG,DEGRADED,pinch-svg,2,view,,declares command `arguments[]` �
 ping,Ping,UNSUPPORTED,ping,1,view,denied Node built-ins in sandbox: child_process,declares command `arguments[]` — not passed by runtime yet,,child_process os util
 ping-menu,Ping Menu,UNSUPPORTED,ping-menu,1,menu-bar,"unsupported command mode(s): ping-monitor: mode ""menu-bar"" | denied Node built-ins in sandbox: child_process",declares background `interval` command(s) — not scheduled,,child_process util
 pinia-docs,Pinia Docs,SUPPORTED,pinia-docs,1,view,,,,
-pins,Pins,UNSUPPORTED,pins,8,menu-bar|view|no-view,"AI: AI.ask throws — Invoke AI not yet wired | unsupported command mode(s): index: mode ""menu-bar"" | denied Node built-ins in sandbox: fs, vm, child_process",launchCommand: loads; throws if called (inter-command launch not wired) | declares background `interval` command(s) — not scheduled,,child_process crypto fs os path vm
+pins,Pins,UNSUPPORTED,pins,8,menu-bar|view|no-view,"unsupported command mode(s): index: mode ""menu-bar"" | denied Node built-ins in sandbox: fs, vm, child_process",launchCommand: loads; throws if called (inter-command launch not wired) | declares background `interval` command(s) — not scheduled,,child_process crypto fs os path vm
 pinwork,Pinwork,SUPPORTED,pinwork,6,view,,,,
 pip,PiP,SUPPORTED,pip,2,no-view,,,,
 pipe-commands,Pipe Commands,UNSUPPORTED,pipe-commands,4,view,"denied Node built-ins in sandbox: child_process, fs",,,child_process fs path
@@ -1876,7 +1876,7 @@ pokedex,Pokédex,DEGRADED,pokedex,8,view,,declares command `arguments[]` — not
 pokemon-tcg-pocket-binder,Pokémon Tcg Pocket Binder,SUPPORTED,pokemon-tcg-pocket-binder,1,view,,,,
 polar,Polar,UNSUPPORTED,polar,3,view,OAuth: OAuth.PKCEClient throws — OAuth not yet wired,,,
 polars-documentation-search,Polars Documentation Search,SUPPORTED,polars-documentation-search,1,view,,,,util zlib
-polidict,Polidict,UNSUPPORTED,polidict,6,view|no-view,OAuth: OAuth.PKCEClient throws — OAuth not yet wired | AI: AI.ask throws — Invoke AI not yet wired | denied Node built-ins in sandbox: child_process,declares command `arguments[]` — not passed by runtime yet,,child_process crypto util
+polidict,Polidict,UNSUPPORTED,polidict,6,view|no-view,OAuth: OAuth.PKCEClient throws — OAuth not yet wired | denied Node built-ins in sandbox: child_process,declares command `arguments[]` — not passed by runtime yet,,child_process crypto util
 polished,Polished,SUPPORTED,polished,4,view,,,,
 pollen-count,Pollen Count,SUPPORTED,pollen-count,1,view,,,,
 polymarket,Polymarket,SUPPORTED,polymarket,2,view,,,,
@@ -1895,7 +1895,7 @@ ports,Port Manager,UNSUPPORTED,ports,2,view|no-view,denied Node built-ins in san
 portuguese-primeira-liga,Portuguese Primeira Liga,SUPPORTED,portuguese-primeira-liga,3,view,,,,
 position-size-calculator,Position Size Calculator,SUPPORTED,position-size-calculator,1,view,,,,
 positron,Positron,UNSUPPORTED,positron,3,view|no-view,"denied Node built-ins in sandbox: fs, child_process",,,child_process fs os path
-postey,Postey,UNSUPPORTED,postey,5,view,AI: AI.ask throws — Invoke AI not yet wired | declares AI tools[] (4) — AI extensions not supported,declares extension-level `ai` instructions — ignored,@raycast/api:Tool (not in Invoke surface — needs review),
+postey,Postey,UNSUPPORTED,postey,5,view,declares AI tools[] (4) — AI extensions not supported,declares extension-level `ai` instructions — ignored,@raycast/api:Tool (not in Invoke surface — needs review),
 posthog,PostHog,DEGRADED,posthog,5,view,,declares command `arguments[]` — not passed by runtime yet,,
 postiz,Postiz,SUPPORTED,postiz,3,view,,,,
 postman,Postman,SUPPORTED,postman,1,view,,,,
@@ -1924,7 +1924,7 @@ project-hub,Project Hub,SUPPORTED,project-hub,1,view,,,,crypto
 projects,Projects,UNSUPPORTED,projects,1,view,"denied Node built-ins in sandbox: child_process, fs",,,child_process fs os path util
 prompt-builder,Prompt Builder,UNSUPPORTED,prompt-builder,3,view,denied Node built-ins in sandbox: fs,,,fs
 prompt-stash,Prompt Stash,UNSUPPORTED,prompt-stash,3,view|no-view,denied Node built-ins in sandbox: fs,,,fs os path
-promptlab,PromptLab,UNSUPPORTED,promptlab,7,view|menu-bar,"AI: AI.ask throws — Invoke AI not yet wired | unsupported command mode(s): menubar-item: mode ""menu-bar"" | denied Node built-ins in sandbox: fs, child_process",launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet,@raycast/utils:useAI (not implemented in Invoke),child_process crypto fs os path util
+promptlab,PromptLab,UNSUPPORTED,promptlab,7,view|menu-bar,"unsupported command mode(s): menubar-item: mode ""menu-bar"" | denied Node built-ins in sandbox: fs, child_process",launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet,,child_process crypto fs os path util
 promptnote,PromptNote,UNSUPPORTED,promptnote,6,view,OAuth: OAuth.PKCEClient throws — OAuth not yet wired,,,crypto
 prompts-chat,Prompts.chat,SUPPORTED,prompts-chat,5,view,,,,
 pronounce-the-word,Pronounce the Word,UNSUPPORTED,pronounce-the-word,1,view,"denied Node built-ins in sandbox: child_process, fs",,,child_process fs path
@@ -1976,7 +1976,7 @@ quick-event,Quick Event,SUPPORTED,quick-event,1,view,,,,
 quick-git,Quick Git,UNSUPPORTED,quick-git,2,view,denied Node built-ins in sandbox: fs,launchCommand: loads; throws if called (inter-command launch not wired) | useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox,,fs path
 quick-jump,Quick Jump,UNSUPPORTED,quick-jump,1,view,denied Node built-ins in sandbox: fs,,,fs os path
 quick-latex,LaTeX to Image,UNSUPPORTED,quick-latex,1,view,denied Node built-ins in sandbox: fs,declares command `arguments[]` — not passed by runtime yet,,fs path
-quick-notes,Quick Notes,UNSUPPORTED,quick-notes,6,view|no-view,AI: AI.ask throws — Invoke AI not yet wired | denied Node built-ins in sandbox: fs,declares background `interval` command(s) — not scheduled | declares command `arguments[]` — not passed by runtime yet,,fs path
+quick-notes,Quick Notes,UNSUPPORTED,quick-notes,6,view|no-view,denied Node built-ins in sandbox: fs,declares background `interval` command(s) — not scheduled | declares command `arguments[]` — not passed by runtime yet,,fs path
 quick-open-project,Quick Open Project,UNSUPPORTED,quick-open-project,1,view,"denied Node built-ins in sandbox: child_process, fs",,,child_process fs os
 quick-quit,Quick Quit,UNSUPPORTED,quick-quit,4,view|no-view,,,@raycast/api:// Import the Application type (not in Invoke surface — needs review),crypto
 quick-references,Quick References,UNSUPPORTED,quick-references,1,view,denied Node built-ins in sandbox: fs,,,fs os path
@@ -2017,7 +2017,7 @@ random-text-picker,Random Text Picker,UNSUPPORTED,random-text-picker,1,view,deni
 random-us-phone-number,Random US Phone Number,SUPPORTED,random-us-phone-number,1,no-view,,,,
 rapidcap,RapidCap,UNSUPPORTED,rapidcap,2,view,denied Node built-ins in sandbox: fs,,,fs
 rateyourmusic-search,Rate Your Music Search,DEGRADED,rateyourmusic-search,1,no-view,,declares command `arguments[]` — not passed by runtime yet,,
-ratingsdb,RatingsDB,UNSUPPORTED,ratingsdb,2,view,AI: AI.ask throws — Invoke AI not yet wired | declares AI tools[] (1) — AI extensions not supported,declares command `arguments[]` — not passed by runtime yet,@raycast/utils:useAI (not implemented in Invoke),
+ratingsdb,RatingsDB,UNSUPPORTED,ratingsdb,2,view,declares AI tools[] (1) — AI extensions not supported,declares command `arguments[]` — not passed by runtime yet,,
 ratio-calculator,Ratio Calculator,SUPPORTED,ratio-calculator,1,view,,,,
 ray-boop,Ray Boop,SUPPORTED,ray-boop,1,view,,,,crypto
 ray-clicker,Ray Clicker,DEGRADED,ray-clicker,1,view,,launchCommand: loads; throws if called (inter-command launch not wired),,
@@ -2032,14 +2032,14 @@ raycast-bard-ai,Google Bard,SUPPORTED,raycast-bard-ai,11,view,,,,
 raycast-clip,Clip - URL Shortener,SUPPORTED,clip,2,view,,,,path
 raycast-datadog,Datadog,SUPPORTED,datadog,5,view,,,,
 raycast-diki,Diki Translate,SUPPORTED,raycast-diki,1,view,,,,
-raycast-explorer,Raycast Explorer,UNSUPPORTED,raycast-explorer,5,view,OAuth: OAuth.PKCEClient throws — OAuth not yet wired | AI: AI.ask throws — Invoke AI not yet wired,,,
+raycast-explorer,Raycast Explorer,UNSUPPORTED,raycast-explorer,5,view,OAuth: OAuth.PKCEClient throws — OAuth not yet wired,,,
 raycast-fly,Fly.io,SUPPORTED,raycast-fly,1,view,,,,
 raycast-focus-stats,Raycast Focus Stats,UNSUPPORTED,raycast-focus-stats,3,view|no-view,"denied Node built-ins in sandbox: child_process, fs, https",declares background `interval` command(s) — not scheduled,,child_process fs https os path zlib
 raycast-frc,Raycast FRC,DEGRADED,raycast-frc,4,view,,declares command `arguments[]` — not passed by runtime yet,,
 raycast-gemini,Google Gemini,UNSUPPORTED,raycast-gemini,16,view|no-view,"denied Node built-ins in sandbox: fs, child_process",launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet,,child_process fs os util
 raycast-google-palm,Google PaLM,DEGRADED,raycast-google-palm,10,view,,declares command `arguments[]` — not passed by runtime yet,,
 raycast-ia-writer,iA Writer,UNSUPPORTED,raycast-ia-writer,3,no-view|view,denied Node built-ins in sandbox: child_process,declares command `arguments[]` — not passed by runtime yet,,child_process
-raycast-icons,Raycast Icons,UNSUPPORTED,raycast-icons,1,view,AI: AI.ask throws — Invoke AI not yet wired,,@raycast/utils:useAI (not implemented in Invoke),
+raycast-icons,Raycast Icons,SUPPORTED,raycast-icons,1,view,,,,
 raycast-ios-hig,iOS Human Interface Guidelines,SUPPORTED,ios-hig,1,view,,,,
 raycast-jq,Jq,UNSUPPORTED,raycast-jq,1,view,"denied Node built-ins in sandbox: child_process, fs",useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox,@raycast/utils:AsyncState (not implemented in Invoke),child_process fs path stream util
 raycast-kozip-extension,Kozip,SUPPORTED,raycast-kozip-extension,1,view,,,,
@@ -2047,7 +2047,7 @@ raycast-language-tool,Language Tool - Spell & Grammar Checker,SUPPORTED,language
 raycast-lighting-node-search,Search Lightning Nodes,DEGRADED,raycast-lighting-node-search,1,view,,declares command `arguments[]` — not passed by runtime yet,,
 raycast-link-lock,Link Lock - Password Locked Links,SUPPORTED,raycast-link-lock,1,view,,,,
 raycast-manual,Raycast Manual,SUPPORTED,raycast-manual,1,view,,,,
-raycast-monkeytype-theme,Raycast MonkeyType Theme Explorer,UNSUPPORTED,raycast-monkeytype-theme,1,view,AI: AI.ask throws — Invoke AI not yet wired,,,
+raycast-monkeytype-theme,Raycast MonkeyType Theme Explorer,SUPPORTED,raycast-monkeytype-theme,1,view,,,,
 raycast-motion-preview,Motion Preview,UNSUPPORTED,raycast-motion-preview,1,no-view,denied Node built-ins in sandbox: fs,,,fs
 raycast-mux,Mux.com,DEGRADED,raycast-mux,6,no-view|view,,declares command `arguments[]` — not passed by runtime yet,,
 raycast-new-instance,New Instance,UNSUPPORTED,raycast-new-instance,2,view|no-view,denied Node built-ins in sandbox: child_process,,,child_process util
@@ -2056,7 +2056,7 @@ raycast-notification,Raycast Notification,DEGRADED,raycast-notification,1,no-vie
 raycast-nrm,NPM Registry Manager,SUPPORTED,raycast-nrm,1,view,,,,
 raycast-ollama,Ollama AI,UNSUPPORTED,raycast-ollama,21,view,declares AI tools[] (2) — AI extensions not supported | denied Node built-ins in sandbox: fs,launchCommand: loads; throws if called (inter-command launch not wired) | BrowserExtension: loads; throws if called (browser bridge not wired) | declares command `arguments[]` — not passed by runtime yet,,fs os stream
 raycast-ordbokene,Ordbøkene - Norwegian Dictionary,SUPPORTED,raycast-ordbokene,1,view,,,,
-raycast-port,Raycast Port,UNSUPPORTED,raycast-port,3,no-view,AI: AI.ask throws — Invoke AI not yet wired | denied Node built-ins in sandbox: child_process,BrowserExtension: loads; throws if called (browser bridge not wired),@raycast/api:WindowManagement (not in Invoke surface — needs review),child_process
+raycast-port,Raycast Port,UNSUPPORTED,raycast-port,3,no-view,denied Node built-ins in sandbox: child_process,BrowserExtension: loads; throws if called (browser bridge not wired),@raycast/api:WindowManagement (not in Invoke surface — needs review),child_process
 raycast-rsync-extension,Rsync File Transfer,UNSUPPORTED,raycast-rsync-extension,3,view,"denied Node built-ins in sandbox: fs, child_process",,,child_process fs os path util
 raycast-sink,Sink Short Links Manager,DEGRADED,raycast-sink,2,view,,launchCommand: loads; throws if called (inter-command launch not wired),,url
 raycast-store-updates,Raycast Store Updates,UNSUPPORTED,raycast-store-updates,1,view,denied Node built-ins in sandbox: fs,,,fs path
@@ -2094,7 +2094,7 @@ react-icons,React Icons,UNSUPPORTED,react-icons,1,view,denied Node built-ins in 
 react-native-directory,React Native Directory,SUPPORTED,react-native-directory,1,view,,,,
 read-ai,Read AI - Text to Speech,UNSUPPORTED,read-ai,3,no-view|view,"denied Node built-ins in sandbox: fs, child_process",,,child_process fs os path util
 readeck,Readeck,UNSUPPORTED,readeck,2,view,,,@raycast/utils:Action (not implemented in Invoke) | @raycast/utils:ActionPanel (not implemented in Invoke) | @raycast/utils:Icon (not implemented in Invoke) | @raycast/utils:Form (not implemented in Invoke) | @raycast/utils:showToast (not implemented in Invoke) | @raycast/utils:Toast (not implemented in Invoke) | @raycast/utils:getPreferenceValues (not implemented in Invoke) | @raycast/utils:List (not implemented in Invoke),
-reader-mode,Reader Mode,UNSUPPORTED,reader-mode,3,view,AI: AI.ask throws — Invoke AI not yet wired | denied Node built-ins in sandbox: fs,BrowserExtension: loads; throws if called (browser bridge not wired) | declares command `arguments[]` — not passed by runtime yet,@raycast/utils:useAI (not implemented in Invoke),fs os path
+reader-mode,Reader Mode,UNSUPPORTED,reader-mode,3,view,denied Node built-ins in sandbox: fs,BrowserExtension: loads; throws if called (browser bridge not wired) | declares command `arguments[]` — not passed by runtime yet,,fs os path
 reading-time,Reading Time,SUPPORTED,reading-time,1,view,,,,
 readwise,Readwise,SUPPORTED,readwise,5,no-view|view,,,,
 readwise-reader,Readwise Reader,DEGRADED,readwise-reader,11,no-view|view,,BrowserExtension: loads; throws if called (browser bridge not wired) | declares command `arguments[]` — not passed by runtime yet,,
@@ -2114,7 +2114,7 @@ reddit-search,Reddit Search,SUPPORTED,reddit-search,1,view,,,,
 redirect-trace,Redirect Trace,SUPPORTED,redirect-trace,1,view,,,,
 redis,Redis,SUPPORTED,redis,2,view,,,,
 redmine,Redmine,SUPPORTED,redmine,1,view,,,,
-rednote-viewer,RedNote Viewer,UNSUPPORTED,rednote-viewer,1,view,AI: AI.ask throws — Invoke AI not yet wired | denied Node built-ins in sandbox: fs,,@raycast/utils:useAI (not implemented in Invoke),crypto fs os path
+rednote-viewer,RedNote Viewer,UNSUPPORTED,rednote-viewer,1,view,denied Node built-ins in sandbox: fs,,,crypto fs os path
 reflect,Reflect,UNSUPPORTED,reflect,6,view|no-view,OAuth: OAuth.PKCEClient throws — OAuth not yet wired,declares command `arguments[]` — not passed by runtime yet,,
 refresh-browsers,Refresh Browsers,SUPPORTED,refresh-browsers,1,no-view,,,,
 refresh-wifi,Refresh WiFi,SUPPORTED,refresh-wifi,1,no-view,,,,
@@ -2140,7 +2140,7 @@ render,Render,SUPPORTED,render,1,view,,,,
 replicate,Replicate,UNSUPPORTED,replicate,1,view,denied Node built-ins in sandbox: fs,,,crypto fs os path
 repo-launcher,Repo Launcher,UNSUPPORTED,repo-launcher,2,view,"denied Node built-ins in sandbox: fs, child_process",,,child_process fs path util
 repology-search,Repology Search,SUPPORTED,repology-search,1,view,,,,
-repository-manager,Repository Manager,UNSUPPORTED,repository-manager,1,view,"AI: AI.ask throws — Invoke AI not yet wired | denied Node built-ins in sandbox: child_process, fs",,@raycast/api:useMemo (not in Invoke surface — needs review) | @raycast/api:useCallback (not in Invoke surface — needs review) | @raycast/api:useEffect (not in Invoke surface — needs review) | @raycast/api:useRef (not in Invoke surface — needs review) | @raycast/api:useState (not in Invoke surface — needs review) | @raycast/api:existsSync (not in Invoke surface — needs review) | @raycast/api:readFileSync (not in Invoke surface — needs review) | @raycast/utils:Action (not implemented in Invoke) | @raycast/utils:ActionPanel (not implemented in Invoke) | @raycast/utils:AI (not implemented in Invoke) | @raycast/utils:Detail (not implemented in Invoke) | @raycast/utils:Icon (not implemented in Invoke) | @raycast/utils:environment (not implemented in Invoke) | @raycast/utils:useNavigation (not implemented in Invoke) | @raycast/utils:Color (not implemented in Invoke) | @raycast/utils:Image (not implemented in Invoke) | @raycast/utils:List (not implemented in Invoke) | @raycast/utils:Clipboard (not implemented in Invoke) | @raycast/utils:Toast (not implemented in Invoke) | @raycast/utils:showToast (not implemented in Invoke) | @raycast/utils:confirmAlert (not implemented in Invoke) | @raycast/utils:useEffect (not implemented in Invoke) | @raycast/utils:useMemo (not implemented in Invoke) | @raycast/utils:useRef (not implemented in Invoke) | @raycast/utils:useState (not implemented in Invoke),child_process fs os path util
+repository-manager,Repository Manager,UNSUPPORTED,repository-manager,1,view,"denied Node built-ins in sandbox: child_process, fs",,@raycast/api:useMemo (not in Invoke surface — needs review) | @raycast/api:useCallback (not in Invoke surface — needs review) | @raycast/api:useEffect (not in Invoke surface — needs review) | @raycast/api:useRef (not in Invoke surface — needs review) | @raycast/api:useState (not in Invoke surface — needs review) | @raycast/api:existsSync (not in Invoke surface — needs review) | @raycast/api:readFileSync (not in Invoke surface — needs review) | @raycast/utils:Action (not implemented in Invoke) | @raycast/utils:ActionPanel (not implemented in Invoke) | @raycast/utils:AI (not implemented in Invoke) | @raycast/utils:Detail (not implemented in Invoke) | @raycast/utils:Icon (not implemented in Invoke) | @raycast/utils:environment (not implemented in Invoke) | @raycast/utils:useNavigation (not implemented in Invoke) | @raycast/utils:Color (not implemented in Invoke) | @raycast/utils:Image (not implemented in Invoke) | @raycast/utils:List (not implemented in Invoke) | @raycast/utils:Clipboard (not implemented in Invoke) | @raycast/utils:Toast (not implemented in Invoke) | @raycast/utils:showToast (not implemented in Invoke) | @raycast/utils:confirmAlert (not implemented in Invoke) | @raycast/utils:useEffect (not implemented in Invoke) | @raycast/utils:useMemo (not implemented in Invoke) | @raycast/utils:useRef (not implemented in Invoke) | @raycast/utils:useState (not implemented in Invoke),child_process fs os path util
 rescuetime-focus-session-trigger,RescueTime,DEGRADED,rescuetime-focus-session-trigger,8,view|no-view,,updateCommandMetadata: loads; no-op (command metadata updates not wired),,
 research,Deep Research,UNSUPPORTED,deep-research,1,view,declares AI tools[] (1) — AI extensions not supported | denied Node built-ins in sandbox: fs,declares extension-level `ai` instructions — ignored,,fs path
 resend,Resend,UNSUPPORTED,resend,4,view,declares AI tools[] (12) — AI extensions not supported | denied Node built-ins in sandbox: fs,declares extension-level `ai` instructions — ignored,@raycast/api:Tool (not in Invoke surface — needs review),fs path
@@ -2183,7 +2183,7 @@ rusbase,Rusbase,SUPPORTED,rusbase,3,view,,,,
 rust-docs,Rust Documentation,SUPPORTED,rust-docs,1,view,,,,
 sabnzbd,SABnzbd,DEGRADED,sabnzbd,8,view|no-view,,declares command `arguments[]` — not passed by runtime yet,,
 sadaqah-box,Sadaqah Box,SUPPORTED,sadaqah-box,2,view,,,,crypto
-safari,Safari,UNSUPPORTED,safari,8,view|no-view,AI: AI.ask throws — Invoke AI not yet wired | declares AI tools[] (9) — AI extensions not supported,launchCommand: loads; throws if called (inter-command launch not wired) | useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox | declares extension-level `ai` instructions — ignored,,os path url util
+safari,Safari,UNSUPPORTED,safari,8,view|no-view,declares AI tools[] (9) — AI extensions not supported,launchCommand: loads; throws if called (inter-command launch not wired) | useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox | declares extension-level `ai` instructions — ignored,,os path url util
 safe-secret,Safe Secret,SUPPORTED,safe-secret,1,view,,,,
 sage-hr,Sage HR,SUPPORTED,sage-hr,1,view,,,,
 salesforce,Salesforce Search,UNSUPPORTED,salesforce-search,2,view,OAuth: OAuth.PKCEClient throws — OAuth not yet wired | denied Node built-ins in sandbox: fs,,,fs path
@@ -2286,7 +2286,7 @@ sharding-tools,Sharding Tools,SUPPORTED,sharding-tools,3,view,,,,
 share-a-quote,Share a Quote,DEGRADED,share-a-quote,1,no-view,,BrowserExtension: loads; throws if called (browser bridge not wired),,
 share-my-code,Share My Code,DEGRADED,share-my-code,3,view,,launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet,,
 sharex,ShareX,UNSUPPORTED,sharex,9,view|no-view,"denied Node built-ins in sandbox: fs, child_process",declares command `arguments[]` — not passed by runtime yet,,child_process fs os path url util
-shell,Shell,UNSUPPORTED,shell,1,view,"AI: AI.ask throws — Invoke AI not yet wired | declares AI tools[] (1) — AI extensions not supported | denied Node built-ins in sandbox: child_process, fs",declares extension-level `ai` instructions — ignored | declares command `arguments[]` — not passed by runtime yet,,child_process fs util
+shell,Shell,UNSUPPORTED,shell,1,view,"declares AI tools[] (1) — AI extensions not supported | denied Node built-ins in sandbox: child_process, fs",declares extension-level `ai` instructions — ignored | declares command `arguments[]` — not passed by runtime yet,,child_process fs util
 shell-alias,Shell Alias,UNSUPPORTED,shell-alias,2,view,denied Node built-ins in sandbox: fs,,,fs os path
 shell-buddy,Shell Buddy,DEGRADED,shell-buddy,1,view,,declares command `arguments[]` — not passed by runtime yet,,
 shell-history,Shell History,UNSUPPORTED,shell-history,1,view,denied Node built-ins in sandbox: child_process,,,child_process os path
@@ -2317,7 +2317,7 @@ similarweb,Similarweb,DEGRADED,similarweb,2,view,,launchCommand: loads; throws i
 simon,Simon,UNSUPPORTED,simon,1,view,denied Node built-ins in sandbox: child_process,,,child_process
 simple-dictionary,Simple Dictionary,DEGRADED,simple-dictionary,3,view,,launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet,,
 simple-http,Simple Http,UNSUPPORTED,simple-http,2,view|no-view,denied Node built-ins in sandbox: child_process,updateCommandMetadata: loads; no-op (command metadata updates not wired) | launchCommand: loads; throws if called (inter-command launch not wired),,child_process
-simple-icons,Brand Icons - simpleicons.org,UNSUPPORTED,simple-icons,1,view,AI: AI.ask throws — Invoke AI not yet wired | denied Node built-ins in sandbox: fs,,@raycast/utils:useAI (not implemented in Invoke),fs os path process timers
+simple-icons,Brand Icons - simpleicons.org,UNSUPPORTED,simple-icons,1,view,denied Node built-ins in sandbox: fs,,,fs os path process timers
 simple-login,SimpleLogin,SUPPORTED,simple-login,3,no-view|view,,,,
 simple-memo,Simple Memo,DEGRADED,simple-memo,3,view|no-view,,declares command `arguments[]` — not passed by runtime yet,,
 simple-reminder,Simple Reminder,UNSUPPORTED,simple-reminder,3,view|no-view|menu-bar,"unsupported command mode(s): reminderMenuBar: mode ""menu-bar"" | denied Node built-ins in sandbox: child_process",updateCommandMetadata: loads; no-op (command metadata updates not wired) | launchCommand: loads; throws if called (inter-command launch not wired) | declares background `interval` command(s) — not scheduled,,child_process crypto
@@ -2337,9 +2337,9 @@ siri,Siri,UNSUPPORTED,siri,1,no-view,declares AI tools[] (1) — AI extensions n
 sitespeakai,SiteSpeakAI,DEGRADED,sitespeakai,1,view,,declares command `arguments[]` — not passed by runtime yet,,
 sketch,Sketch,UNSUPPORTED,sketch,2,view,,,@raycast/api:KeyEquivalent (not in Invoke surface — needs review),
 skills,Skills,UNSUPPORTED,skills,2,view,"declares AI tools[] (5) — AI extensions not supported | denied Node built-ins in sandbox: fs, child_process",,,child_process fs os path util
-skyscanner-flights,Flight Search,UNSUPPORTED,skyscanner-flights,2,view,AI: AI.ask throws — Invoke AI not yet wired,,,
-slack,Slack,UNSUPPORTED,slack,9,view|no-view,AI: AI.ask throws — Invoke AI not yet wired | declares AI tools[] (6) — AI extensions not supported,runPowerShellScript: Windows-only; throws on macOS (import loads) | declares extension-level `ai` instructions — ignored,@raycast/utils:useAI (not implemented in Invoke) | @raycast/utils:OAuthService (not implemented in Invoke) | @raycast/utils:withAccessToken (not implemented in Invoke) | @raycast/utils:WithAccessTokenComponentOrFn (not implemented in Invoke),
-slack-status,Slack Status,UNSUPPORTED,slack-status,1,view,AI: AI.ask throws — Invoke AI not yet wired | denied Node built-ins in sandbox: fs,,@raycast/utils:OAuthService (not implemented in Invoke) | @raycast/utils:withAccessToken (not implemented in Invoke) | @raycast/utils:getAccessToken (not implemented in Invoke),fs
+skyscanner-flights,Flight Search,SUPPORTED,skyscanner-flights,2,view,,,,
+slack,Slack,UNSUPPORTED,slack,9,view|no-view,declares AI tools[] (6) — AI extensions not supported,runPowerShellScript: Windows-only; throws on macOS (import loads) | declares extension-level `ai` instructions — ignored,@raycast/utils:OAuthService (not implemented in Invoke) | @raycast/utils:withAccessToken (not implemented in Invoke) | @raycast/utils:WithAccessTokenComponentOrFn (not implemented in Invoke),
+slack-status,Slack Status,UNSUPPORTED,slack-status,1,view,denied Node built-ins in sandbox: fs,,@raycast/utils:OAuthService (not implemented in Invoke) | @raycast/utils:withAccessToken (not implemented in Invoke) | @raycast/utils:getAccessToken (not implemented in Invoke),fs
 slack-summarizer,Slack Summarizer,UNSUPPORTED,slack-summarizer,2,view,,declares command `arguments[]` — not passed by runtime yet,@raycast/utils:OAuthService (not implemented in Invoke),
 slack-templated-message,Slack Templated Message,UNSUPPORTED,slack-templated-message,4,view,denied Node built-ins in sandbox: fs,,@raycast/utils:getAccessToken (not implemented in Invoke) | @raycast/utils:withAccessToken (not implemented in Invoke) | @raycast/utils:OAuthService (not implemented in Invoke),fs os path
 slackmojis,Slackmojis,UNSUPPORTED,slackmojis,1,view,denied Node built-ins in sandbox: fs,,,fs os path
@@ -2351,7 +2351,7 @@ sm-ms,SM.MS,SUPPORTED,sm-ms,5,view|no-view,,,,os path
 smallpdf,Smallpdf,SUPPORTED,smallpdf,1,view,,,,
 smallweb,Smallweb,UNSUPPORTED,smallweb,2,view|no-view,denied Node built-ins in sandbox: fs,BrowserExtension: loads; throws if called (browser bridge not wired),,fs path util
 smart-calendars-ai-create-events-using-ai,Smart Calendars AI – Create Events / Reminders Using AI,UNSUPPORTED,smart-calendars-ai-create-events-using-ai,3,no-view|view,denied Node built-ins in sandbox: fs,,,fs path url
-smart-reply,Smart Reply - AI-Powered Multilingual Response Generator,UNSUPPORTED,smart-reply,1,view,AI: AI.ask throws — Invoke AI not yet wired,,,
+smart-reply,Smart Reply - AI-Powered Multilingual Response Generator,SUPPORTED,smart-reply,1,view,,,,
 smartthings-connector,SmartThings Connector,UNSUPPORTED,smartthings-connector,5,view,,,"@raycast/api:// useNavigation (not in Invoke surface — needs review) | @raycast/api:// Entfernen Sie diesen Import
   Action (not in Invoke surface — needs review)",
 smultron,Smultron,SUPPORTED,smultron,1,no-view,,,,
@@ -2404,7 +2404,7 @@ spoqify,Spoqify,SUPPORTED,spoqify,2,no-view,,,,
 sportssync,Sportssync,UNSUPPORTED,sportssync,20,view|menu-bar,"unsupported command mode(s): live-scores-menubar: mode ""menu-bar""",declares background `interval` command(s) — not scheduled,,
 spotify-beta,Spotify Beta,SUPPORTED,spotify-beta,1,view,,,,
 spotify-controls,Spotify Controls,UNSUPPORTED,spotify-controls,22,no-view|menu-bar,"unsupported command mode(s): menuBarPlayer: mode ""menu-bar""",declares background `interval` command(s) — not scheduled | declares command `arguments[]` — not passed by runtime yet,,
-spotify-player,Spotify Player,UNSUPPORTED,spotify-player,35,view|menu-bar|no-view,"OAuth: OAuth.PKCEClient throws — OAuth not yet wired | AI: AI.ask throws — Invoke AI not yet wired | unsupported command mode(s): nowPlayingMenuBar: mode ""menu-bar"" | declares AI tools[] (7) — AI extensions not supported",launchCommand: loads; throws if called (inter-command launch not wired) | updateCommandMetadata: loads; no-op (command metadata updates not wired) | runPowerShellScript: Windows-only; throws on macOS (import loads) | declares extension-level `ai` instructions — ignored | declares background `interval` command(s) — not scheduled | declares command `arguments[]` — not passed by runtime yet,@raycast/utils:OAuthService (not implemented in Invoke) | @raycast/utils:withAccessToken (not implemented in Invoke),
+spotify-player,Spotify Player,UNSUPPORTED,spotify-player,35,view|menu-bar|no-view,"OAuth: OAuth.PKCEClient throws — OAuth not yet wired | unsupported command mode(s): nowPlayingMenuBar: mode ""menu-bar"" | declares AI tools[] (7) — AI extensions not supported",launchCommand: loads; throws if called (inter-command launch not wired) | updateCommandMetadata: loads; no-op (command metadata updates not wired) | runPowerShellScript: Windows-only; throws on macOS (import loads) | declares extension-level `ai` instructions — ignored | declares background `interval` command(s) — not scheduled | declares command `arguments[]` — not passed by runtime yet,@raycast/utils:OAuthService (not implemented in Invoke) | @raycast/utils:withAccessToken (not implemented in Invoke),
 spring-initializr,Spring Initializr,UNSUPPORTED,spring-initializr,1,view,denied Node built-ins in sandbox: fs,,,fs path
 spryker-docs,Spryker Docs,SUPPORTED,spryker-docs,1,view,,,,
 sql-format,Format SQL,SUPPORTED,sql-format,4,no-view|view,,,,
@@ -2424,8 +2424,8 @@ stashit,Stashit,UNSUPPORTED,stashit,3,view,denied Node built-ins in sandbox: fs,
 stashpad-docs,Stashpad Docs,SUPPORTED,stashpad-docs,2,no-view|view,,,,
 statamic-docs,Statamic Documentation Search,SUPPORTED,statamic-docs,1,view,,,,
 static-marks,Static Marks - Bookmark Search,UNSUPPORTED,static-marks-bookmarks,1,view,denied Node built-ins in sandbox: fs,,,fs path
-stealth-ai-tool,Stealth AI,UNSUPPORTED,stealth-ai-tool,10,view|no-view,"AI: AI.ask throws — Invoke AI not yet wired | denied Node built-ins in sandbox: child_process, https",launchCommand: loads; throws if called (inter-command launch not wired) | declares extension-level `ai` instructions — ignored,,child_process https
-steam,Steam,UNSUPPORTED,steam,1,view,AI: AI.ask throws — Invoke AI not yet wired | denied Node built-ins in sandbox: fs,,@raycast/utils:useAI (not implemented in Invoke),fs path
+stealth-ai-tool,Stealth AI,UNSUPPORTED,stealth-ai-tool,10,view|no-view,"denied Node built-ins in sandbox: child_process, https",launchCommand: loads; throws if called (inter-command launch not wired) | declares extension-level `ai` instructions — ignored,,child_process https
+steam,Steam,UNSUPPORTED,steam,1,view,denied Node built-ins in sandbox: fs,,,fs path
 steam-player-counts,Steam Player Counts,SUPPORTED,steam-player-counts,1,view,,,,
 steamgriddb,SteamGridDB,UNSUPPORTED,steamgriddb,1,view,denied Node built-ins in sandbox: fs,,,fs os path
 stickies,Stickies,UNSUPPORTED,stickies,7,view|menu-bar|no-view,"unsupported command mode(s): menubar-stickies: mode ""menu-bar"" | denied Node built-ins in sandbox: child_process",updateCommandMetadata: loads; no-op (command metadata updates not wired) | launchCommand: loads; throws if called (inter-command launch not wired) | declares background `interval` command(s) — not scheduled,,child_process os path
@@ -2449,7 +2449,7 @@ sublime,Sublime,UNSUPPORTED,sublime,7,view|no-view,OAuth: OAuth.PKCEClient throw
 subnoto,Subnoto - Confidential Electronic Signature,UNSUPPORTED,subnoto,3,view,denied Node built-ins in sandbox: fs,,,fs path url
 substack,Substack,SUPPORTED,substack,2,view,,,,
 subwatch,Subwatch,SUPPORTED,subwatch,2,view,,,,
-summarize-youtube-video-with-ai,Summarize YouTube Videos with AI,UNSUPPORTED,summarize-youtube-video-with-ai,5,view,AI: AI.ask throws — Invoke AI not yet wired | declares AI tools[] (1) — AI extensions not supported,BrowserExtension: loads; throws if called (browser bridge not wired) | declares extension-level `ai` instructions — ignored | declares command `arguments[]` — not passed by runtime yet,,
+summarize-youtube-video-with-ai,Summarize YouTube Videos with AI,UNSUPPORTED,summarize-youtube-video-with-ai,5,view,declares AI tools[] (1) — AI extensions not supported,BrowserExtension: loads; throws if called (browser bridge not wired) | declares extension-level `ai` instructions — ignored | declares command `arguments[]` — not passed by runtime yet,,
 summation,Summation - Sum Calculator,SUPPORTED,summation,1,view,,,,
 sun-moon-times,Sun/Moon Times,UNSUPPORTED,sun-moon-times,1,view,,,@raycast/utils:List (not implemented in Invoke),
 supabase,Supabase,SUPPORTED,supabase,1,view,,,,
@@ -2481,9 +2481,9 @@ swiss-ov,Swiss ÖV,SUPPORTED,swiss-ov,2,view,,,,
 swiss-train-times,Swiss Train Times,SUPPORTED,swiss-train-times,1,view,,,,
 switch-game-play-history,Switch Game Play History,SUPPORTED,switch-game-play-history,3,view,,,,crypto
 switchhosts,SwitchHosts,SUPPORTED,switchhosts,1,view,,,,
-sync-folders,Sync Folders,UNSUPPORTED,sync-folders,6,menu-bar|view|no-view,"AI: AI.ask throws — Invoke AI not yet wired | unsupported command mode(s): menu-bar: mode ""menu-bar"" | denied Node built-ins in sandbox: fs, child_process",launchCommand: loads; throws if called (inter-command launch not wired),,child_process crypto fs util
+sync-folders,Sync Folders,UNSUPPORTED,sync-folders,6,menu-bar|view|no-view,"unsupported command mode(s): menu-bar: mode ""menu-bar"" | denied Node built-ins in sandbox: fs, child_process",launchCommand: loads; throws if called (inter-command launch not wired),,child_process crypto fs util
 synology-download-station,Synology Download Station,SUPPORTED,synology-download-station,2,view,,,,
-synonyms,Synonyms,UNSUPPORTED,synonyms,1,view,AI: AI.ask throws — Invoke AI not yet wired | denied Node built-ins in sandbox: fs,,,fs
+synonyms,Synonyms,UNSUPPORTED,synonyms,1,view,denied Node built-ins in sandbox: fs,,,fs
 syntax-fm,Syntax.fm,SUPPORTED,syntax-fm,1,view,,,,
 system-information,System Information,UNSUPPORTED,system-information,1,view,declares AI tools[] (5) — AI extensions not supported | denied Node built-ins in sandbox: child_process,declares extension-level `ai` instructions — ignored,@raycast/api:Tool (not in Invoke surface — needs review),child_process os
 t3-chat,T3 Chat,DEGRADED,t3-chat,1,no-view,,declares command `arguments[]` — not passed by runtime yet,,
@@ -2529,12 +2529,12 @@ terminaldotshop,Terminal Shop,UNSUPPORTED,terminaldotshop,1,view,OAuth: OAuth.PK
 terminalfinder,Terminal Finder,UNSUPPORTED,terminalfinder,22,no-view,denied Node built-ins in sandbox: child_process,declares command `arguments[]` — not passed by runtime yet,,assert child_process path
 terraform-doc,Terraform Doc,SUPPORTED,terraform-doc,2,view,,,,
 tesla,Tesla,SUPPORTED,tesla,18,view,,,,
-tesla-energy,Tesla Energy,UNSUPPORTED,tesla-energy,2,view|menu-bar,"OAuth: OAuth.PKCEClient throws — OAuth not yet wired | AI: AI.ask throws — Invoke AI not yet wired | unsupported command mode(s): menu-bar-status: mode ""menu-bar""",launchCommand: loads; throws if called (inter-command launch not wired) | declares background `interval` command(s) — not scheduled,@raycast/utils:withAccessToken (not implemented in Invoke) | @raycast/utils:OAuthService (not implemented in Invoke) | @raycast/utils:getAccessToken (not implemented in Invoke),
+tesla-energy,Tesla Energy,UNSUPPORTED,tesla-energy,2,view|menu-bar,"OAuth: OAuth.PKCEClient throws — OAuth not yet wired | unsupported command mode(s): menu-bar-status: mode ""menu-bar""",launchCommand: loads; throws if called (inter-command launch not wired) | declares background `interval` command(s) — not scheduled,@raycast/utils:withAccessToken (not implemented in Invoke) | @raycast/utils:OAuthService (not implemented in Invoke) | @raycast/utils:getAccessToken (not implemented in Invoke),
 teslamate,TeslaMate,SUPPORTED,teslamate,2,view,,,,
 tex2typst,Tex2Typst,SUPPORTED,tex2typst,2,no-view,,,,
 text-decorator,Text Decorator,DEGRADED,text-decorator,3,no-view|view,,launchCommand: loads; throws if called (inter-command launch not wired) | updateCommandMetadata: loads; no-op (command metadata updates not wired) | declares command `arguments[]` — not passed by runtime yet,,
 text-differ,Text Differ,UNSUPPORTED,text-differ,1,no-view,denied Node built-ins in sandbox: child_process,,,child_process
-text-enhance,Text Enhance,UNSUPPORTED,text-enhance,2,view,AI: AI.ask throws — Invoke AI not yet wired,,,
+text-enhance,Text Enhance,SUPPORTED,text-enhance,2,view,,,,
 text-format-improver,CJK Text Format Improver,SUPPORTED,text-format-improver,1,no-view,,,,
 text-replacements,Text Replacements,UNSUPPORTED,text-replacements,2,view|no-view,"denied Node built-ins in sandbox: child_process, fs",,,child_process fs os path util
 text-rewrap,Text Rewrap,SUPPORTED,text-rewrap,3,view,,,,
@@ -2553,16 +2553,16 @@ thermoconvert,ThermoConvert,SUPPORTED,thermo-convert,1,view,,,,
 thesaurus,Thesaurus,SUPPORTED,thesaurus,2,view,,,,
 thesvg,TheSVG,DEGRADED,thesvg,2,view|no-view,,declares command `arguments[]` — not passed by runtime yet,,
 thingiverse,Thingiverse,SUPPORTED,thingiverse,1,view,,,,
-things,Things,UNSUPPORTED,things,10,view|menu-bar|no-view,"AI: AI.ask throws — Invoke AI not yet wired | unsupported command mode(s): show-today-in-menu-bar: mode ""menu-bar"" | declares AI tools[] (12) — AI extensions not supported | denied Node built-ins in sandbox: child_process, fs",launchCommand: loads; throws if called (inter-command launch not wired) | declares extension-level `ai` instructions — ignored | declares background `interval` command(s) — not scheduled | declares command `arguments[]` — not passed by runtime yet,@raycast/api:Tool (not in Invoke surface — needs review),child_process fs os path util
+things,Things,UNSUPPORTED,things,10,view|menu-bar|no-view,"unsupported command mode(s): show-today-in-menu-bar: mode ""menu-bar"" | declares AI tools[] (12) — AI extensions not supported | denied Node built-ins in sandbox: child_process, fs",launchCommand: loads; throws if called (inter-command launch not wired) | declares extension-level `ai` instructions — ignored | declares background `interval` command(s) — not scheduled | declares command `arguments[]` — not passed by runtime yet,@raycast/api:Tool (not in Invoke surface — needs review),child_process fs os path util
 thock,Thock,UNSUPPORTED,thock,2,no-view|view,"denied Node built-ins in sandbox: child_process, fs",,,child_process fs path util
 thrasher-magazine,Thrasher Magazine,SUPPORTED,thrasher-magazine,1,view,,,,
 threads,Threads,UNSUPPORTED,threads,9,no-view|view,denied Node built-ins in sandbox: fs,declares command `arguments[]` — not passed by runtime yet,,fs os
 threads-video-downloader,Threads Video Downloader,SUPPORTED,threads-video-downloader,1,view,,,,
 tibia-helper,Tibia Helper,SUPPORTED,tibia-helper,3,view,,,,
-ticktick,TickTick,UNSUPPORTED,ticktick,6,view|no-view,AI: AI.ask throws — Invoke AI not yet wired | declares AI tools[] (3) — AI extensions not supported,declares extension-level `ai` instructions — ignored | declares command `arguments[]` — not passed by runtime yet,,
+ticktick,TickTick,UNSUPPORTED,ticktick,6,view|no-view,declares AI tools[] (3) — AI extensions not supported,declares extension-level `ai` instructions — ignored | declares command `arguments[]` — not passed by runtime yet,,
 tidal,Tidal,UNSUPPORTED,tidal,12,menu-bar|view|no-view,"unsupported command mode(s): menubar: mode ""menu-bar"" | denied Node built-ins in sandbox: child_process, fs, http",launchCommand: loads; throws if called (inter-command launch not wired) | declares background `interval` command(s) — not scheduled,,child_process fs http path
 tidal-controller,Tidal Controller,UNSUPPORTED,tidal-controller,10,no-view|menu-bar,"unsupported command mode(s): now-playing-menu-bar: mode ""menu-bar""",declares background `interval` command(s) — not scheduled,,
-tidyread---streamline-your-daily-reading,TidyRead - Streamline Your Daily Reading,UNSUPPORTED,tidyread---streamline-your-daily-reading,5,view|no-view,"AI: AI.ask throws — Invoke AI not yet wired | denied Node built-ins in sandbox: fs, http, child_process",updateCommandMetadata: loads; no-op (command metadata updates not wired) | launchCommand: loads; throws if called (inter-command launch not wired) | declares background `interval` command(s) — not scheduled,,child_process fs http
+tidyread---streamline-your-daily-reading,TidyRead - Streamline Your Daily Reading,UNSUPPORTED,tidyread---streamline-your-daily-reading,5,view|no-view,"denied Node built-ins in sandbox: fs, http, child_process",updateCommandMetadata: loads; no-op (command metadata updates not wired) | launchCommand: loads; throws if called (inter-command launch not wired) | declares background `interval` command(s) — not scheduled,,child_process fs http
 tiktoken,Tiktoken,SUPPORTED,tiktoken,2,view,,,,
 tikz,TikZ,UNSUPPORTED,tikz,1,view,"declares AI tools[] (1) — AI extensions not supported | denied Node built-ins in sandbox: child_process, fs",,,child_process fs os path
 tim,Tim,UNSUPPORTED,tim,7,no-view|view,"denied Node built-ins in sandbox: fs, child_process",,,child_process fs os path
@@ -2573,7 +2573,7 @@ time-converter,Time Zone Converter,SUPPORTED,time-converter,1,view,,,,
 time-logger,Google Calendar Epic Time Logger,SUPPORTED,time-logger,1,view,,,,
 time-logs,Time Logs,UNSUPPORTED,time-logs,6,view|menu-bar,"unsupported command mode(s): menuBarTimer: mode ""menu-bar""",launchCommand: loads; throws if called (inter-command launch not wired) | declares background `interval` command(s) — not scheduled | declares command `arguments[]` — not passed by runtime yet,,crypto
 time-machine,Time Machine,UNSUPPORTED,time-machine,4,no-view|view,denied Node built-ins in sandbox: child_process,,,child_process
-time-teller,Time Teller,UNSUPPORTED,time-teller,1,view,AI: AI.ask throws — Invoke AI not yet wired,,,timers
+time-teller,Time Teller,SUPPORTED,time-teller,1,view,,,,timers
 time-tracking,Time Tracking,UNSUPPORTED,time-tracking,5,view|no-view,denied Node built-ins in sandbox: fs,launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet,,fs path
 time-until-i-do,Time Until I Do,SUPPORTED,time-until-i-do,1,view,,,,
 timecamp,TimeCamp,SUPPORTED,timecamp,1,view,,,,
@@ -2621,7 +2621,7 @@ trakt-manager,Trakt Manager,UNSUPPORTED,trakt-manager,7,view,OAuth: OAuth.PKCECl
 transfer-sh_upload,Transfer.sh Uploader,UNSUPPORTED,transfer-sh_upload,1,no-view,denied Node built-ins in sandbox: fs,,,fs path stream util
 transform,Transform,SUPPORTED,transform,29,view,,,,
 translate,Google Translate,UNSUPPORTED,google-translate,6,view|no-view,"denied Node built-ins in sandbox: https, child_process, fs",,,child_process fs https os path querystring
-translate-send-webpage-to-reader,Translate and Send Webpage to Reader,UNSUPPORTED,translate-send-webpage-to-reader,1,no-view,AI: AI.ask throws — Invoke AI not yet wired,BrowserExtension: loads; throws if called (browser bridge not wired),,
+translate-send-webpage-to-reader,Translate and Send Webpage to Reader,DEGRADED,translate-send-webpage-to-reader,1,no-view,,BrowserExtension: loads; throws if called (browser bridge not wired),,
 translit,Translit,SUPPORTED,translit,1,view,,,,
 transmission,Transmission,UNSUPPORTED,transmission,3,view|no-view,denied Node built-ins in sandbox: fs,,,fs path
 transmit,Transmit,SUPPORTED,transmit,1,view,,,,
@@ -2659,7 +2659,7 @@ tynyfy,Tynyfy - URL Shortener,SUPPORTED,tynyfy,1,view,,,,
 type-snob,Type Snob,SUPPORTED,type-snob,1,view,,,,
 type-the-alphabet,Type the Alphabet,SUPPORTED,type-the-alphabet,1,view,,,,
 typeform,Typeform Navigator,SUPPORTED,typeform-navigator,1,view,,,,
-typefully,Typefully,UNSUPPORTED,typefully,5,view,AI: AI.ask throws — Invoke AI not yet wired | declares AI tools[] (4) — AI extensions not supported,declares extension-level `ai` instructions — ignored,@raycast/api:Tool (not in Invoke surface — needs review),
+typefully,Typefully,UNSUPPORTED,typefully,5,view,declares AI tools[] (4) — AI extensions not supported,declares extension-level `ai` instructions — ignored,@raycast/api:Tool (not in Invoke surface — needs review),
 typer,Typer - Custom Text Hotkey,DEGRADED,typer,5,no-view,,updateCommandMetadata: loads; no-op (command metadata updates not wired),,
 typescript-documentation-search,TypeScript Documentation Search,SUPPORTED,typescript-documentation-search,1,view,,,,
 typescript-mock-generator,Typescript Mock Generator,SUPPORTED,typescript-mock-generator,1,view,,,,
@@ -2668,7 +2668,7 @@ typographer,Typographer: Make Text Pretty,SUPPORTED,typographer,1,no-view,,,,
 typora-note-creator,Typora Note Creator,UNSUPPORTED,typora-note-creator,1,view,"denied Node built-ins in sandbox: fs, child_process",,,child_process fs os path
 typst-symbols,Typst Math Symbols,SUPPORTED,typst-symbols,1,view,,,,
 typst-universe,Typst Universe,SUPPORTED,typst-universe,1,view,,,,
-u301-url-shortener,U301 URL Shortener,UNSUPPORTED,u301-url-shortener,3,view|no-view,AI: AI.ask throws — Invoke AI not yet wired | declares AI tools[] (1) — AI extensions not supported,declares extension-level `ai` instructions — ignored | declares command `arguments[]` — not passed by runtime yet,,
+u301-url-shortener,U301 URL Shortener,UNSUPPORTED,u301-url-shortener,3,view|no-view,declares AI tools[] (1) — AI extensions not supported,declares extension-level `ai` instructions — ignored | declares command `arguments[]` — not passed by runtime yet,,
 udemy-coupons,Udemy Coupons,SUPPORTED,udemy-coupons,1,view,,,,
 ugly-face,Ugly Face,UNSUPPORTED,ugly-face,1,view,denied Node built-ins in sandbox: fs,,@raycast/api:render (not in Invoke surface — needs review),fs os path
 uk-bank-holidays,UK Bank Holidays,DEGRADED,uk-bank-holidays,2,view|no-view,,updateCommandMetadata: loads; no-op (command metadata updates not wired) | declares background `interval` command(s) — not scheduled,,
@@ -2681,7 +2681,7 @@ unicode-symbols,Unicode Symbols Search,UNSUPPORTED,unicode-symbols,1,view,denied
 unifi,Unifi,UNSUPPORTED,unifi,4,view|no-view,denied Node built-ins in sandbox: https,declares command `arguments[]` — not passed by runtime yet,,https timers
 unify-path-separator,Unify Path Separator,SUPPORTED,unify-path-separator,1,view,,,,
 unirate-currency,UniRate Currency,SUPPORTED,unirate-currency,2,view,,,,
-united-nations,United Nations,UNSUPPORTED,united-nations,5,view,AI: AI.ask throws — Invoke AI not yet wired,,,process timers
+united-nations,United Nations,SUPPORTED,united-nations,5,view,,,,process timers
 unitex,UniTex - LaTeX Math to Unicode Text.,SUPPORTED,unitex,1,view,,,,
 universal-commands,Universal Commands,DEGRADED,universal-commands,3,view,,declares command `arguments[]` — not passed by runtime yet,,crypto
 universal-inbox,Universal Inbox,SUPPORTED,universal-inbox,1,view,,,,
@@ -2772,7 +2772,7 @@ vn-textify,VN Textify,SUPPORTED,vn-textify,1,no-view,,,,assert
 vocab,Vocabulary.com,SUPPORTED,vocab-search,1,view,,,,
 vocabuilder,VocaBuilder,UNSUPPORTED,vocabuilder,3,view,"denied Node built-ins in sandbox: fs, child_process",,,child_process crypto fs os path
 vocabula-lat,Vocabula.lat,SUPPORTED,vocabula-lat,2,view,,,,
-voice-to-text-windows,Voice-to-Text for Windows,UNSUPPORTED,voice-to-text-windows,3,view,"AI: AI.ask throws — Invoke AI not yet wired | denied Node built-ins in sandbox: child_process, fs",,,child_process fs os path
+voice-to-text-windows,Voice-to-Text for Windows,UNSUPPORTED,voice-to-text-windows,3,view,"denied Node built-ins in sandbox: child_process, fs",,,child_process fs os path
 voiceink,VoiceInk,UNSUPPORTED,voiceink,1,view,denied Node built-ins in sandbox: fs,useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox,,fs os path
 voicemeeter-raycast,Voicemeeter Control,UNSUPPORTED,voicemeeter-raycast,5,view,"denied Node built-ins in sandbox: fs, child_process",,,child_process fs path
 voicenotes,Voicenotes,SUPPORTED,voicenotes,1,view,,,,
@@ -2818,9 +2818,9 @@ what-happened-today,What Happened Today,SUPPORTED,what-happened-today,1,view,,,,
 whatsapp,WhatsApp,UNSUPPORTED,whatsapp,4,view,"declares AI tools[] (3) — AI extensions not supported | denied Node built-ins in sandbox: child_process, fs",declares extension-level `ai` instructions — ignored,@raycast/api:Tool (not in Invoke surface — needs review),child_process fs os path util
 whentomeet,WhenToMeet,UNSUPPORTED,whentomeet,1,view,declares AI tools[] (2) — AI extensions not supported,declares extension-level `ai` instructions — ignored,,
 where-is-my-cursor,Where Is My Cursor?,SUPPORTED,where-is-my-cursor,5,no-view|view,,,,
-whimsical,Whimsical,UNSUPPORTED,whimsical,1,view,AI: AI.ask throws — Invoke AI not yet wired | declares AI tools[] (1) — AI extensions not supported,declares extension-level `ai` instructions — ignored,,
+whimsical,Whimsical,UNSUPPORTED,whimsical,1,view,declares AI tools[] (1) — AI extensions not supported,declares extension-level `ai` instructions — ignored,,
 whisper,Whisper - Share Secrets,UNSUPPORTED,whisper,2,no-view|view,declares AI tools[] (1) — AI extensions not supported,declares extension-level `ai` instructions — ignored | declares command `arguments[]` — not passed by runtime yet,,
-whisper-dictation,Whisper Dictation,UNSUPPORTED,whisper-dictation,5,view,"AI: AI.ask throws — Invoke AI not yet wired | denied Node built-ins in sandbox: child_process, fs, https",launchCommand: loads; throws if called (inter-command launch not wired),,child_process crypto fs https path
+whisper-dictation,Whisper Dictation,UNSUPPORTED,whisper-dictation,5,view,"denied Node built-ins in sandbox: child_process, fs, https",launchCommand: loads; throws if called (inter-command launch not wired),,child_process crypto fs https path
 whitebit,WhiteBIT Exchange,DEGRADED,whitebit,7,view|no-view,,launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet,,crypto
 whmcs-client-search,WHMCS Client Search,UNSUPPORTED,whmcs-client-search,2,view|no-view,denied Node built-ins in sandbox: fs,,,fs path
 who-is-off-today,Who Is off Today?,SUPPORTED,who-is-off-today,1,view,,,,
@@ -2863,7 +2863,7 @@ word-research,Word Research,DEGRADED,word-research,2,view,,declares command `arg
 word-search,Word Search,SUPPORTED,word-search,8,view,,,,
 word4you,Word4you,UNSUPPORTED,word4you,2,view,"denied Node built-ins in sandbox: fs, https, child_process",declares command `arguments[]` — not passed by runtime yet,,child_process crypto fs https os path stream util
 wordle,Wordle,DEGRADED,wordle,3,view,,launchCommand: loads; throws if called (inter-command launch not wired),,
-wordpress-docs,WordPress Docs,UNSUPPORTED,wordpress-docs,1,view,AI: AI.ask throws — Invoke AI not yet wired,,@raycast/utils:useAI (not implemented in Invoke),
+wordpress-docs,WordPress Docs,SUPPORTED,wordpress-docs,1,view,,,,
 wordpress-icon-finder,WordPress Icon Finder,SUPPORTED,wordpress-icon-finder,1,view,,,,
 wordpress-manager,WordPress Manager,SUPPORTED,wordpress-manager,9,view,,,,
 wordpress-plugins,WordPress Plugins,SUPPORTED,wordpress-plugins,1,view,,,,
@@ -2875,7 +2875,7 @@ worktrees,Git Worktrees,UNSUPPORTED,worktrees,2,view,denied Node built-ins in sa
 world-clock,Time-Traveling World Clock,SUPPORTED,time-traveling-world-clock,1,view,,,,
 world-clock,World Clock,UNSUPPORTED,world-clock,3,view|menu-bar,"unsupported command mode(s): query-world-time-menu-bar: mode ""menu-bar"" | denied Node built-ins in sandbox: net",launchCommand: loads; throws if called (inter-command launch not wired) | declares background `interval` command(s) — not scheduled,,net
 world-cup,FIFA World Cup 2026™,SUPPORTED,world-cup,1,view,,,,
-wp-bones,WP Bones,UNSUPPORTED,wp-bones,5,menu-bar|view,"AI: AI.ask throws — Invoke AI not yet wired | unsupported command mode(s): menu-bar: mode ""menu-bar""",launchCommand: loads; throws if called (inter-command launch not wired) | declares background `interval` command(s) — not scheduled | declares command `arguments[]` — not passed by runtime yet,,
+wp-bones,WP Bones,UNSUPPORTED,wp-bones,5,menu-bar|view,"unsupported command mode(s): menu-bar: mode ""menu-bar""",launchCommand: loads; throws if called (inter-command launch not wired) | declares background `interval` command(s) — not scheduled | declares command `arguments[]` — not passed by runtime yet,,
 wp-cli-command-explorer,WordPress WP-CLI Commands Explorer,SUPPORTED,wp-cli-command-explorer,1,view,,,,
 wppb,WPPB,UNSUPPORTED,wppb,1,view,denied Node built-ins in sandbox: fs,,,fs path
 wrap-text,Wrap Text,DEGRADED,wrap-text,6,no-view,,declares command `arguments[]` — not passed by runtime yet,,
@@ -2889,7 +2889,7 @@ xcode,Xcode,UNSUPPORTED,xcode,21,menu-bar|view|no-view,"unsupported command mode
 xcode-cloud,Xcode Cloud,UNSUPPORTED,xcode-cloud,2,view,denied Node built-ins in sandbox: fs,,,fs
 xcodes,Xcodes,UNSUPPORTED,xcodes,1,view,"denied Node built-ins in sandbox: fs, child_process",,,child_process fs path util
 xecutor,Xecutor,DEGRADED,xecutor,2,view|no-view,,declares command `arguments[]` — not passed by runtime yet,,url
-xiaohe-query,Xiaohe Query,UNSUPPORTED,xiaohe-query,1,view,AI: AI.ask throws — Invoke AI not yet wired | denied Node built-ins in sandbox: fs,,,fs path
+xiaohe-query,Xiaohe Query,UNSUPPORTED,xiaohe-query,1,view,denied Node built-ins in sandbox: fs,,,fs path
 xid,xid,SUPPORTED,xid,1,no-view,,,,crypto os
 xkcd,XKCD Comics,SUPPORTED,xkcd,1,view,,,,
 xkcd-password-generator,XKCD Password Generator,SUPPORTED,xkcd-password-generator,1,view,,,,crypto

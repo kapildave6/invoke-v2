@@ -2,9 +2,9 @@
   "root": "/Users/test/Documents/code/extensions/extensions",
   "trusted": false,
   "counts": {
-    "SUPPORTED": 1259,
-    "DEGRADED": 335,
-    "UNSUPPORTED": 1367
+    "SUPPORTED": 1277,
+    "DEGRADED": 345,
+    "UNSUPPORTED": 1339
   },
   "topGaps": [
     [
@@ -36,10 +36,6 @@
       145
     ],
     [
-      "@raycast/utils",
-      114
-    ],
-    [
       "@raycast/api",
       112
     ],
@@ -48,8 +44,8 @@
       96
     ],
     [
-      "AI",
-      90
+      "@raycast/utils",
+      94
     ],
     [
       "updateCommandMetadata",
@@ -1146,7 +1142,7 @@
       "name": "ai-code-namer",
       "title": "AI Code Namer",
       "dir": "ai-code-namer",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 9,
       "modes": "view",
       "apiImports": [
@@ -1161,9 +1157,7 @@
       ],
       "utilsImports": [],
       "builtins": [],
-      "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired"
-      ],
+      "blockers": [],
       "degraded": [],
       "unknown": []
     },
@@ -1232,7 +1226,6 @@
         "child_process"
       ],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "denied Node built-ins in sandbox: child_process"
       ],
       "degraded": [],
@@ -2308,7 +2301,7 @@
       "name": "anonaddy",
       "title": "Addy",
       "dir": "anonaddy",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 5,
       "modes": "view|no-view",
       "apiImports": [
@@ -2348,9 +2341,7 @@
         "withCache"
       ],
       "builtins": [],
-      "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired"
-      ],
+      "blockers": [],
       "degraded": [
         "BrowserExtension: loads; throws if called (browser bridge not wired)",
         "launchCommand: loads; throws if called (inter-command launch not wired)"
@@ -2967,7 +2958,6 @@
         "util"
       ],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "unsupported command mode(s): menu-bar: mode \"menu-bar\", brew-maintenance: mode \"menu-bar\"",
         "denied Node built-ins in sandbox: child_process, fs"
       ],
@@ -3248,7 +3238,6 @@
         "path"
       ],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "unsupported command mode(s): menu-bar: mode \"menu-bar\"",
         "declares AI tools[] (4) — AI extensions not supported"
       ],
@@ -3379,7 +3368,6 @@
         "util"
       ],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "unsupported command mode(s): menu-bar: mode \"menu-bar\"",
         "declares AI tools[] (8) — AI extensions not supported",
         "denied Node built-ins in sandbox: child_process"
@@ -6174,7 +6162,7 @@
       "name": "bhagavad-gita-quotes",
       "title": "Bhagavad Gita Quotes",
       "dir": "bhagavad-gita-quotes",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
@@ -6195,9 +6183,7 @@
         "useFetch"
       ],
       "builtins": [],
-      "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired"
-      ],
+      "blockers": [],
       "degraded": [],
       "unknown": []
     },
@@ -7402,7 +7388,6 @@
         "path"
       ],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "declares AI tools[] (1) — AI extensions not supported",
         "denied Node built-ins in sandbox: fs"
       ],
@@ -8685,7 +8670,6 @@
         "path"
       ],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "unsupported command mode(s): menu-bar: mode \"menu-bar\"",
         "denied Node built-ins in sandbox: child_process, fs"
       ],
@@ -11024,7 +11008,6 @@
         "crypto"
       ],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "denied Node built-ins in sandbox: child_process"
       ],
       "degraded": [
@@ -12785,16 +12768,13 @@
       ],
       "builtins": [],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "unsupported command mode(s): menu-bar: mode \"menu-bar\""
       ],
       "degraded": [
         "launchCommand: loads; throws if called (inter-command launch not wired)",
         "declares command `arguments[]` — not passed by runtime yet"
       ],
-      "unknown": [
-        "@raycast/utils:useAI (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "color-shades",
@@ -12871,7 +12851,6 @@
         "fs"
       ],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "denied Node built-ins in sandbox: fs"
       ],
       "degraded": [],
@@ -18633,7 +18612,7 @@
       "name": "dnb-book-lookup",
       "title": "DNB Book Lookup",
       "dir": "dnb-book-lookup",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
@@ -18655,9 +18634,7 @@
       ],
       "utilsImports": [],
       "builtins": [],
-      "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired"
-      ],
+      "blockers": [],
       "degraded": [
         "declares command `arguments[]` — not passed by runtime yet"
       ],
@@ -19964,7 +19941,6 @@
       ],
       "builtins": [],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "unsupported command mode(s): menu-bar: mode \"menu-bar\"",
         "declares AI tools[] (6) — AI extensions not supported"
       ],
@@ -19973,9 +19949,7 @@
         "declares background `interval` command(s) — not scheduled",
         "declares command `arguments[]` — not passed by runtime yet"
       ],
-      "unknown": [
-        "@raycast/utils:useAI (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "duan-raycast-extension",
@@ -20141,7 +20115,6 @@
       "utilsImports": [],
       "builtins": [],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "declares AI tools[] (1) — AI extensions not supported"
       ],
       "degraded": [
@@ -20232,7 +20205,7 @@
       "name": "dungeons-dragons",
       "title": "Dungeons & Dragons",
       "dir": "dungeons-and-dragons",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 6,
       "modes": "view",
       "apiImports": [
@@ -20254,15 +20227,11 @@
         "useFetch"
       ],
       "builtins": [],
-      "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired"
-      ],
+      "blockers": [],
       "degraded": [
         "declares command `arguments[]` — not passed by runtime yet"
       ],
-      "unknown": [
-        "@raycast/utils:useAI (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "dust-tt",
@@ -20668,7 +20637,7 @@
       "name": "easyvariable",
       "title": "Easy Variable",
       "dir": "easyvariable",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
@@ -20684,9 +20653,7 @@
       ],
       "utilsImports": [],
       "builtins": [],
-      "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired"
-      ],
+      "blockers": [],
       "degraded": [],
       "unknown": []
     },
@@ -20797,13 +20764,10 @@
       ],
       "builtins": [],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "declares AI tools[] (2) — AI extensions not supported"
       ],
       "degraded": [],
-      "unknown": [
-        "@raycast/utils:useAI (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "ekstraklasa",
@@ -20831,7 +20795,7 @@
       "name": "element",
       "title": "Element",
       "dir": "element",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 2,
       "modes": "view",
       "apiImports": [
@@ -20846,9 +20810,7 @@
       ],
       "utilsImports": [],
       "builtins": [],
-      "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired"
-      ],
+      "blockers": [],
       "degraded": [],
       "unknown": []
     },
@@ -21113,7 +21075,7 @@
       "name": "emojify",
       "title": "Emojify",
       "dir": "emojify",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 2,
       "modes": "view",
       "apiImports": [
@@ -21134,9 +21096,7 @@
         "showFailureToast"
       ],
       "builtins": [],
-      "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired"
-      ],
+      "blockers": [],
       "degraded": [
         "declares command `arguments[]` — not passed by runtime yet"
       ],
@@ -22960,7 +22920,6 @@
       ],
       "builtins": [],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "unsupported command mode(s): unread-menu-bar: mode \"menu-bar\""
       ],
       "degraded": [
@@ -22970,7 +22929,6 @@
         "declares command `arguments[]` — not passed by runtime yet"
       ],
       "unknown": [
-        "@raycast/utils:useAI (not implemented in Invoke)",
         "@raycast/utils:CachedPromiseOptions (not implemented in Invoke)"
       ]
     },
@@ -26999,7 +26957,6 @@
         "path"
       ],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "denied Node built-ins in sandbox: fs, child_process"
       ],
       "degraded": [
@@ -27136,7 +27093,6 @@
         "util"
       ],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "denied Node built-ins in sandbox: child_process"
       ],
       "degraded": [
@@ -28829,9 +28785,7 @@
         "withAccessToken"
       ],
       "builtins": [],
-      "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired"
-      ],
+      "blockers": [],
       "degraded": [
         "declares command `arguments[]` — not passed by runtime yet"
       ],
@@ -29672,7 +29626,7 @@
       "name": "grammari-x",
       "title": "Grammarix",
       "dir": "grammari-x",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 4,
       "modes": "view",
       "apiImports": [
@@ -29699,9 +29653,7 @@
       ],
       "utilsImports": [],
       "builtins": [],
-      "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired"
-      ],
+      "blockers": [],
       "degraded": [
         "declares command `arguments[]` — not passed by runtime yet"
       ],
@@ -34110,7 +34062,6 @@
       ],
       "builtins": [],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "unsupported command mode(s): live-incidents: mode \"menu-bar\""
       ],
       "degraded": [
@@ -34298,7 +34249,7 @@
       "name": "ingredients-lister",
       "title": "Ingredients Lister",
       "dir": "ingredients-lister",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 2,
       "modes": "view",
       "apiImports": [
@@ -34318,15 +34269,11 @@
         "useAI"
       ],
       "builtins": [],
-      "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired"
-      ],
+      "blockers": [],
       "degraded": [
         "declares command `arguments[]` — not passed by runtime yet"
       ],
-      "unknown": [
-        "@raycast/utils:useAI (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "initium",
@@ -34449,7 +34396,6 @@
         "util"
       ],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "OAuth: OAuth.PKCEClient throws — OAuth not yet wired",
         "denied Node built-ins in sandbox: child_process"
       ],
@@ -36253,7 +36199,6 @@
         "path"
       ],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "declares AI tools[] (1) — AI extensions not supported",
         "denied Node built-ins in sandbox: fs"
       ],
@@ -36462,7 +36407,6 @@
         "url"
       ],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "unsupported command mode(s): menu-bar: mode \"menu-bar\"",
         "denied Node built-ins in sandbox: fs"
       ],
@@ -38456,7 +38400,7 @@
       "name": "language-detector",
       "title": "Language Detector",
       "dir": "language-detector",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 3,
       "modes": "no-view|view",
       "apiImports": [
@@ -38480,9 +38424,7 @@
         "useForm"
       ],
       "builtins": [],
-      "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired"
-      ],
+      "blockers": [],
       "degraded": [
         "declares command `arguments[]` — not passed by runtime yet"
       ],
@@ -38567,7 +38509,7 @@
       "name": "laravel-artisan",
       "title": "Laravel Artisan",
       "dir": "laravel-artisan",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
@@ -38584,13 +38526,9 @@
         "useFetch"
       ],
       "builtins": [],
-      "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired"
-      ],
+      "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/utils:useAI (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "laravel-cloud",
@@ -39489,7 +39427,7 @@
       "name": "learning-snacks",
       "title": "Learning Snacks",
       "dir": "learning-snacks",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
@@ -39507,9 +39445,7 @@
       ],
       "utilsImports": [],
       "builtins": [],
-      "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired"
-      ],
+      "blockers": [],
       "degraded": [],
       "unknown": []
     },
@@ -40277,7 +40213,6 @@
       ],
       "unknown": [
         "@raycast/utils:OAuthService (not implemented in Invoke)",
-        "@raycast/utils:useAI (not implemented in Invoke)",
         "@raycast/utils:withAccessToken (not implemented in Invoke)"
       ]
     },
@@ -41277,7 +41212,6 @@
         "path"
       ],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "declares AI tools[] (5) — AI extensions not supported",
         "denied Node built-ins in sandbox: fs"
       ],
@@ -41425,7 +41359,7 @@
       "name": "lorem-ipsum",
       "title": "Lorem Ipsum",
       "dir": "lorem-ipsum",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 4,
       "modes": "no-view",
       "apiImports": [
@@ -41440,9 +41374,7 @@
       ],
       "utilsImports": [],
       "builtins": [],
-      "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired"
-      ],
+      "blockers": [],
       "degraded": [
         "declares command `arguments[]` — not passed by runtime yet"
       ],
@@ -41564,7 +41496,7 @@
       "name": "lucide-icons",
       "title": "Lucide Icons Search",
       "dir": "lucide-icons",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
@@ -41585,13 +41517,9 @@
         "useFetch"
       ],
       "builtins": [],
-      "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired"
-      ],
+      "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/utils:useAI (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "lucky-surf",
@@ -43275,16 +43203,13 @@
         "path"
       ],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "denied Node built-ins in sandbox: fs"
       ],
       "degraded": [
         "launchCommand: loads; throws if called (inter-command launch not wired)",
         "declares command `arguments[]` — not passed by runtime yet"
       ],
-      "unknown": [
-        "@raycast/utils:useAI (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "markdown-styler",
@@ -43996,7 +43921,7 @@
       "name": "medialister-marketplace-helper",
       "title": "Medialister Marketplace Helper",
       "dir": "medialister-marketplace-helper",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 2,
       "modes": "view",
       "apiImports": [
@@ -44014,9 +43939,7 @@
       ],
       "utilsImports": [],
       "builtins": [],
-      "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired"
-      ],
+      "blockers": [],
       "degraded": [],
       "unknown": []
     },
@@ -44024,7 +43947,7 @@
       "name": "meduza",
       "title": "Meduza",
       "dir": "meduza",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 2,
       "modes": "view",
       "apiImports": [
@@ -44041,13 +43964,9 @@
         "useFetch"
       ],
       "builtins": [],
-      "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired"
-      ],
+      "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/utils:useAI (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "mem",
@@ -44480,7 +44399,6 @@
       ],
       "builtins": [],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "declares AI tools[] (3) — AI extensions not supported"
       ],
       "degraded": [
@@ -44579,7 +44497,6 @@
         "path"
       ],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "unsupported command mode(s): unread-messages: mode \"menu-bar\"",
         "declares AI tools[] (3) — AI extensions not supported"
       ],
@@ -47584,9 +47501,7 @@
       "degraded": [
         "declares command `arguments[]` — not passed by runtime yet"
       ],
-      "unknown": [
-        "@raycast/utils:useAI (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "myanimelist-search",
@@ -49802,7 +49717,6 @@
       ],
       "builtins": [],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "OAuth: OAuth.PKCEClient throws — OAuth not yet wired",
         "declares AI tools[] (6) — AI extensions not supported"
       ],
@@ -50642,7 +50556,7 @@
       "name": "oblique-strategies",
       "title": "Oblique Strategies",
       "dir": "oblique-strategies",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 3,
       "modes": "view",
       "apiImports": [
@@ -50664,9 +50578,7 @@
       "degraded": [
         "launchCommand: loads; throws if called (inter-command launch not wired)"
       ],
-      "unknown": [
-        "@raycast/utils:useAI (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "obs-clippings",
@@ -50691,7 +50603,6 @@
         "fs"
       ],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "denied Node built-ins in sandbox: fs"
       ],
       "degraded": [],
@@ -50913,7 +50824,6 @@
         "path"
       ],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "denied Node built-ins in sandbox: fs"
       ],
       "degraded": [],
@@ -52475,7 +52385,6 @@
         "stream"
       ],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "denied Node built-ins in sandbox: fs, child_process"
       ],
       "degraded": [
@@ -52553,13 +52462,10 @@
         "path"
       ],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "denied Node built-ins in sandbox: fs, child_process"
       ],
       "degraded": [],
-      "unknown": [
-        "@raycast/utils:useAI (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "openfortivpn",
@@ -55314,7 +55220,7 @@
       "name": "penflow-ai",
       "title": "Penflow AI",
       "dir": "penflow-ai",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
@@ -55331,9 +55237,7 @@
       ],
       "utilsImports": [],
       "builtins": [],
-      "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired"
-      ],
+      "blockers": [],
       "degraded": [],
       "unknown": []
     },
@@ -56085,7 +55989,6 @@
         "zlib"
       ],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "declares AI tools[] (3) — AI extensions not supported",
         "denied Node built-ins in sandbox: child_process, fs"
       ],
@@ -56466,7 +56369,6 @@
         "vm"
       ],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "unsupported command mode(s): index: mode \"menu-bar\"",
         "denied Node built-ins in sandbox: fs, vm, child_process"
       ],
@@ -57521,7 +57423,6 @@
       ],
       "blockers": [
         "OAuth: OAuth.PKCEClient throws — OAuth not yet wired",
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "denied Node built-ins in sandbox: child_process"
       ],
       "degraded": [
@@ -58148,7 +58049,6 @@
       ],
       "builtins": [],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "declares AI tools[] (4) — AI extensions not supported"
       ],
       "degraded": [
@@ -59026,7 +58926,6 @@
         "util"
       ],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "unsupported command mode(s): menubar-item: mode \"menu-bar\"",
         "denied Node built-ins in sandbox: fs, child_process"
       ],
@@ -59034,9 +58933,7 @@
         "launchCommand: loads; throws if called (inter-command launch not wired)",
         "declares command `arguments[]` — not passed by runtime yet"
       ],
-      "unknown": [
-        "@raycast/utils:useAI (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "promptnote",
@@ -60618,7 +60515,6 @@
         "path"
       ],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "denied Node built-ins in sandbox: fs"
       ],
       "degraded": [
@@ -61744,15 +61640,12 @@
       ],
       "builtins": [],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "declares AI tools[] (1) — AI extensions not supported"
       ],
       "degraded": [
         "declares command `arguments[]` — not passed by runtime yet"
       ],
-      "unknown": [
-        "@raycast/utils:useAI (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "ratio-calculator",
@@ -62197,8 +62090,7 @@
       ],
       "builtins": [],
       "blockers": [
-        "OAuth: OAuth.PKCEClient throws — OAuth not yet wired",
-        "AI: AI.ask throws — Invoke AI not yet wired"
+        "OAuth: OAuth.PKCEClient throws — OAuth not yet wired"
       ],
       "degraded": [],
       "unknown": []
@@ -62405,7 +62297,7 @@
       "name": "raycast-icons",
       "title": "Raycast Icons",
       "dir": "raycast-icons",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
@@ -62424,13 +62316,9 @@
         "useCachedPromise"
       ],
       "builtins": [],
-      "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired"
-      ],
+      "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/utils:useAI (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "raycast-ios-hig",
@@ -62626,7 +62514,7 @@
       "name": "raycast-monkeytype-theme",
       "title": "Raycast MonkeyType Theme Explorer",
       "dir": "raycast-monkeytype-theme",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
@@ -62646,9 +62534,7 @@
       ],
       "utilsImports": [],
       "builtins": [],
-      "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired"
-      ],
+      "blockers": [],
       "degraded": [],
       "unknown": []
     },
@@ -62918,7 +62804,6 @@
         "child_process"
       ],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "denied Node built-ins in sandbox: child_process"
       ],
       "degraded": [
@@ -64133,16 +64018,13 @@
         "path"
       ],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "denied Node built-ins in sandbox: fs"
       ],
       "degraded": [
         "BrowserExtension: loads; throws if called (browser bridge not wired)",
         "declares command `arguments[]` — not passed by runtime yet"
       ],
-      "unknown": [
-        "@raycast/utils:useAI (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "reading-time",
@@ -64736,13 +64618,10 @@
         "path"
       ],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "denied Node built-ins in sandbox: fs"
       ],
       "degraded": [],
-      "unknown": [
-        "@raycast/utils:useAI (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "reflect",
@@ -65578,7 +65457,6 @@
         "util"
       ],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "denied Node built-ins in sandbox: child_process, fs"
       ],
       "degraded": [],
@@ -66888,7 +66766,6 @@
         "util"
       ],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "declares AI tools[] (9) — AI extensions not supported"
       ],
       "degraded": [
@@ -69873,7 +69750,6 @@
         "util"
       ],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "declares AI tools[] (1) — AI extensions not supported",
         "denied Node built-ins in sandbox: child_process, fs"
       ],
@@ -70857,13 +70733,10 @@
         "timers"
       ],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "denied Node built-ins in sandbox: fs"
       ],
       "degraded": [],
-      "unknown": [
-        "@raycast/utils:useAI (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "simple-login",
@@ -71484,7 +71357,7 @@
       "name": "skyscanner-flights",
       "title": "Flight Search",
       "dir": "skyscanner-flights",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 2,
       "modes": "view",
       "apiImports": [
@@ -71503,9 +71376,7 @@
         "showFailureToast"
       ],
       "builtins": [],
-      "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired"
-      ],
+      "blockers": [],
       "degraded": [],
       "unknown": []
     },
@@ -71556,7 +71427,6 @@
       ],
       "builtins": [],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "declares AI tools[] (6) — AI extensions not supported"
       ],
       "degraded": [
@@ -71564,7 +71434,6 @@
         "declares extension-level `ai` instructions — ignored"
       ],
       "unknown": [
-        "@raycast/utils:useAI (not implemented in Invoke)",
         "@raycast/utils:OAuthService (not implemented in Invoke)",
         "@raycast/utils:withAccessToken (not implemented in Invoke)",
         "@raycast/utils:WithAccessTokenComponentOrFn (not implemented in Invoke)"
@@ -71612,7 +71481,6 @@
         "fs"
       ],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "denied Node built-ins in sandbox: fs"
       ],
       "degraded": [],
@@ -71976,7 +71844,7 @@
       "name": "smart-reply",
       "title": "Smart Reply - AI-Powered Multilingual Response Generator",
       "dir": "smart-reply",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
@@ -72001,9 +71869,7 @@
         "usePromise"
       ],
       "builtins": [],
-      "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired"
-      ],
+      "blockers": [],
       "degraded": [],
       "unknown": []
     },
@@ -73643,7 +73509,6 @@
       "builtins": [],
       "blockers": [
         "OAuth: OAuth.PKCEClient throws — OAuth not yet wired",
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "unsupported command mode(s): nowPlayingMenuBar: mode \"menu-bar\"",
         "declares AI tools[] (7) — AI extensions not supported"
       ],
@@ -74249,7 +74114,6 @@
         "https"
       ],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "denied Node built-ins in sandbox: child_process, https"
       ],
       "degraded": [
@@ -74292,13 +74156,10 @@
         "path"
       ],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "denied Node built-ins in sandbox: fs"
       ],
       "degraded": [],
-      "unknown": [
-        "@raycast/utils:useAI (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "steam-player-counts",
@@ -74987,7 +74848,6 @@
       "utilsImports": [],
       "builtins": [],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "declares AI tools[] (1) — AI extensions not supported"
       ],
       "degraded": [
@@ -75962,7 +75822,6 @@
         "util"
       ],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "unsupported command mode(s): menu-bar: mode \"menu-bar\"",
         "denied Node built-ins in sandbox: fs, child_process"
       ],
@@ -76030,7 +75889,6 @@
         "fs"
       ],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "denied Node built-ins in sandbox: fs"
       ],
       "degraded": [],
@@ -77400,7 +77258,6 @@
       "builtins": [],
       "blockers": [
         "OAuth: OAuth.PKCEClient throws — OAuth not yet wired",
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "unsupported command mode(s): menu-bar-status: mode \"menu-bar\""
       ],
       "degraded": [
@@ -77525,7 +77382,7 @@
       "name": "text-enhance",
       "title": "Text Enhance",
       "dir": "text-enhance",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 2,
       "modes": "view",
       "apiImports": [
@@ -77549,9 +77406,7 @@
       ],
       "utilsImports": [],
       "builtins": [],
-      "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired"
-      ],
+      "blockers": [],
       "degraded": [],
       "unknown": []
     },
@@ -78088,7 +77943,6 @@
         "util"
       ],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "unsupported command mode(s): show-today-in-menu-bar: mode \"menu-bar\"",
         "declares AI tools[] (12) — AI extensions not supported",
         "denied Node built-ins in sandbox: child_process, fs"
@@ -78262,7 +78116,6 @@
       ],
       "builtins": [],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "declares AI tools[] (3) — AI extensions not supported"
       ],
       "degraded": [
@@ -78382,7 +78235,6 @@
         "http"
       ],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "denied Node built-ins in sandbox: fs, http, child_process"
       ],
       "degraded": [
@@ -78703,7 +78555,7 @@
       "name": "time-teller",
       "title": "Time Teller",
       "dir": "time-teller",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
@@ -78720,9 +78572,7 @@
       "builtins": [
         "timers"
       ],
-      "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired"
-      ],
+      "blockers": [],
       "degraded": [],
       "unknown": []
     },
@@ -80191,7 +80041,7 @@
       "name": "translate-send-webpage-to-reader",
       "title": "Translate and Send Webpage to Reader",
       "dir": "translate-send-webpage-to-reader",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 1,
       "modes": "no-view",
       "apiImports": [
@@ -80203,9 +80053,7 @@
       ],
       "utilsImports": [],
       "builtins": [],
-      "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired"
-      ],
+      "blockers": [],
       "degraded": [
         "BrowserExtension: loads; throws if called (browser bridge not wired)"
       ],
@@ -81304,7 +81152,6 @@
       ],
       "builtins": [],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "declares AI tools[] (4) — AI extensions not supported"
       ],
       "degraded": [
@@ -81537,7 +81384,6 @@
       ],
       "builtins": [],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "declares AI tools[] (1) — AI extensions not supported"
       ],
       "degraded": [
@@ -81893,7 +81739,7 @@
       "name": "united-nations",
       "title": "United Nations",
       "dir": "united-nations",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 5,
       "modes": "view",
       "apiImports": [
@@ -81922,9 +81768,7 @@
         "process",
         "timers"
       ],
-      "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired"
-      ],
+      "blockers": [],
       "degraded": [],
       "unknown": []
     },
@@ -84664,7 +84508,6 @@
         "path"
       ],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "denied Node built-ins in sandbox: child_process, fs"
       ],
       "degraded": [],
@@ -86059,7 +85902,6 @@
       "utilsImports": [],
       "builtins": [],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "declares AI tools[] (1) — AI extensions not supported"
       ],
       "degraded": [
@@ -86139,7 +85981,6 @@
         "path"
       ],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "denied Node built-ins in sandbox: child_process, fs, https"
       ],
       "degraded": [
@@ -87477,7 +87318,7 @@
       "name": "wordpress-docs",
       "title": "WordPress Docs",
       "dir": "wordpress-docs",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
@@ -87494,13 +87335,9 @@
         "useFetch"
       ],
       "builtins": [],
-      "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired"
-      ],
+      "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/utils:useAI (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "wordpress-icon-finder",
@@ -87902,7 +87739,6 @@
       ],
       "builtins": [],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "unsupported command mode(s): menu-bar: mode \"menu-bar\""
       ],
       "degraded": [
@@ -88332,7 +88168,6 @@
         "path"
       ],
       "blockers": [
-        "AI: AI.ask throws — Invoke AI not yet wired",
         "denied Node built-ins in sandbox: fs"
       ],
       "degraded": [],
