@@ -63,6 +63,16 @@ public final class PaletteWindow: NSObject {
     private var searchTrailingDefault: NSLayoutConstraint!
     private var searchTrailingWithFilter: NSLayoutConstraint!
 
+    // Inline command-argument chips (Raycast parity): when the highlighted command declares arguments,
+    // the search row shows [query] [icon] [field per arg], left-aligned right after the query text.
+    private let argBar = NSStackView()
+    private let argIcon = NSImageView()
+    private var argFields: [NSTextField] = []
+    private var argNames: [String] = []
+    private var searchWidthConstraint: NSLayoutConstraint! // active only while args are shown (query hugs content)
+    /// True while the search row is showing argument chips for the selected command.
+    public private(set) var hasArguments = false
+
     /// Fixed palette width (Raycast-style); clamped to the display on small screens.
     private static let paletteWidth: CGFloat = 750
 
@@ -132,7 +142,19 @@ public final class PaletteWindow: NSObject {
         searchSeparator.boxType = .separator
         searchSeparator.translatesAutoresizingMaskIntoConstraints = false
 
+        // Argument chip bar — hidden until a command with arguments is selected (setArguments).
+        argIcon.translatesAutoresizingMaskIntoConstraints = false
+        argIcon.imageScaling = .scaleProportionallyUpOrDown
+        argIcon.setContentHuggingPriority(.required, for: .horizontal)
+        argBar.translatesAutoresizingMaskIntoConstraints = false
+        argBar.orientation = .horizontal
+        argBar.alignment = .centerY
+        argBar.spacing = 8
+        argBar.setContentHuggingPriority(.required, for: .horizontal)
+        argBar.isHidden = true
+
         blur.addSubview(searchField)
+        blur.addSubview(argBar)
         blur.addSubview(filterButton)
         blur.addSubview(searchSeparator)
         blur.addSubview(paletteView)
@@ -141,8 +163,16 @@ public final class PaletteWindow: NSObject {
         searchTrailingDefault = searchField.trailingAnchor.constraint(equalTo: blur.trailingAnchor, constant: -16)
         searchTrailingWithFilter = searchField.trailingAnchor.constraint(equalTo: filterButton.leadingAnchor, constant: -10)
         searchTrailingDefault.isActive = true
+        // While args are shown, the query field hugs its content (so chips sit right after it). Inactive
+        // by default; setArguments activates it and keeps its constant in sync with the typed text.
+        searchWidthConstraint = searchField.widthAnchor.constraint(equalToConstant: 80)
 
         NSLayoutConstraint.activate([
+            argBar.leadingAnchor.constraint(equalTo: searchField.trailingAnchor, constant: 10),
+            argBar.centerYAnchor.constraint(equalTo: searchField.centerYAnchor),
+            argBar.trailingAnchor.constraint(lessThanOrEqualTo: blur.trailingAnchor, constant: -16),
+            argIcon.widthAnchor.constraint(equalToConstant: 18),
+            argIcon.heightAnchor.constraint(equalToConstant: 18),
             searchField.leadingAnchor.constraint(equalTo: blur.leadingAnchor, constant: 16),
             searchField.topAnchor.constraint(equalTo: blur.topAnchor, constant: 14),
 
@@ -361,6 +391,72 @@ public final class PaletteWindow: NSObject {
     /// Current values of a rendered Form's fields, by field id (read when a submit action fires).
     public func formValues() -> [String: String] { paletteView.currentFormValues() }
 
+    // MARK: - Inline command arguments (Raycast parity)
+
+    /// Show argument chips for the selected command, right after the query. No-ops (keeps typed values)
+    /// when the same arguments are already shown, so re-filtering the list doesn't clobber input.
+    public func setArguments(_ specs: [(name: String, placeholder: String)], iconPath: String?) {
+        let names = specs.map(\.name)
+        if hasArguments && names == argNames { return }
+        argBar.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        argFields = []
+        argNames = names
+
+        if let iconPath, let img = NSImage(contentsOfFile: iconPath) {
+            argIcon.image = img
+        } else {
+            argIcon.image = NSImage(systemSymbolName: "command", accessibilityDescription: nil)
+        }
+        argBar.addArrangedSubview(argIcon)
+        for s in specs {
+            let tf = NSTextField()
+            tf.placeholderString = s.placeholder
+            tf.font = .systemFont(ofSize: 13)
+            tf.isBezeled = true
+            tf.bezelStyle = .roundedBezel
+            tf.focusRingType = .none
+            tf.translatesAutoresizingMaskIntoConstraints = false
+            tf.delegate = self
+            tf.widthAnchor.constraint(greaterThanOrEqualToConstant: 72).isActive = true
+            argFields.append(tf)
+            argBar.addArrangedSubview(tf)
+        }
+        argBar.isHidden = false
+        hasArguments = true
+        suppressAutoHide = true // Tab between query/chips churns key focus on a borderless panel
+        searchTrailingDefault.isActive = false
+        searchTrailingWithFilter.isActive = false
+        updateSearchWidth()
+        searchWidthConstraint.isActive = true
+    }
+
+    /// Hide the argument chips (selection moved to a command without arguments, or left root mode).
+    public func clearArguments() {
+        guard hasArguments else { return }
+        hasArguments = false
+        suppressAutoHide = false
+        argBar.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        argFields = []
+        argNames = []
+        argBar.isHidden = true
+        searchWidthConstraint.isActive = false
+        searchTrailingDefault.isActive = true
+    }
+
+    /// The values currently entered in the argument chips, keyed by argument name.
+    public func argumentValues() -> [String: String] {
+        var out: [String: String] = [:]
+        for (i, name) in argNames.enumerated() where i < argFields.count { out[name] = argFields[i].stringValue }
+        return out
+    }
+
+    /// Size the query field to its text so the chips sit immediately after it (Raycast layout).
+    private func updateSearchWidth() {
+        let s = searchField.stringValue
+        let w = (s as NSString).size(withAttributes: [.font: searchField.font as Any]).width
+        searchWidthConstraint.constant = max(46, min(w + 14, 360))
+    }
+
     /// Show the type-filter dropdown (clipboard mode) with the given options/selection.
     public func setFilter(options: [String], selected: String) {
         filterButton.removeAllItems()
@@ -513,23 +609,41 @@ extension PaletteWindow: NSWindowDelegate {
 
 extension PaletteWindow: NSTextFieldDelegate {
     public func controlTextDidChange(_ obj: Notification) {
-        onSearchChange?(searchField.stringValue)
+        // Only the query field drives search; the argument chips are read on activation, not as search.
+        if (obj.object as? NSTextField) === searchField {
+            if hasArguments { updateSearchWidth() }
+            onSearchChange?(searchField.stringValue)
+        }
     }
 
     /// Route list-navigation keys while the search field keeps focus (Raycast-style): arrows move
-    /// the selection, Enter/⌘Enter activate the primary/secondary action, Esc cancels.
+    /// the selection, Enter/⌘Enter activate the primary/secondary action, Esc cancels. When argument
+    /// chips are shown, Tab moves focus query→chip→chip→query and Enter from a chip runs the command.
     public func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
-        // In a grid, navigate in 2D: up/down jump a full row (±columns), left/right step ±1. In a list,
-        // up/down step ±1 and left/right fall through to the text caret.
+        let field = control as? NSTextField
+        let inChip = field.map { argFields.contains($0) } ?? false
+
+        // Tab/Backtab cycle focus across the query field and the argument chips.
+        if hasArguments, commandSelector == #selector(NSResponder.insertTab(_:)) || commandSelector == #selector(NSResponder.insertBacktab(_:)) {
+            let forward = commandSelector == #selector(NSResponder.insertTab(_:))
+            let order: [NSTextField] = [searchField] + argFields
+            let idx = field.flatMap { order.firstIndex(of: $0) } ?? 0
+            let next = order[(idx + (forward ? 1 : order.count - 1)) % order.count]
+            panel.makeFirstResponder(next)
+            return true
+        }
+
         switch commandSelector {
         case #selector(NSResponder.moveDown(_:)):
+            if inChip { return false } // arrows in a chip edit the caret; they must NOT move the selection
             onMove?(gridColumns > 0 ? gridColumns : 1); return true
         case #selector(NSResponder.moveUp(_:)):
+            if inChip { return false }
             onMove?(gridColumns > 0 ? -gridColumns : -1); return true
         case #selector(NSResponder.moveRight(_:)):
-            if gridColumns > 0 { onMove?(1); return true }; return false
+            if gridColumns > 0, !inChip { onMove?(1); return true }; return false
         case #selector(NSResponder.moveLeft(_:)):
-            if gridColumns > 0 { onMove?(-1); return true }; return false
+            if gridColumns > 0, !inChip { onMove?(-1); return true }; return false
         case #selector(NSResponder.insertNewline(_:)):
             onActivate?(false); return true // ⌘Return (secondary) is handled by the key monitor
         case #selector(NSResponder.cancelOperation(_:)):

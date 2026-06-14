@@ -87,6 +87,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         var iconPath: String? = nil // absolute path to a manifest icon image (extensions), preferred when set
         let keywords: [String]
         let closesPalette: Bool // folder-opens close; "navigating" commands (clipboard) keep it open
+        var argSpec: [[String: Any]] = [] // Raycast command arguments → inline search-bar chips
         let run: () -> Void
     }
 
@@ -561,6 +562,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
 
     /// Open an in-palette form. `submit` receives the field values (by id) when the user presses Enter.
     private func enterNativeForm(title: String, fields: [ViewNode], submit: @escaping ([String: String]) -> Void) {
+        palette.clearArguments() // leaving the root command list — drop any inline argument chips
         mode = .nativeForm
         nativeFormTitle = title
         nativeFormSubmit = submit
@@ -798,6 +800,28 @@ public final class AppController: NSObject, NSApplicationDelegate {
         if selectedIndex >= count { selectedIndex = max(0, count - 1) }
         palette.render(activeTree, selectedIndex: selectedIndex)
         updateActionBar()
+        updateRootArguments()
+    }
+
+    /// The RootCommand backing the currently-selected row (nil for apps / AI / non-command rows).
+    private func selectedRootCommand() -> RootCommand? {
+        let rows = items()
+        guard selectedIndex >= 0, selectedIndex < rows.count,
+              let cid = rows[selectedIndex].props["commandId"]?.stringValue else { return nil }
+        return commands.first { $0.id == cid }
+    }
+
+    /// Show inline argument chips (Raycast parity) for the selected command, or hide them. Called on
+    /// every selection/render change in root mode.
+    private func updateRootArguments() {
+        guard mode == .root, let cmd = selectedRootCommand(), !cmd.argSpec.isEmpty else {
+            palette.clearArguments(); return
+        }
+        let specs = cmd.argSpec.compactMap { a -> (name: String, placeholder: String)? in
+            guard let n = a["name"] as? String else { return nil }
+            return (name: n, placeholder: (a["placeholder"] as? String) ?? n)
+        }
+        palette.setArguments(specs, iconPath: cmd.iconPath)
     }
 
     /// Compose one tree: [Calculator card] + (empty query → Suggestions; else Applications + Commands).
@@ -944,6 +968,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
             // thumbnail re-scan — so arrow nav stays snappy.
             palette.render(activeTree, selectedIndex: selectedIndex)
             updateActionBar()
+            updateRootArguments()
         }
     }
 
@@ -958,6 +983,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         default:
             palette.render(activeTree, selectedIndex: selectedIndex)
             updateActionBar()
+            updateRootArguments()
         }
     }
 
@@ -1157,6 +1183,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     /// mode (so opening a quicklink / running a snippet doesn't leave us stuck in that mode).
     private func afterLaunch() {
         palette.suppressAutoHide = false
+        palette.clearArguments() // drop any inline argument chips before hiding
         palette.hide()
         teardownExtension()
         mode = .root
@@ -1942,12 +1969,13 @@ public final class AppController: NSObject, NSApplicationDelegate {
                         out.append(RootCommand(id: cmdId, title: ctitle, subtitle: title, runTitle: "Run",
                                                icon: "bolt.fill", iconPath: iconPath,
                                                keywords: [name, cname, title.lowercased()],
-                                               closesPalette: false) { [weak self] in
+                                               closesPalette: false, argSpec: argSpec) { [weak self] in
                             // closesPalette:false so a first-run prefs-onboarding form can open in the
                             // palette; the no-view action itself tears the palette down when it runs.
                             guard let self else { return }
                             self.launchExtensionCommand(extKey: extKey, extTitle: title, spec: prefsSpec,
-                                                        argSpec: argSpec, commandTitle: ctitle) { prefs, args in
+                                                        argSpec: argSpec, commandTitle: ctitle,
+                                                        providedArgs: self.chipArgs(argSpec)) { prefs, args in
                                 self.runNoViewExtension(id: cmdId, title: ctitle, entryRelPath: rel, command: cname, preferences: prefs, arguments: args)
                             }
                         })
@@ -1955,10 +1983,11 @@ public final class AppController: NSObject, NSApplicationDelegate {
                         out.append(RootCommand(id: cmdId, title: ctitle, subtitle: title, runTitle: "Open",
                                                icon: "puzzlepiece.extension.fill", iconPath: iconPath,
                                                keywords: [name, cname, title.lowercased()],
-                                               closesPalette: false) { [weak self] in
+                                               closesPalette: false, argSpec: argSpec) { [weak self] in
                             guard let self else { return }
                             self.launchExtensionCommand(extKey: extKey, extTitle: title, spec: prefsSpec,
-                                                        argSpec: argSpec, commandTitle: ctitle) { prefs, args in
+                                                        argSpec: argSpec, commandTitle: ctitle,
+                                                        providedArgs: self.chipArgs(argSpec)) { prefs, args in
                                 self.launchExtension(id: cmdId, title: ctitle, entryRelPath: rel, command: cname, preferences: prefs, arguments: args)
                             }
                         })
@@ -2085,6 +2114,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
 
     private func launchExtension(id: String, title: String, entryRelPath: String, command: String, preferences: String, arguments: String = "{}") {
         teardownExtension()
+        palette.clearArguments() // leaving the root list for the extension view — drop argument chips
         let h = ExtensionHost()
         h.onLog = { msg in print("[invoke:ext] \(msg)") }
         h.onCommit = { [weak self] _ in self?.extReceivedCommit = true; self?.onExtensionCommit() }
@@ -2254,12 +2284,27 @@ public final class AppController: NSObject, NSApplicationDelegate {
     /// Launch an extension command, first showing the required-preferences onboarding if it isn't
     /// configured yet, then (if the command declares `arguments`) the arguments form. `launch` performs
     /// the actual view/no-view launch with the resolved prefs JSON and the collected arguments JSON.
+    /// Build the arguments JSON from the inline search-bar chips, if they're currently shown for a
+    /// command with arguments. Returns nil when there are no chips (e.g. launched via hotkey/alias) so
+    /// the caller falls back to the arguments form.
+    private func chipArgs(_ argSpec: [[String: Any]]) -> String? {
+        guard !argSpec.isEmpty, palette.hasArguments else { return nil }
+        let vals = palette.argumentValues()
+        var obj: [String: Any] = [:]
+        for a in argSpec { if let name = a["name"] as? String { obj[name] = vals[name] ?? "" } }
+        let data = (try? JSONSerialization.data(withJSONObject: obj)) ?? Data("{}".utf8)
+        return String(decoding: data, as: UTF8.self)
+    }
+
     private func launchExtensionCommand(extKey: String, extTitle: String, spec: [[String: Any]],
                                         argSpec: [[String: Any]] = [], commandTitle: String = "",
+                                        providedArgs: String? = nil,
                                         launch: @escaping (_ prefs: String, _ argsJSON: String) -> Void) {
         let withArgs: (String) -> Void = { [weak self] prefs in
             guard let self else { return }
-            if argSpec.isEmpty {
+            if let provided = providedArgs {
+                launch(prefs, provided)            // values came from the inline chips
+            } else if argSpec.isEmpty {
                 launch(prefs, "{}")
             } else {
                 self.presentArgumentsForm(title: commandTitle.isEmpty ? extTitle : commandTitle,
