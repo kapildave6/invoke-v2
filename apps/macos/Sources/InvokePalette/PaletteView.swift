@@ -586,18 +586,25 @@ public final class PaletteView: NSView {
         h.alignment = .top
         h.spacing = 0
         h.translatesAutoresizingMaskIntoConstraints = false
-        h.addArrangedSubview(markdownScroll(md))
+        let mdScroll = markdownScroll(md)
+        h.addArrangedSubview(mdScroll)
+        var sidebarReserve: CGFloat = 0
         if let metaNode = node.children.first(where: { $0.type == "metadata" }), !metaNode.children.isEmpty {
             let divider = NSBox(); divider.boxType = .separator; divider.translatesAutoresizingMaskIntoConstraints = false
             let side = detailMetadataSidebar(metaNode)
             h.addArrangedSubview(divider)
             h.addArrangedSubview(side)
             NSLayoutConstraint.activate([divider.widthAnchor.constraint(equalToConstant: 1), side.widthAnchor.constraint(equalToConstant: 240)])
+            sidebarReserve = 241 // divider + sidebar
         }
         stack.addArrangedSubview(h)
         NSLayoutConstraint.activate([
             h.widthAnchor.constraint(equalTo: stack.widthAnchor),
             h.heightAnchor.constraint(equalToConstant: 420),
+            // Pin the markdown column's width to the available space so its content (esp. images) is
+            // bounded by the palette — otherwise a large image makes the scroll grow to its natural size
+            // and spill off-screen instead of scaling down to fit.
+            mdScroll.widthAnchor.constraint(equalTo: stack.widthAnchor, constant: -sidebarReserve),
         ])
     }
 
