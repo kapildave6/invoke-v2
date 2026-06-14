@@ -46,13 +46,15 @@ const API_SUPPORTED = new Set([
   // M1 host-wired (RPC): real dialog / persisted cache / settings / diagnostic
   "Cache", "confirmAlert", "captureException", "openExtensionPreferences", "openCommandPreferences",
   "useNavigation", // M3 render-on-push navigation
+  // selection / application / finder / filesystem (remediation 04)
+  "getSelectedText", "getApplications", "getFrontmostApplication", "getDefaultApplication",
+  "trash", "showInFinder", "getSelectedFinderItems",
 ]);
 
 // `@raycast/api` exports that exist but are stubbed/no-op (run, but degraded).
 const API_DEGRADED = new Map([
   // M1 load-stubs — import succeeds; throw (or no-op) only if actually called
   ["launchCommand", "loads; throws if called (inter-command launch not wired)"],
-  ["getSelectedFinderItems", "loads; throws if called (Finder selection not wired)"],
   ["BrowserExtension", "loads; throws if called (browser bridge not wired)"],
   ["updateCommandMetadata", "loads; no-op (command metadata updates not wired)"],
 ]);
@@ -61,12 +63,6 @@ const API_DEGRADED = new Map([
 const API_BLOCKING = new Map([
   ["AI", "AI.ask throws — Invoke AI not yet wired"],
   ["OAuth", "OAuth.PKCEClient throws — OAuth not yet wired"],
-  ["getSelectedText", "throws — selection APIs not wired"],
-  ["getApplications", "throws — application discovery not wired"],
-  ["getFrontmostApplication", "throws — application discovery not wired"],
-  ["getDefaultApplication", "throws — application discovery not wired"],
-  ["trash", "throws — file trash not wired"],
-  ["showInFinder", "throws — showInFinder not wired"],
 ]);
 
 // Common `@raycast/api` exports that are simply ABSENT (import will fail).
