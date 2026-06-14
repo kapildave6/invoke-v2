@@ -21,8 +21,11 @@ let package = Package(
         .target(name: "InvokeRenderer", dependencies: ["InvokeIPC"]),
         .target(name: "InvokeServices"),
         .target(name: "InvokePersistence"),
+        // Tiny Objective-C shim: catch NSExceptions so a render bug degrades to an error view instead
+        // of aborting the app (Swift's try/catch can't catch Obj-C exceptions).
+        .target(name: "InvokeObjC"),
         // AppKit UI.
-        .target(name: "InvokePalette", dependencies: ["InvokeRenderer", "InvokeIPC"]),
+        .target(name: "InvokePalette", dependencies: ["InvokeRenderer", "InvokeIPC", "InvokeObjC"]),
         .target(
             name: "InvokeShell",
             dependencies: ["InvokePalette", "InvokeIPC", "InvokeRenderer", "InvokeServices", "InvokePersistence"],

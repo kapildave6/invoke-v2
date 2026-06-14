@@ -1,6 +1,7 @@
 import AppKit
 import InvokeIPC
 import InvokeRenderer
+import InvokeObjC // InvokeCatchException — guard the render path from Obj-C exceptions (no app crash)
 
 /// Flipped so an NSScrollView lays its document out top-down (AppKit default is bottom-up).
 private final class FlippedDocView: NSView {
@@ -110,22 +111,47 @@ public final class PaletteView: NSView {
         let surfaces = tree.root.children
         lastRenderedTree = tree
         lastSurfaceWasGrid = surfaces.contains { $0.type == "grid" }
-        // Dispatch on the top-level surface the extension rendered (PLAN.md §5 component set).
-        if let detail = surfaces.first(where: { $0.type == "detail" }) {
-            renderDetailSurface(detail)
-        } else if let form = surfaces.first(where: { $0.type == "form" }) {
-            renderFormSurface(form)
-        } else if let grid = surfaces.first(where: { $0.type == "grid" }) {
-            renderGrid(grid, selectedIndex: selectedIndex)
-            scrollSelectedIntoView()
-        } else if let list = surfaces.first(where: { $0.type == "list" }),
-                  case .bool(true)? = list.props["showDetail"] {
-            renderSplit(list: list, selectedIndex: selectedIndex) // master–detail (e.g. Clipboard History)
-        } else {
-            appendRows(for: tree.root, selectedIndex: selectedIndex)
-            scrollSelectedIntoView()
+        // Dispatch on the top-level surface the extension rendered (PLAN.md §5 component set). The whole
+        // dispatch runs inside an Obj-C exception guard: a malformed view tree or an AppKit exception
+        // (bad constraint, unknown selector, …) must NOT abort Invoke — it degrades to an error surface.
+        if let reason = InvokeCatchException({
+            if let detail = surfaces.first(where: { $0.type == "detail" }) {
+                self.renderDetailSurface(detail)
+            } else if let form = surfaces.first(where: { $0.type == "form" }) {
+                self.renderFormSurface(form)
+            } else if let grid = surfaces.first(where: { $0.type == "grid" }) {
+                self.renderGrid(grid, selectedIndex: selectedIndex)
+                self.scrollSelectedIntoView()
+            } else if let list = surfaces.first(where: { $0.type == "list" }),
+                      case .bool(true)? = list.props["showDetail"] {
+                self.renderSplit(list: list, selectedIndex: selectedIndex) // master–detail (e.g. Clipboard History)
+            } else {
+                self.appendRows(for: tree.root, selectedIndex: selectedIndex)
+                self.scrollSelectedIntoView()
+            }
+        }) {
+            renderErrorSurface(reason)
         }
         return true
+    }
+
+    /// Fallback surface shown when rendering the extension's view threw — keeps Invoke alive and tells
+    /// the user (and us) what happened instead of crashing the whole app.
+    private func renderErrorSurface(_ reason: String) {
+        NSLog("[invoke] render failed, showing error surface: %@", reason)
+        // The partial render may have left views/state behind; reset to a clean single-message surface.
+        stack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        gridCells.removeAll()
+        itemCounter = 0
+        selectedRowView = nil
+        let md = "## ⚠️ This view couldn’t be displayed\n\nThe extension’s screen failed to render, so Invoke stopped it instead of crashing.\n\n```\n\(reason)\n```"
+        // markdownScroll is itself guarded below, but a plain label is the safest last resort.
+        if let guarded = InvokeCatchException({ self.stack.addArrangedSubview(self.markdownScroll(md)) }) {
+            NSLog("[invoke] error surface also failed: %@", guarded)
+            let lbl = NSTextField(labelWithString: "This view couldn’t be displayed.")
+            lbl.translatesAutoresizingMaskIntoConstraints = false
+            stack.addArrangedSubview(lbl)
+        }
     }
 
     private func scrollSelectedIntoView() {
@@ -442,8 +468,7 @@ public final class PaletteView: NSView {
                 stack.addArrangedSubview(body)
                 body.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
             case .image(let url, let alt):
-                let view = Self.detailImageView(url: url, alt: alt, fillWidthOf: stack)
-                stack.addArrangedSubview(view)
+                Self.appendDetailImage(url: url, alt: alt, to: stack)
             }
         }
 
@@ -490,9 +515,19 @@ public final class PaletteView: NSView {
         return segs.isEmpty ? [.text(md)] : segs
     }
 
-    /// An NSImageView that fills the available width up to the image's natural size, preserving aspect.
-    /// Unresolvable references fall back to the alt text so the user at least sees something.
-    private static func detailImageView(url: String, alt: String, fillWidthOf stack: NSStackView) -> NSView {
+    /// Append an image (or an alt-text fallback) to the markdown stack, filling the available width up to
+    /// the image's natural size, preserving aspect. The view is added to `stack` BEFORE any stack-relative
+    /// constraint is activated — activating a constraint between two views with no common ancestor throws
+    /// an NSException and aborts the app, so insertion must come first.
+    private static func appendDetailImage(url: String, alt: String, to stack: NSStackView) {
+        func addFallback() {
+            let lbl = NSTextField(labelWithString: alt.isEmpty ? "🖼 (image unavailable)" : "🖼 \(alt)")
+            lbl.textColor = .secondaryLabelColor
+            lbl.translatesAutoresizingMaskIntoConstraints = false
+            stack.addArrangedSubview(lbl)
+            lbl.widthAnchor.constraint(lessThanOrEqualTo: stack.widthAnchor).isActive = true
+        }
+
         let iv = NSImageView()
         iv.imageScaling = .scaleProportionallyUpOrDown
         iv.imageAlignment = .alignTopLeft
@@ -500,7 +535,9 @@ public final class PaletteView: NSView {
         iv.setContentHuggingPriority(.defaultLow, for: .horizontal)
         iv.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
+        // Precondition: `iv` is already an arranged subview of `stack` (shares it as a common ancestor).
         func apply(_ image: NSImage) {
+            guard iv.superview != nil else { return } // detached before the async image arrived
             iv.image = image
             let w = max(1, image.size.width), h = max(1, image.size.height)
             let fill = iv.widthAnchor.constraint(equalTo: stack.widthAnchor)
@@ -514,20 +551,19 @@ public final class PaletteView: NSView {
         }
 
         if let image = loadDetailImageSync(url) {
+            stack.addArrangedSubview(iv) // in the hierarchy BEFORE stack-relative constraints
             apply(image)
-            return iv
+            return
         }
         if let u = URL(string: url), u.scheme == "http" || u.scheme == "https" {
+            stack.addArrangedSubview(iv) // attach now; the image arrives later and grows the row
             URLSession.shared.dataTask(with: u) { data, _, _ in
                 guard let data, let image = NSImage(data: data) else { return }
                 DispatchQueue.main.async { apply(image) }
             }.resume()
-            return iv // grows from ~0 height to the image's aspect once loaded
+            return
         }
-        let fallback = NSTextField(labelWithString: alt.isEmpty ? "🖼 (image unavailable)" : "🖼 \(alt)")
-        fallback.textColor = .secondaryLabelColor
-        fallback.translatesAutoresizingMaskIntoConstraints = false
-        return fallback
+        addFallback()
     }
 
     /// Load a Detail image from a local path, file:// URL, or data: URI. Returns nil for http(s)
