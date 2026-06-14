@@ -66,6 +66,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     /// routing; `activeFrame` is the frame id whose tree is shown. Lower frames stay mounted (state kept).
     private var navDepth = 0
     private var activeFrame = 0
+    private var selectionByFrame: [Int: Int] = [:] // remembered selectedIndex per nav frame (restored on pop)
 
     private var activeTree: ViewTree {
         if mode == .extensionView, let extHost {
@@ -2401,15 +2402,20 @@ public final class AppController: NSObject, NSApplicationDelegate {
         currentExtTitle = ""
         navDepth = 0
         activeFrame = 0
+        selectionByFrame.removeAll()
         palette.setAssetsPath("")
     }
 
-    /// The child changed the active navigation frame (push/pop). Display that frame's tree.
+    /// The child changed the active navigation frame (push/pop). Display that frame's tree, restoring
+    /// the selection it had — so popping back to a list/grid lands on the row you pushed from (Raycast
+    /// semantics). The extension's React state is preserved by the child (the lower frame stays mounted);
+    /// the *selected index* is host state, so we remember it per frame here.
     private func onExtNav(depth: Int, frame: Int) {
         guard mode == .extensionView else { return }
+        selectionByFrame[activeFrame] = selectedIndex // remember the frame we're leaving
         navDepth = depth
         activeFrame = frame
-        selectedIndex = 0
+        selectedIndex = selectionByFrame[frame] ?? 0  // restore (a brand-new pushed frame starts at 0)
         renderExtension()
     }
 
