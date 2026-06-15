@@ -27,6 +27,13 @@ private final class ClickableRow: NSView {
 public final class PaletteView: NSView {
     private let stack = NSStackView()
     private let scrollView = NSScrollView()
+    // Virtualized grid (Raycast parity): an NSCollectionView only builds/recycles VISIBLE cells, so a
+    // 2,000+ item grid (e.g. glyph-search) is instant instead of building every cell up front.
+    private let gridScroll = NSScrollView()
+    private let collectionView = NSCollectionView()
+    private var gridData: [ViewNode] = []
+    private var gridSelected = 0
+    private var gridThumbHeight: CGFloat = 72
     private var itemCounter = 0
     private var selectedRowView: NSView?
 
@@ -80,6 +87,37 @@ public final class PaletteView: NSView {
             stack.trailingAnchor.constraint(equalTo: doc.trailingAnchor, constant: -12),
             stack.bottomAnchor.constraint(equalTo: doc.bottomAnchor, constant: -8),
         ])
+
+        // Virtualized grid surface — its own scroll/collection view, shown only for grid surfaces.
+        let layout = NSCollectionViewFlowLayout()
+        layout.minimumInteritemSpacing = 8
+        layout.minimumLineSpacing = 8
+        layout.sectionInset = NSEdgeInsets(top: 10, left: 12, bottom: 10, right: 12)
+        collectionView.collectionViewLayout = layout
+        collectionView.isSelectable = true
+        collectionView.allowsEmptySelection = true
+        collectionView.allowsMultipleSelection = false
+        collectionView.backgroundColors = [.clear]
+        collectionView.dataSource = self
+        collectionView.delegate = self
+        collectionView.register(GridItemView.self, forItemWithIdentifier: GridItemView.id)
+        gridScroll.translatesAutoresizingMaskIntoConstraints = false
+        gridScroll.drawsBackground = false
+        gridScroll.hasVerticalScroller = true
+        gridScroll.scrollerStyle = .overlay
+        gridScroll.documentView = collectionView
+        gridScroll.isHidden = true
+        addSubview(gridScroll)
+        let dbl = NSClickGestureRecognizer(target: self, action: #selector(gridDoubleClick(_:)))
+        dbl.numberOfClicksRequired = 2
+        dbl.delaysPrimaryMouseButtonEvents = false
+        collectionView.addGestureRecognizer(dbl)
+        NSLayoutConstraint.activate([
+            gridScroll.topAnchor.constraint(equalTo: topAnchor),
+            gridScroll.leadingAnchor.constraint(equalTo: leadingAnchor),
+            gridScroll.trailingAnchor.constraint(equalTo: trailingAnchor),
+            gridScroll.bottomAnchor.constraint(equalTo: bottomAnchor),
+        ])
     }
 
     @available(*, unavailable)
@@ -107,12 +145,10 @@ public final class PaletteView: NSView {
     /// did a full rebuild (so the window should resize); false on the selection-only fast path.
     @discardableResult
     public func render(_ tree: ViewTree, selectedIndex: Int) -> Bool {
-        // Fast path: same grid tree, only the selection changed → just move the highlight (no rebuild,
-        // no layout churn), keeping arrow navigation snappy on large screenshot grids.
-        if lastSurfaceWasGrid, tree === lastRenderedTree, !gridCells.isEmpty {
-            for (i, c) in gridCells.enumerated() { applyGridSelection(c, selected: i == selectedIndex) }
-            selectedRowView = gridCells.indices.contains(selectedIndex) ? gridCells[selectedIndex] : nil
-            scrollSelectedIntoView()
+        // Fast path: same grid tree, only the selection changed → just move the collection-view selection
+        // (no reload), keeping arrow navigation snappy on large grids.
+        if lastSurfaceWasGrid, tree === lastRenderedTree, !gridData.isEmpty {
+            selectGridItem(selectedIndex, scroll: true)
             return false
         }
         stack.arrangedSubviews.forEach { $0.removeFromSuperview() }
@@ -122,6 +158,8 @@ public final class PaletteView: NSView {
         let surfaces = tree.root.children
         lastRenderedTree = tree
         lastSurfaceWasGrid = surfaces.contains { $0.type == "grid" }
+        // The virtualized grid lives in its own scroll view; show it only for grid surfaces.
+        if !lastSurfaceWasGrid { gridScroll.isHidden = true; scrollView.isHidden = false; gridData = [] }
         // Dispatch on the top-level surface the extension rendered (PLAN.md §5 component set). The whole
         // dispatch runs inside an Obj-C exception guard: a malformed view tree or an AppKit exception
         // (bad constraint, unknown selector, …) must NOT abort Invoke — it degrades to an error surface.
@@ -699,37 +737,77 @@ public final class PaletteView: NSView {
 
     // MARK: Grid
 
+    /// Render a grid into the virtualized NSCollectionView (only visible cells are built/recycled).
     private func renderGrid(_ grid: ViewNode, selectedIndex: Int) {
         var columns = 5
         if case .number(let n)? = grid.props["columns"] { columns = max(1, Int(n)) }
         var itemHeight: CGFloat = 72
         if case .number(let h)? = grid.props["itemHeight"] { itemHeight = CGFloat(h) }
-        var gridItems: [ViewNode] = []
-        func collect(_ n: ViewNode) { if n.type == "grid-item" { gridItems.append(n) }; n.children.forEach(collect) }
+        var items: [ViewNode] = []
+        func collect(_ n: ViewNode) { if n.type == "grid-item" { items.append(n) }; n.children.forEach(collect) }
         collect(grid)
-        var idx = 0
-        var i = 0
-        while i < gridItems.count {
-            let rowItems = Array(gridItems[i..<min(i + columns, gridItems.count)])
-            let rowStack = NSStackView()
-            rowStack.orientation = .horizontal
-            rowStack.distribution = .fillEqually
-            rowStack.spacing = 8
-            rowStack.translatesAutoresizingMaskIntoConstraints = false
-            for node in rowItems {
-                let cell = gridCell(node, selected: idx == selectedIndex, index: idx, thumbHeight: itemHeight)
-                if idx == selectedIndex { selectedRowView = cell }
-                gridCells.append(cell) // index-aligned, for the selection fast-path
-                rowStack.addArrangedSubview(cell)
-                idx += 1
-            }
-            for _ in 0..<(columns - rowItems.count) { rowStack.addArrangedSubview(NSView()) } // pad for equal cells
-            stack.addArrangedSubview(rowStack)
-            NSLayoutConstraint.activate([rowStack.widthAnchor.constraint(equalTo: stack.widthAnchor)])
-            i += columns
+        gridData = items
+        gridThumbHeight = itemHeight
+        gridSelected = max(0, min(selectedIndex, items.count - 1))
+        itemCounter = items.count
+
+        // Fit exactly `columns` cells per row across the palette width (matches PaletteWindow's gridColumns
+        // for 2-D arrow nav). itemSize = cell width × (thumb + title).
+        let spacing: CGFloat = 8, sideInset: CGFloat = 12
+        let paletteW = bounds.width > 50 ? bounds.width : 750 // fall back to the fixed palette width pre-layout
+        let avail = paletteW - sideInset * 2 - spacing * CGFloat(columns - 1)
+        let w = max(40, floor(avail / CGFloat(columns)))
+        if let flow = collectionView.collectionViewLayout as? NSCollectionViewFlowLayout {
+            flow.itemSize = NSSize(width: w, height: itemHeight + 26)
         }
-        itemCounter = gridItems.count
+        scrollView.isHidden = true
+        gridScroll.isHidden = false
+        collectionView.reloadData()
+        selectGridItem(gridSelected, scroll: true)
     }
+
+    /// Update the collection view's selected cell (highlight + scroll). Called by the render fast-path on
+    /// arrow-key moves so selection changes don't rebuild the grid.
+    private func selectGridItem(_ index: Int, scroll: Bool) {
+        guard index >= 0, index < gridData.count else { return }
+        gridSelected = index
+        let ip = IndexPath(item: index, section: 0)
+        collectionView.selectionIndexPaths = [ip]
+        for vip in collectionView.indexPathsForVisibleItems() {
+            (collectionView.item(at: vip) as? GridItemView)?.applySelected(vip == ip)
+        }
+        if scroll { collectionView.scrollToItems(at: [ip], scrollPosition: .centeredVertically) }
+    }
+
+    /// Build/recycle a grid cell's content (image + title), mirroring the per-cell logic the old
+    /// stack-based grid used, but for a reused NSCollectionViewItem.
+    private func configureGridItem(_ item: GridItemView, node: ViewNode) {
+        item.label.stringValue = node.title ?? ""
+        item.thumb.image = nil
+        item.thumb.contentTintColor = nil
+        item.thumb.identifier = nil
+        if let b64 = node.props["thumb"]?.stringValue, let img = cachedImage(b64) {
+            item.thumb.image = img
+        } else if let src = imageSource(node.props["content"] ?? node.props["icon"]) {
+            if let img = loadLocalImage(src) { item.thumb.image = img }
+            else if src.hasPrefix("http://") || src.hasPrefix("https://") { loadRemoteImage(src, into: item.thumb) }
+            else if let sym = NSImage(systemSymbolName: src, accessibilityDescription: nil) ?? NSImage(systemSymbolName: sfSymbol(for: src), accessibilityDescription: nil) {
+                item.thumb.image = sym; item.thumb.contentTintColor = .secondaryLabelColor
+            }
+        }
+    }
+
+    // A double-click first single-selects (didSelectItemsAt updates gridSelected), then activates it.
+    @objc private func gridDoubleClick(_ g: NSClickGestureRecognizer) { onActivate?(gridSelected) }
+
+    // Bridges for the NSCollectionView data source / delegate (below) to PaletteView's private grid state.
+    fileprivate func gridCount() -> Int { gridData.count }
+    fileprivate func gridConfigure(_ item: GridItemView, at index: Int) {
+        guard index >= 0, index < gridData.count else { return }
+        configureGridItem(item, node: gridData[index])
+        item.applySelected(index == gridSelected)
+    }
+    fileprivate func gridClicked(_ index: Int) { gridSelected = index; onSelect?(index) }
 
     private func gridCell(_ node: ViewNode, selected: Bool, index: Int, thumbHeight: CGFloat = 72) -> NSView {
         let cell = ClickableRow()
@@ -1547,5 +1625,76 @@ extension PaletteView: NSTextViewDelegate {
         guard let tv = notification.object as? NSTextView, let info = formFieldInfo[ObjectIdentifier(tv)] else { return }
         lastEditedFieldId = info.id
         if let h = info.onChange { onFormFieldChange?(h, tv.string) }
+    }
+}
+
+// MARK: - Virtualized grid (NSCollectionView)
+
+/// A recycled grid cell: a rounded thumbnail box + a centered title below it. The collection view builds
+/// only the visible ones, so a 2,000+ item grid is instant. Content is filled by PaletteView.configureGridItem.
+final class GridItemView: NSCollectionViewItem {
+    static let id = NSUserInterfaceItemIdentifier("InvokeGridItem")
+    let bg = NSView()
+    let thumb = NSImageView()
+    let label = NSTextField(labelWithString: "")
+
+    override func loadView() {
+        let root = NSView()
+        bg.wantsLayer = true; bg.layer?.cornerRadius = 7; bg.translatesAutoresizingMaskIntoConstraints = false
+        thumb.imageScaling = .scaleProportionallyUpOrDown; thumb.animates = true
+        thumb.wantsLayer = true; thumb.layer?.cornerRadius = 6; thumb.layer?.masksToBounds = true
+        thumb.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .systemFont(ofSize: 12); label.alignment = .center
+        label.lineBreakMode = .byTruncatingTail; label.maximumNumberOfLines = 1
+        label.textColor = .labelColor; label.translatesAutoresizingMaskIntoConstraints = false
+        label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        root.addSubview(bg); root.addSubview(label); bg.addSubview(thumb)
+        NSLayoutConstraint.activate([
+            bg.topAnchor.constraint(equalTo: root.topAnchor),
+            bg.leadingAnchor.constraint(equalTo: root.leadingAnchor),
+            bg.trailingAnchor.constraint(equalTo: root.trailingAnchor),
+            thumb.leadingAnchor.constraint(equalTo: bg.leadingAnchor, constant: 8),
+            thumb.trailingAnchor.constraint(equalTo: bg.trailingAnchor, constant: -8),
+            thumb.topAnchor.constraint(equalTo: bg.topAnchor, constant: 8),
+            thumb.bottomAnchor.constraint(equalTo: bg.bottomAnchor, constant: -8),
+            label.topAnchor.constraint(equalTo: bg.bottomAnchor, constant: 2),
+            label.leadingAnchor.constraint(equalTo: root.leadingAnchor, constant: 2),
+            label.trailingAnchor.constraint(equalTo: root.trailingAnchor, constant: -2),
+            label.bottomAnchor.constraint(equalTo: root.bottomAnchor),
+        ])
+        view = root
+        applySelected(false)
+    }
+
+    func applySelected(_ sel: Bool) {
+        bg.layer?.backgroundColor = (sel ? NSColor.controlAccentColor.withAlphaComponent(0.20) : NSColor.gray.withAlphaComponent(0.12)).cgColor
+        bg.layer?.borderWidth = sel ? 2 : 0
+        bg.layer?.borderColor = NSColor.controlAccentColor.cgColor
+    }
+    override var isSelected: Bool { didSet { applySelected(isSelected) } }
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        thumb.image = nil; thumb.identifier = nil; thumb.contentTintColor = nil; label.stringValue = ""
+        applySelected(false)
+    }
+}
+
+extension PaletteView: NSCollectionViewDataSource {
+    public func collectionView(_ cv: NSCollectionView, numberOfItemsInSection section: Int) -> Int { gridCount() }
+    public func collectionView(_ cv: NSCollectionView, itemForRepresentedObjectAt indexPath: IndexPath) -> NSCollectionViewItem {
+        let item = cv.makeItem(withIdentifier: GridItemView.id, for: indexPath) as? GridItemView ?? GridItemView()
+        gridConfigure(item, at: indexPath.item)
+        return item
+    }
+}
+
+extension PaletteView: NSCollectionViewDelegate {
+    public func collectionView(_ cv: NSCollectionView, didSelectItemsAt indexPaths: Set<IndexPath>) {
+        guard let ip = indexPaths.first else { return }
+        (cv.item(at: ip) as? GridItemView)?.applySelected(true)
+        gridClicked(ip.item)
+    }
+    public func collectionView(_ cv: NSCollectionView, didDeselectItemsAt indexPaths: Set<IndexPath>) {
+        for ip in indexPaths { (cv.item(at: ip) as? GridItemView)?.applySelected(false) }
     }
 }
