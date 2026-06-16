@@ -1633,6 +1633,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
                   let state = req["state"]?.stringValue, !state.isEmpty,
                   let url = URL(string: urlStr) else { reply(.null); return true }
             pendingOAuth[state] = reply
+            print("[invoke:oauth] authorize → opening browser (state=\(state.prefix(8))…, redirect=invoke://oauth-callback)")
             NSWorkspace.shared.open(url)
             // Safety timeout so a child RPC never hangs forever if the user abandons the browser flow.
             DispatchQueue.main.asyncAfter(deadline: .now() + 300) { [weak self] in
@@ -1654,6 +1655,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         let items = comps.queryItems ?? []
         let state = items.first(where: { $0.name == "state" })?.value ?? ""
         let code = items.first(where: { $0.name == "code" })?.value ?? ""
+        print("[invoke:oauth] callback received (state=\(state.prefix(8))…, code=\(code.isEmpty ? "MISSING" : "present"), known-state=\(pendingOAuth[state] != nil))")
         guard let reply = pendingOAuth.removeValue(forKey: state) else { return } // unknown/expired state → ignore
         if code.isEmpty { reply(.null) } else { reply(.object(["authorizationCode": .string(code)])) }
         palette.show() // bring Invoke back to the foreground after the browser hand-off
