@@ -619,11 +619,21 @@ export class OAuthService {
         if (t?.accessToken) { this.options.onAuthorize?.({ token: t.accessToken, type: "oauth" }); return t.accessToken; }
       } catch { /* fall through to a fresh authorize */ }
     }
+    if (!this.options.clientId) {
+      // No client_id and no PAT: the extension relies on a hosted OAuth proxy (e.g. Raycast's) that
+      // Invoke doesn't run. Fail with a clear, actionable message instead of opening an empty authorize
+      // URL. Most such extensions accept a personal access token in preferences — point the user there.
+      throw new Error("This extension needs a Personal Access Token — set it in Settings → Extensions (interactive OAuth isn't available without a client ID).");
+    }
     const req = await client.authorizationRequest({
       endpoint: this.options.authorizeUrl, clientId: this.options.clientId, scope: this.options.scope,
       extraParameters: this.options.extraParameters,
     });
-    const { authorizationCode } = await client.authorize(req);
+    const authResp = await client.authorize(req);
+    if (!authResp || !authResp.authorizationCode) {
+      throw new Error("Authorization was cancelled or did not complete.");
+    }
+    const authorizationCode = authResp.authorizationCode;
     const tokenResp = await exchangeToken(this.options.tokenUrl, {
       client_id: this.options.clientId, code: authorizationCode, code_verifier: req.codeVerifier,
       grant_type: "authorization_code", redirect_uri: req.redirectURI,
@@ -706,11 +716,16 @@ export function withAccessToken<T extends Record<string, unknown>>(
       useEffect(() => {
         let active = true;
         (async () => {
-          if (!_accessToken) {
-            const token = pat ?? (await authorize());
-            _accessToken = { token, type: pat ? "personal" : "oauth" };
+          try {
+            if (!_accessToken) {
+              const token = pat ?? (await authorize());
+              _accessToken = { token, type: pat ? "personal" : "oauth" };
+            }
+            if (active) setReady(true);
+          } catch (e) {
+            // Authorize failed (e.g. no client id / cancelled): surface it instead of a permanent blank.
+            await showFailureToast(e, { title: "Authorization failed" });
           }
-          if (active) setReady(true);
         })();
         return () => { active = false; };
       }, []);
