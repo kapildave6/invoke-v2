@@ -9,6 +9,7 @@
  */
 import { spawn, type ChildProcess } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import fs from "node:fs";
 import path from "node:path";
 import { EventEmitter } from "node:events";
 import {
@@ -99,13 +100,18 @@ export class ExtensionProcess extends EventEmitter {
   constructor(entry: string, command: string, preferences: Record<string, unknown> = {}, capabilities?: HostCapabilities) {
     super();
     this.capabilities = capabilities;
+    // Point tsx at the EXTENSION's tsconfig (entry = <extDir>/src/<cmd>.tsx → <extDir>/tsconfig.json) so
+    // its `@/*` → `src/*` path alias resolves; otherwise tsx picks the repo-root tsconfig (cwd) and `@/x`
+    // fails with "Cannot find module". Only set it when that tsconfig exists.
+    const extTsconfig = path.join(path.dirname(path.dirname(entry)), "tsconfig.json");
+    const tsconfigEnv = fs.existsSync(extTsconfig) ? { TSX_TSCONFIG_PATH: extTsconfig } : {};
     // process-per-extension: a fresh OS process, isolated address space (§4.4).
     this.child = spawn(
       process.execPath,
       ["--import", "tsx", CHILD, entry, command],
       {
         stdio: ["inherit", "inherit", "inherit", "pipe"], // fd3 = duplex socketpair
-        env: { ...process.env, INVOKE_COMMAND: command, INVOKE_PREFERENCES: JSON.stringify(preferences) },
+        env: { ...process.env, ...tsconfigEnv, INVOKE_COMMAND: command, INVOKE_PREFERENCES: JSON.stringify(preferences) },
       },
     );
     this.sock = this.child.stdio[3] as unknown as NodeJS.ReadWriteStream;

@@ -231,6 +231,14 @@ async function main(): Promise<void> {
       const from = path.join(src, entry);
       if (fs.existsSync(from)) fs.cpSync(from, path.join(dest, entry), { recursive: true });
     }
+    // Many extensions import via the `@/…` path alias (Raycast's convention: `@/*` → `./src/*`, defined
+    // in @raycast/api's base tsconfig). tsx resolves tsconfig `paths` at runtime, but only if a tsconfig
+    // is present beside the entry — and the source's tsconfig isn't copied. Write one so `@/x` resolves
+    // to `src/x` instead of "Cannot find module '@/…'".
+    fs.writeFileSync(
+      path.join(dest, "tsconfig.json"),
+      JSON.stringify({ compilerOptions: { baseUrl: ".", paths: { "@/*": ["src/*"] }, jsx: "react-jsx" } }, null, 2),
+    );
     const PRAGMA = "/** @jsxRuntime automatic @jsxImportSource react */\n";
     const codemod = (d: string) => {
       for (const e of fs.readdirSync(d, { withFileTypes: true })) {

@@ -123,6 +123,11 @@ public final class ExtensionHost {
         // Raycast command arguments (the search-bar fields), as {name: value} JSON. The command reads
         // them via props.arguments (LaunchProps); Invoke collects them in a form before launch.
         env["INVOKE_ARGUMENTS"] = arguments
+        // Point tsx at the extension's own tsconfig so its `@/*` → `src/*` path alias resolves (entry is
+        // <extDir>/src/<cmd>.<ext>). Without this tsx picks the repo-root tsconfig and `@/x` fails to load.
+        let extDir = (((entryRelPath as NSString).deletingLastPathComponent) as NSString).deletingLastPathComponent
+        let extTsconfig = repoRoot + "/" + extDir + "/tsconfig.json"
+        if FileManager.default.fileExists(atPath: extTsconfig) { env["TSX_TSCONFIG_PATH"] = extTsconfig }
         let envp = env.map { "\($0.key)=\($0.value)" }
 
         var childPid: pid_t = 0
