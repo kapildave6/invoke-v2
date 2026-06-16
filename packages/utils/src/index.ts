@@ -5,7 +5,7 @@
  * Minimal but real implementations so extensions (and the conformance suite) can
  * depend on them; richer caching/pagination/mutate land in Phase 3.
  */
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { createElement, useCallback, useEffect, useRef, useState, type ComponentType, type ReactNode } from "react";
 
 export interface AsyncState<T> {
   data: T | undefined;
@@ -730,7 +730,11 @@ export function withAccessToken<T extends Record<string, unknown>>(
         return () => { active = false; };
       }, []);
       if (!ready) return null;
-      return (fnOrComponent as (props: T) => ReactNode)(props);
+      // Render the wrapped component as a CHILD element (createElement), NOT a direct function call.
+      // A direct call inlines the child's hooks into this wrapper, so when `ready` flips false→true the
+      // wrapper's hook count changes → "Rendered more hooks than during the previous render". As a child
+      // element it has its own hook scope.
+      return createElement(fnOrComponent as ComponentType<T>, props);
     }) as WithAccessTokenComponentOrFn<T>;
   };
 }
