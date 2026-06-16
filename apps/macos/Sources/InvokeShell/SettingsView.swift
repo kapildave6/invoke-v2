@@ -507,14 +507,20 @@ struct CommandDetailPane: View {
                         description: pg?.description ?? "", fields: pg?.fields ?? [], prefExtID: pg?.id ?? sel,
                         capabilities: pg?.capabilities ?? [], commands: pg?.commands ?? [], isClipboard: false)
         }
-        // Command selected → its own description + command-level prefs.
+        // Command selected → its description + BOTH the extension-level and command-level preferences
+        // (Raycast shows extension prefs on every command's screen, e.g. an API token used by all
+        // commands). Without the merge, an extension-level token (the common case) was unreachable
+        // unless you happened to select the extension group itself.
         for g in groups {
             if let c = g.commands.first(where: { $0.id == sel }) {
                 let pg = prefGroup(forGroupOrCommand: sel)
                 let cname = sel.split(separator: ".").last.map(String.init) ?? sel
                 let cd = pg?.commands.first { $0.id == cname }
+                let extFields = pg?.fields ?? []                 // extension-level (shared) prefs
+                let cmdFields = cd?.fields ?? []                 // this command's own prefs
+                let merged = extFields + cmdFields.filter { cf in !extFields.contains { $0.name == cf.name } }
                 return Info(id: c.id, title: c.title, icon: c.icon, iconPath: c.iconPath, type: "Command", supportsBinding: c.supportsBinding, colorKey: g.name,
-                            description: cd?.description ?? "", fields: cd?.fields ?? [], prefExtID: pg?.id ?? g.id,
+                            description: cd?.description ?? "", fields: merged, prefExtID: pg?.id ?? g.id,
                             capabilities: [], commands: [], isClipboard: c.id == "clipboard.history")
             }
         }
