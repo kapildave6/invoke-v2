@@ -186,7 +186,10 @@ public final class ExtensionHost {
             let frame = msg.frame ?? 0
             DispatchQueue.main.async { self.onNav?(depth, frame) }
         case "log":
-            log("[ext log]")
+            // Surface the extension's console output (was dropped) — invaluable for debugging extensions.
+            let level = msg.level ?? "info"
+            let text = (msg.args ?? []).map { $0.stringValue ?? $0.debugString }.joined(separator: " ")
+            log("[ext \(level)] \(text)")
         case "sandboxDenial":
             let module = msg.module ?? "a Node built-in"
             DispatchQueue.main.async { self.onSandboxDenial?(module) }

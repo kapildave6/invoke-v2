@@ -25,6 +25,8 @@ public struct HostBound: Codable {
     public let module: String?  // sandboxDenial: the denied Node built-in
     public let frame: Int?      // mutations: the navigation frame the ops belong to (0 = base)
     public let depth: Int?      // nav: active navigation depth (0 = base, N = N pushed views)
+    public let level: String?   // log: "info" | "warn" | "error"
+    public let args: [JSONValue]? // log: the console args
 }
 
 /// host → child envelope.

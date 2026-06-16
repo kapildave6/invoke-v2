@@ -44,6 +44,18 @@ public enum JSONValue: Codable {
         return nil
     }
 
+    /// A readable rendering of any JSON value (for logging non-string console args).
+    public var debugString: String {
+        switch self {
+        case .string(let s): return s
+        case .number(let n): return n == n.rounded() ? String(Int(n)) : String(n)
+        case .bool(let b): return b ? "true" : "false"
+        case .null: return "null"
+        case .array(let a): return "[" + a.map { $0.debugString }.joined(separator: ", ") + "]"
+        case .object(let o): return "{" + o.map { "\($0): \($1.debugString)" }.joined(separator: ", ") + "}"
+        }
+    }
+
     /// Resolve a handler reference `{ "__handler": "h3" }` (PLAN.md §4.4).
     public var handlerRef: String? {
         if case .object(let o) = self, case .string(let h)? = o["__handler"] { return h }
