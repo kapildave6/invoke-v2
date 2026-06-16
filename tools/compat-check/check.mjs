@@ -50,6 +50,7 @@ const API_SUPPORTED = new Set([
   "getSelectedText", "getApplications", "getFrontmostApplication", "getDefaultApplication",
   "trash", "showInFinder", "getSelectedFinderItems",
   "AI", // AI.ask (remediation 05)
+  "OAuth", "OAuthClient", // OAuth PKCE (M4)
 ]);
 
 // `@raycast/api` exports that exist but are stubbed/no-op (run, but degraded).
@@ -62,7 +63,6 @@ const API_DEGRADED = new Map([
 
 // `@raycast/api` exports that are stubbed to THROW — hard blockers.
 const API_BLOCKING = new Map([
-  ["OAuth", "OAuth.PKCEClient throws — OAuth not yet wired"],
 ]);
 
 // Common `@raycast/api` exports that are simply ABSENT (import will fail).
@@ -77,6 +77,7 @@ const UTILS_SUPPORTED = new Set([
   // M1 pure-JS parity helpers
   "getFavicon", "getAvatarIcon", "getProgressIcon", "MutatePromise",
   "useLocalStorage", "useFrecencySorting", "withCache", "createDeeplink", "useAI",
+  "OAuthService", "withAccessToken", "getAccessToken", "WithAccessTokenComponentOrFn",
 ]);
 
 // `@raycast/utils` exports that run but are degraded / trusted-only.

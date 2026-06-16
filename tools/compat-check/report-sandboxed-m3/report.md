@@ -8,9 +8,9 @@
 
 | Status | Count | % |
 |---|---:|---:|
-| SUPPORTED | 1277 | 43.1% |
-| DEGRADED | 345 | 11.7% |
-| UNSUPPORTED | 1339 | 45.2% |
+| SUPPORTED | 1319 | 44.5% |
+| DEGRADED | 361 | 12.2% |
+| UNSUPPORTED | 1281 | 43.3% |
 
 ## Top gaps (extensions blocked/degraded per missing capability)
 
@@ -24,15 +24,14 @@
 | declares AI tools[] | 186 |
 | declares extension-level `ai` instructions — ignored | 145 |
 | @raycast/api | 112 |
-| OAuth | 96 |
-| @raycast/utils | 94 |
 | updateCommandMetadata | 88 |
 | BrowserExtension | 47 |
 | useExec | 41 |
+| @raycast/utils | 37 |
 | runPowerShellScript | 18 |
 | namespace import of @raycast/api | 7 |
 
-## UNSUPPORTED (1339)
+## UNSUPPORTED (1281)
 
 ### `0x0` — 0x0
 - dir: `0x0` · commands: 1 · modes: view
@@ -147,7 +146,7 @@
 
 ### `akkoma` — Akkoma
 - dir: `akkoma` · commands: 4 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired; denied Node built-ins in sandbox: fs
+- **Blockers:** denied Node built-ins in sandbox: fs
 
 ### `alacritty` — Alacritty
 - dir: `alacritty` · commands: 4 · modes: no-view
@@ -165,11 +164,6 @@
 ### `alist-downloder` — AList Downloder
 - dir: `alist-downloder` · commands: 1 · modes: view
 - **Blockers:** denied Node built-ins in sandbox: fs, child_process
-
-### `alloy` — Alloy
-- dir: `alloy` · commands: 2 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
-- Needs review: @raycast/utils:withAccessToken (not implemented in Invoke); @raycast/utils:OAuthService (not implemented in Invoke)
 
 ### `alt-text-generator` — Alt-Text Generator
 - dir: `alt-text-generator` · commands: 3 · modes: no-view
@@ -296,12 +290,8 @@
 
 ### `are-na` — Are.na
 - dir: `are-na` · commands: 7 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired; declares AI tools[] (7) — AI extensions not supported
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review); @raycast/utils:withAccessToken (not implemented in Invoke); @raycast/utils:getAccessToken (not implemented in Invoke)
-
-### `asana` — Asana
-- dir: `asana` · commands: 2 · modes: view
-- Needs review: @raycast/utils:OAuthService (not implemented in Invoke); @raycast/utils:getAccessToken (not implemented in Invoke); @raycast/utils:withAccessToken (not implemented in Invoke)
+- **Blockers:** declares AI tools[] (7) — AI extensions not supported
+- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
 
 ### `ascii-art-wallpaper` — ASCII Art Wallpaper
 - dir: `ascii-art-wallpaper` · commands: 3 · modes: view|no-view
@@ -346,7 +336,7 @@
 
 ### `awork` — awork
 - dir: `awork` · commands: 3 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired; declares AI tools[] (4) — AI extensions not supported
+- **Blockers:** declares AI tools[] (4) — AI extensions not supported
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired)
 
 ### `aws` — Amazon AWS
@@ -369,10 +359,6 @@
 ### `backlog-md-manager` — Backlog.md Manager
 - dir: `backlog-md-manager` · commands: 3 · modes: view
 - **Blockers:** denied Node built-ins in sandbox: child_process, fs
-
-### `backstage` — Backstage
-- dir: `backstage` · commands: 1 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
 
 ### `badges` — Badges - Shields.io
 - dir: `badges` · commands: 4 · modes: view
@@ -446,9 +432,9 @@
 
 ### `beeper` — Beeper Desktop
 - dir: `beeper` · commands: 6 · modes: view|no-view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired; declares AI tools[] (6) — AI extensions not supported; denied Node built-ins in sandbox: fs
+- **Blockers:** declares AI tools[] (6) — AI extensions not supported; denied Node built-ins in sandbox: fs
 - Degraded: declares extension-level `ai` instructions — ignored
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review); @raycast/utils:OAuthService (not implemented in Invoke); @raycast/utils:getAccessToken (not implemented in Invoke); @raycast/utils:withAccessToken (not implemented in Invoke)
+- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
 
 ### `bento-me` — Bento
 - dir: `bento-me` · commands: 1 · modes: view
@@ -635,10 +621,6 @@
 - Degraded: declares extension-level `ai` instructions — ignored
 - Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
 
-### `calendly` — Calendly Share Meeting Links
-- dir: `calendly` · commands: 1 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
-
 ### `calibre-library` — Calibre Library
 - dir: `calibre-search` · commands: 2 · modes: view
 - **Blockers:** denied Node built-ins in sandbox: fs, child_process
@@ -648,10 +630,6 @@
 - dir: `caltask` · commands: 4 · modes: view|menu-bar
 - **Blockers:** unsupported command mode(s): menu-bar: mode "menu-bar"; denied Node built-ins in sandbox: child_process, fs
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares background `interval` command(s) — not scheduled
-
-### `canva` — Canva
-- dir: `canva` · commands: 1 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
 
 ### `capture-fullpage-of-website` — Capture Fullpage of Website
 - dir: `capture-fullpage-of-website` · commands: 1 · modes: view
@@ -714,15 +692,9 @@
 - **Blockers:** denied Node built-ins in sandbox: fs
 - Degraded: declares command `arguments[]` — not passed by runtime yet
 
-### `chatwork-search` — Chatwork Search
-- dir: `search-chatwork` · commands: 3 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
-- Needs review: @raycast/utils:withAccessToken (not implemented in Invoke); @raycast/utils:getAccessToken (not implemented in Invoke); @raycast/utils:OAuthService (not implemented in Invoke)
-
 ### `cheatsheets-remastered` — Cheatsheets Remastered
 - dir: `cheatsheets-remastered` · commands: 4 · modes: view
 - **Blockers:** denied Node built-ins in sandbox: fs
-- Needs review: @raycast/utils:OAuthService (not implemented in Invoke); @raycast/utils:withAccessToken (not implemented in Invoke); @raycast/utils:getAccessToken (not implemented in Invoke)
 
 ### `checksum` — Checksum
 - dir: `checksum` · commands: 4 · modes: view|menu-bar
@@ -736,11 +708,6 @@
 ### `circle-ci` — CircleCI Workflows
 - dir: `circle-ci` · commands: 1 · modes: view
 - Needs review: @raycast/api:ImageLike (not in Invoke surface — needs review)
-
-### `circleback` — Circleback
-- dir: `circleback` · commands: 3 · modes: no-view|view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
-- Needs review: @raycast/utils:withAccessToken (not implemented in Invoke); @raycast/utils:getAccessToken (not implemented in Invoke); @raycast/utils:OAuthService (not implemented in Invoke)
 
 ### `claude-code-config-switcher` — Claude Code Switcher
 - dir: `claude-code-config-switcher` · commands: 3 · modes: view
@@ -773,10 +740,6 @@
 - dir: `cling` · commands: 2 · modes: view
 - **Blockers:** denied Node built-ins in sandbox: child_process, fs
 - Degraded: useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox; declares command `arguments[]` — not passed by runtime yet
-
-### `clipmate` — Clipmate AI
-- dir: `clipmate` · commands: 1 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
 
 ### `clipmenu` — ClipMenu
 - dir: `clipmenu` · commands: 1 · modes: menu-bar
@@ -816,11 +779,6 @@
 ### `cloudflare-warp` — Cloudflare WARP
 - dir: `cloudflare-warp` · commands: 3 · modes: no-view|view
 - **Blockers:** denied Node built-ins in sandbox: child_process
-
-### `cloudstash` — Cloudstash
-- dir: `cloudstash` · commands: 2 · modes: no-view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
-- Degraded: declares command `arguments[]` — not passed by runtime yet
 
 ### `cmux` — cmux
 - dir: `cmux` · commands: 4 · modes: view|no-view
@@ -926,10 +884,6 @@
 - dir: `compressx` · commands: 2 · modes: view|no-view
 - **Blockers:** denied Node built-ins in sandbox: child_process
 
-### `confluence` — Confluence
-- dir: `confluence-search` · commands: 8 · modes: view|no-view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
-
 ### `connect-to-vpn` — Connect to VPN
 - dir: `connect-to-vpn` · commands: 3 · modes: no-view|view|menu-bar
 - **Blockers:** unsupported command mode(s): menu-bar: mode "menu-bar"; denied Node built-ins in sandbox: child_process
@@ -989,7 +943,7 @@
 
 ### `coze` — Coze
 - dir: `coze` · commands: 3 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired; denied Node built-ins in sandbox: fs
+- **Blockers:** denied Node built-ins in sandbox: fs
 - Needs review: @raycast/api:fetch (not in Invoke surface — needs review)
 
 ### `craft-cms-docs` — Craft CMS
@@ -1112,11 +1066,6 @@
 - **Blockers:** denied Node built-ins in sandbox: child_process, fs
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares command `arguments[]` — not passed by runtime yet
 
-### `dash-off` — Dash Off
-- dir: `dash-off` · commands: 2 · modes: no-view|view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
-- Degraded: launchCommand: loads; throws if called (inter-command launch not wired)
-
 ### `datafast` — Datafast
 - dir: `datafast` · commands: 7 · modes: view|menu-bar
 - **Blockers:** unsupported command mode(s): menu-bar-realtime: mode "menu-bar"
@@ -1130,11 +1079,6 @@
 - dir: `days-until-christmas` · commands: 2 · modes: no-view|menu-bar
 - **Blockers:** unsupported command mode(s): menu-bar: mode "menu-bar"
 - Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); declares background `interval` command(s) — not scheduled
-
-### `days2` — Days 2 - Google Calendar Countdown
-- dir: `days2` · commands: 3 · modes: view|no-view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); launchCommand: loads; throws if called (inter-command launch not wired); declares background `interval` command(s) — not scheduled
-- Needs review: @raycast/utils:withAccessToken (not implemented in Invoke); @raycast/utils:getAccessToken (not implemented in Invoke); @raycast/utils:OAuthService (not implemented in Invoke)
 
 ### `db-schema-explorer` — DB Schema Explorer
 - dir: `db-schema-explorer` · commands: 3 · modes: view
@@ -1298,8 +1242,7 @@
 
 ### `done-bear` — Done Bear
 - dir: `done-bear` · commands: 10 · modes: view|menu-bar
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired; unsupported command mode(s): menu-bar-today: mode "menu-bar"
-- Needs review: @raycast/utils:getAccessToken (not implemented in Invoke); @raycast/utils:withAccessToken (not implemented in Invoke); @raycast/utils:OAuthService (not implemented in Invoke)
+- **Blockers:** unsupported command mode(s): menu-bar-today: mode "menu-bar"
 
 ### `doorstopper` — Doorstopper
 - dir: `doorstopper` · commands: 5 · modes: no-view|menu-bar
@@ -1358,9 +1301,8 @@
 
 ### `dub` — Dub
 - dir: `dub` · commands: 2 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired; declares AI tools[] (6) — AI extensions not supported
+- **Blockers:** declares AI tools[] (6) — AI extensions not supported
 - Degraded: declares extension-level `ai` instructions — ignored; declares command `arguments[]` — not passed by runtime yet
-- Needs review: @raycast/utils:OAuthService (not implemented in Invoke); @raycast/utils:withAccessToken (not implemented in Invoke)
 
 ### `duck-facts` — Duck Facts
 - dir: `duck-facts` · commands: 1 · modes: view
@@ -1370,12 +1312,6 @@
 ### `duckduckgo-image-search` — DuckDuckGo Image Search
 - dir: `duckduckgo-image-search` · commands: 1 · modes: view
 - **Blockers:** denied Node built-ins in sandbox: fs
-
-### `dust-tt` — Ask Dust
-- dir: `dust-tt` · commands: 6 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
-- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); updateCommandMetadata: loads; no-op (command metadata updates not wired); declares command `arguments[]` — not passed by runtime yet
-- Needs review: @raycast/utils:OAuthService (not implemented in Invoke); @raycast/utils:withAccessToken (not implemented in Invoke)
 
 ### `e2b` — E2B Code Interpreter
 - dir: `e2b` · commands: 1 · modes: no-view
@@ -1502,11 +1438,6 @@
 - **Blockers:** declares AI tools[] (8) — AI extensions not supported
 - Degraded: declares extension-level `ai` instructions — ignored
 
-### `fabric` — Fabric
-- dir: `fabric` · commands: 3 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
-- Needs review: @raycast/utils:getAccessToken (not implemented in Invoke); @raycast/utils:OAuthService (not implemented in Invoke); @raycast/utils:withAccessToken (not implemented in Invoke)
-
 ### `fake-financial-data` — Fake Financial Data
 - dir: `fake-financial-data` · commands: 5 · modes: no-view|menu-bar
 - **Blockers:** unsupported command mode(s): menu-bar-commands: mode "menu-bar"
@@ -1528,10 +1459,6 @@
 - dir: `fathom-analytics-stats` · commands: 9 · modes: view|menu-bar|no-view
 - **Blockers:** unsupported command mode(s): current-visitors-menu-bar: mode "menu-bar"
 - Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); declares background `interval` command(s) — not scheduled
-
-### `favoro` — FAVORO
-- dir: `favoro` · commands: 3 · modes: view|no-view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
 
 ### `feedbin` — Feedbin
 - dir: `feedbin` · commands: 6 · modes: view|menu-bar|no-view
@@ -1561,9 +1488,8 @@
 
 ### `figma-files-raycast-extension` — Figma File Search
 - dir: `figma-files` · commands: 2 · modes: view|menu-bar
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired; unsupported command mode(s): menu-bar: mode "menu-bar"
+- **Blockers:** unsupported command mode(s): menu-bar: mode "menu-bar"
 - Degraded: declares background `interval` command(s) — not scheduled
-- Needs review: @raycast/utils:getAccessToken (not implemented in Invoke); @raycast/utils:withAccessToken (not implemented in Invoke); @raycast/utils:OAuthService (not implemented in Invoke)
 
 ### `figma-link-cleaner` — Figma Link Cleaner
 - dir: `figma-link-cleaner` · commands: 1 · modes: no-view
@@ -1745,7 +1671,6 @@
 - dir: `forked-extensions` · commands: 1 · modes: view
 - **Blockers:** denied Node built-ins in sandbox: fs
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired)
-- Needs review: @raycast/utils:OAuthService (not implemented in Invoke); @raycast/utils:getAccessToken (not implemented in Invoke); @raycast/utils:withAccessToken (not implemented in Invoke)
 
 ### `forscore` — forScore
 - dir: `forscore` · commands: 6 · modes: no-view|view
@@ -1762,9 +1687,9 @@
 
 ### `freeagent` — FreeAgent
 - dir: `freeagent` · commands: 8 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired; declares AI tools[] (25) — AI extensions not supported
+- **Blockers:** declares AI tools[] (25) — AI extensions not supported
 - Degraded: declares extension-level `ai` instructions — ignored
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review); @raycast/utils:getAccessToken (not implemented in Invoke); @raycast/utils:OAuthService (not implemented in Invoke); @raycast/utils:withAccessToken (not implemented in Invoke)
+- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
 
 ### `freesound` — Freesound
 - dir: `freesound` · commands: 1 · modes: view
@@ -1914,7 +1839,7 @@
 - dir: `github` · commands: 20 · modes: view|menu-bar
 - **Blockers:** unsupported command mode(s): unread-notifications: mode "menu-bar", my-issues-menu: mode "menu-bar", my-stats-menu: mode "menu-bar", my-pull-requests-menu: mode "menu-bar"; declares AI tools[] (15) — AI extensions not supported; denied Node built-ins in sandbox: child_process, fs
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares extension-level `ai` instructions — ignored; declares background `interval` command(s) — not scheduled
-- Needs review: @raycast/api:Preferences (not in Invoke surface — needs review); @raycast/utils:OAuthService (not implemented in Invoke); @raycast/utils:withAccessToken (not implemented in Invoke)
+- Needs review: @raycast/api:Preferences (not in Invoke surface — needs review)
 
 ### `github-codespaces` — GitHub Codespaces
 - dir: `github-codespaces` · commands: 2 · modes: view|menu-bar
@@ -1923,28 +1848,19 @@
 
 ### `github-copilot` — GitHub Copilot
 - dir: `github-copilot` · commands: 5 · modes: view|menu-bar
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired; unsupported command mode(s): github-copilot-tasks: mode "menu-bar"; declares AI tools[] (2) — AI extensions not supported
+- **Blockers:** unsupported command mode(s): github-copilot-tasks: mode "menu-bar"; declares AI tools[] (2) — AI extensions not supported
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares background `interval` command(s) — not scheduled
-- Needs review: @raycast/utils:withAccessToken (not implemented in Invoke); @raycast/utils:OAuthService (not implemented in Invoke); @raycast/utils:getAccessToken (not implemented in Invoke)
 
 ### `github-for-enterprise` — GitHub Enterprise
 - dir: `github-for-enterprise` · commands: 8 · modes: view|menu-bar
 - **Blockers:** unsupported command mode(s): unread-notifications: mode "menu-bar"
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares background `interval` command(s) — not scheduled
-- Needs review: @raycast/api:FormValues (not in Invoke surface — needs review); @raycast/utils:OAuthService (not implemented in Invoke); @raycast/utils:withAccessToken (not implemented in Invoke)
-
-### `github-gist` — GitHub Gist
-- dir: `github-gist` · commands: 2 · modes: view
-- Needs review: @raycast/utils:OAuthService (not implemented in Invoke); @raycast/utils:withAccessToken (not implemented in Invoke)
+- Needs review: @raycast/api:FormValues (not in Invoke surface — needs review)
 
 ### `github-menu-bar` — GitHub Commits Menu
 - dir: `github-menu-bar` · commands: 1 · modes: menu-bar
 - **Blockers:** unsupported command mode(s): menu: mode "menu-bar"
 - Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); declares background `interval` command(s) — not scheduled
-
-### `github-repository-search` — GitHub Repository Search
-- dir: `github-repository-search` · commands: 1 · modes: view
-- Needs review: @raycast/utils:OAuthService (not implemented in Invoke); @raycast/utils:getAccessToken (not implemented in Invoke); @raycast/utils:withAccessToken (not implemented in Invoke)
 
 ### `github-review-requests` — GitHub Review Requests
 - dir: `github-review-requests` · commands: 2 · modes: view|menu-bar
@@ -1966,12 +1882,12 @@
 
 ### `gitlab` — GitLab
 - dir: `gitlab` · commands: 24 · modes: view|menu-bar|no-view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired; unsupported command mode(s): todomenubar: mode "menu-bar", mrmenu: mode "menu-bar", issuemenu: mode "menu-bar"; declares AI tools[] (12) — AI extensions not supported; denied Node built-ins in sandbox: https, fs
+- **Blockers:** unsupported command mode(s): todomenubar: mode "menu-bar", mrmenu: mode "menu-bar", issuemenu: mode "menu-bar"; declares AI tools[] (12) — AI extensions not supported; denied Node built-ins in sandbox: https, fs
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares background `interval` command(s) — not scheduled
 
 ### `gitpod` — Gitpod
 - dir: `gitpod` · commands: 4 · modes: view|menu-bar
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired; unsupported command mode(s): menubar: mode "menu-bar"
+- **Blockers:** unsupported command mode(s): menubar: mode "menu-bar"
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares background `interval` command(s) — not scheduled
 
 ### `gles-to-malioc` — GLES to MaliOC
@@ -1982,15 +1898,9 @@
 - dir: `global-media-key` · commands: 5 · modes: no-view
 - **Blockers:** denied Node built-ins in sandbox: child_process, fs
 
-### `globalping` — Globalping
-- dir: `globalping` · commands: 5 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
-- Degraded: declares command `arguments[]` — not passed by runtime yet
-- Needs review: @raycast/utils:getAccessToken (not implemented in Invoke); @raycast/utils:withAccessToken (not implemented in Invoke); @raycast/utils:OAuthService (not implemented in Invoke)
-
 ### `gmail` — Gmail
 - dir: `gmail` · commands: 9 · modes: view|no-view|menu-bar
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired; unsupported command mode(s): unreadmailsmenu: mode "menu-bar"; denied Node built-ins in sandbox: fs
+- **Blockers:** unsupported command mode(s): unreadmailsmenu: mode "menu-bar"; denied Node built-ins in sandbox: fs
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares background `interval` command(s) — not scheduled; declares command `arguments[]` — not passed by runtime yet
 
 ### `gmail-accounts` — Gmail Accounts
@@ -2009,12 +1919,12 @@
 - dir: `google-calendar` · commands: 5 · modes: view
 - **Blockers:** declares AI tools[] (9) — AI extensions not supported
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired)
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review); @raycast/utils:OAuthService (not implemented in Invoke); @raycast/utils:withAccessToken (not implemented in Invoke)
+- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
 
 ### `google-calendar-quickadd` — Google Calendar Events Quick Add
 - dir: `google-calendar-quickadd` · commands: 2 · modes: no-view|view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review); @raycast/utils:OAuthService (not implemented in Invoke); @raycast/utils:withAccessToken (not implemented in Invoke)
+- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
 
 ### `google-chrome` — Google Chrome
 - dir: `google-chrome` · commands: 10 · modes: view|no-view
@@ -2030,7 +1940,6 @@
 - dir: `google-contacts` · commands: 3 · modes: view|no-view
 - **Blockers:** declares AI tools[] (1) — AI extensions not supported
 - Degraded: declares extension-level `ai` instructions — ignored; declares command `arguments[]` — not passed by runtime yet
-- Needs review: @raycast/utils:getAccessToken (not implemented in Invoke); @raycast/utils:withAccessToken (not implemented in Invoke); @raycast/utils:OAuthService (not implemented in Invoke)
 
 ### `google-drive` — Google Drive
 - dir: `google-drive` · commands: 1 · modes: view
@@ -2040,15 +1949,10 @@
 - dir: `google-lens` · commands: 1 · modes: no-view
 - **Blockers:** denied Node built-ins in sandbox: child_process, fs
 
-### `google-tasks` — Google Tasks
-- dir: `google-tasks` · commands: 2 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
-
 ### `google-workspace` — Google Workspace
 - dir: `google-workspace` · commands: 7 · modes: no-view|view|menu-bar
 - **Blockers:** unsupported command mode(s): starred-google-drive-files-menubar: mode "menu-bar"; declares AI tools[] (2) — AI extensions not supported; denied Node built-ins in sandbox: fs
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares background `interval` command(s) — not scheduled; declares command `arguments[]` — not passed by runtime yet
-- Needs review: @raycast/utils:OAuthService (not implemented in Invoke); @raycast/utils:getAccessToken (not implemented in Invoke); @raycast/utils:WithAccessTokenComponentOrFn (not implemented in Invoke); @raycast/utils:withAccessToken (not implemented in Invoke)
 
 ### `gopass` — Gopass
 - dir: `gopass` · commands: 1 · modes: view
@@ -2088,11 +1992,6 @@
 ### `guitar-tools` — Guitar Tools
 - dir: `guitar-tools` · commands: 1 · modes: view
 - **Blockers:** denied Node built-ins in sandbox: child_process, fs
-
-### `gumroad` — Gumroad Sales
-- dir: `gumroad` · commands: 2 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
-- Needs review: @raycast/utils:OAuthService (not implemented in Invoke); @raycast/utils:getAccessToken (not implemented in Invoke); @raycast/utils:withAccessToken (not implemented in Invoke)
 
 ### `gyazo-uploader` — Gyazo Uploader
 - dir: `gyazo-uploader` · commands: 1 · modes: no-view
@@ -2153,7 +2052,6 @@
 
 ### `height` — Height
 - dir: `height` · commands: 5 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired)
 - Needs review: @raycast/utils:CachedPromiseOptions (not implemented in Invoke)
 
@@ -2169,11 +2067,6 @@
 ### `helm-chart` — Helm Chart
 - dir: `helm-chart` · commands: 1 · modes: view
 - Needs review: @raycast/utils:Response (not implemented in Invoke)
-
-### `heptabase` — Heptabase
-- dir: `heptabase` · commands: 6 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
-- Degraded: declares command `arguments[]` — not passed by runtime yet
 
 ### `hermes-agent` — Hermes Agent
 - dir: `hermes-agent` · commands: 6 · modes: view|no-view
@@ -2224,10 +2117,6 @@
 - **Blockers:** unsupported command mode(s): notificationmenu: mode "menu-bar", weathermenu: mode "menu-bar", mediaplayermenu: mode "menu-bar", lightsmenu: mode "menu-bar", coversmenu: mode "menu-bar", batteriesmenu: mode "menu-bar", entitiesmenu: mode "menu-bar", entitymenu01: mode "menu-bar", entitymenu02: mode "menu-bar", entitymenu03: mode "menu-bar", calendarmenu: mode "menu-bar"; declares AI tools[] (3) — AI extensions not supported; denied Node built-ins in sandbox: fs, https, child_process
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares background `interval` command(s) — not scheduled
 
-### `homey` — Homey
-- dir: `homey` · commands: 2 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
-
 ### `hop` — Hop
 - dir: `hop` · commands: 1 · modes: view
 - **Blockers:** denied Node built-ins in sandbox: fs
@@ -2267,7 +2156,7 @@
 
 ### `hypersonic` — Hypersonic
 - dir: `hypersonic` · commands: 2 · modes: view|menu-bar
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired; unsupported command mode(s): active-todos: mode "menu-bar"
+- **Blockers:** unsupported command mode(s): active-todos: mode "menu-bar"
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares background `interval` command(s) — not scheduled
 - Needs review: @raycast/api:TransparentEmpty (not in Invoke surface — needs review); @raycast/api:useDatabases (not in Invoke surface — needs review); @raycast/api:useFilter (not in Invoke surface — needs review); @raycast/api:useAuth (not in Invoke surface — needs review); @raycast/api:Tag (not in Invoke surface — needs review); @raycast/api:AuthorizationAction (not in Invoke surface — needs review); @raycast/api:OpenPreferencesAction (not in Invoke surface — needs review); @raycast/api:discord (not in Invoke surface — needs review); @raycast/api:figma (not in Invoke surface — needs review); @raycast/api:github (not in Invoke surface — needs review); @raycast/api:gitlab (not in Invoke surface — needs review); @raycast/api:linear (not in Invoke surface — needs review); @raycast/api:notion (not in Invoke surface — needs review); @raycast/api:slack (not in Invoke surface — needs review); @raycast/api:x (not in Invoke surface — needs review); @raycast/api:youtube (not in Invoke surface — needs review); @raycast/api:reauthorize (not in Invoke surface — needs review); @raycast/api:Project (not in Invoke surface — needs review); @raycast/api:useMemo (not in Invoke surface — needs review); @raycast/api:useState (not in Invoke surface — needs review); @raycast/api:getTodos (not in Invoke surface — needs review); @raycast/api:Filter (not in Invoke surface — needs review); @raycast/utils:useDatabases (not implemented in Invoke); @raycast/utils:useFilter (not implemented in Invoke); @raycast/utils:Tag (not implemented in Invoke); @raycast/utils:Project (not implemented in Invoke); @raycast/utils:Action (not implemented in Invoke); @raycast/utils:ActionPanel (not implemented in Invoke); @raycast/utils:Color (not implemented in Invoke); @raycast/utils:Icon (not implemented in Invoke); @raycast/utils:Image (not implemented in Invoke); @raycast/utils:Filter (not implemented in Invoke); @raycast/utils:loadPreferences (not implemented in Invoke); @raycast/utils:parseTodosToDoneWorkString (not implemented in Invoke); @raycast/utils:getTodos (not implemented in Invoke)
 
@@ -2340,10 +2229,6 @@
 - dir: `imageoptim` · commands: 1 · modes: no-view
 - **Blockers:** denied Node built-ins in sandbox: child_process
 
-### `imessage-2fa` — 2FA Code Finder
-- dir: `imessage-2fa` · commands: 1 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
-
 ### `imgur` — Imgur
 - dir: `imgur` · commands: 2 · modes: view
 - **Blockers:** denied Node built-ins in sandbox: fs
@@ -2374,7 +2259,7 @@
 
 ### `inoreader` — Inoreader
 - dir: `inoreader` · commands: 4 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired; denied Node built-ins in sandbox: child_process
+- **Blockers:** denied Node built-ins in sandbox: child_process
 
 ### `input-switcher` — Keyboard Layout Switcher
 - dir: `keyboard-layout-switcher` · commands: 2 · modes: view|no-view
@@ -2466,16 +2351,10 @@
 - dir: `jetbrains` · commands: 2 · modes: view|menu-bar
 - **Blockers:** unsupported command mode(s): recentMenu: mode "menu-bar"; denied Node built-ins in sandbox: fs, child_process
 
-### `jetpack-commands` — Jetpack Commands
-- dir: `jetpack-commands` · commands: 46 · modes: no-view|view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired)
-
 ### `jira` — Jira
 - dir: `jira` · commands: 9 · modes: view
 - **Blockers:** declares AI tools[] (11) — AI extensions not supported; denied Node built-ins in sandbox: fs
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares extension-level `ai` instructions — ignored
-- Needs review: @raycast/utils:OAuthService (not implemented in Invoke); @raycast/utils:withAccessToken (not implemented in Invoke)
 
 ### `jira-search` — Jira Search
 - dir: `jira-search` · commands: 5 · modes: view|no-view
@@ -2490,7 +2369,6 @@
 - dir: `jira-self-hosted` · commands: 9 · modes: view
 - **Blockers:** declares AI tools[] (10) — AI extensions not supported; denied Node built-ins in sandbox: fs
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares extension-level `ai` instructions — ignored
-- Needs review: @raycast/utils:withAccessToken (not implemented in Invoke)
 
 ### `joey-vocab` — Joey Vocab
 - dir: `joey-vocab` · commands: 2 · modes: view
@@ -2570,10 +2448,6 @@
 ### `keepassxc` — KeePassXC
 - dir: `keepassxc` · commands: 1 · modes: view
 - **Blockers:** denied Node built-ins in sandbox: child_process
-
-### `keeply` — Keeply
-- dir: `keeply` · commands: 2 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
 
 ### `kef-control` — Control Kef
 - dir: `kef-control` · commands: 3 · modes: view|menu-bar
@@ -2777,12 +2651,6 @@
 - dir: `linear` · commands: 14 · modes: view|menu-bar|no-view
 - **Blockers:** unsupported command mode(s): unread-notifications: mode "menu-bar"; declares AI tools[] (22) — AI extensions not supported; denied Node built-ins in sandbox: fs
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares extension-level `ai` instructions — ignored; declares background `interval` command(s) — not scheduled; declares command `arguments[]` — not passed by runtime yet
-- Needs review: @raycast/utils:OAuthService (not implemented in Invoke); @raycast/utils:withAccessToken (not implemented in Invoke)
-
-### `lingo-rep-raycast` — Lingorep - Translate, Repeat, Memorize
-- dir: `lingo-rep-raycast` · commands: 1 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
-- Needs review: @raycast/utils:OAuthService (not implemented in Invoke); @raycast/utils:withAccessToken (not implemented in Invoke)
 
 ### `link-bundles` — Link Bundles
 - dir: `link-bundles` · commands: 2 · modes: view
@@ -2968,7 +2836,7 @@
 
 ### `mastodon` — Mastodon
 - dir: `mastodon` · commands: 6 · modes: view|menu-bar
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired; unsupported command mode(s): menu-bar-notifications: mode "menu-bar"; denied Node built-ins in sandbox: fs
+- **Blockers:** unsupported command mode(s): menu-bar-notifications: mode "menu-bar"; denied Node built-ins in sandbox: fs
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares background `interval` command(s) — not scheduled
 
 ### `mastodon-search` — Mastodon Search
@@ -3002,8 +2870,7 @@
 
 ### `memo` — Memo
 - dir: `memo` · commands: 2 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
-- Needs review: @raycast/api:Page (not in Invoke surface — needs review); @raycast/api:Api (not in Invoke surface — needs review); @raycast/api:OAuthClient (not in Invoke surface — needs review); @raycast/api:RaycastAdapter (not in Invoke surface — needs review); @raycast/api:useEffect (not in Invoke surface — needs review); @raycast/api:useState (not in Invoke surface — needs review); @raycast/api:Saver (not in Invoke surface — needs review)
+- Needs review: @raycast/api:Page (not in Invoke surface — needs review); @raycast/api:Api (not in Invoke surface — needs review); @raycast/api:RaycastAdapter (not in Invoke surface — needs review); @raycast/api:useEffect (not in Invoke surface — needs review); @raycast/api:useState (not in Invoke surface — needs review); @raycast/api:Saver (not in Invoke surface — needs review)
 
 ### `memorable-generate-password` — Memorable Password Generator
 - dir: `memorable-generate-password` · commands: 1 · modes: view
@@ -3083,11 +2950,7 @@
 
 ### `microsoft-onedrive` — Microsoft OneDrive
 - dir: `microsoft-onedrive` · commands: 2 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired; denied Node built-ins in sandbox: fs
-
-### `microsoft-teams` — Microsoft Teams
-- dir: `microsoft-teams` · commands: 3 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
+- **Blockers:** denied Node built-ins in sandbox: fs
 
 ### `midjourney` — Midjourney
 - dir: `midjourney` · commands: 2 · modes: view
@@ -3115,11 +2978,6 @@
 ### `miraie-ac-control` — MirAIe AC Control
 - dir: `miraie-ac-control` · commands: 2 · modes: view|menu-bar
 - **Blockers:** unsupported command mode(s): menu-bar: mode "menu-bar"
-
-### `miro` — Miro
-- dir: `miro` · commands: 3 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
-- Degraded: launchCommand: loads; throws if called (inter-command launch not wired)
 
 ### `mirror-displays` — Mirror Displays
 - dir: `mirror-displays` · commands: 1 · modes: view
@@ -3164,21 +3022,11 @@
 
 ### `mollie-for-raycast` — Mollie
 - dir: `mollie-for-raycast` · commands: 4 · modes: menu-bar|view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired; unsupported command mode(s): transactionsMenuBar: mode "menu-bar"
+- **Blockers:** unsupported command mode(s): transactionsMenuBar: mode "menu-bar"
 
 ### `momentum` — Momentum
 - dir: `momentum` · commands: 5 · modes: no-view
 - **Blockers:** denied Node built-ins in sandbox: fs
-- Degraded: declares command `arguments[]` — not passed by runtime yet
-
-### `moneybird` — Moneybird
-- dir: `moneybird` · commands: 3 · modes: view|no-view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
-- Needs review: @raycast/utils:OAuthService (not implemented in Invoke); @raycast/utils:withAccessToken (not implemented in Invoke)
-
-### `moneytree` — Moneytree
-- dir: `moneytree` · commands: 3 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
 - Degraded: declares command `arguments[]` — not passed by runtime yet
 
 ### `monitor-mate` — MonitorMate
@@ -3189,10 +3037,6 @@
 ### `monorepo-manager` — Manage Monorepo Projects/Workspaces
 - dir: `monorepo-manager` · commands: 1 · modes: view
 - **Blockers:** denied Node built-ins in sandbox: fs
-
-### `monzo` — Monzo
-- dir: `monzo` · commands: 2 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
 
 ### `mood` — Mood Tracker
 - dir: `mood` · commands: 3 · modes: view
@@ -3272,10 +3116,6 @@
 - dir: `my-daily-log` · commands: 6 · modes: view
 - **Blockers:** denied Node built-ins in sandbox: fs
 - Degraded: declares command `arguments[]` — not passed by runtime yet
-
-### `myanimelist-search` — Myanimelist Search
-- dir: `myanimelist-search` · commands: 2 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
 
 ### `myip` — MyIP
 - dir: `myip` · commands: 2 · modes: view|menu-bar
@@ -3364,10 +3204,6 @@
 - **Blockers:** unsupported command mode(s): menu-bar: mode "menu-bar"
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares background `interval` command(s) — not scheduled
 
-### `nocal` — nocal
-- dir: `nocal` · commands: 4 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
-
 ### `node-release-notes` — Node Release Notes
 - dir: `node-release-notes` · commands: 1 · modes: view
 - Needs review: @raycast/utils:AsyncState (not implemented in Invoke)
@@ -3376,10 +3212,6 @@
 - dir: `node-version-manager` · commands: 4 · modes: view|no-view
 - **Blockers:** denied Node built-ins in sandbox: child_process
 - Degraded: declares command `arguments[]` — not passed by runtime yet
-
-### `note-in-google-doc` — Notes in Google Docs
-- dir: `note-in-google-doc` · commands: 1 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
 
 ### `noteman` — Noteman
 - dir: `noteman` · commands: 4 · modes: view
@@ -3391,9 +3223,8 @@
 
 ### `notion` — Notion
 - dir: `notion` · commands: 4 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired; declares AI tools[] (6) — AI extensions not supported
+- **Blockers:** declares AI tools[] (6) — AI extensions not supported
 - Degraded: declares extension-level `ai` instructions — ignored; declares command `arguments[]` — not passed by runtime yet
-- Needs review: @raycast/utils:withAccessToken (not implemented in Invoke); @raycast/utils:OAuthService (not implemented in Invoke)
 
 ### `notion-url-to-id` — Notion URL to ID
 - dir: `notion-url-to-id` · commands: 2 · modes: no-view|view
@@ -3490,10 +3321,6 @@
 ### `okta-app-manager` — Okta Manager
 - dir: `okta-app-manager` · commands: 4 · modes: view
 - **Blockers:** denied Node built-ins in sandbox: fs
-
-### `omg-lol` — omg.lol
-- dir: `omg-lol` · commands: 7 · modes: view|no-view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
 
 ### `omnivore` — Omnivore
 - dir: `omnivore` · commands: 2 · modes: view|no-view
@@ -3661,23 +3488,15 @@
 - dir: `otp-auth` · commands: 1 · modes: view
 - **Blockers:** denied Node built-ins in sandbox: fs
 
-### `otp-inbox` — OTP Inbox
-- dir: `otp-inbox` · commands: 1 · modes: view
-- Needs review: @raycast/utils:withAccessToken (not implemented in Invoke); @raycast/utils:OAuthService (not implemented in Invoke); @raycast/utils:getAccessToken (not implemented in Invoke)
-
 ### `otter` — Otter Bookmarks
 - dir: `otter` · commands: 4 · modes: view|menu-bar
 - **Blockers:** unsupported command mode(s): menubar: mode "menu-bar"
 - Degraded: declares background `interval` command(s) — not scheduled
 - Needs review: @raycast/api:useCachedPromise (not in Invoke surface — needs review); @raycast/utils:List (not implemented in Invoke); @raycast/utils:ActionPanel (not implemented in Invoke); @raycast/utils:Action (not implemented in Invoke); @raycast/utils:Icon (not implemented in Invoke); @raycast/utils:Detail (not implemented in Invoke); @raycast/utils:getPreferenceValues (not implemented in Invoke); @raycast/utils:Image (not implemented in Invoke); @raycast/utils:MenuBarExtra (not implemented in Invoke); @raycast/utils:open (not implemented in Invoke); @raycast/utils:Keyboard (not implemented in Invoke); @raycast/utils:openExtensionPreferences (not implemented in Invoke); @raycast/utils:useFetchRecentItems (not implemented in Invoke)
 
-### `ottomatic` — Ottomatic
-- dir: `ottomatic` · commands: 2 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
-
 ### `oura` — Oura
 - dir: `oura` · commands: 9 · modes: view|no-view|menu-bar
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired; unsupported command mode(s): menu-bar: mode "menu-bar"
+- **Blockers:** unsupported command mode(s): menu-bar: mode "menu-bar"
 - Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); launchCommand: loads; throws if called (inter-command launch not wired); declares background `interval` command(s) — not scheduled; declares command `arguments[]` — not passed by runtime yet
 
 ### `owl` — Owl
@@ -3777,7 +3596,6 @@
 
 ### `pcloud` — pCloud
 - dir: `pcloud` · commands: 1 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
 - Needs review: @raycast/utils:Response (not implemented in Invoke)
 
 ### `pdf-compression` — PDF Compression
@@ -3886,12 +3704,7 @@
 
 ### `plane` — Plane
 - dir: `plane` · commands: 3 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
-- Needs review: @raycast/utils:OAuthService (not implemented in Invoke); @raycast/utils:withAccessToken (not implemented in Invoke); @raycast/utils:PaginationOptions (not implemented in Invoke)
-
-### `planetscale` — PlanetScale
-- dir: `planetscale` · commands: 5 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
+- Needs review: @raycast/utils:PaginationOptions (not implemented in Invoke)
 
 ### `planwell` — PlanWell
 - dir: `planwell` · commands: 3 · modes: view
@@ -3915,20 +3728,15 @@
 - **Blockers:** unsupported command mode(s): podcasts-menubar: mode "menu-bar"; denied Node built-ins in sandbox: fs
 - Needs review: @raycast/api:Navigation (not in Invoke surface — needs review)
 
-### `polar` — Polar
-- dir: `polar` · commands: 3 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
-
 ### `polidict` — Polidict
 - dir: `polidict` · commands: 6 · modes: view|no-view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired; denied Node built-ins in sandbox: child_process
+- **Blockers:** denied Node built-ins in sandbox: child_process
 - Degraded: declares command `arguments[]` — not passed by runtime yet
 
 ### `pomodoro` — Pomodoro
 - dir: `pomodoro` · commands: 5 · modes: menu-bar|view
 - **Blockers:** unsupported command mode(s): pomodoro-menu-bar: mode "menu-bar", slack-pomodoro-menu-bar: mode "menu-bar"; declares AI tools[] (4) — AI extensions not supported; denied Node built-ins in sandbox: child_process
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares extension-level `ai` instructions — ignored; declares background `interval` command(s) — not scheduled
-- Needs review: @raycast/utils:OAuthService (not implemented in Invoke); @raycast/utils:getAccessToken (not implemented in Invoke); @raycast/utils:withAccessToken (not implemented in Invoke)
 
 ### `popicons` — Popicons
 - dir: `popicons` · commands: 1 · modes: view
@@ -3996,10 +3804,6 @@
 - **Blockers:** declares AI tools[] (1) — AI extensions not supported; denied Node built-ins in sandbox: child_process, fs
 - Degraded: declares extension-level `ai` instructions — ignored
 
-### `productlane` — Productlane
-- dir: `productlane` · commands: 1 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
-
 ### `project-code-to-text` — Project Code to Text
 - dir: `project-code-to-text` · commands: 1 · modes: view
 - **Blockers:** denied Node built-ins in sandbox: fs
@@ -4022,10 +3826,6 @@
 - dir: `promptlab` · commands: 7 · modes: view|menu-bar
 - **Blockers:** unsupported command mode(s): menubar-item: mode "menu-bar"; denied Node built-ins in sandbox: fs, child_process
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares command `arguments[]` — not passed by runtime yet
-
-### `promptnote` — PromptNote
-- dir: `promptnote` · commands: 6 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
 
 ### `pronounce-the-word` — Pronounce the Word
 - dir: `pronounce-the-word` · commands: 1 · modes: view
@@ -4195,15 +3995,6 @@
 ### `raycast-ai-custom-providers` — Raycast AI Custom Providers
 - dir: `raycast-ai-custom-providers` · commands: 1 · modes: view
 - **Blockers:** denied Node built-ins in sandbox: fs
-
-### `raycast-airtable-extension` — Airtable
-- dir: `airtable` · commands: 1 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
-- Needs review: @raycast/utils:withAccessToken (not implemented in Invoke); @raycast/utils:getAccessToken (not implemented in Invoke); @raycast/utils:OAuthService (not implemented in Invoke)
-
-### `raycast-explorer` — Raycast Explorer
-- dir: `raycast-explorer` · commands: 5 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
 
 ### `raycast-focus-stats` — Raycast Focus Stats
 - dir: `raycast-focus-stats` · commands: 3 · modes: view|no-view
@@ -4377,11 +4168,6 @@
 - dir: `rednote-viewer` · commands: 1 · modes: view
 - **Blockers:** denied Node built-ins in sandbox: fs
 
-### `reflect` — Reflect
-- dir: `reflect` · commands: 6 · modes: view|no-view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
-- Degraded: declares command `arguments[]` — not passed by runtime yet
-
 ### `regex-batch-renamer` — Regex Batch Renamer
 - dir: `regex-batch-renamer` · commands: 3 · modes: view
 - **Blockers:** denied Node built-ins in sandbox: fs
@@ -4503,7 +4289,6 @@
 - dir: `running-page` · commands: 3 · modes: view|menu-bar
 - **Blockers:** unsupported command mode(s): menubar-totals: mode "menu-bar"
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares background `interval` command(s) — not scheduled
-- Needs review: @raycast/utils:getAccessToken (not implemented in Invoke); @raycast/utils:withAccessToken (not implemented in Invoke); @raycast/utils:OAuthService (not implemented in Invoke)
 
 ### `safari` — Safari
 - dir: `safari` · commands: 8 · modes: view|no-view
@@ -4512,7 +4297,7 @@
 
 ### `salesforce` — Salesforce Search
 - dir: `salesforce-search` · commands: 2 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired; denied Node built-ins in sandbox: fs
+- **Blockers:** denied Node built-ins in sandbox: fs
 
 ### `sap-logon` — SAP GUI Connector
 - dir: `sap-logon` · commands: 4 · modes: view|no-view|menu-bar
@@ -4620,9 +4405,9 @@
 
 ### `send-ai` — SendAI
 - dir: `send-ai` · commands: 13 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired; declares AI tools[] (23) — AI extensions not supported; denied Node built-ins in sandbox: fs
+- **Blockers:** declares AI tools[] (23) — AI extensions not supported; denied Node built-ins in sandbox: fs
 - Degraded: declares extension-level `ai` instructions — ignored; declares command `arguments[]` — not passed by runtime yet
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review); @raycast/utils:withAccessToken (not implemented in Invoke)
+- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
 
 ### `send-to-e-reader` — Send to E-Reader
 - dir: `send-to-e-reader` · commands: 1 · modes: view
@@ -4656,11 +4441,6 @@
 ### `series-rating-graphs` — Series Rating Graphs
 - dir: `series-rating-graphs` · commands: 1 · modes: view
 - **Blockers:** denied Node built-ins in sandbox: fs
-
-### `servicenow` — ServiceNow
-- dir: `servicenow` · commands: 15 · modes: view|no-view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
-- Degraded: BrowserExtension: loads; throws if called (browser bridge not wired); declares command `arguments[]` — not passed by runtime yet
 
 ### `sesh` — Sesh
 - dir: `sesh` · commands: 1 · modes: view
@@ -4807,22 +4587,14 @@
 - dir: `slack` · commands: 9 · modes: view|no-view
 - **Blockers:** declares AI tools[] (6) — AI extensions not supported
 - Degraded: runPowerShellScript: Windows-only; throws on macOS (import loads); declares extension-level `ai` instructions — ignored
-- Needs review: @raycast/utils:OAuthService (not implemented in Invoke); @raycast/utils:withAccessToken (not implemented in Invoke); @raycast/utils:WithAccessTokenComponentOrFn (not implemented in Invoke)
 
 ### `slack-status` — Slack Status
 - dir: `slack-status` · commands: 1 · modes: view
 - **Blockers:** denied Node built-ins in sandbox: fs
-- Needs review: @raycast/utils:OAuthService (not implemented in Invoke); @raycast/utils:withAccessToken (not implemented in Invoke); @raycast/utils:getAccessToken (not implemented in Invoke)
-
-### `slack-summarizer` — Slack Summarizer
-- dir: `slack-summarizer` · commands: 2 · modes: view
-- Degraded: declares command `arguments[]` — not passed by runtime yet
-- Needs review: @raycast/utils:OAuthService (not implemented in Invoke)
 
 ### `slack-templated-message` — Slack Templated Message
 - dir: `slack-templated-message` · commands: 4 · modes: view
 - **Blockers:** denied Node built-ins in sandbox: fs
-- Needs review: @raycast/utils:getAccessToken (not implemented in Invoke); @raycast/utils:withAccessToken (not implemented in Invoke); @raycast/utils:OAuthService (not implemented in Invoke)
 
 ### `slackmojis` — Slackmojis
 - dir: `slackmojis` · commands: 1 · modes: view
@@ -4906,9 +4678,8 @@
 
 ### `sourcegraph` — Sourcegraph
 - dir: `sourcegraph` · commands: 7 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired; denied Node built-ins in sandbox: http
+- **Blockers:** denied Node built-ins in sandbox: http
 - Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); launchCommand: loads; throws if called (inter-command launch not wired)
-- Needs review: @raycast/utils:OAuthService (not implemented in Invoke)
 
 ### `sourcegraph-amp-dash-x` — Amp Dash X
 - dir: `sourcegraph-amp-dash-x` · commands: 2 · modes: view
@@ -4941,12 +4712,12 @@
 
 ### `spiceblow-database` — Spiceblow - Sql Database Management
 - dir: `spiceblow-database` · commands: 1 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired; denied Node built-ins in sandbox: fs
-- Needs review: @raycast/utils:DeeplinkType (not implemented in Invoke); @raycast/utils:withAccessToken (not implemented in Invoke); @raycast/utils:OAuthService (not implemented in Invoke)
+- **Blockers:** denied Node built-ins in sandbox: fs
+- Needs review: @raycast/utils:DeeplinkType (not implemented in Invoke)
 
 ### `spike` — Spike
 - dir: `spike` · commands: 6 · modes: view|menu-bar
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired; unsupported command mode(s): openIncidents: mode "menu-bar"
+- **Blockers:** unsupported command mode(s): openIncidents: mode "menu-bar"
 
 ### `spirii-go` — Spirii Go
 - dir: `spirii-go` · commands: 2 · modes: view
@@ -4968,9 +4739,8 @@
 
 ### `spotify-player` — Spotify Player
 - dir: `spotify-player` · commands: 35 · modes: view|menu-bar|no-view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired; unsupported command mode(s): nowPlayingMenuBar: mode "menu-bar"; declares AI tools[] (7) — AI extensions not supported
+- **Blockers:** unsupported command mode(s): nowPlayingMenuBar: mode "menu-bar"; declares AI tools[] (7) — AI extensions not supported
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired); updateCommandMetadata: loads; no-op (command metadata updates not wired); runPowerShellScript: Windows-only; throws on macOS (import loads); declares extension-level `ai` instructions — ignored; declares background `interval` command(s) — not scheduled; declares command `arguments[]` — not passed by runtime yet
-- Needs review: @raycast/utils:OAuthService (not implemented in Invoke); @raycast/utils:withAccessToken (not implemented in Invoke)
 
 ### `spring-initializr` — Spring Initializr
 - dir: `spring-initializr` · commands: 1 · modes: view
@@ -4987,7 +4757,7 @@
 
 ### `stablecog` — Stablecog
 - dir: `stablecog` · commands: 5 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired; denied Node built-ins in sandbox: fs
+- **Blockers:** denied Node built-ins in sandbox: fs
 - Degraded: declares command `arguments[]` — not passed by runtime yet
 
 ### `stackoverflow` — Search Stack Exchange Sites
@@ -5046,8 +4816,7 @@
 
 ### `sublime` — Sublime
 - dir: `sublime` · commands: 7 · modes: view|no-view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired; denied Node built-ins in sandbox: fs
-- Needs review: @raycast/utils:withAccessToken (not implemented in Invoke); @raycast/utils:getAccessToken (not implemented in Invoke); @raycast/utils:OAuthService (not implemented in Invoke)
+- **Blockers:** denied Node built-ins in sandbox: fs
 
 ### `subnoto` — Subnoto - Confidential Electronic Signature
 - dir: `subnoto` · commands: 3 · modes: view
@@ -5153,12 +4922,6 @@
 - dir: `tabler` · commands: 1 · modes: view
 - **Blockers:** denied Node built-ins in sandbox: fs
 
-### `tabstash` — TabStash
-- dir: `tabstash` · commands: 2 · modes: view|no-view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
-- Degraded: BrowserExtension: loads; throws if called (browser bridge not wired); declares command `arguments[]` — not passed by runtime yet
-- Needs review: @raycast/utils:getAccessToken (not implemented in Invoke); @raycast/utils:withAccessToken (not implemented in Invoke); @raycast/utils:OAuthService (not implemented in Invoke)
-
 ### `tails` — Tails
 - dir: `tails` · commands: 4 · modes: view|no-view|menu-bar
 - **Blockers:** unsupported command mode(s): menu-bar: mode "menu-bar"; denied Node built-ins in sandbox: fs
@@ -5211,11 +4974,6 @@
 - dir: `terminal-image-paste` · commands: 1 · modes: no-view
 - **Blockers:** denied Node built-ins in sandbox: child_process
 
-### `terminaldotshop` — Terminal Shop
-- dir: `terminaldotshop` · commands: 1 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
-- Needs review: @raycast/utils:getAccessToken (not implemented in Invoke); @raycast/utils:OAuthService (not implemented in Invoke); @raycast/utils:withAccessToken (not implemented in Invoke)
-
 ### `terminalfinder` — Terminal Finder
 - dir: `terminalfinder` · commands: 22 · modes: no-view
 - **Blockers:** denied Node built-ins in sandbox: child_process
@@ -5223,9 +4981,8 @@
 
 ### `tesla-energy` — Tesla Energy
 - dir: `tesla-energy` · commands: 2 · modes: view|menu-bar
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired; unsupported command mode(s): menu-bar-status: mode "menu-bar"
+- **Blockers:** unsupported command mode(s): menu-bar-status: mode "menu-bar"
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares background `interval` command(s) — not scheduled
-- Needs review: @raycast/utils:withAccessToken (not implemented in Invoke); @raycast/utils:OAuthService (not implemented in Invoke); @raycast/utils:getAccessToken (not implemented in Invoke)
 
 ### `text-differ` — Text Differ
 - dir: `text-differ` · commands: 1 · modes: no-view
@@ -5253,8 +5010,7 @@
 
 ### `the-blue-cloud` — The Blue Cloud
 - dir: `the-blue-cloud` · commands: 1 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired; denied Node built-ins in sandbox: fs
-- Needs review: @raycast/utils:OAuthService (not implemented in Invoke); @raycast/utils:withAccessToken (not implemented in Invoke)
+- **Blockers:** denied Node built-ins in sandbox: fs
 
 ### `things` — Things
 - dir: `things` · commands: 10 · modes: view|menu-bar|no-view
@@ -5318,10 +5074,6 @@
 - **Blockers:** denied Node built-ins in sandbox: fs
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares command `arguments[]` — not passed by runtime yet
 
-### `timely` — Timely
-- dir: `timely` · commands: 2 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
-
 ### `timers` — Timers
 - dir: `timers` · commands: 19 · modes: no-view|view|menu-bar
 - **Blockers:** unsupported command mode(s): timersMenuBar: mode "menu-bar", stopwatchMenuBar: mode "menu-bar"; declares AI tools[] (2) — AI extensions not supported; denied Node built-ins in sandbox: child_process, fs
@@ -5358,10 +5110,6 @@
 - **Blockers:** denied Node built-ins in sandbox: child_process, fs
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired)
 
-### `tny` — Tny
-- dir: `tny` · commands: 3 · modes: view|no-view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
-
 ### `todo-list` — Todo List
 - dir: `todo-list` · commands: 2 · modes: view|menu-bar
 - **Blockers:** unsupported command mode(s): menu_bar: mode "menu-bar"; denied Node built-ins in sandbox: fs
@@ -5369,9 +5117,8 @@
 
 ### `todoist` — Todoist
 - dir: `todoist` · commands: 11 · modes: view|no-view|menu-bar
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired; unsupported command mode(s): menu-bar: mode "menu-bar"; declares AI tools[] (29) — AI extensions not supported; denied Node built-ins in sandbox: fs
+- **Blockers:** unsupported command mode(s): menu-bar: mode "menu-bar"; declares AI tools[] (29) — AI extensions not supported; denied Node built-ins in sandbox: fs
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares extension-level `ai` instructions — ignored; declares background `interval` command(s) — not scheduled; declares command `arguments[]` — not passed by runtime yet
-- Needs review: @raycast/utils:OAuthService (not implemented in Invoke); @raycast/utils:withAccessToken (not implemented in Invoke)
 
 ### `toggl-track` — Toggl Track
 - dir: `toggl-track` · commands: 7 · modes: view|menu-bar
@@ -5430,7 +5177,7 @@
 
 ### `trakt-manager` — Trakt Manager
 - dir: `trakt-manager` · commands: 7 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired; denied Node built-ins in sandbox: fs
+- **Blockers:** denied Node built-ins in sandbox: fs
 
 ### `transfer-sh_upload` — Transfer.sh Uploader
 - dir: `transfer-sh_upload` · commands: 1 · modes: no-view
@@ -5449,12 +5196,6 @@
 - **Blockers:** unsupported command mode(s): menu-bar-trips: mode "menu-bar"; declares AI tools[] (5) — AI extensions not supported
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares extension-level `ai` instructions — ignored; declares background `interval` command(s) — not scheduled
 
-### `trek` — Trek
-- dir: `trek` · commands: 6 · modes: view|no-view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
-- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares command `arguments[]` — not passed by runtime yet
-- Needs review: @raycast/utils:withAccessToken (not implemented in Invoke); @raycast/utils:getAccessToken (not implemented in Invoke); @raycast/utils:OAuthService (not implemented in Invoke)
-
 ### `trovu` — Trovu - Web Search Command Line
 - dir: `trovu` · commands: 1 · modes: view
 - **Blockers:** denied Node built-ins in sandbox: fs
@@ -5465,7 +5206,7 @@
 
 ### `turso` — Turso
 - dir: `turso` · commands: 3 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired; denied Node built-ins in sandbox: http
+- **Blockers:** denied Node built-ins in sandbox: http
 
 ### `twenty` — Twenty
 - dir: `twenty` · commands: 1 · modes: view
@@ -5473,12 +5214,8 @@
 
 ### `twitch` — Twitch
 - dir: `twitch` · commands: 4 · modes: view|menu-bar
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired; unsupported command mode(s): live: mode "menu-bar"; denied Node built-ins in sandbox: child_process
+- **Blockers:** unsupported command mode(s): live: mode "menu-bar"; denied Node built-ins in sandbox: child_process
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares background `interval` command(s) — not scheduled
-
-### `twitter` — Twitter
-- dir: `twitter` · commands: 4 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
 
 ### `twitter-video-downloader` — X/Twitter Video Downloader
 - dir: `twitter-video-downloader` · commands: 2 · modes: view|no-view
@@ -5533,7 +5270,7 @@
 
 ### `unsplash` — Unsplash
 - dir: `unsplash` · commands: 4 · modes: view|no-view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired; denied Node built-ins in sandbox: fs
+- **Blockers:** denied Node built-ins in sandbox: fs
 - Degraded: declares background `interval` command(s) — not scheduled
 
 ### `update-clash-subscription` — Update Clash Subscription
@@ -5587,7 +5324,7 @@
 
 ### `vault-manager` — Vault Manager
 - dir: `vault` · commands: 1 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired; denied Node built-ins in sandbox: http, fs
+- **Blockers:** denied Node built-ins in sandbox: http, fs
 
 ### `vercast` — Vercel
 - dir: `vercast` · commands: 9 · modes: view|menu-bar|no-view
@@ -5643,12 +5380,6 @@
 ### `vivapb` — VivaPB
 - dir: `vivapb` · commands: 1 · modes: no-view
 - **Blockers:** denied Node built-ins in sandbox: child_process
-
-### `vixai` — Vixai
-- dir: `vixai` · commands: 5 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
-- Degraded: declares command `arguments[]` — not passed by runtime yet
-- Needs review: @raycast/utils:withAccessToken (not implemented in Invoke)
 
 ### `vlc` — VLC
 - dir: `vlc` · commands: 22 · modes: no-view|view
@@ -5712,11 +5443,6 @@
 - dir: `watchkey` · commands: 5 · modes: view
 - **Blockers:** denied Node built-ins in sandbox: child_process, fs
 
-### `wave` — Wave
-- dir: `wave` · commands: 1 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
-- Needs review: @raycast/utils:OAuthService (not implemented in Invoke); @raycast/utils:getAccessToken (not implemented in Invoke); @raycast/utils:withAccessToken (not implemented in Invoke)
-
 ### `weather` — Weather
 - dir: `weather` · commands: 2 · modes: view|menu-bar
 - **Blockers:** unsupported command mode(s): menubar: mode "menu-bar"
@@ -5729,11 +5455,6 @@
 ### `webdav-uploader` — WebDAV Uploader
 - dir: `webdav-uploader` · commands: 1 · modes: no-view
 - **Blockers:** denied Node built-ins in sandbox: fs
-
-### `webflow-sites` — Webflow
-- dir: `webflow-sites` · commands: 1 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
-- Needs review: @raycast/utils:withAccessToken (not implemented in Invoke); @raycast/utils:OAuthService (not implemented in Invoke)
 
 ### `webpage-to-markdown` — Webpage to Markdown
 - dir: `webpage-to-markdown` · commands: 1 · modes: view
@@ -5798,12 +5519,6 @@
 - dir: `whmcs-client-search` · commands: 2 · modes: view|no-view
 - **Blockers:** denied Node built-ins in sandbox: fs
 
-### `whoop` — WHOOP
-- dir: `whoop` · commands: 3 · modes: no-view|view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); declares background `interval` command(s) — not scheduled
-- Needs review: @raycast/utils:OAuthService (not implemented in Invoke); @raycast/utils:withAccessToken (not implemented in Invoke)
-
 ### `wi-fi` — Wi-Fi
 - dir: `wi-fi` · commands: 2 · modes: no-view|menu-bar
 - **Blockers:** unsupported command mode(s): wi-fi-signal: mode "menu-bar"; denied Node built-ins in sandbox: child_process
@@ -5857,7 +5572,7 @@
 
 ### `wip` — WIP
 - dir: `wip` · commands: 4 · modes: view|no-view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired; denied Node built-ins in sandbox: fs
+- **Blockers:** denied Node built-ins in sandbox: fs
 - Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); declares background `interval` command(s) — not scheduled
 
 ### `wireguard` — Wireguard
@@ -5880,7 +5595,7 @@
 
 ### `withings-sync` — Withings Sync
 - dir: `withings-sync` · commands: 3 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired; denied Node built-ins in sandbox: fs
+- **Blockers:** denied Node built-ins in sandbox: fs
 
 ### `wiz-controller` — Wiz Controller
 - dir: `wiz-controller` · commands: 5 · modes: no-view|view
@@ -5907,9 +5622,8 @@
 
 ### `workouts` — Workouts
 - dir: `workouts` · commands: 6 · modes: view|menu-bar
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired; unsupported command mode(s): menubar-totals: mode "menu-bar"; declares AI tools[] (6) — AI extensions not supported; denied Node built-ins in sandbox: fs
+- **Blockers:** unsupported command mode(s): menubar-totals: mode "menu-bar"; declares AI tools[] (6) — AI extensions not supported; denied Node built-ins in sandbox: fs
 - Degraded: declares extension-level `ai` instructions — ignored; declares background `interval` command(s) — not scheduled
-- Needs review: @raycast/utils:getAccessToken (not implemented in Invoke); @raycast/utils:OAuthService (not implemented in Invoke); @raycast/utils:withAccessToken (not implemented in Invoke)
 
 ### `worktrees` — Git Worktrees
 - dir: `worktrees` · commands: 2 · modes: view
@@ -5970,10 +5684,6 @@
 - **Blockers:** denied Node built-ins in sandbox: child_process, fs
 - Degraded: declares command `arguments[]` — not passed by runtime yet
 
-### `yandex-smart-home` — Yandex Smart Home
-- dir: `yandex-smart-home` · commands: 2 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired
-
 ### `yasb` — YASB
 - dir: `yasb` · commands: 12 · modes: no-view|view
 - **Blockers:** denied Node built-ins in sandbox: child_process
@@ -6010,7 +5720,7 @@
 
 ### `youtube-highlights` — YouTube Highlights
 - dir: `youtube-highlights` · commands: 5 · modes: view
-- **Blockers:** OAuth: OAuth.PKCEClient throws — OAuth not yet wired; denied Node built-ins in sandbox: child_process, fs
+- **Blockers:** denied Node built-ins in sandbox: child_process, fs
 
 ### `youtube-subscriber-count` — YouTube Subscriber Count
 - dir: `youtube-subscriber-count` · commands: 1 · modes: menu-bar
@@ -6072,15 +5782,10 @@
 - **Blockers:** denied Node built-ins in sandbox: fs
 - Degraded: declares command `arguments[]` — not passed by runtime yet
 
-### `zoo` — Zoo - Ask AIs with Your Prompt Library
-- dir: `zoo` · commands: 3 · modes: view
-- Needs review: @raycast/utils:OAuthService (not implemented in Invoke); @raycast/utils:withAccessToken (not implemented in Invoke)
-
 ### `zoom` — Zoom
 - dir: `zoom` · commands: 5 · modes: view|no-view|menu-bar
 - **Blockers:** unsupported command mode(s): this-week-meetings: mode "menu-bar"; declares AI tools[] (6) — AI extensions not supported
 - Degraded: declares extension-level `ai` instructions — ignored; declares background `interval` command(s) — not scheduled; declares command `arguments[]` — not passed by runtime yet
-- Needs review: @raycast/utils:OAuthService (not implemented in Invoke); @raycast/utils:getAccessToken (not implemented in Invoke); @raycast/utils:withAccessToken (not implemented in Invoke)
 
 ### `zotero` — Search Zotero
 - dir: `zotero` · commands: 1 · modes: view
@@ -6100,7 +5805,7 @@
 - dir: `zshrc-manager` · commands: 1 · modes: view
 - **Blockers:** denied Node built-ins in sandbox: fs
 
-## DEGRADED (345)
+## DEGRADED (361)
 
 ### `40-questions` — 40 Questions - Yearly Reflection
 - dir: `40-questions` · commands: 3 · modes: view|no-view
@@ -6238,6 +5943,10 @@
 - dir: `cloudinary` · commands: 3 · modes: view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
 
+### `cloudstash` — Cloudstash
+- dir: `cloudstash` · commands: 2 · modes: no-view
+- Degraded: declares command `arguments[]` — not passed by runtime yet
+
 ### `cnpj-lookup` — CNPJ Lookup
 - dir: `cnpj-lookup` · commands: 1 · modes: view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
@@ -6334,6 +6043,10 @@
 - dir: `danish-tax-calculator` · commands: 2 · modes: view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
 
+### `dash-off` — Dash Off
+- dir: `dash-off` · commands: 2 · modes: no-view|view
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired)
+
 ### `datahub` — Datahub Utility
 - dir: `datahub` · commands: 2 · modes: no-view|view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
@@ -6345,6 +6058,10 @@
 ### `date-format-converter` — Date Format Converter
 - dir: `datetime-format-converter` · commands: 2 · modes: view|no-view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
+
+### `days2` — Days 2 - Google Calendar Countdown
+- dir: `days2` · commands: 3 · modes: view|no-view
+- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); launchCommand: loads; throws if called (inter-command launch not wired); declares background `interval` command(s) — not scheduled
 
 ### `decimal-2-time` — Decimal 2 Time
 - dir: `decimal-2-time` · commands: 1 · modes: view
@@ -6442,6 +6159,10 @@
 - dir: `dungeons-and-dragons` · commands: 6 · modes: view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
 
+### `dust-tt` — Ask Dust
+- dir: `dust-tt` · commands: 6 · modes: view
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); updateCommandMetadata: loads; no-op (command metadata updates not wired); declares command `arguments[]` — not passed by runtime yet
+
 ### `easy-new-file` — Easy New File
 - dir: `easy-new-file` · commands: 3 · modes: no-view|view
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares command `arguments[]` — not passed by runtime yet
@@ -6522,6 +6243,10 @@
 - dir: `github-search` · commands: 2 · modes: view
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired)
 
+### `globalping` — Globalping
+- dir: `globalping` · commands: 5 · modes: view
+- Degraded: declares command `arguments[]` — not passed by runtime yet
+
 ### `glossary` — Glossary
 - dir: `glossary` · commands: 4 · modes: view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
@@ -6584,6 +6309,10 @@
 
 ### `have-i-been-pwned` — Have I Been Pwned
 - dir: `have-i-been-pwned` · commands: 3 · modes: view
+- Degraded: declares command `arguments[]` — not passed by runtime yet
+
+### `heptabase` — Heptabase
+- dir: `heptabase` · commands: 6 · modes: view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
 
 ### `hetzner` — Hetzner
@@ -6649,6 +6378,10 @@
 ### `ipinfo` — IP Info
 - dir: `ipinfo` · commands: 3 · modes: view
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares command `arguments[]` — not passed by runtime yet
+
+### `jetpack-commands` — Jetpack Commands
+- dir: `jetpack-commands` · commands: 46 · modes: no-view|view
+- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired)
 
 ### `jira2git` — Jira2Git
 - dir: `jira2git` · commands: 1 · modes: no-view
@@ -6798,12 +6531,20 @@
 - dir: `minion-ipsum` · commands: 1 · modes: no-view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
 
+### `miro` — Miro
+- dir: `miro` · commands: 3 · modes: view
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired)
+
 ### `mite` — Mite
 - dir: `mite` · commands: 4 · modes: view|no-view
 - Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); declares background `interval` command(s) — not scheduled
 
 ### `mnemosyne` — Mnemosyne
 - dir: `mnemosyne` · commands: 2 · modes: no-view
+- Degraded: declares command `arguments[]` — not passed by runtime yet
+
+### `moneytree` — Moneytree
+- dir: `moneytree` · commands: 3 · modes: view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
 
 ### `mongodb-objectid` — MongoDB ObjectId
@@ -7130,6 +6871,10 @@
 - dir: `real-calc` · commands: 2 · modes: view|no-view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
 
+### `reflect` — Reflect
+- dir: `reflect` · commands: 6 · modes: view|no-view
+- Degraded: declares command `arguments[]` — not passed by runtime yet
+
 ### `remove-paywall` — Remove Paywall
 - dir: `remove-paywall` · commands: 3 · modes: no-view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
@@ -7202,6 +6947,10 @@
 - dir: `sequoia-tiling` · commands: 23 · modes: no-view
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired)
 
+### `servicenow` — ServiceNow
+- dir: `servicenow` · commands: 15 · modes: view|no-view
+- Degraded: BrowserExtension: loads; throws if called (browser bridge not wired); declares command `arguments[]` — not passed by runtime yet
+
 ### `share-a-quote` — Share a Quote
 - dir: `share-a-quote` · commands: 1 · modes: no-view
 - Degraded: BrowserExtension: loads; throws if called (browser bridge not wired)
@@ -7240,6 +6989,10 @@
 
 ### `sitespeakai` — SiteSpeakAI
 - dir: `sitespeakai` · commands: 1 · modes: view
+- Degraded: declares command `arguments[]` — not passed by runtime yet
+
+### `slack-summarizer` — Slack Summarizer
+- dir: `slack-summarizer` · commands: 2 · modes: view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
 
 ### `slugify` — Slugify
@@ -7286,6 +7039,10 @@
 - dir: `t3-chat` · commands: 1 · modes: no-view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
 
+### `tabstash` — TabStash
+- dir: `tabstash` · commands: 2 · modes: view|no-view
+- Degraded: BrowserExtension: loads; throws if called (browser bridge not wired); declares command `arguments[]` — not passed by runtime yet
+
 ### `text-decorator` — Text Decorator
 - dir: `text-decorator` · commands: 3 · modes: no-view|view
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired); updateCommandMetadata: loads; no-op (command metadata updates not wired); declares command `arguments[]` — not passed by runtime yet
@@ -7321,6 +7078,10 @@
 ### `translate-send-webpage-to-reader` — Translate and Send Webpage to Reader
 - dir: `translate-send-webpage-to-reader` · commands: 1 · modes: no-view
 - Degraded: BrowserExtension: loads; throws if called (browser bridge not wired)
+
+### `trek` — Trek
+- dir: `trek` · commands: 6 · modes: view|no-view
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares command `arguments[]` — not passed by runtime yet
 
 ### `twitch-logs` — Twitch Logs
 - dir: `twitch-logs` · commands: 1 · modes: view
@@ -7390,6 +7151,10 @@
 - dir: `virtualbox-power-switch` · commands: 1 · modes: view
 - Degraded: useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox
 
+### `vixai` — Vixai
+- dir: `vixai` · commands: 5 · modes: view
+- Degraded: declares command `arguments[]` — not passed by runtime yet
+
 ### `vortex` — Vortex
 - dir: `vortex` · commands: 4 · modes: view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
@@ -7413,6 +7178,10 @@
 ### `whois` — Whois
 - dir: `whois` · commands: 1 · modes: view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
+
+### `whoop` — WHOOP
+- dir: `whoop` · commands: 3 · modes: no-view|view
+- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); declares background `interval` command(s) — not scheduled
 
 ### `whosampled` — WhoSampled
 - dir: `whosampled` · commands: 3 · modes: no-view
@@ -7482,6 +7251,6 @@
 - dir: `zread-ai` · commands: 2 · modes: no-view
 - Degraded: BrowserExtension: loads; throws if called (browser bridge not wired); declares command `arguments[]` — not passed by runtime yet
 
-## SUPPORTED (1277)
+## SUPPORTED (1319)
 
-`2fa-directory`, `5devs`, `8-ball`, `8-divide`, `aave-search`, `active-mississaugua`, `adguard-home`, `adonisjs-documentation`, `advanced-replace`, `advice-slip`, `affine`, `ai-by-vercel`, `ai-code-namer`, `ai-humanizer`, `ai-stats`, `ai-text-to-calendar`, `ai-usage-tracker`, `aimlab`, `airplane`, `airport`, `airsy`, `airsync`, `aiven`, `aleph`, `aliyun-flow`, `alpaca-trading`, `alpinejs`, `alwaysdata`, `amazon-search`, `amphetamine`, `analog-film-library`, `android-versions`, `anilist-airing-schedule`, `anki`, `anna-s-archive`, `antisocials`, `anybox`, `anycoffee`, `apify`, `apis-guru-search`, `appgrid`, `apple-books`, `apple-developer-docs`, `apple-devices`, `apple-stocks-search`, `apply-inline-code`, `appwrite`, `arabic-keyboard`, `arc-helper`, `arca`, `archisteamfarm`, `array-this`, `ars-technica`, `arxiv`, `asciimath-to-latex-converter`, `asoiaf`, `asyncapi`, `atomberg-raycast-extension`, `attio`, `audio-writer`, `auth0-management`, `autumn`, `avatar`, `axios-docs`, `background-sounds`, `bahn-info`, `balatro-compendium`, `banca-d-italia-currency-converter`, `base-ui-docs`, `bash-commands`, `battery-health`, `bazinga-tools`, `bbc-news-headlines`, `beancount-meta`, `beardtown`, `beat-per-minute`, `beeminder`, `bento`, `berlin-public-transportation`, `betaseries`, `betterdiscord-store`, `bhagavad-gita-quotes`, `biaodian`, `bibigpt-summarize-audiovideo-with-ai`, `big-o`, `bilibili-search`, `bing-search`, `binge-clock`, `bintools`, `bitaxe-status`, `bitbucket`, `bitbucket-search-self-hosted`, `bitly-url-shortener`, `bitrise`, `blockchain-explorer-search`, `blockchain-gas-tracker`, `bmrks`, `board-game-geek`, `bookstack`, `bored`, `botpress`, `braintick`, `brasileirao-serie-a`, `brave-search`, `brave-search-with-results`, `bring`, `browser-tabs`, `bsr-entsorgung`, `bttv-emote`, `buddy`, `buildkite`, `bundesliga`, `bundlephobia-search`, `bunq`, `caaals`, `cacher`, `calendar`, `camper-calc`, `can-i-php`, `can-i-use`, `cangjie`, `canvascast`, `capacities`, `capture`, `carbon-code-screenshot-for-raycast`, `catenary-raycast`, `catppuccin`, `cc0-lib`, `ccf-what`, `ccfddl`, `chainscout`, `change-case`, `change-scroll-direction`, `changedetection-io`, `charming-chatgpt`, `chatbase`, `chatgpt3-prompt`, `cheatsheets`, `check-citi-bike-availability`, `checklist`, `cheetah`, `chess-com`, `chhoto`, `china-ip-address`, `chinese-character-converter`, `chinese-lottery`, `chinese-numbers`, `choose-a-license`, `chords-and-tabs`, `chuck-norris-facts`, `cilium-docs`, `cinemas-nos`, `citation-generator`, `cl-indicators`, `clarify`, `clash`, `claude`, `claude-code-cheatsheet`, `clean-agent-text`, `clean-text`, `clear-clipboard`, `climbing-grade-converter`, `clip-swap`, `clipboard-editor`, `clipboard-formatter`, `clipboard-sequential-paste`, `clipboard-type`, `clipboard-utilities`, `close-finder`, `cloudflare`, `cloudflare-ai`, `cloudflare-email-routing`, `cocoa-core-data-timestamp-converter`, `coda-bookmarks-search`, `code-review-emojis`, `code-smells`, `codeblocks`, `codegeex`, `codemagic`, `codesnap`, `cognimemo`, `coin-caster`, `coinbase-pro`, `coingecko`, `coinpaprika`, `collected-notes`, `cometapi`, `comma-separator`, `commercequest`, `commit-issue-parser`, `commit-message-generator`, `commitlint`, `consoledev`, `control-d`, `control-viscosity`, `conventional-commits`, `convert-typescript-to-javascript`, `converter`, `convex`, `coolify`, `copy-notion-markdown-link`, `copy-skeet-link`, `count-numbers`, `country-lookup`, `cpf-cnpj-generator`, `cran-e-search`, `cratecast`, `creem`, `crisp`, `cron-description`, `crunchbase`, `crypto-search`, `css-calculations`, `css-gg`, `css-tricks`, `cuid-generator`, `curator-bio`, `currency-exchange`, `cursor`, `cursors`, `curto-io-url-shortener`, `customer-io`, `cyberchef`, `cypress-docs`, `dad-jokes`, `daisyui`, `daminik`, `danbooru`, `dashlane`, `dashlane-vault`, `databuddy`, `date-converter`, `dbt-documentation`, `dbtcloud`, `decentraland`, `deduplicator`, `deepl-api-usage`, `defichain-dobby`, `definitelytyped`, `defiscan`, `dekudeals`, `deployhq`, `design-skills`, `designer-excuses`, `designer-news`, `deutscherwetterdienst`, `dev-to`, `devcontainer-features`, `developer-excuse`, `devenv-docs`, `devin`, `devonthink`, `devutils`, `dex-screener`, `dexcom-reader`, `dice-tiles`, `diff-checker`, `digitalocean`, `directus`, `discogs`, `discord-timestamps`, `discordjs-documentation`, `disney`, `distraction-tracker`, `djangopackages`, `dns-lookup`, `docker`, `dockerhub`, `dodo-payments`, `dog-images`, `dokploy`, `dolar-hoy`, `dollar-blue`, `domainr`, `donut`, `doppler-share-secrets`, `dotnet-api-browser`, `dotnet-docs-search`, `dotween-eases`, `douban`, `dovetail`, `dpm-lol`, `dr-news`, `dreamhost`, `dribbble`, `drug-search`, `drupal-org`, `duck-duck-go-search`, `duckduckgo-email`, `duden`, `dutch-article`, `dynamic-font-size`, `e18e-module-replacements`, `early-tools-news`, `easings`, `easyvariable`, `ebird`, `ecosia-search`, `ekstraklasa`, `element`, `elixir`, `elm-search`, `elron`, `ember-api-documentation`, `emissions-calculator`, `end-of-life`, `endel`, `ens-name-lookup`, `envoyer`, `epoch-to-timestamp`, `escape-regexp-characters`, `espn`, `esports-pass`, `essay`, `esv-bible`, `ethereum-utils`, `eurovision-song-contest`, `evaluate-math-expression`, `evil-insult`, `evm-codes`, `excalidraw`, `excel-formula-beautifier`, `exivo`, `explain-command`, `expo`, `facetime`, `fake-swedish-personal-number`, `fakecrime-upload`, `fancy-text`, `fantasy-premier-league-rankings`, `farcaster`, `fastly`, `fastmail-masked-email`, `fathom-analytics`, `fbi`, `featurebase`, `feedly`, `feishu-document-creator`, `fhir`, `fibonacci-sequence`, `figma-learn-companion`, `figma-shortcuts`, `figma-variables`, `filament`, `file-tree-generator`, `fillerama`, `finary`, `findnearby`, `fingertip`, `finnish-dictionary`, `firefly-iii`, `fix-language`, `fluctuation`, `fluent-outdoors`, `flux`, `flycheck-raycast`, `flypy`, `font-awesome`, `forgejo`, `format-graphql`, `formizee`, `framer-motion`, `frankerfacez`, `freedns`, `freshrss`, `frill`, `ftrack`, `fuelx`, `fumadocs`, `game-scout`, `gandi`, `gcp-search`, `geist-ui-components`, `geoconverter`, `geoguesser`, `geohash-encode-decode`, `get-cat-images`, `get-direct-link`, `gg-deals`, `ghost-docs`, `gift-stardew-valley`, `git-branch-name-generator`, `git-commands`, `gitee`, `github-cli-manual`, `github-profile`, `github-spark`, `github-users`, `gitlab-docs`, `gitmoji`, `gleam-packages`, `glide`, `glyph-search`, `go-links`, `go-package-search`, `golden-ratio`, `gomander`, `goodlinks`, `google-advanced-search`, `google-finance`, `google-fonts`, `google-meet`, `google-scholar`, `google-search`, `google-trends`, `gotify`, `govee`, `gradle-plugins`, `grafana`, `grafbase`, `grammaring`, `graphcdn`, `greip`, `grist`, `grokipedia`, `groundhog-day`, `growthbook`, `habr-media`, `hardcover`, `hashnode`, `hatena-bookmark`, `hazeover`, `headlines`, `hebrew-date-zmanim`, `helldivers2`, `hellonext-changelogs`, `helm-docs`, `hemolog`, `hephaestus`, `heroicons`, `hestiacp-admin`, `hetrixtools`, `hexlify`, `hide-all-apps`, `hide-mail`, `hidemyemail`, `holodex`, `holopin`, `homebox`, `homepage`, `hoogle`, `host-switch`, `hostloc`, `howlongtobeat`, `hsdecks`, `html-colors`, `http-dot-cat`, `http-mime`, `hubspot`, `hugging-face`, `humaans`, `hupu`, `hyper-focus`, `iata-code-decoder`, `icd10-lookup`, `iching-divination`, `icloud-global-pricing-comparison`, `ifanr`, `image-diff-checker`, `image-host`, `in-the-time-zone`, `inbound`, `incognito-clone`, `inertiajs-documentation`, `infomaniak`, `initium`, `inkdrop`, `inpost-parcel-lockers`, `input-source-switcher`, `inspire-search`, `instapaper`, `intention-clarifier`, `ionos-sync`, `ios-resolution`, `ipa-translator`, `ipcheck-ing`, `iptv`, `is-it-toxic-to`, `isdown`, `itch-io`, `jalali-date-convertor`, `james-webb-space-telescope`, `jellyfin`, `jira-time-tracking`, `jisho`, `jitsi`, `jotform`, `json-editor`, `json-format`, `json-to-go`, `json-to-toon-converter`, `json2ts`, `jsrepo`, `jue-jin`, `jurassic-ninja-site-generator`, `just-delete-me`, `justcolorpicker-raycast`, `kaalam`, `kafka-ui`, `kagi-news`, `kagi-search`, `kalshi`, `kaneo-for-raycast`, `kaomoji-search`, `keeper-security`, `keychain-password-gen`, `kimi`, `kimi-for-coding`, `kind-words`, `kindle-paste`, `kinopoisk`, `klu-ai`, `knowwa`, `korean-date-converter`, `korean-spell-checker`, `koyeb`, `kubernetes`, `kubernetes-docs`, `kutt`, `laby-net`, `lacinka`, `laliga`, `laracasts`, `laravel-artisan`, `laravel-livewire`, `laravel-nova`, `laravel-shift`, `laravel-vapor`, `large-type`, `lark`, `lark-applink`, `latest-news`, `latex-math-symbols`, `launchdarkly`, `lazygit-keybindings`, `learning-snacks`, `leetcode`, `lego-bricks`, `leitnerbox`, `lemmy`, `lemon-squeezy`, `lenscast`, `letta`, `lgtmeow`, `liba-ro_shortener`, `lichess-org`, `lifx`, `lifx-advanced-controller`, `lightdash-navigator`, `lightning-time`, `lightshot-gallery`, `ligue-1`, `linguee`, `link-cleaner`, `linkding`, `linux-command`, `liquipedia-matches`, `literal`, `liveblocks`, `llm-stats`, `llms-txt`, `loan-calculator`, `lobehub-icons`, `lobsters`, `logsnag`, `logtail`, `lookaway`, `lotr`, `lucide-animated`, `lucide-icons`, `lume`, `lunatask`, `lunchmoney`, `lyne`, `lyrics`, `mac-app-store-search`, `macrumors`, `macstories`, `macupdater`, `magic-home`, `mail-to-self`, `mailerlite-stats`, `mailtrap`, `make-dot-com`, `make-with-notion-2024`, `mandarin-chinese-dictionary`, `manga-calendar`, `manotori`, `manus`, `manus-manager`, `marble`, `marginnote`, `markdown-codeblock`, `markdown-converter`, `markdown-preview`, `markdown-reference`, `markdown-this`, `markdown-to-jira`, `markdown-to-plain-text`, `markdown-to-rich-text`, `markprompt`, `masscode`, `math-functions`, `matter`, `mattermost`, `maybe`, `mbta-tracker`, `md-to-excel`, `medialister-marketplace-helper`, `meduza`, `mem`, `mem0`, `memberstack`, `mempool`, `mercado-libre`, `metacritic`, `metaphor`, `meteoblue-lookup`, `metube`, `microblog`, `microsoft-teams-calling`, `midas`, `migadu`, `mikrus`, `minecast`, `minecraft-color-codes`, `minecraft-crafting-recipes`, `minimax-ai`, `minisim`, `minttr`, `mistral`, `mittwald`, `mixpanel`, `mobius-materials`, `mochi`, `modrinth`, `modrinth-search`, `moji`, `monday-com`, `moneylover`, `monkeytype`, `monobank`, `monocle`, `monse`, `mousehunt-helper`, `mui-documentation`, `multi-links`, `multilinks`, `multipass`, `multiviewer`, `music-news`, `music-timer`, `musicbrainz`, `musicthread`, `must`, `mxroute`, `mymind`, `mynaui-icons`, `namecheap`, `namuwiki`, `nano-games`, `nasa`, `nativebase-docs`, `nature-remo`, `naver-search`, `navidrome`, `nba-game-viewer`, `near-rewards`, `neodb`, `neon`, `nepali-calendar`, `netease-music`, `netnewswire`, `neurooo-translate`, `new-relic`, `new-york-times`, `next-lens`, `next-run`, `nextcloud`, `nfl-information`, `nft-search`, `ngrok`, `nif`, `nif-fresquinho`, `nixpkgs-search`, `nl-news-headlines`, `no-as-a-service`, `node-js-evaluate`, `nordic-energy-prices`, `nos-nieuws`, `nostr`, `not-diamond`, `notaday`, `notilight-controller`, `notion_researcher`, `notra`, `novu`, `nowplaying-cli`, `ns-nl-search`, `nsis-reference`, `nts`, `nu-nieuws`, `nuget`, `number-facts`, `numpad`, `nyc-train-tracker`, `nzbget`, `obs-control`, `octopus-energy`, `odin`, `odoo-companion`, `office-quotes`, `oh-my-zsh-git-alias`, `ohdear`, `ohmyzsh-plugins`, `ok-json`, `oklch-color-converter`, `oktasearch`, `olacv`, `ollama-mind-map-generator`, `olympic-games`, `omni-news`, `one-tab-group`, `onelook-thesaurus`, `ones`, `open-docker`, `open-gem-documentation`, `open-in-shopify-admin`, `open-latest-url-from-clipboard`, `open-props`, `open-with-app`, `openrouter-model-search`, `openrouter-models-finder`, `openrouter-quick-actions`, `openweathermap`, `opsgenie`, `orbita`, `orion`, `osrs-wiki`, `ossinsight`, `outline-page`, `ovhcloud`, `owledge-raycast`, `owncloud`, `ozbargain-deals`, `pagerduty`, `palette-colors`, `pandas-documentation-search`, `pangu-for-raycast`, `papersize`, `paperspace`, `parabol`, `parcel-tracker`, `parse`, `password-generator`, `paste-from-apple-books`, `pastebin`, `pastefy`, `pastery`, `paymenter`, `paypal-invoices`, `pbr-assistant`, `penflow-ai`, `penpot`, `perry`, `personio`, `pestphp-documentation`, `pexels`, `phare-io-uptime`, `phind-search`, `phonetic-typing`, `phosphor-icons`, `php-docs`, `php-toolbox`, `pinboard`, `pinia-docs`, `pinwork`, `pip`, `pitchfork`, `pivot`, `pkg-swap`, `planning-center`, `plausible-analytics`, `playtester`, `playwright-docs`, `plex`, `ploi`, `pm2`, `pocketbase`, `podcasts`, `pokemon-tcg-pocket-binder`, `polars-documentation-search`, `polished`, `pollen-count`, `polymarket`, `pomo`, `popcorn`, `port`, `portal-wholesale`, `portuguese-primeira-liga`, `position-size-calculator`, `postiz`, `postman`, `potter-db`, `premier-league`, `prettier`, `primer`, `prisma-cli-commands`, `prisma-postgres`, `productboard`, `project-companion`, `project-hub`, `prompts-chat`, `protobuf2typescript`, `proton-version`, `protondb`, `prowlarr`, `proxmox`, `proxyman`, `pub-dev`, `public-bug-bounty-and-vulnerability-disclosure-programs`, `publico`, `publora`, `pubme`, `pulsemcp`, `pumble`, `punto`, `purpleair`, `px-to-rem-converter`, `qonto`, `qotp`, `qovery`, `qq-music-controls`, `query-domains`, `quick-access-for-zeroheight`, `quick-access-infomaniak`, `quick-event`, `quick-search`, `quickfile`, `quicksnip`, `quicktime`, `quicktype`, `quikwallet`, `quoterism-raycast`, `r-pkg-search`, `radicle`, `rae-dictionary-raycast`, `rails-routes`, `railway`, `rain-radars`, `rainaissance`, `ramda-documentation`, `random`, `random-date-generator`, `random-email`, `random-password-generator`, `random-us-phone-number`, `ratio-calculator`, `ray-boop`, `ray-so`, `raycafe`, `raycast-bard-ai`, `raycast-clip`, `raycast-datadog`, `raycast-diki`, `raycast-fly`, `raycast-icons`, `raycast-ios-hig`, `raycast-kozip-extension`, `raycast-language-tool`, `raycast-link-lock`, `raycast-manual`, `raycast-monkeytype-theme`, `raycast-norwegian-public-transport`, `raycast-nrm`, `raycast-ordbokene`, `raycast-textlint-rule-aws-service-name`, `raycast-timeular`, `raycast-timezone-converter`, `raycast-translate-ge`, `raycast-weekly-newsletter`, `raycast-wemo`, `raytyping`, `rdir`, `rdw-kentekencheck`, `re-mind`, `react-native-directory`, `reading-time`, `readwise`, `readymetrics`, `rebrandly`, `recap`, `recents`, `recurly`, `reddit-search`, `redirect-trace`, `redis`, `redmine`, `refresh-browsers`, `refresh-wifi`, `regex-repl`, `regex-tester`, `rehooks`, `reka-ui`, `remove-window-from-set`, `render`, `repology-search`, `resmo`, `retool-documentation`, `retrac`, `rewardful`, `rewiser`, `rg-adguard-links`, `ricescore`, `rick-and-morty`, `ring-intercom`, `risk-reward-calculator`, `rize-io-sessions`, `roblox-creator-docs`, `rocket-chat`, `roll-d20`, `rollcast`, `rollup-wtf`, `rtl-reader`, `rule-of-three`, `ruler`, `rusbase`, `rust-docs`, `sadaqah-box`, `safe-secret`, `sage-hr`, `sanity`, `sat-scorer`, `sav`, `save-to-cubox`, `saved-items`, `savvycal`, `say-no-to-notch`, `scaleway`, `scratchpad`, `screen-studio`, `screenocr`, `screenpipe`, `seafile`, `search-ansible-documentation`, `search-astro-docs`, `search-clojuredocs`, `search-composer-packagist`, `search-github-stars`, `search-hex`, `search-joplin-notes`, `search-justwatch`, `search-mdn`, `search-notion`, `search-npm`, `search-oeis`, `search-private-npm-packages`, `search-regexp`, `search-rubygems`, `search-shopify-liquid-documentation`, `search-with-algolia`, `searchcaster`, `sec-filings-search`, `security-search`, `semantic-scholar`, `sendportal`, `sendy`, `sentry`, `serialcast`, `serie-a`, `serverless-framework-docs`, `session`, `sevalla`, `shadcn-svelte`, `shadcn-ui`, `shadcn-vue`, `shakespearify`, `sharding-tools`, `shelve`, `shiori`, `ship24-client`, `shlink`, `shopify-dev-docs-search`, `shopify-developer-changelog`, `shopify-theme-resources`, `shopinfo-app`, `shortcut`, `shroud-email`, `sidecar-connect`, `signal`, `simple-login`, `simplebackups`, `simplelogin`, `single-focus`, `singularityapp`, `sip`, `skyscanner-flights`, `sm-ms`, `smallpdf`, `smart-reply`, `smultron`, `sncftraintimes`, `sniffer`, `solana-explorer`, `solana-wallets-generation`, `solidtime`, `solusvm-1-client`, `solusvm-2`, `sonarr`, `sonu-stream`, `sound-search`, `spatie-documentation`, `speedcubing`, `spell`, `spinupwp`, `splatoon`, `splitwise`, `splix`, `spoiler-converter`, `spoqify`, `spotify-beta`, `spryker-docs`, `sql-format`, `sql-reference-search`, `squeeze`, `st-andrews-main-library-occupancy`, `stagehand`, `starling`, `stashpad-docs`, `statamic-docs`, `steam-player-counts`, `stock-lookup`, `stock-tracker`, `stockholm-public-transport`, `stoicquotes`, `storyblok`, `storybook-launcher`, `storybook-search`, `storytime`, `strapi-raycast-extension`, `strftime-cheatsheet`, `string-formatter`, `substack`, `subwatch`, `summation`, `supabase`, `supabase-docs`, `supermemory`, `surf-check`, `surfs-up`, `surge-outbound-switcher`, `svga-player`, `swap-commas-dots`, `swift-evolution`, `swift-package-index`, `swiss-ov`, `swiss-train-times`, `switch-game-play-history`, `switchhosts`, `synology-download-station`, `syntax-fm`, `table-converter`, `tableau-navigator`, `tabletop-dice-roller`, `tabnews`, `tailwind-size-conversion`, `tallinn-transport`, `tally`, `tana`, `tana-paste`, `tarot`, `tasklink`, `taskplane`, `tategaki`, `tautulli`, `tc-no-generator`, `teamgantt`, `teamup-rooms`, `techcrunch`, `tempo`, `temporary-email`, `tennis-standings`, `terminal`, `terraform-doc`, `tesla`, `teslamate`, `tex2typst`, `text-enhance`, `text-format-improver`, `text-rewrap`, `thaw`, `the-matrix-of-destiny`, `the-noble-quran`, `the-verge`, `thermoconvert`, `thesaurus`, `thingiverse`, `thrasher-magazine`, `threads-video-downloader`, `tibia-helper`, `tiktoken`, `time`, `time-calculator`, `time-converter`, `time-logger`, `time-teller`, `time-until-i-do`, `timecamp`, `timecrowd-tracker`, `tints-and-shades`, `tiny-tycho`, `tinyfaces-nft`, `tldr`, `tmdb`, `toggle-fn`, `toggle-grayscale`, `tokenizer`, `tomito-controls`, `ton-address`, `toolbox`, `transform`, `translit`, `transmit`, `trello`, `trenit`, `trimmy`, `trustmrr`, `truth-or-dare`, `tscheck-in`, `tududi`, `tuneblade`, `tunnelblick`, `tuple`, `tuya-smart`, `tv-remote`, `tv2---denmark`, `tw-colorpicker`, `twingate`, `twitch-chat`, `twitter-trendscast`, `twos`, `tyme-3-time-tracker`, `tynyfy`, `type-snob`, `type-the-alphabet`, `typeform`, `typescript-documentation-search`, `typescript-mock-generator`, `typographer`, `typst-symbols`, `typst-universe`, `udemy-coupons`, `ulid`, `ulysses`, `unify-path-separator`, `unirate-currency`, `united-nations`, `unitex`, `universal-inbox`, `universities`, `unix-timestamp`, `unix-timestamp-converter`, `unkey`, `unleash-feature-toggle`, `unogs`, `unsure-calc`, `untis`, `upcoming-holidays`, `uplabs`, `upstash`, `uptime-kuma`, `uptime-robot`, `url-parse`, `url-tools`, `url-unshortener`, `useless-facts`, `usememos`, `user-agent`, `utc-workbench`, `v2ex`, `v2ex-viewer`, `v2raya-control`, `vade-mecum`, `val-town`, `valheim-wiki`, `valkey-commands-search`, `valorant-esports`, `vanguard-backup`, `vanishlink`, `vant-documentation`, `vartiq`, `vc-ru-news`, `veganify-application`, `vietnamese-calendar`, `vietqr-transfer`, `vim-bro`, `virtfusion`, `virtualizor-enduser`, `viscosity`, `vision-directory`, `visitor-queue`, `vn-textify`, `vocab`, `vocabula-lat`, `voicenotes`, `volumio-control`, `vue-router-docs`, `vuejs-documentation`, `vuetify-docs`, `vueuse-functions`, `vultr`, `wcag`, `web-converter`, `web-page-design-mode`, `web3-profile`, `web3bio`, `webhook-sender`, `webkit-developer-docs`, `websocket-debugging`, `what-happened-today`, `where-is-my-cursor`, `who-is-off-today`, `wiggle-text`, `window-sizer`, `wistia`, `wled-controller`, `wolfram-alpha`, `woo-marketplace-search`, `word-count`, `word-search`, `wordpress-docs`, `wordpress-icon-finder`, `wordpress-manager`, `wordpress-plugins`, `workflowy-inbox`, `world-clock`, `world-cup`, `wp-cli-command-explorer`, `wrike`, `xbox-friends`, `xid`, `xkcd`, `xkcd-password-generator`, `xqc`, `yamli`, `yandex-music`, `yap`, `yazio-tracker`, `yield-calculator`, `yopass`, `you-com-search`, `youdao-translate`, `youform`, `yourls`, `youtube-companion`, `youtube-music`, `youtube-search`, `youtube-shorts-to-normal-video-page`, `youversion-suggest`, `yr-weather-forecast`, `yu-gi-oh-card-lookup`, `za-fake-id-number-generator`, `zalgo-text`, `zefix`, `zeitraum`, `zenblog`, `zendesk`, `zendesk-admin`, `zeplin-project-raycast-extension`, `zerodha-portfolio-kite-coin`, `zerossl`, `znotch`, `zo-raycast`, `zod-documentation`, `zodme`, `zoom-meeting-control`, `zyntra`
+`2fa-directory`, `5devs`, `8-ball`, `8-divide`, `aave-search`, `active-mississaugua`, `adguard-home`, `adonisjs-documentation`, `advanced-replace`, `advice-slip`, `affine`, `ai-by-vercel`, `ai-code-namer`, `ai-humanizer`, `ai-stats`, `ai-text-to-calendar`, `ai-usage-tracker`, `aimlab`, `airplane`, `airport`, `airsy`, `airsync`, `aiven`, `aleph`, `aliyun-flow`, `alloy`, `alpaca-trading`, `alpinejs`, `alwaysdata`, `amazon-search`, `amphetamine`, `analog-film-library`, `android-versions`, `anilist-airing-schedule`, `anki`, `anna-s-archive`, `antisocials`, `anybox`, `anycoffee`, `apify`, `apis-guru-search`, `appgrid`, `apple-books`, `apple-developer-docs`, `apple-devices`, `apple-stocks-search`, `apply-inline-code`, `appwrite`, `arabic-keyboard`, `arc-helper`, `arca`, `archisteamfarm`, `array-this`, `ars-technica`, `arxiv`, `asana`, `asciimath-to-latex-converter`, `asoiaf`, `asyncapi`, `atomberg-raycast-extension`, `attio`, `audio-writer`, `auth0-management`, `autumn`, `avatar`, `axios-docs`, `background-sounds`, `backstage`, `bahn-info`, `balatro-compendium`, `banca-d-italia-currency-converter`, `base-ui-docs`, `bash-commands`, `battery-health`, `bazinga-tools`, `bbc-news-headlines`, `beancount-meta`, `beardtown`, `beat-per-minute`, `beeminder`, `bento`, `berlin-public-transportation`, `betaseries`, `betterdiscord-store`, `bhagavad-gita-quotes`, `biaodian`, `bibigpt-summarize-audiovideo-with-ai`, `big-o`, `bilibili-search`, `bing-search`, `binge-clock`, `bintools`, `bitaxe-status`, `bitbucket`, `bitbucket-search-self-hosted`, `bitly-url-shortener`, `bitrise`, `blockchain-explorer-search`, `blockchain-gas-tracker`, `bmrks`, `board-game-geek`, `bookstack`, `bored`, `botpress`, `braintick`, `brasileirao-serie-a`, `brave-search`, `brave-search-with-results`, `bring`, `browser-tabs`, `bsr-entsorgung`, `bttv-emote`, `buddy`, `buildkite`, `bundesliga`, `bundlephobia-search`, `bunq`, `caaals`, `cacher`, `calendar`, `calendly`, `camper-calc`, `can-i-php`, `can-i-use`, `cangjie`, `canva`, `canvascast`, `capacities`, `capture`, `carbon-code-screenshot-for-raycast`, `catenary-raycast`, `catppuccin`, `cc0-lib`, `ccf-what`, `ccfddl`, `chainscout`, `change-case`, `change-scroll-direction`, `changedetection-io`, `charming-chatgpt`, `chatbase`, `chatgpt3-prompt`, `chatwork-search`, `cheatsheets`, `check-citi-bike-availability`, `checklist`, `cheetah`, `chess-com`, `chhoto`, `china-ip-address`, `chinese-character-converter`, `chinese-lottery`, `chinese-numbers`, `choose-a-license`, `chords-and-tabs`, `chuck-norris-facts`, `cilium-docs`, `cinemas-nos`, `circleback`, `citation-generator`, `cl-indicators`, `clarify`, `clash`, `claude`, `claude-code-cheatsheet`, `clean-agent-text`, `clean-text`, `clear-clipboard`, `climbing-grade-converter`, `clip-swap`, `clipboard-editor`, `clipboard-formatter`, `clipboard-sequential-paste`, `clipboard-type`, `clipboard-utilities`, `clipmate`, `close-finder`, `cloudflare`, `cloudflare-ai`, `cloudflare-email-routing`, `cocoa-core-data-timestamp-converter`, `coda-bookmarks-search`, `code-review-emojis`, `code-smells`, `codeblocks`, `codegeex`, `codemagic`, `codesnap`, `cognimemo`, `coin-caster`, `coinbase-pro`, `coingecko`, `coinpaprika`, `collected-notes`, `cometapi`, `comma-separator`, `commercequest`, `commit-issue-parser`, `commit-message-generator`, `commitlint`, `confluence`, `consoledev`, `control-d`, `control-viscosity`, `conventional-commits`, `convert-typescript-to-javascript`, `converter`, `convex`, `coolify`, `copy-notion-markdown-link`, `copy-skeet-link`, `count-numbers`, `country-lookup`, `cpf-cnpj-generator`, `cran-e-search`, `cratecast`, `creem`, `crisp`, `cron-description`, `crunchbase`, `crypto-search`, `css-calculations`, `css-gg`, `css-tricks`, `cuid-generator`, `curator-bio`, `currency-exchange`, `cursor`, `cursors`, `curto-io-url-shortener`, `customer-io`, `cyberchef`, `cypress-docs`, `dad-jokes`, `daisyui`, `daminik`, `danbooru`, `dashlane`, `dashlane-vault`, `databuddy`, `date-converter`, `dbt-documentation`, `dbtcloud`, `decentraland`, `deduplicator`, `deepl-api-usage`, `defichain-dobby`, `definitelytyped`, `defiscan`, `dekudeals`, `deployhq`, `design-skills`, `designer-excuses`, `designer-news`, `deutscherwetterdienst`, `dev-to`, `devcontainer-features`, `developer-excuse`, `devenv-docs`, `devin`, `devonthink`, `devutils`, `dex-screener`, `dexcom-reader`, `dice-tiles`, `diff-checker`, `digitalocean`, `directus`, `discogs`, `discord-timestamps`, `discordjs-documentation`, `disney`, `distraction-tracker`, `djangopackages`, `dns-lookup`, `docker`, `dockerhub`, `dodo-payments`, `dog-images`, `dokploy`, `dolar-hoy`, `dollar-blue`, `domainr`, `donut`, `doppler-share-secrets`, `dotnet-api-browser`, `dotnet-docs-search`, `dotween-eases`, `douban`, `dovetail`, `dpm-lol`, `dr-news`, `dreamhost`, `dribbble`, `drug-search`, `drupal-org`, `duck-duck-go-search`, `duckduckgo-email`, `duden`, `dutch-article`, `dynamic-font-size`, `e18e-module-replacements`, `early-tools-news`, `easings`, `easyvariable`, `ebird`, `ecosia-search`, `ekstraklasa`, `element`, `elixir`, `elm-search`, `elron`, `ember-api-documentation`, `emissions-calculator`, `end-of-life`, `endel`, `ens-name-lookup`, `envoyer`, `epoch-to-timestamp`, `escape-regexp-characters`, `espn`, `esports-pass`, `essay`, `esv-bible`, `ethereum-utils`, `eurovision-song-contest`, `evaluate-math-expression`, `evil-insult`, `evm-codes`, `excalidraw`, `excel-formula-beautifier`, `exivo`, `explain-command`, `expo`, `fabric`, `facetime`, `fake-swedish-personal-number`, `fakecrime-upload`, `fancy-text`, `fantasy-premier-league-rankings`, `farcaster`, `fastly`, `fastmail-masked-email`, `fathom-analytics`, `favoro`, `fbi`, `featurebase`, `feedly`, `feishu-document-creator`, `fhir`, `fibonacci-sequence`, `figma-learn-companion`, `figma-shortcuts`, `figma-variables`, `filament`, `file-tree-generator`, `fillerama`, `finary`, `findnearby`, `fingertip`, `finnish-dictionary`, `firefly-iii`, `fix-language`, `fluctuation`, `fluent-outdoors`, `flux`, `flycheck-raycast`, `flypy`, `font-awesome`, `forgejo`, `format-graphql`, `formizee`, `framer-motion`, `frankerfacez`, `freedns`, `freshrss`, `frill`, `ftrack`, `fuelx`, `fumadocs`, `game-scout`, `gandi`, `gcp-search`, `geist-ui-components`, `geoconverter`, `geoguesser`, `geohash-encode-decode`, `get-cat-images`, `get-direct-link`, `gg-deals`, `ghost-docs`, `gift-stardew-valley`, `git-branch-name-generator`, `git-commands`, `gitee`, `github-cli-manual`, `github-gist`, `github-profile`, `github-repository-search`, `github-spark`, `github-users`, `gitlab-docs`, `gitmoji`, `gleam-packages`, `glide`, `glyph-search`, `go-links`, `go-package-search`, `golden-ratio`, `gomander`, `goodlinks`, `google-advanced-search`, `google-finance`, `google-fonts`, `google-meet`, `google-scholar`, `google-search`, `google-tasks`, `google-trends`, `gotify`, `govee`, `gradle-plugins`, `grafana`, `grafbase`, `grammaring`, `graphcdn`, `greip`, `grist`, `grokipedia`, `groundhog-day`, `growthbook`, `gumroad`, `habr-media`, `hardcover`, `hashnode`, `hatena-bookmark`, `hazeover`, `headlines`, `hebrew-date-zmanim`, `helldivers2`, `hellonext-changelogs`, `helm-docs`, `hemolog`, `hephaestus`, `heroicons`, `hestiacp-admin`, `hetrixtools`, `hexlify`, `hide-all-apps`, `hide-mail`, `hidemyemail`, `holodex`, `holopin`, `homebox`, `homepage`, `homey`, `hoogle`, `host-switch`, `hostloc`, `howlongtobeat`, `hsdecks`, `html-colors`, `http-dot-cat`, `http-mime`, `hubspot`, `hugging-face`, `humaans`, `hupu`, `hyper-focus`, `iata-code-decoder`, `icd10-lookup`, `iching-divination`, `icloud-global-pricing-comparison`, `ifanr`, `image-diff-checker`, `image-host`, `imessage-2fa`, `in-the-time-zone`, `inbound`, `incognito-clone`, `inertiajs-documentation`, `infomaniak`, `initium`, `inkdrop`, `inpost-parcel-lockers`, `input-source-switcher`, `inspire-search`, `instapaper`, `intention-clarifier`, `ionos-sync`, `ios-resolution`, `ipa-translator`, `ipcheck-ing`, `iptv`, `is-it-toxic-to`, `isdown`, `itch-io`, `jalali-date-convertor`, `james-webb-space-telescope`, `jellyfin`, `jira-time-tracking`, `jisho`, `jitsi`, `jotform`, `json-editor`, `json-format`, `json-to-go`, `json-to-toon-converter`, `json2ts`, `jsrepo`, `jue-jin`, `jurassic-ninja-site-generator`, `just-delete-me`, `justcolorpicker-raycast`, `kaalam`, `kafka-ui`, `kagi-news`, `kagi-search`, `kalshi`, `kaneo-for-raycast`, `kaomoji-search`, `keeper-security`, `keeply`, `keychain-password-gen`, `kimi`, `kimi-for-coding`, `kind-words`, `kindle-paste`, `kinopoisk`, `klu-ai`, `knowwa`, `korean-date-converter`, `korean-spell-checker`, `koyeb`, `kubernetes`, `kubernetes-docs`, `kutt`, `laby-net`, `lacinka`, `laliga`, `laracasts`, `laravel-artisan`, `laravel-livewire`, `laravel-nova`, `laravel-shift`, `laravel-vapor`, `large-type`, `lark`, `lark-applink`, `latest-news`, `latex-math-symbols`, `launchdarkly`, `lazygit-keybindings`, `learning-snacks`, `leetcode`, `lego-bricks`, `leitnerbox`, `lemmy`, `lemon-squeezy`, `lenscast`, `letta`, `lgtmeow`, `liba-ro_shortener`, `lichess-org`, `lifx`, `lifx-advanced-controller`, `lightdash-navigator`, `lightning-time`, `lightshot-gallery`, `ligue-1`, `lingo-rep-raycast`, `linguee`, `link-cleaner`, `linkding`, `linux-command`, `liquipedia-matches`, `literal`, `liveblocks`, `llm-stats`, `llms-txt`, `loan-calculator`, `lobehub-icons`, `lobsters`, `logsnag`, `logtail`, `lookaway`, `lotr`, `lucide-animated`, `lucide-icons`, `lume`, `lunatask`, `lunchmoney`, `lyne`, `lyrics`, `mac-app-store-search`, `macrumors`, `macstories`, `macupdater`, `magic-home`, `mail-to-self`, `mailerlite-stats`, `mailtrap`, `make-dot-com`, `make-with-notion-2024`, `mandarin-chinese-dictionary`, `manga-calendar`, `manotori`, `manus`, `manus-manager`, `marble`, `marginnote`, `markdown-codeblock`, `markdown-converter`, `markdown-preview`, `markdown-reference`, `markdown-this`, `markdown-to-jira`, `markdown-to-plain-text`, `markdown-to-rich-text`, `markprompt`, `masscode`, `math-functions`, `matter`, `mattermost`, `maybe`, `mbta-tracker`, `md-to-excel`, `medialister-marketplace-helper`, `meduza`, `mem`, `mem0`, `memberstack`, `mempool`, `mercado-libre`, `metacritic`, `metaphor`, `meteoblue-lookup`, `metube`, `microblog`, `microsoft-teams`, `microsoft-teams-calling`, `midas`, `migadu`, `mikrus`, `minecast`, `minecraft-color-codes`, `minecraft-crafting-recipes`, `minimax-ai`, `minisim`, `minttr`, `mistral`, `mittwald`, `mixpanel`, `mobius-materials`, `mochi`, `modrinth`, `modrinth-search`, `moji`, `monday-com`, `moneybird`, `moneylover`, `monkeytype`, `monobank`, `monocle`, `monse`, `monzo`, `mousehunt-helper`, `mui-documentation`, `multi-links`, `multilinks`, `multipass`, `multiviewer`, `music-news`, `music-timer`, `musicbrainz`, `musicthread`, `must`, `mxroute`, `myanimelist-search`, `mymind`, `mynaui-icons`, `namecheap`, `namuwiki`, `nano-games`, `nasa`, `nativebase-docs`, `nature-remo`, `naver-search`, `navidrome`, `nba-game-viewer`, `near-rewards`, `neodb`, `neon`, `nepali-calendar`, `netease-music`, `netnewswire`, `neurooo-translate`, `new-relic`, `new-york-times`, `next-lens`, `next-run`, `nextcloud`, `nfl-information`, `nft-search`, `ngrok`, `nif`, `nif-fresquinho`, `nixpkgs-search`, `nl-news-headlines`, `no-as-a-service`, `nocal`, `node-js-evaluate`, `nordic-energy-prices`, `nos-nieuws`, `nostr`, `not-diamond`, `notaday`, `note-in-google-doc`, `notilight-controller`, `notion_researcher`, `notra`, `novu`, `nowplaying-cli`, `ns-nl-search`, `nsis-reference`, `nts`, `nu-nieuws`, `nuget`, `number-facts`, `numpad`, `nyc-train-tracker`, `nzbget`, `obs-control`, `octopus-energy`, `odin`, `odoo-companion`, `office-quotes`, `oh-my-zsh-git-alias`, `ohdear`, `ohmyzsh-plugins`, `ok-json`, `oklch-color-converter`, `oktasearch`, `olacv`, `ollama-mind-map-generator`, `olympic-games`, `omg-lol`, `omni-news`, `one-tab-group`, `onelook-thesaurus`, `ones`, `open-docker`, `open-gem-documentation`, `open-in-shopify-admin`, `open-latest-url-from-clipboard`, `open-props`, `open-with-app`, `openrouter-model-search`, `openrouter-models-finder`, `openrouter-quick-actions`, `openweathermap`, `opsgenie`, `orbita`, `orion`, `osrs-wiki`, `ossinsight`, `otp-inbox`, `ottomatic`, `outline-page`, `ovhcloud`, `owledge-raycast`, `owncloud`, `ozbargain-deals`, `pagerduty`, `palette-colors`, `pandas-documentation-search`, `pangu-for-raycast`, `papersize`, `paperspace`, `parabol`, `parcel-tracker`, `parse`, `password-generator`, `paste-from-apple-books`, `pastebin`, `pastefy`, `pastery`, `paymenter`, `paypal-invoices`, `pbr-assistant`, `penflow-ai`, `penpot`, `perry`, `personio`, `pestphp-documentation`, `pexels`, `phare-io-uptime`, `phind-search`, `phonetic-typing`, `phosphor-icons`, `php-docs`, `php-toolbox`, `pinboard`, `pinia-docs`, `pinwork`, `pip`, `pitchfork`, `pivot`, `pkg-swap`, `planetscale`, `planning-center`, `plausible-analytics`, `playtester`, `playwright-docs`, `plex`, `ploi`, `pm2`, `pocketbase`, `podcasts`, `pokemon-tcg-pocket-binder`, `polar`, `polars-documentation-search`, `polished`, `pollen-count`, `polymarket`, `pomo`, `popcorn`, `port`, `portal-wholesale`, `portuguese-primeira-liga`, `position-size-calculator`, `postiz`, `postman`, `potter-db`, `premier-league`, `prettier`, `primer`, `prisma-cli-commands`, `prisma-postgres`, `productboard`, `productlane`, `project-companion`, `project-hub`, `promptnote`, `prompts-chat`, `protobuf2typescript`, `proton-version`, `protondb`, `prowlarr`, `proxmox`, `proxyman`, `pub-dev`, `public-bug-bounty-and-vulnerability-disclosure-programs`, `publico`, `publora`, `pubme`, `pulsemcp`, `pumble`, `punto`, `purpleair`, `px-to-rem-converter`, `qonto`, `qotp`, `qovery`, `qq-music-controls`, `query-domains`, `quick-access-for-zeroheight`, `quick-access-infomaniak`, `quick-event`, `quick-search`, `quickfile`, `quicksnip`, `quicktime`, `quicktype`, `quikwallet`, `quoterism-raycast`, `r-pkg-search`, `radicle`, `rae-dictionary-raycast`, `rails-routes`, `railway`, `rain-radars`, `rainaissance`, `ramda-documentation`, `random`, `random-date-generator`, `random-email`, `random-password-generator`, `random-us-phone-number`, `ratio-calculator`, `ray-boop`, `ray-so`, `raycafe`, `raycast-airtable-extension`, `raycast-bard-ai`, `raycast-clip`, `raycast-datadog`, `raycast-diki`, `raycast-explorer`, `raycast-fly`, `raycast-icons`, `raycast-ios-hig`, `raycast-kozip-extension`, `raycast-language-tool`, `raycast-link-lock`, `raycast-manual`, `raycast-monkeytype-theme`, `raycast-norwegian-public-transport`, `raycast-nrm`, `raycast-ordbokene`, `raycast-textlint-rule-aws-service-name`, `raycast-timeular`, `raycast-timezone-converter`, `raycast-translate-ge`, `raycast-weekly-newsletter`, `raycast-wemo`, `raytyping`, `rdir`, `rdw-kentekencheck`, `re-mind`, `react-native-directory`, `reading-time`, `readwise`, `readymetrics`, `rebrandly`, `recap`, `recents`, `recurly`, `reddit-search`, `redirect-trace`, `redis`, `redmine`, `refresh-browsers`, `refresh-wifi`, `regex-repl`, `regex-tester`, `rehooks`, `reka-ui`, `remove-window-from-set`, `render`, `repology-search`, `resmo`, `retool-documentation`, `retrac`, `rewardful`, `rewiser`, `rg-adguard-links`, `ricescore`, `rick-and-morty`, `ring-intercom`, `risk-reward-calculator`, `rize-io-sessions`, `roblox-creator-docs`, `rocket-chat`, `roll-d20`, `rollcast`, `rollup-wtf`, `rtl-reader`, `rule-of-three`, `ruler`, `rusbase`, `rust-docs`, `sadaqah-box`, `safe-secret`, `sage-hr`, `sanity`, `sat-scorer`, `sav`, `save-to-cubox`, `saved-items`, `savvycal`, `say-no-to-notch`, `scaleway`, `scratchpad`, `screen-studio`, `screenocr`, `screenpipe`, `seafile`, `search-ansible-documentation`, `search-astro-docs`, `search-clojuredocs`, `search-composer-packagist`, `search-github-stars`, `search-hex`, `search-joplin-notes`, `search-justwatch`, `search-mdn`, `search-notion`, `search-npm`, `search-oeis`, `search-private-npm-packages`, `search-regexp`, `search-rubygems`, `search-shopify-liquid-documentation`, `search-with-algolia`, `searchcaster`, `sec-filings-search`, `security-search`, `semantic-scholar`, `sendportal`, `sendy`, `sentry`, `serialcast`, `serie-a`, `serverless-framework-docs`, `session`, `sevalla`, `shadcn-svelte`, `shadcn-ui`, `shadcn-vue`, `shakespearify`, `sharding-tools`, `shelve`, `shiori`, `ship24-client`, `shlink`, `shopify-dev-docs-search`, `shopify-developer-changelog`, `shopify-theme-resources`, `shopinfo-app`, `shortcut`, `shroud-email`, `sidecar-connect`, `signal`, `simple-login`, `simplebackups`, `simplelogin`, `single-focus`, `singularityapp`, `sip`, `skyscanner-flights`, `sm-ms`, `smallpdf`, `smart-reply`, `smultron`, `sncftraintimes`, `sniffer`, `solana-explorer`, `solana-wallets-generation`, `solidtime`, `solusvm-1-client`, `solusvm-2`, `sonarr`, `sonu-stream`, `sound-search`, `spatie-documentation`, `speedcubing`, `spell`, `spinupwp`, `splatoon`, `splitwise`, `splix`, `spoiler-converter`, `spoqify`, `spotify-beta`, `spryker-docs`, `sql-format`, `sql-reference-search`, `squeeze`, `st-andrews-main-library-occupancy`, `stagehand`, `starling`, `stashpad-docs`, `statamic-docs`, `steam-player-counts`, `stock-lookup`, `stock-tracker`, `stockholm-public-transport`, `stoicquotes`, `storyblok`, `storybook-launcher`, `storybook-search`, `storytime`, `strapi-raycast-extension`, `strftime-cheatsheet`, `string-formatter`, `substack`, `subwatch`, `summation`, `supabase`, `supabase-docs`, `supermemory`, `surf-check`, `surfs-up`, `surge-outbound-switcher`, `svga-player`, `swap-commas-dots`, `swift-evolution`, `swift-package-index`, `swiss-ov`, `swiss-train-times`, `switch-game-play-history`, `switchhosts`, `synology-download-station`, `syntax-fm`, `table-converter`, `tableau-navigator`, `tabletop-dice-roller`, `tabnews`, `tailwind-size-conversion`, `tallinn-transport`, `tally`, `tana`, `tana-paste`, `tarot`, `tasklink`, `taskplane`, `tategaki`, `tautulli`, `tc-no-generator`, `teamgantt`, `teamup-rooms`, `techcrunch`, `tempo`, `temporary-email`, `tennis-standings`, `terminal`, `terminaldotshop`, `terraform-doc`, `tesla`, `teslamate`, `tex2typst`, `text-enhance`, `text-format-improver`, `text-rewrap`, `thaw`, `the-matrix-of-destiny`, `the-noble-quran`, `the-verge`, `thermoconvert`, `thesaurus`, `thingiverse`, `thrasher-magazine`, `threads-video-downloader`, `tibia-helper`, `tiktoken`, `time`, `time-calculator`, `time-converter`, `time-logger`, `time-teller`, `time-until-i-do`, `timecamp`, `timecrowd-tracker`, `timely`, `tints-and-shades`, `tiny-tycho`, `tinyfaces-nft`, `tldr`, `tmdb`, `tny`, `toggle-fn`, `toggle-grayscale`, `tokenizer`, `tomito-controls`, `ton-address`, `toolbox`, `transform`, `translit`, `transmit`, `trello`, `trenit`, `trimmy`, `trustmrr`, `truth-or-dare`, `tscheck-in`, `tududi`, `tuneblade`, `tunnelblick`, `tuple`, `tuya-smart`, `tv-remote`, `tv2---denmark`, `tw-colorpicker`, `twingate`, `twitch-chat`, `twitter`, `twitter-trendscast`, `twos`, `tyme-3-time-tracker`, `tynyfy`, `type-snob`, `type-the-alphabet`, `typeform`, `typescript-documentation-search`, `typescript-mock-generator`, `typographer`, `typst-symbols`, `typst-universe`, `udemy-coupons`, `ulid`, `ulysses`, `unify-path-separator`, `unirate-currency`, `united-nations`, `unitex`, `universal-inbox`, `universities`, `unix-timestamp`, `unix-timestamp-converter`, `unkey`, `unleash-feature-toggle`, `unogs`, `unsure-calc`, `untis`, `upcoming-holidays`, `uplabs`, `upstash`, `uptime-kuma`, `uptime-robot`, `url-parse`, `url-tools`, `url-unshortener`, `useless-facts`, `usememos`, `user-agent`, `utc-workbench`, `v2ex`, `v2ex-viewer`, `v2raya-control`, `vade-mecum`, `val-town`, `valheim-wiki`, `valkey-commands-search`, `valorant-esports`, `vanguard-backup`, `vanishlink`, `vant-documentation`, `vartiq`, `vc-ru-news`, `veganify-application`, `vietnamese-calendar`, `vietqr-transfer`, `vim-bro`, `virtfusion`, `virtualizor-enduser`, `viscosity`, `vision-directory`, `visitor-queue`, `vn-textify`, `vocab`, `vocabula-lat`, `voicenotes`, `volumio-control`, `vue-router-docs`, `vuejs-documentation`, `vuetify-docs`, `vueuse-functions`, `vultr`, `wave`, `wcag`, `web-converter`, `web-page-design-mode`, `web3-profile`, `web3bio`, `webflow-sites`, `webhook-sender`, `webkit-developer-docs`, `websocket-debugging`, `what-happened-today`, `where-is-my-cursor`, `who-is-off-today`, `wiggle-text`, `window-sizer`, `wistia`, `wled-controller`, `wolfram-alpha`, `woo-marketplace-search`, `word-count`, `word-search`, `wordpress-docs`, `wordpress-icon-finder`, `wordpress-manager`, `wordpress-plugins`, `workflowy-inbox`, `world-clock`, `world-cup`, `wp-cli-command-explorer`, `wrike`, `xbox-friends`, `xid`, `xkcd`, `xkcd-password-generator`, `xqc`, `yamli`, `yandex-music`, `yandex-smart-home`, `yap`, `yazio-tracker`, `yield-calculator`, `yopass`, `you-com-search`, `youdao-translate`, `youform`, `yourls`, `youtube-companion`, `youtube-music`, `youtube-search`, `youtube-shorts-to-normal-video-page`, `youversion-suggest`, `yr-weather-forecast`, `yu-gi-oh-card-lookup`, `za-fake-id-number-generator`, `zalgo-text`, `zefix`, `zeitraum`, `zenblog`, `zendesk`, `zendesk-admin`, `zeplin-project-raycast-extension`, `zerodha-portfolio-kite-coin`, `zerossl`, `znotch`, `zo-raycast`, `zod-documentation`, `zodme`, `zoo`, `zoom-meeting-control`, `zyntra`
