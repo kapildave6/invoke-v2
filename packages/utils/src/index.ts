@@ -246,10 +246,10 @@ export function useSQL<T = unknown>(
  * Like usePromise, but the dependency tuple is also the argument list passed to `fn`. (Our cache layer
  * is the same process-local store as useCachedState; cross-session persistence lands with the host Cache.) */
 export function useCachedPromise<T, A extends unknown[] = unknown[]>(
-  fn: (...args: A) => Promise<T>,
+  fn: (...args: A) => Promise<T> | (() => Promise<T>) | T,
   args: A = [] as unknown as A,
-  _options?: { initialData?: T; keepPreviousData?: boolean; onError?: (e: Error) => void },
-): AsyncState<T> {
+  options?: { initialData?: T; keepPreviousData?: boolean; onError?: (e: Error) => void },
+): AsyncState<T> & { mutate: MutatePromise<T> } {
   // Depend on a STRUCTURAL key of args, not the array's identity: callers routinely pass a fresh
   // literal each render (e.g. [note.id]); spreading that straight into deps re-runs the effect every
   // render → infinite refetch loop when an element is itself a fresh object. Call fn with the latest
@@ -262,7 +262,26 @@ export function useCachedPromise<T, A extends unknown[] = unknown[]>(
   }
   const argsRef = useRef(args);
   argsRef.current = args;
-  return usePromise<T>(() => fn(...(argsRef.current as A)), [key]);
+  const state = usePromise<T>(async () => {
+    let result = fn(...(argsRef.current as A)) as unknown;
+    // Raycast supports an "abortable" form where fn returns a thunk (() => Promise) — call it.
+    if (typeof result === "function") result = (result as () => unknown)();
+    result = await result;
+    // Pagination/return-shape convention: a `{ data, hasMore }` result exposes `data` as the value.
+    if (result && typeof result === "object" && "data" in (result as Record<string, unknown>) && !Array.isArray(result)) {
+      return (result as { data: T }).data;
+    }
+    return result as T;
+  }, [key]);
+  const data = state.data ?? options?.initialData;
+  useEffect(() => { if (state.error) options?.onError?.(state.error); }, [state.error]); // eslint-disable-line react-hooks/exhaustive-deps
+  // mutate: optimistically update + revalidate (minimal — runs the async update then refetches).
+  const mutate: MutatePromise<T> = async (asyncUpdate, _opts) => {
+    const r = asyncUpdate ? await asyncUpdate : undefined;
+    state.revalidate();
+    return r as never;
+  };
+  return { ...state, data, mutate };
 }
 
 /* ------------------------------------------------------------------ useForm
