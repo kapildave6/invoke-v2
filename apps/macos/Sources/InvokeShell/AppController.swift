@@ -2259,7 +2259,9 @@ public final class AppController: NSObject, NSApplicationDelegate {
                     // Raycast command arguments (collected before the command runs; distinct from prefs).
                     let argSpec = (c["arguments"] as? [[String: Any]]) ?? []
                     if cmode == "menu-bar" {
-                        out.append(RootCommand(id: cmdId, title: ctitle, subtitle: title, runTitle: "Toggle in Menu Bar",
+                        // Many extensions title their menu-bar command identically to a sibling command;
+                        // mark it so the two are distinguishable in the list.
+                        out.append(RootCommand(id: cmdId, title: ctitle, subtitle: "\(title) · Menu Bar", runTitle: "Toggle in Menu Bar",
                                                icon: "menubar.rectangle", iconPath: iconPath,
                                                keywords: [name, cname, title.lowercased(), "menu bar"],
                                                closesPalette: true, argSpec: argSpec) { [weak self] in

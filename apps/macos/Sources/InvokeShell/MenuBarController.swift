@@ -38,6 +38,7 @@ final class MenuBarController {
         if entries[cmdId] != nil { remove(cmdId); return }
         let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         statusItem.button?.title = "…" // placeholder until the first commit
+        print("[invoke:menubar] created status item for \(cmdId) (button=\(statusItem.button != nil))")
         let host = ExtensionHost()
         let entry = Entry(host: host, statusItem: statusItem, extKey: extKey)
         entries[cmdId] = entry
