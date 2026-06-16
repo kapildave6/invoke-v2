@@ -272,7 +272,10 @@ type MenuBarType = ReturnType<typeof host> & {
   Separator: ReturnType<typeof host>;
 };
 export const MenuBarExtra = host(T.MenuBarExtra) as MenuBarType;
-MenuBarExtra.Item = host(T.MenuBarItem, ["onAction"]);
+// NOTE: do NOT lift onAction into children — it's a function handler the reconciler serializes to a
+// handler ref (a PROP). Lifting it makes React try to render the function as a child ("Functions are
+// not valid as a React child") and the click handler is lost.
+MenuBarExtra.Item = host(T.MenuBarItem);
 MenuBarExtra.Section = host(T.MenuBarSection);   // a titled group of items
 MenuBarExtra.Submenu = host(T.MenuBarSubmenu);   // a nested menu
 MenuBarExtra.Separator = host(T.MenuBarSeparator);

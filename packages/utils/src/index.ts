@@ -25,7 +25,10 @@ export function usePromise<T>(fn: () => Promise<T>, deps: unknown[] = []): Async
     const run = ++latest.current;
     setLoading(true);
     setError(undefined);
-    fn()
+    // Tolerate a synchronous fn (returns a value, not a Promise) or one that throws synchronously —
+    // Promise.resolve()/try wrap both, so `fn(...).then is not a function` can't happen.
+    Promise.resolve()
+      .then(() => fn())
       .then((d) => {
         if (run === latest.current) {
           setData(d);
