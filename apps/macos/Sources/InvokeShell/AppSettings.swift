@@ -115,6 +115,18 @@ public final class AppSettings: ObservableObject {
         extensionPrefs = byExt
     }
 
+    // OAuth token storage (per extension + provider), in the same per-extension Keychain service used
+    // for secret preferences. Tokens never leave the device. `account` is "oauth.tokens.<provider>".
+    public func oauthTokensGet(extID: String, provider: String) -> String? {
+        Self.keychainGet(service: "com.invoke.ext.\(extID)", account: "oauth.tokens.\(provider)")
+    }
+    public func oauthTokensSet(extID: String, provider: String, json: String) {
+        Self.keychainSet(service: "com.invoke.ext.\(extID)", account: "oauth.tokens.\(provider)", value: json)
+    }
+    public func oauthTokensRemove(extID: String, provider: String) {
+        Self.keychainSet(service: "com.invoke.ext.\(extID)", account: "oauth.tokens.\(provider)", value: "")
+    }
+
     private static func keychainGet(service: String, account: String) -> String? {
         let q: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,

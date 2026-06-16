@@ -533,7 +533,83 @@ export const AI = {
   // (the host maps unknown models to its configured default), never an undefined-member crash.
   Model: new Proxy({} as Record<string, string>, { get: (_t, k) => String(k) }),
 };
-export const OAuth = { PKCEClient: class { constructor(_opts?: unknown) { unsupported("OAuth.PKCEClient"); } } };
+/* ----------------------------------------------------- OAuth (PKCE, host-driven)
+ * The host owns the security-critical parts: PKCE verifier/challenge generation, opening the browser,
+ * capturing the invoke://oauth-callback redirect, and storing tokens in the per-extension Keychain. The
+ * SDK methods are thin RPC wrappers. Tokens never leave the device. */
+export interface OAuthTokenResponse {
+  access_token: string;
+  refresh_token?: string;
+  expires_in?: number;
+  scope?: string;
+  id_token?: string;
+}
+export interface OAuthTokenSet {
+  accessToken: string;
+  refreshToken?: string;
+  idToken?: string;
+  expiresIn?: number;
+  scope?: string;
+  updatedAt?: string;
+  isExpired(): boolean;
+}
+export interface OAuthAuthorizationRequest {
+  authorizationEndpoint: string;
+  clientId: string;
+  scope: string;
+  redirectURI: string;
+  codeChallenge: string;
+  codeVerifier: string;
+  state: string;
+  toURL(): string;
+}
+export interface OAuthAuthorizationResponse { authorizationCode: string }
+
+export const OAuth = {
+  RedirectMethod: { Web: "web", App: "app", AppURI: "appURI" } as const,
+  PKCEClient: class PKCEClient {
+    private opts: { redirectMethod?: string; providerName?: string; providerId?: string; providerIcon?: unknown; description?: string };
+    constructor(opts: { redirectMethod?: string; providerName?: string; providerId?: string; providerIcon?: unknown; description?: string }) {
+      this.opts = opts ?? {};
+    }
+    private get provider(): string { return this.opts.providerId ?? this.opts.providerName ?? "default"; }
+
+    async authorizationRequest(o: { endpoint: string; clientId: string; scope: string; extraParameters?: Record<string, string> }): Promise<OAuthAuthorizationRequest> {
+      const r = (await rpc("oauth.authorizeRequest", {
+        provider: this.provider, endpoint: o.endpoint, clientId: o.clientId, scope: o.scope, extraParameters: o.extraParameters,
+      })) as Omit<OAuthAuthorizationRequest, "toURL">;
+      return { ...r, toURL: () => buildAuthorizeURL(r) };
+    }
+    async authorize(request: OAuthAuthorizationRequest): Promise<OAuthAuthorizationResponse> {
+      return (await rpc("oauth.authorize", { provider: this.provider, request })) as OAuthAuthorizationResponse;
+    }
+    async setTokens(tokens: OAuthTokenResponse | OAuthTokenSet): Promise<void> {
+      await rpc("oauth.setTokens", { provider: this.provider, tokens });
+    }
+    async getTokens(): Promise<OAuthTokenSet | undefined> {
+      const t = (await rpc("oauth.getTokens", { provider: this.provider })) as
+        (Omit<OAuthTokenSet, "isExpired"> & { expiresAt?: number }) | undefined | null;
+      if (!t || !t.accessToken) return undefined;
+      // Reconstruct isExpired() from the host's stored absolute expiry (functions can't cross the wire).
+      return { ...t, isExpired: () => (t.expiresAt ? Date.now() >= t.expiresAt : false) };
+    }
+    async removeTokens(): Promise<void> { await rpc("oauth.removeTokens", { provider: this.provider }); }
+  },
+};
+function buildAuthorizeURL(r: { authorizationEndpoint: string; clientId: string; scope: string; redirectURI: string; codeChallenge: string; state: string }): string {
+  const u = new URL(r.authorizationEndpoint);
+  const p = u.searchParams;
+  p.set("client_id", r.clientId);
+  p.set("response_type", "code");
+  p.set("redirect_uri", r.redirectURI);
+  p.set("scope", r.scope);
+  p.set("code_challenge", r.codeChallenge);
+  p.set("code_challenge_method", "S256");
+  p.set("state", r.state);
+  return u.toString();
+}
+/** Back-compat alias: one extension imports `OAuthClient`. */
+export const OAuthClient = OAuth;
 /** A macOS application (Raycast's Application). */
 export interface Application { name: string; path: string; bundleId?: string; localizedName?: string }
 /** The highlighted text in the frontmost app (host-read via Accessibility; "" if none/unavailable). */

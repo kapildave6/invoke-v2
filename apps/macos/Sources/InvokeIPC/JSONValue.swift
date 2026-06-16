@@ -38,6 +38,12 @@ public enum JSONValue: Codable {
         return nil
     }
 
+    public var doubleValue: Double? {
+        if case .number(let n) = self { return n }
+        if case .string(let s) = self { return Double(s) } // token endpoints sometimes return numbers as strings
+        return nil
+    }
+
     /// Resolve a handler reference `{ "__handler": "h3" }` (PLAN.md §4.4).
     public var handlerRef: String? {
         if case .object(let o) = self, case .string(let h)? = o["__handler"] { return h }

@@ -59,6 +59,8 @@ export const ALLOWED_RPC: ReadonlySet<string> = new Set([
   "finder.selection",
   "fs.trash",
   "ai.ask", // Raycast AI.ask / useAI (host Anthropic client)
+  // OAuth (PKCE) — host owns PKCE crypto, browser/redirect, and per-extension Keychain token storage.
+  "oauth.authorizeRequest", "oauth.authorize", "oauth.setTokens", "oauth.getTokens", "oauth.removeTokens",
 ]);
 
 export function isAllowedRpcMethod(method: string): boolean {

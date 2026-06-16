@@ -69,6 +69,7 @@ function devCapabilities(opts: { preferences: Record<string, unknown>; storePath
   let lastCopy = "";
   // Dev-only Cache store (the Swift host persists this per-extension; here it's process-local).
   let cache: Record<string, string> = {};
+  const oauthTokens: Record<string, unknown> = {}; // dev-only OAuth token store (host uses the Keychain)
 
   const handler = async (method: string, raw: unknown): Promise<unknown> => {
     const params = (raw ?? {}) as Record<string, any>;
@@ -168,6 +169,37 @@ function devCapabilities(opts: { preferences: Record<string, unknown>; storePath
       case "ai.ask":
         console.log(`  ✦ ai.ask "${String(params.prompt ?? "").slice(0, 60)}" [dev stub]`);
         return `[dev AI stub] ${params.prompt ?? ""}`;
+      // OAuth (dev parity): real PKCE so authorizeRequest is exercisable; tokens in the process-local store.
+      case "oauth.authorizeRequest": {
+        const { randomBytes, createHash } = await import("node:crypto");
+        const b64u = (b: Buffer) => b.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+        const verifier = b64u(randomBytes(64));
+        return {
+          authorizationEndpoint: params.endpoint ?? "", clientId: params.clientId ?? "", scope: params.scope ?? "",
+          redirectURI: "invoke://oauth-callback", codeVerifier: verifier,
+          codeChallenge: b64u(createHash("sha256").update(verifier).digest()), state: b64u(randomBytes(24)),
+        };
+      }
+      case "oauth.authorize":
+        console.log(`  🔐 oauth.authorize (dev: no browser) → no code`);
+        return null;
+      case "oauth.setTokens": {
+        // Normalize like the Swift host: accept the raw token-endpoint response or a normalized set.
+        const t = (params.tokens ?? {}) as Record<string, any>;
+        const norm: Record<string, unknown> = { accessToken: t.access_token ?? t.accessToken ?? "" };
+        if (t.refresh_token ?? t.refreshToken) norm.refreshToken = t.refresh_token ?? t.refreshToken;
+        if (t.id_token ?? t.idToken) norm.idToken = t.id_token ?? t.idToken;
+        if (t.scope) norm.scope = t.scope;
+        const exp = t.expires_in ?? t.expiresIn;
+        if (exp) norm.expiresAt = Date.now() + Number(exp) * 1000;
+        oauthTokens[String(params.provider ?? "default")] = norm;
+        return null;
+      }
+      case "oauth.getTokens":
+        return oauthTokens[String(params.provider ?? "default")] ?? null;
+      case "oauth.removeTokens":
+        delete oauthTokens[String(params.provider ?? "default")];
+        return null;
       case "executeSQL": {
         // Dev-only mirror of the Swift host capability: copy the (WAL) db + sidecars to temp and query
         // the copy via node:sqlite, so `npm run dev:ext` can exercise useSQL extensions headlessly.

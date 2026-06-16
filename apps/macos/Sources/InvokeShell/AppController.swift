@@ -2,6 +2,7 @@ import AppKit
 import ApplicationServices
 import Carbon.HIToolbox
 import CoreGraphics
+import CryptoKit
 import ImageIO
 import InvokeIPC
 import InvokeRenderer
@@ -1624,9 +1625,52 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 }
             }
             return true
+        case "oauth.authorize":
+            // Open the provider's authorize URL in the browser; resolve when the invoke://oauth-callback
+            // redirect arrives with a matching state (captured by openDeeplink → resolveOAuthCallback).
+            guard case .object(let req)? = arg("request"),
+                  let urlStr = req["authorizeURL"]?.stringValue ?? buildOAuthAuthorizeURL(req),
+                  let state = req["state"]?.stringValue, !state.isEmpty,
+                  let url = URL(string: urlStr) else { reply(.null); return true }
+            pendingOAuth[state] = reply
+            NSWorkspace.shared.open(url)
+            // Safety timeout so a child RPC never hangs forever if the user abandons the browser flow.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 300) { [weak self] in
+                if let cb = self?.pendingOAuth.removeValue(forKey: state) { cb(.null) }
+            }
+            return true
         default:
             return false
         }
+    }
+
+    /// Pending OAuth authorize calls, keyed by `state`; resolved by the invoke://oauth-callback redirect.
+    /// The reply returns { authorizationCode } to the child.
+    private var pendingOAuth: [String: (JSONValue) -> Void] = [:]
+
+    /// Resolve a captured OAuth redirect (invoke://oauth-callback?code=&state=). Validates `state`.
+    func resolveOAuthCallback(_ url: URL) {
+        guard let comps = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return }
+        let items = comps.queryItems ?? []
+        let state = items.first(where: { $0.name == "state" })?.value ?? ""
+        let code = items.first(where: { $0.name == "code" })?.value ?? ""
+        guard let reply = pendingOAuth.removeValue(forKey: state) else { return } // unknown/expired state → ignore
+        if code.isEmpty { reply(.null) } else { reply(.object(["authorizationCode": .string(code)])) }
+        palette.show() // bring Invoke back to the foreground after the browser hand-off
+    }
+
+    private func buildOAuthAuthorizeURL(_ req: [String: JSONValue]) -> String? {
+        guard let endpoint = req["authorizationEndpoint"]?.stringValue, var comps = URLComponents(string: endpoint) else { return nil }
+        var q = comps.queryItems ?? []
+        q.append(.init(name: "client_id", value: req["clientId"]?.stringValue ?? ""))
+        q.append(.init(name: "response_type", value: "code"))
+        q.append(.init(name: "redirect_uri", value: req["redirectURI"]?.stringValue ?? ""))
+        q.append(.init(name: "scope", value: req["scope"]?.stringValue ?? ""))
+        q.append(.init(name: "code_challenge", value: req["codeChallenge"]?.stringValue ?? ""))
+        q.append(.init(name: "code_challenge_method", value: "S256"))
+        q.append(.init(name: "state", value: req["state"]?.stringValue ?? ""))
+        comps.queryItems = q
+        return comps.url?.absoluteString
     }
 
     private func presentConfirmAlert(_ params: JSONValue?, reply: @escaping (JSONValue) -> Void) {
@@ -1867,9 +1911,68 @@ public final class AppController: NSObject, NSApplicationDelegate {
             }
             if !failures.isEmpty { presentPermissionHelp(.fullDiskAccess) }
             return failures.isEmpty ? .null : .string("failed to trash: \(failures.joined(separator: ", "))")
+
+        // --- OAuth (PKCE). authorize is async (handleAsyncCapability); these are sync. ---
+        case "oauth.authorizeRequest":
+            // Generate PKCE verifier/challenge + state host-side; keep the verifier OUT of the child only
+            // for the request it needs to exchange — Raycast passes codeVerifier back, so we include it.
+            let verifier = Self.randomURLSafe(64)
+            let challenge = Self.s256Challenge(verifier)
+            let state = Self.randomURLSafe(24)
+            let redirectURI = "invoke://oauth-callback"
+            return .object([
+                "authorizationEndpoint": .string(arg("endpoint")?.stringValue ?? ""),
+                "clientId": .string(arg("clientId")?.stringValue ?? ""),
+                "scope": .string(arg("scope")?.stringValue ?? ""),
+                "redirectURI": .string(redirectURI),
+                "codeChallenge": .string(challenge),
+                "codeVerifier": .string(verifier),
+                "state": .string(state),
+            ])
+        case "oauth.setTokens":
+            guard case .object(let t)? = arg("tokens") else { return .null }
+            let provider = arg("provider")?.stringValue ?? "default"
+            // Accept both the raw token-endpoint response (access_token/expires_in) and the normalized set.
+            let access = t["access_token"]?.stringValue ?? t["accessToken"]?.stringValue ?? ""
+            let refresh = t["refresh_token"]?.stringValue ?? t["refreshToken"]?.stringValue
+            let idTok = t["id_token"]?.stringValue ?? t["idToken"]?.stringValue
+            let scope = t["scope"]?.stringValue
+            var stored: [String: JSONValue] = ["accessToken": .string(access)]
+            if let refresh { stored["refreshToken"] = .string(refresh) }
+            if let idTok { stored["idToken"] = .string(idTok) }
+            if let scope { stored["scope"] = .string(scope) }
+            if let exp = (t["expires_in"]?.doubleValue ?? t["expiresIn"]?.doubleValue) {
+                stored["expiresAt"] = .number(Date().timeIntervalSince1970 * 1000 + exp * 1000)
+            }
+            if let data = try? JSONEncoder().encode(JSONValue.object(stored)), let json = String(data: data, encoding: .utf8) {
+                AppSettings.shared.oauthTokensSet(extID: currentExtGrantKey, provider: provider, json: json)
+            }
+            return .null
+        case "oauth.getTokens":
+            let provider = arg("provider")?.stringValue ?? "default"
+            guard let json = AppSettings.shared.oauthTokensGet(extID: currentExtGrantKey, provider: provider),
+                  let data = json.data(using: .utf8),
+                  let val = try? JSONDecoder().decode(JSONValue.self, from: data) else { return .null }
+            return val
+        case "oauth.removeTokens":
+            AppSettings.shared.oauthTokensRemove(extID: currentExtGrantKey, provider: arg("provider")?.stringValue ?? "default")
+            return .null
         default:
             return .null
         }
+    }
+
+    // PKCE helpers (RFC 7636). Verifier is URL-safe base64 of random bytes; challenge = base64url(SHA256(verifier)).
+    private static func randomURLSafe(_ bytes: Int) -> String {
+        var data = Data(count: bytes)
+        _ = data.withUnsafeMutableBytes { SecRandomCopyBytes(kSecRandomDefault, bytes, $0.baseAddress!) }
+        return base64URL(data)
+    }
+    private static func s256Challenge(_ verifier: String) -> String {
+        base64URL(Data(SHA256.hash(data: Data(verifier.utf8))))
+    }
+    private static func base64URL(_ d: Data) -> String {
+        d.base64EncodedString().replacingOccurrences(of: "+", with: "-").replacingOccurrences(of: "/", with: "_").replacingOccurrences(of: "=", with: "")
     }
 
     private static func applicationJSON(name: String, path: String, bundleId: String?) -> JSONValue {
@@ -2844,7 +2947,10 @@ public final class AppController: NSObject, NSApplicationDelegate {
 
     /// Handle `invoke://commands/<id>` — run that command (the payoff for the Copy Deeplink action).
     private func openDeeplink(_ url: URL) {
-        guard url.scheme == "invoke", url.host == "commands" else { return }
+        guard url.scheme == "invoke" else { return }
+        // OAuth redirect (invoke://oauth-callback?code=&state=) → resolve the pending authorize RPC.
+        if url.host == "oauth-callback" { resolveOAuthCallback(url); return }
+        guard url.host == "commands" else { return }
         let id = String(url.path.dropFirst()) // "/window.maximize" → "window.maximize"
         guard !id.isEmpty, let cmd = commands.first(where: { $0.id == id }) else {
             palette.showToast("Unknown command in deep link"); return

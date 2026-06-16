@@ -65,6 +65,8 @@ public final class ExtensionHost {
         "selection.read", "app.list", "app.frontmost", "app.default",
         "finder.reveal", "finder.selection", "fs.trash",
         "ai.ask", // Raycast AI.ask / useAI (host Anthropic client)
+        // OAuth (PKCE): authorize is async; authorizeRequest/{set,get,remove}Tokens are sync.
+        "oauth.authorizeRequest", "oauth.authorize", "oauth.setTokens", "oauth.getTokens", "oauth.removeTokens",
     ]
 
     private var pid: pid_t = -1

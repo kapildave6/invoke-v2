@@ -5,7 +5,7 @@
  * Minimal but real implementations so extensions (and the conformance suite) can
  * depend on them; richer caching/pagination/mutate land in Phase 3.
  */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 export interface AsyncState<T> {
   data: T | undefined;
@@ -567,4 +567,160 @@ export function useAI(prompt: string, options: UseAIOptions = {}): AsyncState<st
   useEffect(() => { if (state.error) options.onError?.(state.error); }, [state.error]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (state.data) options.onData?.(state.data); }, [state.data]); // eslint-disable-line react-hooks/exhaustive-deps
   return { ...state, data: state.data ?? "" };
+}
+
+/* ============================================================ OAuth helpers (@raycast/utils parity)
+ * Convenience wrappers over @invoke/api's OAuth.PKCEClient: a service that runs the full
+ * request→authorize→token-exchange→store sequence (with named provider presets), and a
+ * withAccessToken HOC that authorizes before a command runs and exposes the token via getAccessToken. */
+export interface OnAuthorizeParams { token: string; type: "oauth"; idToken?: string; scope?: string }
+export interface OAuthServiceOptions {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  client: any; // OAuth.PKCEClient instance
+  clientId: string;
+  scope: string;
+  authorizeUrl: string;
+  tokenUrl: string;
+  refreshTokenUrl?: string;
+  extraParameters?: Record<string, string>;
+  bodyEncoding?: "url-encoded" | "json";
+  onAuthorize?: (params: OnAuthorizeParams) => void;
+  personalAccessToken?: string;
+}
+
+async function exchangeToken(url: string, body: Record<string, string>, encoding: "url-encoded" | "json"): Promise<Record<string, unknown>> {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": encoding === "json" ? "application/json" : "application/x-www-form-urlencoded", Accept: "application/json" },
+    body: encoding === "json" ? JSON.stringify(body) : new URLSearchParams(body).toString(),
+  });
+  if (!res.ok) throw new Error(`Token exchange failed: ${res.status} ${res.statusText}`);
+  return (await res.json()) as Record<string, unknown>;
+}
+
+export class OAuthService {
+  constructor(public options: OAuthServiceOptions) {}
+
+  /** Returns a valid access token: a personal token if given, a cached non-expired token, else runs the
+   *  full PKCE flow (authorize in the browser → exchange code → store tokens). */
+  async authorize(): Promise<string> {
+    if (this.options.personalAccessToken) return this.options.personalAccessToken;
+    const client = this.options.client;
+    const existing = await client.getTokens();
+    if (existing?.accessToken && !existing.isExpired()) return existing.accessToken;
+    // Refresh if we have a refresh token and a refresh endpoint.
+    if (existing?.refreshToken && this.options.refreshTokenUrl) {
+      try {
+        const refreshed = await exchangeToken(this.options.refreshTokenUrl, {
+          client_id: this.options.clientId, grant_type: "refresh_token", refresh_token: existing.refreshToken,
+        }, this.options.bodyEncoding ?? "url-encoded");
+        await client.setTokens({ refresh_token: existing.refreshToken, ...refreshed });
+        const t = await client.getTokens();
+        if (t?.accessToken) { this.options.onAuthorize?.({ token: t.accessToken, type: "oauth" }); return t.accessToken; }
+      } catch { /* fall through to a fresh authorize */ }
+    }
+    const req = await client.authorizationRequest({
+      endpoint: this.options.authorizeUrl, clientId: this.options.clientId, scope: this.options.scope,
+      extraParameters: this.options.extraParameters,
+    });
+    const { authorizationCode } = await client.authorize(req);
+    const tokenResp = await exchangeToken(this.options.tokenUrl, {
+      client_id: this.options.clientId, code: authorizationCode, code_verifier: req.codeVerifier,
+      grant_type: "authorization_code", redirect_uri: req.redirectURI,
+    }, this.options.bodyEncoding ?? "url-encoded");
+    await client.setTokens(tokenResp);
+    const token = String(tokenResp.access_token ?? "");
+    this.options.onAuthorize?.({ token, type: "oauth" });
+    return token;
+  }
+
+  /* Provider presets (real provider OAuth endpoints; only the URLs/scopes are config). */
+  static github(o: { clientId: string; scope: string; personalAccessToken?: string; onAuthorize?: (p: OnAuthorizeParams) => void }) {
+    return makeService(o, "GitHub", "https://github.com/login/oauth/authorize", "https://github.com/login/oauth/access_token");
+  }
+  static google(o: { clientId: string; scope: string; authorizeUrl?: string; tokenUrl?: string; personalAccessToken?: string; onAuthorize?: (p: OnAuthorizeParams) => void }) {
+    return makeService(o, "Google", o.authorizeUrl ?? "https://accounts.google.com/o/oauth2/v2/auth", o.tokenUrl ?? "https://oauth2.googleapis.com/token");
+  }
+  static slack(o: { clientId: string; scope: string; personalAccessToken?: string; onAuthorize?: (p: OnAuthorizeParams) => void }) {
+    return makeService(o, "Slack", "https://slack.com/oauth/v2/authorize", "https://slack.com/api/oauth.v2.access");
+  }
+  static linear(o: { clientId: string; scope: string; personalAccessToken?: string; onAuthorize?: (p: OnAuthorizeParams) => void }) {
+    return makeService(o, "Linear", "https://linear.app/oauth/authorize", "https://api.linear.app/oauth/token");
+  }
+  static asana(o: { clientId: string; scope: string; personalAccessToken?: string; onAuthorize?: (p: OnAuthorizeParams) => void }) {
+    return makeService(o, "Asana", "https://app.asana.com/-/oauth_authorize", "https://app.asana.com/-/oauth_token");
+  }
+  static jira(o: { clientId: string; scope: string; authorizeUrl?: string; tokenUrl?: string; personalAccessToken?: string; onAuthorize?: (p: OnAuthorizeParams) => void }) {
+    return makeService(o, "Jira", o.authorizeUrl ?? "https://auth.atlassian.com/authorize", o.tokenUrl ?? "https://auth.atlassian.com/oauth/token");
+  }
+}
+
+function makeService(
+  o: { clientId: string; scope: string; personalAccessToken?: string; extraParameters?: Record<string, string>; onAuthorize?: (p: OnAuthorizeParams) => void },
+  providerName: string, authorizeUrl: string, tokenUrl: string,
+): OAuthService {
+  // Lazily build a PKCEClient from @invoke/api (avoids a hard import cycle at module load).
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const apiP = import("@invoke/api") as Promise<any>;
+  // The client is needed synchronously by authorize(); resolve it there instead.
+  const lazyClient = {
+    _c: undefined as unknown,
+    async _get() { if (!this._c) { const api = await apiP; this._c = new api.OAuth.PKCEClient({ redirectMethod: "appURI", providerName }); } return this._c; },
+    authorizationRequest(a: unknown) { return this._get().then((c: any) => c.authorizationRequest(a)); }, // eslint-disable-line @typescript-eslint/no-explicit-any
+    authorize(a: unknown) { return this._get().then((c: any) => c.authorize(a)); }, // eslint-disable-line @typescript-eslint/no-explicit-any
+    setTokens(a: unknown) { return this._get().then((c: any) => c.setTokens(a)); }, // eslint-disable-line @typescript-eslint/no-explicit-any
+    getTokens() { return this._get().then((c: any) => c.getTokens()); }, // eslint-disable-line @typescript-eslint/no-explicit-any
+    removeTokens() { return this._get().then((c: any) => c.removeTokens()); }, // eslint-disable-line @typescript-eslint/no-explicit-any
+  };
+  return new OAuthService({ client: lazyClient, clientId: o.clientId, scope: o.scope, authorizeUrl, tokenUrl, extraParameters: o.extraParameters, personalAccessToken: o.personalAccessToken, onAuthorize: o.onAuthorize });
+}
+
+let _accessToken: { token: string; type: "oauth" | "personal"; idToken?: string } | undefined;
+/** The access token of the current withAccessToken-wrapped command. Throws if called outside one. */
+export function getAccessToken(): { token: string; type: "oauth" | "personal"; idToken?: string } {
+  if (!_accessToken) throw new Error("getAccessToken must be used inside a withAccessToken-wrapped command");
+  return _accessToken;
+}
+
+export type WithAccessTokenComponentOrFn<T = unknown> = ((props: T) => ReactNode) | (() => Promise<void>);
+
+/** HOC: authorize via the OAuthService (or a raw authorize fn) before running the wrapped command,
+ *  storing the token for getAccessToken(). View components show a loading state until authorized. */
+export function withAccessToken<T extends Record<string, unknown>>(
+  options: OAuthService | { authorize: () => Promise<string>; personalAccessToken?: string; onAuthorize?: (p: OnAuthorizeParams) => void },
+) {
+  const authorize = () => (options as OAuthService).authorize();
+  const pat = (options as { personalAccessToken?: string }).personalAccessToken;
+  return (fnOrComponent: WithAccessTokenComponentOrFn<T>): WithAccessTokenComponentOrFn<T> => {
+    // No-view command: a plain async function — authorize, then run it.
+    if (fnOrComponent.length === 0 && !isLikelyComponent(fnOrComponent)) {
+      return (async () => {
+        const token = pat ?? (await authorize());
+        _accessToken = { token, type: pat ? "personal" : "oauth" };
+        await (fnOrComponent as () => Promise<void>)();
+      }) as WithAccessTokenComponentOrFn<T>;
+    }
+    // View command: a component — render nothing until authorized, then render it with the token set.
+    return ((props: T) => {
+      const [ready, setReady] = useState<boolean>(!!_accessToken);
+      useEffect(() => {
+        let active = true;
+        (async () => {
+          if (!_accessToken) {
+            const token = pat ?? (await authorize());
+            _accessToken = { token, type: pat ? "personal" : "oauth" };
+          }
+          if (active) setReady(true);
+        })();
+        return () => { active = false; };
+      }, []);
+      if (!ready) return null;
+      return (fnOrComponent as (props: T) => ReactNode)(props);
+    }) as WithAccessTokenComponentOrFn<T>;
+  };
+}
+// Heuristic: a React component's name is capitalized; a plain command fn usually isn't. Used only to
+// disambiguate the zero-arg case (both no-view command fns and zero-prop components take no args).
+function isLikelyComponent(fn: unknown): boolean {
+  return typeof fn === "function" && /^[A-Z]/.test((fn as { name?: string }).name ?? "");
 }
