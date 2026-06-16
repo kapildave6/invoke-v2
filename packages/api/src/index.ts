@@ -67,6 +67,9 @@ const T = {
   Action: "action",
   MenuBarExtra: "menubar-extra",
   MenuBarItem: "menubar-item",
+  MenuBarSection: "menubar-section",
+  MenuBarSubmenu: "menubar-submenu",
+  MenuBarSeparator: "menubar-separator",
 } as const;
 
 /** Build a host element, lifting element-valued slot props into children. */
@@ -262,9 +265,30 @@ ActionPanel.Section = host(T.ActionPanelSection);
 ActionPanel.Submenu = host(T.ActionPanelSection);
 
 /* ------------------------------------------------------------------ MenuBarExtra */
-type MenuBarType = ReturnType<typeof host> & { Item: ReturnType<typeof host> };
+type MenuBarType = ReturnType<typeof host> & {
+  Item: ReturnType<typeof host>;
+  Section: ReturnType<typeof host>;
+  Submenu: ReturnType<typeof host>;
+  Separator: ReturnType<typeof host>;
+};
 export const MenuBarExtra = host(T.MenuBarExtra) as MenuBarType;
 MenuBarExtra.Item = host(T.MenuBarItem, ["onAction"]);
+MenuBarExtra.Section = host(T.MenuBarSection);   // a titled group of items
+MenuBarExtra.Submenu = host(T.MenuBarSubmenu);   // a nested menu
+MenuBarExtra.Separator = host(T.MenuBarSeparator);
+// Action conveniences extensions use as menu items — all render as items with an onAction.
+(MenuBarExtra as unknown as Record<string, unknown>).CopyToClipboard =
+  (props: { content?: string; title?: string } & CommonActionProps) =>
+    createElement(T.MenuBarItem, { ...props, onAction: () => { void Clipboard.copy(String(props.content ?? "")); } });
+(MenuBarExtra as unknown as Record<string, unknown>).OpenInBrowser =
+  (props: { url?: string; title?: string } & CommonActionProps) =>
+    createElement(T.MenuBarItem, { title: props.title, ...props, onAction: () => { void open(String(props.url ?? "")); } });
+// ConfigureCommand / LaunchCommand — render as plain items so the menu doesn't break; their actions
+// (open prefs / launch another command) are best-effort.
+(MenuBarExtra as unknown as Record<string, unknown>).ConfigureCommand =
+  (props: CommonActionProps) => createElement(T.MenuBarItem, { title: "Configure Command", ...props });
+(MenuBarExtra as unknown as Record<string, unknown>).LaunchCommand =
+  (props: CommonActionProps) => createElement(T.MenuBarItem, props);
 
 /* ------------------------------------------------------------------ enums */
 export const Icon = {

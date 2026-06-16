@@ -28,6 +28,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private let quicklinkStore = QuicklinkStore.shared
     private let ai = AIService()
     private let settingsWindow = SettingsWindow()
+    private var menuBar: MenuBarController?  // hosts menu-bar command-mode extensions as NSStatusItems
     private lazy var commands: [RootCommand] = makeCommands()
 
     private enum Mode { case root, clipboard, emoji, screenshots, snippets, quicklinks, extensionView, aiAnswer, nativeForm, aiChat }
@@ -154,6 +155,16 @@ public final class AppController: NSObject, NSApplicationDelegate {
         ].compactMap { $0 }.filter { !$0.isEmpty }
         repoRoot = candidates.first { fm.fileExists(atPath: $0 + "/runtime/node-host/src/child.ts") } ?? candidates.last ?? ""
         print("[invoke:host] repo root: \(repoRoot)")
+
+        // Menu-bar command hosting (NSStatusItem). Its extensions' capability calls route through the
+        // same handleCapability path, scoped to the menu-bar extension's grant key for the call.
+        menuBar = MenuBarController(repoRoot: repoRoot)
+        menuBar?.capability = { [weak self] extKey, method, params in
+            self?.menuBarCapability(extKey: extKey, method: method, params: params) ?? .null
+        }
+        menuBar?.capabilityAsync = { [weak self] extKey, method, params, reply in
+            self?.menuBarCapabilityAsync(extKey: extKey, method: method, params: params, reply: reply) ?? false
+        }
 
         let entry = ProcessInfo.processInfo.environment["INVOKE_EXT_ENTRY"] ?? "examples/calculator/src/calculate.tsx"
         let command = ProcessInfo.processInfo.environment["INVOKE_EXT_COMMAND"] ?? "calculate"
@@ -1596,6 +1607,19 @@ public final class AppController: NSObject, NSApplicationDelegate {
     /// vanished). Stays in-palette so the underlying list re-renders after the delete resolves.
     /// Capabilities whose result isn't ready synchronously (a modal click, a network round-trip). Returns
     /// true if this method was taken (the reply is deferred); false to fall back to the sync handler.
+    /// Run a menu-bar extension's capability scoped to its grant key, restoring the palette's currentExtId
+    /// after (menu-bar hosts run concurrently with the palette; a click must not leave currentExtId changed).
+    private func menuBarCapability(extKey: String, method: String, params: JSONValue?) -> JSONValue {
+        let saved = currentExtId; currentExtId = extKey
+        defer { currentExtId = saved }
+        return handleCapability(method, params)
+    }
+    private func menuBarCapabilityAsync(extKey: String, method: String, params: JSONValue?, reply: @escaping (JSONValue) -> Void) -> Bool {
+        let saved = currentExtId; currentExtId = extKey
+        defer { currentExtId = saved }
+        return handleAsyncCapability(method, params, reply: reply)
+    }
+
     private func handleAsyncCapability(_ method: String, _ params: JSONValue?, reply: @escaping (JSONValue) -> Void) -> Bool {
         func arg(_ key: String) -> JSONValue? { if case .object(let o)? = params { return o[key] }; return nil }
         switch method {
@@ -2223,9 +2247,9 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 for c in cmds {
                     guard let cname = c["name"] as? String else { continue }
                     let cmode = (c["mode"] as? String) ?? "view"
-                    // `view` renders a UI surface; `no-view` runs an action headlessly. `menu-bar` isn't
-                    // supported yet.
-                    guard cmode == "view" || cmode == "no-view" else { continue }
+                    // `view` renders a UI surface; `no-view` runs an action headlessly; `menu-bar` renders
+                    // a MenuBarExtra into an NSStatusItem (toggled on/off from the palette).
+                    guard cmode == "view" || cmode == "no-view" || cmode == "menu-bar" else { continue }
                     let ctitle = (c["title"] as? String) ?? cname
                     guard let rel = ["tsx", "ts", "jsx", "js"].lazy
                         .map({ "\(root)/\(name)/src/\(cname).\($0)" })
@@ -2234,7 +2258,20 @@ public final class AppController: NSObject, NSApplicationDelegate {
                     let iconPath = resolveIcon(c["icon"]) ?? extIconPath
                     // Raycast command arguments (collected before the command runs; distinct from prefs).
                     let argSpec = (c["arguments"] as? [[String: Any]]) ?? []
-                    if cmode == "no-view" {
+                    if cmode == "menu-bar" {
+                        out.append(RootCommand(id: cmdId, title: ctitle, subtitle: title, runTitle: "Toggle in Menu Bar",
+                                               icon: "menubar.rectangle", iconPath: iconPath,
+                                               keywords: [name, cname, title.lowercased(), "menu bar"],
+                                               closesPalette: true, argSpec: argSpec) { [weak self] in
+                            guard let self else { return }
+                            let prefs = self.resolvePreferencesJSON(extKey: extKey, spec: prefsSpec)
+                            let paths = self.extensionPaths(id: cmdId, entryRelPath: rel)
+                            self.menuBar?.toggle(cmdId: cmdId, extKey: extKey, entryRelPath: rel, command: cname,
+                                                 preferences: prefs,
+                                                 trusted: AppSettings.shared.isTrusted(Self.extGrantKey(forId: cmdId)),
+                                                 assetsPath: paths.assets, supportPath: paths.support)
+                        })
+                    } else if cmode == "no-view" {
                         out.append(RootCommand(id: cmdId, title: ctitle, subtitle: title, runTitle: "Run",
                                                icon: "bolt.fill", iconPath: iconPath,
                                                keywords: [name, cname, title.lowercased()],
