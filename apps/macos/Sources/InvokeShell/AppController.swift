@@ -70,11 +70,59 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private var activeFrame = 0
     private var selectionByFrame: [Int: Int] = [:] // remembered selectedIndex per nav frame (restored on pop)
 
+    // Built-in list/grid filtering: when an extension's surface does NOT handle onSearchTextChange,
+    // Raycast filters items by the search text against title/subtitle/keywords. This holds that query.
+    private var extSearchFilter = ""
+
     private var activeTree: ViewTree {
         if mode == .extensionView, let extHost {
-            return extHost.frameTree(activeFrame)
+            let raw = extHost.frameTree(activeFrame)
+            if !extSearchFilter.isEmpty, !surfaceSelfFilters() {
+                return Self.filterTree(raw, query: extSearchFilter)
+            }
+            return raw
         }
         return rootTree ?? host.tree
+    }
+
+    /// True if the active extension surface declares its own onSearchTextChange (then the extension
+    /// filters; the host must not). Checks the top-level list/grid node.
+    private func surfaceSelfFilters() -> Bool {
+        guard let s = extHost?.frameTree(activeFrame).root.children.first(where: { ["list", "grid"].contains($0.type) }) else { return false }
+        return s.props["onSearchTextChange"]?.handlerRef != nil
+    }
+
+    private static func itemMatches(_ n: ViewNode, _ q: String) -> Bool {
+        for f in [n.props["title"]?.stringValue, n.text, n.props["subtitle"]?.stringValue] {
+            if let f, f.lowercased().contains(q) { return true }
+        }
+        if case .array(let kws)? = n.props["keywords"] { for k in kws { if (k.stringValue ?? "").lowercased().contains(q) { return true } } }
+        return false
+    }
+
+    /// A copy of `tree` with list/grid items not matching `query` removed (sections that lose all their
+    /// items are dropped). Non-item nodes (action panels, empty views, dropdowns) are preserved.
+    private static func filterTree(_ tree: ViewTree, query: String) -> ViewTree {
+        let q = query.lowercased()
+        func filter(_ n: ViewNode) -> ViewNode? {
+            switch n.type {
+            case "list-item", "grid-item":
+                return itemMatches(n, q) ? n : nil
+            case "list-section", "grid-section":
+                let hadItems = n.children.contains { ["list-item", "grid-item"].contains($0.type) }
+                let kept = n.children.compactMap(filter)
+                let keptItems = kept.contains { ["list-item", "grid-item"].contains($0.type) }
+                if hadItems && !keptItems { return nil } // section's items all filtered out → drop it
+                let c = ViewNode(id: n.id, type: n.type, text: n.text, props: n.props); c.children = kept; return c
+            default:
+                let c = ViewNode(id: n.id, type: n.type, text: n.text, props: n.props)
+                c.children = n.children.compactMap(filter)
+                return c
+            }
+        }
+        let copy = ViewTree()
+        copy.root.children = tree.root.children.compactMap(filter)
+        return copy
     }
 
     /// A built-in command in the root registry.
@@ -238,7 +286,18 @@ public final class AppController: NSObject, NSApplicationDelegate {
             if pendingQuicklink != nil { renderQuicklinkPrompt() } else { renderQuicklinks(query: text) }
             return
         }
-        if mode == .extensionView { extHost?.setSearchText(text); return } // re-render arrives via onCommit
+        if mode == .extensionView {
+            // If the surface handles search itself, forward it; otherwise apply built-in item filtering.
+            if surfaceSelfFilters() {
+                extSearchFilter = ""
+                extHost?.setSearchText(text) // re-render arrives via onCommit
+            } else {
+                extSearchFilter = text
+                selectedIndex = 0
+                renderExtension()
+            }
+            return
+        }
         if mode == .aiAnswer { return } // showing an answer; Esc to go back
         if mode == .nativeForm { return } // a form; typing happens in the form fields, not the search box
         if mode == .aiChat { return } // the search field is the chat composer; Enter sends (lastQuery)
@@ -2698,6 +2757,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         currentExtTitle = ""
         navDepth = 0
         activeFrame = 0
+        extSearchFilter = ""
         selectionByFrame.removeAll()
         palette.setAssetsPath("")
     }
@@ -2711,6 +2771,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         selectionByFrame[activeFrame] = selectedIndex // remember the frame we're leaving
         navDepth = depth
         activeFrame = frame
+        extSearchFilter = ""
         selectedIndex = selectionByFrame[frame] ?? 0  // restore (a brand-new pushed frame starts at 0)
         renderExtension()
     }

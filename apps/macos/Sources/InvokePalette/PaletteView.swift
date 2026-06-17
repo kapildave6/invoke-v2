@@ -788,6 +788,8 @@ public final class PaletteView: NSView {
         item.thumb.identifier = nil
         if let b64 = node.props["thumb"]?.stringValue, let img = cachedImage(b64) {
             item.thumb.image = img
+        } else if let p = fileIconPath(node.props["content"] ?? node.props["icon"]) {
+            item.thumb.image = NSWorkspace.shared.icon(forFile: p) // Image.ImageLike { fileIcon }
         } else if let src = imageSource(node.props["content"] ?? node.props["icon"]) {
             if let img = loadLocalImage(src) { item.thumb.image = img }
             else if src.hasPrefix("http://") || src.hasPrefix("https://") { loadRemoteImage(src, into: item.thumb) }
@@ -795,6 +797,15 @@ public final class PaletteView: NSView {
                 item.thumb.image = sym; item.thumb.contentTintColor = .secondaryLabelColor
             }
         }
+    }
+
+    /// Extract a `fileIcon` path from an Image.ImageLike (`{ fileIcon }` or `{ value: { fileIcon } }`).
+    private func fileIconPath(_ v: JSONValue?) -> String? {
+        if case .object(let o)? = v {
+            if case .string(let s)? = o["fileIcon"] { return (s as NSString).expandingTildeInPath }
+            if case .object(let inner)? = o["value"], case .string(let s)? = inner["fileIcon"] { return (s as NSString).expandingTildeInPath }
+        }
+        return nil
     }
 
     // A double-click first single-selects (didSelectItemsAt updates gridSelected), then activates it.
@@ -1503,8 +1514,10 @@ public final class PaletteView: NSView {
             iv.heightAnchor.constraint(equalToConstant: 20).isActive = true
             return iv
         }
-        // Real app/file icon (full color) for application and file rows.
-        if let path = node.props["appPath"]?.stringValue ?? node.props["fileIcon"]?.stringValue {
+        // Real app/file icon (full color) for application and file rows — a top-level appPath/fileIcon
+        // prop, or an Image.ImageLike `{ fileIcon }` on the icon prop (Raycast's app/file icon form).
+        if let path = node.props["appPath"]?.stringValue ?? node.props["fileIcon"]?.stringValue
+            ?? fileIconPath(node.props["icon"]) {
             let iv = NSImageView(image: NSWorkspace.shared.icon(forFile: path))
             iv.translatesAutoresizingMaskIntoConstraints = false
             iv.widthAnchor.constraint(equalToConstant: 20).isActive = true
