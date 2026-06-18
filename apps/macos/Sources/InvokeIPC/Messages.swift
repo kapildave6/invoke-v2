@@ -27,6 +27,8 @@ public struct HostBound: Codable {
     public let depth: Int?      // nav: active navigation depth (0 = base, N = N pushed views)
     public let level: String?   // log: "info" | "warn" | "error"
     public let args: [JSONValue]? // log: the console args
+    public let result: JSONValue? // aiToolResult: the tool's JSON result
+    public let error: String?     // aiToolResult: an error message (if the tool threw)
 }
 
 /// host → child envelope.

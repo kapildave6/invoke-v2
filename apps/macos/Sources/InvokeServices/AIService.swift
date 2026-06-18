@@ -171,6 +171,83 @@ public final class AIService {
         }
     }
 
+    /// A tool the agent can call: name + description + JSON-schema input + an async executor.
+    public struct AgentTool {
+        public let name: String
+        public let description: String
+        public let inputSchema: [String: Any]
+        /// Runs the tool with the model-provided input; returns a JSON-serializable result.
+        public let run: (_ input: [String: Any]) async -> Any
+        public init(name: String, description: String, inputSchema: [String: Any] = ["type": "object"],
+                    run: @escaping (_ input: [String: Any]) async -> Any) {
+            self.name = name; self.description = description; self.inputSchema = inputSchema; self.run = run
+        }
+    }
+
+    /// Agentic completion (Raycast AI extensions): the model may call the provided `tools`; each tool_use
+    /// is executed via its `run` closure and fed back as a tool_result, looping until the model emits
+    /// final text. `onText` streams nothing here (one-shot per turn); the final answer is returned.
+    public func runAgent(system: String, prompt: String, tools: [AgentTool], maxTurns: Int = 8,
+                         onStatus: @escaping (String) -> Void = { _ in }) async -> Result<String, AIError> {
+        guard let key = apiKey() else { return .failure(.noKey) }
+        guard let url = URL(string: "https://api.anthropic.com/v1/messages") else { return .failure(.network("bad url")) }
+        let toolsByName = Dictionary(uniqueKeysWithValues: tools.map { ($0.name, $0) })
+        let toolDefs: [[String: Any]] = tools.map { ["name": $0.name, "description": $0.description, "input_schema": $0.inputSchema] }
+        // The running conversation; starts with the user's prompt, grows with assistant + tool_result turns.
+        var messages: [[String: Any]] = [["role": "user", "content": prompt]]
+
+        for _ in 0..<maxTurns {
+            var req = URLRequest(url: url)
+            req.httpMethod = "POST"; req.timeoutInterval = 90
+            req.setValue(key, forHTTPHeaderField: "x-api-key")
+            req.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
+            req.setValue("application/json", forHTTPHeaderField: "content-type")
+            var body: [String: Any] = ["model": model, "max_tokens": 2048, "system": system, "messages": messages]
+            if !toolDefs.isEmpty { body["tools"] = toolDefs }
+            req.httpBody = try? JSONSerialization.data(withJSONObject: body)
+
+            do {
+                let (data, resp) = try await URLSession.shared.data(for: req)
+                guard let http = resp as? HTTPURLResponse else { return .failure(.network("no response")) }
+                guard (200..<300).contains(http.statusCode) else {
+                    let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+                    return .failure(.api(((json?["error"] as? [String: Any])?["message"] as? String) ?? "HTTP \(http.statusCode)"))
+                }
+                guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+                      let content = json["content"] as? [[String: Any]] else { return .failure(.empty) }
+                let stop = json["stop_reason"] as? String
+                let toolUses = content.filter { ($0["type"] as? String) == "tool_use" }
+                if stop == "tool_use", !toolUses.isEmpty {
+                    messages.append(["role": "assistant", "content": content]) // echo the assistant turn verbatim
+                    var toolResults: [[String: Any]] = []
+                    for use in toolUses {
+                        let name = use["name"] as? String ?? ""
+                        let input = use["input"] as? [String: Any] ?? [:]
+                        let id = use["id"] as? String ?? ""
+                        onStatus("Running tool: \(name)…")
+                        let out: Any = await toolsByName[name]?.run(input) ?? ["error": "unknown tool \(name)"]
+                        // tool_result content is a string; JSON-encode objects/arrays, stringify scalars.
+                        let outStr: String
+                        if JSONSerialization.isValidJSONObject(out), let d = try? JSONSerialization.data(withJSONObject: out) {
+                            outStr = String(data: d, encoding: .utf8) ?? "\(out)"
+                        } else {
+                            outStr = String(describing: out)
+                        }
+                        toolResults.append(["type": "tool_result", "tool_use_id": id, "content": outStr])
+                    }
+                    messages.append(["role": "user", "content": toolResults])
+                    continue // loop: let the model use the results
+                }
+                // Final answer: concatenate text blocks.
+                let text = content.compactMap { ($0["type"] as? String) == "text" ? $0["text"] as? String : nil }.joined()
+                return text.isEmpty ? .failure(.empty) : .success(text)
+            } catch {
+                return .failure(.network(error.localizedDescription))
+            }
+        }
+        return .failure(.api("Agent exceeded \(maxTurns) tool turns"))
+    }
+
     private static func keychainKey() -> String? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,

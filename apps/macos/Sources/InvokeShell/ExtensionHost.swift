@@ -47,6 +47,8 @@ public final class ExtensionHost {
     /// Fired on the MAIN queue when a SANDBOXED child failed because it imported a denied Node built-in
     /// (arg: the module name, e.g. "fs"). Lets the controller offer "Trust & relaunch".
     public var onSandboxDenial: ((String) -> Void)?
+    /// Fired on the MAIN queue when an AI-extension tool (mode "ai-tool") returns its result/error.
+    public var onAIToolResult: ((_ result: JSONValue?, _ error: String?) -> Void)?
 
     /// The capability allowlist — mirrors the Node supervisor's ALLOWED_RPC. Denial is enforced HERE
     /// in the host, so even a child crafting a raw RPC frame gets nothing it isn't granted (PLAN §4.4).
@@ -83,7 +85,7 @@ public final class ExtensionHost {
     /// Launch `<repoRoot>/<entryRelPath>`. `mode` is "view" (renders + streams mutations) or "no-view"
     /// (runs the command's default export as a headless action, then the process exits).
     /// `preferences` is the JSON the extension reads via getPreferenceValues() (INVOKE_PREFERENCES).
-    public func launch(repoRoot: String, entryRelPath: String, command: String, preferences: String = "{}", mode: String = "view", trusted: Bool = false, assetsPath: String = "", supportPath: String = "", arguments: String = "{}", launchType: String = "userInitiated") {
+    public func launch(repoRoot: String, entryRelPath: String, command: String, preferences: String = "{}", mode: String = "view", trusted: Bool = false, assetsPath: String = "", supportPath: String = "", arguments: String = "{}", launchType: String = "userInitiated", toolInput: String = "{}") {
         var fds: [Int32] = [0, 0]
         guard socketpair(AF_UNIX, SOCK_STREAM, 0, &fds) == 0 else {
             log("socketpair failed: \(String(cString: strerror(errno)))")
@@ -124,6 +126,7 @@ public final class ExtensionHost {
         // them via props.arguments (LaunchProps); Invoke collects them in a form before launch.
         env["INVOKE_ARGUMENTS"] = arguments
         env["INVOKE_LAUNCH_TYPE"] = launchType // "userInitiated" | "background" (interval-scheduled)
+        env["INVOKE_TOOL_INPUT"] = toolInput   // ai-tool mode: the model-provided tool input (JSON)
         // Point tsx at the extension's own tsconfig so its `@/*` → `src/*` path alias resolves (entry is
         // <extDir>/src/<cmd>.<ext>). Without this tsx picks the repo-root tsconfig and `@/x` fails to load.
         let extDir = (((entryRelPath as NSString).deletingLastPathComponent) as NSString).deletingLastPathComponent
@@ -194,6 +197,9 @@ public final class ExtensionHost {
         case "sandboxDenial":
             let module = msg.module ?? "a Node built-in"
             DispatchQueue.main.async { self.onSandboxDenial?(module) }
+        case "aiToolResult":
+            let result = msg.result; let error = msg.error
+            DispatchQueue.main.async { self.onAIToolResult?(result, error) }
         case "rpc":
             guard let id = msg.id, let method = msg.method else { break }
             let params = msg.params

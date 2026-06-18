@@ -33,6 +33,9 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private struct IntervalSpec { let cmdId, extKey, rel, cname: String; let seconds: TimeInterval; let prefsSpec: [[String: Any]] }
     private var intervalSpecs: [IntervalSpec] = []
     private var intervalTimers: [Timer] = []
+    // AI-extension tools (manifest tools[]): per-extension list, used by the @-mode agent loop.
+    private struct AIToolSpec { let name, description, rel: String }
+    private var aiExtTools: [String: [AIToolSpec]] = [:]
     private lazy var commands: [RootCommand] = makeCommands()
 
     private enum Mode { case root, clipboard, emoji, screenshots, snippets, quicklinks, extensionView, aiAnswer, nativeForm, aiChat }
@@ -2308,6 +2311,30 @@ public final class AppController: NSObject, NSApplicationDelegate {
                     return nil
                 }
                 let extIconPath = resolveIcon(json["icon"])
+                // AI extension tools[] (Raycast): each tool is a file (src/tools/<name> or src/<name>)
+                // exporting a default async fn. Collect them + register an "Ask <ext>" AI command.
+                let toolDefs = (json["tools"] as? [[String: Any]]) ?? []
+                if !toolDefs.isEmpty {
+                    var specs: [AIToolSpec] = []
+                    for t in toolDefs {
+                        guard let tname = t["name"] as? String else { continue }
+                        guard let trel = ["tsx", "ts", "jsx", "js"].flatMap({ ext in ["src/tools/\(tname).\(ext)", "src/\(tname).\(ext)"] })
+                            .map({ "\(root)/\(name)/\($0)" })
+                            .first(where: { fm.fileExists(atPath: repoRoot + "/" + $0) }) else { continue }
+                        specs.append(AIToolSpec(name: tname, description: (t["description"] as? String) ?? (t["title"] as? String) ?? tname, rel: trel))
+                    }
+                    if !specs.isEmpty {
+                        aiExtTools[extKey] = specs
+                        let aiInstructions = (json["ai"] as? [String: Any])?["instructions"] as? String ?? ""
+                        let askId = "ext.\(extKey).__ask"
+                        out.append(RootCommand(id: askId, title: "Ask \(title)", subtitle: "\(title) · AI", runTitle: "Ask",
+                                               icon: "sparkles", iconPath: extIconPath,
+                                               keywords: [name, title.lowercased(), "ai", "ask", "@"],
+                                               closesPalette: false, argSpec: []) { [weak self] in
+                            self?.promptAIExtension(extKey: extKey, title: title, instructions: aiInstructions)
+                        })
+                    }
+                }
                 for c in cmds {
                     guard let cname = c["name"] as? String else { continue }
                     let cmode = (c["mode"] as? String) ?? "view"
@@ -2605,6 +2632,74 @@ public final class AppController: NSObject, NSApplicationDelegate {
         h.launch(repoRoot: repoRoot, entryRelPath: spec.rel, command: spec.cname, preferences: prefs,
                  mode: "no-view", trusted: AppSettings.shared.isTrusted(Self.extGrantKey(forId: spec.cmdId)),
                  assetsPath: paths.assets, supportPath: paths.support, launchType: "background")
+    }
+
+    // MARK: - AI extensions (manifest tools[] + the @-mode agent loop)
+
+    /// Prompt for a question, then run the extension's AI agent loop (model + its tools) and show the
+    /// answer. Uses the typed query if present; otherwise enters AI Chat scoped to the extension.
+    private func promptAIExtension(extKey: String, title: String, instructions: String) {
+        guard ai.hasKey else { palette.showToast("Set your Anthropic API key in Settings → Advanced to use AI"); return }
+        let q = lastQuery.trimmingCharacters(in: .whitespaces)
+        let ask = { [weak self] (question: String) in self?.runAIExtension(extKey: extKey, title: title, instructions: instructions, prompt: question) }
+        if !q.isEmpty { ask(q); return }
+        // No query typed → collect one in a native form.
+        enterNativeForm(title: "Ask \(title)", fields: [
+            ViewNode(id: 1, type: "form-textarea", props: ["id": .string("q"), "title": .string("Question"), "placeholder": .string("Ask \(title)…")]),
+        ]) { vals in ask(vals["q"] ?? "") }
+    }
+
+    private func runAIExtension(extKey: String, title: String, instructions: String, prompt: String) {
+        let q = prompt.trimmingCharacters(in: .whitespaces)
+        guard !q.isEmpty else { return }
+        guard let specs = aiExtTools[extKey], !specs.isEmpty else { palette.showToast("No AI tools for \(title)"); return }
+        mode = .aiAnswer
+        aiAskSeq += 1
+        let seq = aiAskSeq
+        renderAIAnswer(markdown: "_Asking \(title)…_")
+        let tools: [AIService.AgentTool] = specs.map { spec in
+            AIService.AgentTool(name: spec.name, description: spec.description) { [weak self] input in
+                await self?.runAITool(extKey: extKey, entryRel: spec.rel, toolName: spec.name, input: input) ?? ["error": "host gone"]
+            }
+        }
+        let system = instructions.isEmpty
+            ? "You are \(title), a helpful assistant. Use the provided tools to answer. Reply in Markdown."
+            : instructions
+        Task {
+            let result = await ai.runAgent(system: system, prompt: q, tools: tools) { status in
+                DispatchQueue.main.async { if self.mode == .aiAnswer, self.aiAskSeq == seq { self.renderAIAnswer(markdown: "_\(status)_") } }
+            }
+            await MainActor.run {
+                guard self.mode == .aiAnswer, self.aiAskSeq == seq else { return }
+                switch result {
+                case .success(let out): self.lastAIAnswer = out; self.renderAIAnswer(markdown: out)
+                case .failure(let err): self.renderAIAnswer(markdown: "**AI error**\n\n\(err.message)")
+                }
+            }
+        }
+    }
+
+    /// Spawn an extension's tool (mode "ai-tool") with the model-provided input; await its JSON result.
+    private func runAITool(extKey: String, entryRel: String, toolName: String, input: [String: Any]) async -> Any {
+        let inputJSON = (try? JSONSerialization.data(withJSONObject: input)).flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
+        let prefs = resolvePreferencesJSON(extKey: extKey, spec: [])
+        let paths = extensionPaths(id: "ext.\(extKey).\(toolName)", entryRelPath: entryRel)
+        let trusted = AppSettings.shared.isTrusted(extKey)
+        return await withCheckedContinuation { (cont: CheckedContinuation<Any, Never>) in
+            let h = ExtensionHost()
+            var done = false
+            let finish: (Any) -> Void = { v in if !done { done = true; cont.resume(returning: v); h.terminate() } }
+            h.onAIToolResult = { result, error in finish(error != nil ? ["error": error!] : (result?.toAny ?? [:])) }
+            h.onTerminate = { if !done { done = true; cont.resume(returning: ["error": "tool process ended"]) } }
+            h.onCapability = { [weak self] m, p in
+                let prev = self?.currentExtId; self?.currentExtId = extKey
+                defer { self?.currentExtId = prev ?? "" }
+                return self?.handleCapability(m, p) ?? .null
+            }
+            h.launch(repoRoot: repoRoot, entryRelPath: entryRel, command: toolName, preferences: prefs,
+                     mode: "ai-tool", trusted: trusted, assetsPath: paths.assets, supportPath: paths.support,
+                     toolInput: inputJSON)
+        }
     }
 
     // MARK: - Required-preferences onboarding (Raycast parity)

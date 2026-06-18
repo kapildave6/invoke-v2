@@ -551,6 +551,13 @@ export class Cache {
   }
   get isEmpty(): boolean { return this.store.size === 0; }
 }
+/* AI-extension tools (manifest tools[]). `Tool` is mostly used in type position (Tool.Input/Output);
+ * `Tool.Confirmation` is a value an interactive tool returns to request a confirm step. */
+export const Tool = {
+  /** Wrap a confirmation payload (Raycast: a tool returns this to ask the user before acting). Invoke
+   *  doesn't gate on it yet, so it's an identity passthrough so the value/type resolves. */
+  Confirmation: <T>(payload: T): T => payload,
+};
 export interface AIAskOptions { model?: string; creativity?: number | string; system?: string }
 export const AI = {
   /** Single-prompt completion via the host's Anthropic client (Raycast's AI.ask). Resolves to the text. */

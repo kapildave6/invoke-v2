@@ -53,6 +53,8 @@ export type HostBound =
   | { kind: "rpc"; id: number; method: string; params: unknown }
   /** a SANDBOXED extension failed because it imported a denied Node built-in (module = e.g. "fs") */
   | { kind: "sandboxDenial"; module: string }
+  /** result of an AI-extension tool invocation (mode "ai-tool"); JSON-serializable result or error. */
+  | { kind: "aiToolResult"; result?: unknown; error?: string }
   | { kind: "done" };
 
 /** host → child */

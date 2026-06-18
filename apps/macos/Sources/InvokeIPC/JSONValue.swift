@@ -56,6 +56,18 @@ public enum JSONValue: Codable {
         }
     }
 
+    /// Convert to a plain Swift value (for marshaling tool results back to the Anthropic API).
+    public var toAny: Any {
+        switch self {
+        case .string(let s): return s
+        case .number(let n): return n
+        case .bool(let b): return b
+        case .null: return NSNull()
+        case .array(let a): return a.map { $0.toAny }
+        case .object(let o): return o.mapValues { $0.toAny }
+        }
+    }
+
     /// Resolve a handler reference `{ "__handler": "h3" }` (PLAN.md §4.4).
     public var handlerRef: String? {
         if case .object(let o) = self, case .string(let h)? = o["__handler"] { return h }

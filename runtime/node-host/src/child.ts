@@ -123,6 +123,24 @@ async function main(): Promise<void> {
   try { launchArguments = JSON.parse(process.env.INVOKE_ARGUMENTS || "{}"); } catch { launchArguments = {}; }
   const launchProps = { arguments: launchArguments, launchType: process.env.INVOKE_LAUNCH_TYPE || "userInitiated", launchContext: {} };
 
+  // ai-tool: run an AI-extension tool's default export with the model-provided input, return its
+  // JSON result, then exit. The tool entry is the bundle (Command); input arrives as INVOKE_TOOL_INPUT.
+  if (process.env.INVOKE_MODE === "ai-tool") {
+    send({ kind: "ready", command: command ?? "" });
+    try {
+      let input: unknown = {};
+      try { input = JSON.parse(process.env.INVOKE_TOOL_INPUT || "{}"); } catch { input = {}; }
+      const result = await (Command as (input: unknown) => unknown)(input);
+      send({ kind: "aiToolResult", result });
+    } catch (e) {
+      const denied = sandboxDeniedModule(e);
+      if (denied) send({ kind: "sandboxDenial", module: denied });
+      send({ kind: "aiToolResult", error: String(e) });
+    }
+    exitAfterFlush(0);
+    return;
+  }
+
   // no-view: run the command's default export as a headless action (no UI), then exit.
   if (process.env.INVOKE_MODE === "no-view") {
     send({ kind: "ready", command: command ?? "" });

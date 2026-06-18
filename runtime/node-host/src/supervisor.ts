@@ -85,6 +85,8 @@ export interface ExtensionEvents {
   sandboxDenial: [string];
   /** The active navigation frame changed (args: depth, active frame id). */
   nav: [number, number];
+  /** An AI-extension tool finished (mode "ai-tool"): result or error. */
+  aiToolResult: [{ result?: unknown; error?: string }];
   exit: [number | null];
 }
 
@@ -146,6 +148,11 @@ export class ExtensionProcess extends EventEmitter {
         // "Trust & relaunch"; the dev runner just surfaces it (see run.ts).
         this.emit("sandboxDenial", (msg as HostBound & { module?: string }).module ?? "a Node built-in");
         break;
+      case "aiToolResult": {
+        const m = msg as HostBound & { result?: unknown; error?: string };
+        this.emit("aiToolResult", { result: m.result, error: m.error });
+        break;
+      }
       case "nav": {
         // Render-on-push: the active navigation frame changed; show that frame's tree.
         const navMsg = msg as HostBound & { depth?: number; frame?: number };
