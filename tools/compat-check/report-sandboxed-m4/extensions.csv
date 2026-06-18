@@ -1917,8 +1917,7 @@ privileges,Privileges,UNSUPPORTED,privileges,3,no-view,"denied Node built-ins in
 productboard,Productboard,SUPPORTED,productboard,2,view,,,,
 producthunt,Product Hunt,UNSUPPORTED,producthunt,1,view,"denied Node built-ins in sandbox: child_process, fs",,,child_process fs os path
 productlane,Productlane,SUPPORTED,productlane,1,view,,,,
-project-code-to-text,Project Code to Text,UNSUPPORTED,project-code-to-text,1,view,denied Node built-ins in sandbox: fs,,"@raycast/api:// Keep LaunchProps
-  Clipboard (not in Invoke surface — needs review)",fs os path stream
+project-code-to-text,Project Code to Text,UNSUPPORTED,project-code-to-text,1,view,denied Node built-ins in sandbox: fs,,,fs os path stream
 project-companion,Project Companion,SUPPORTED,project-companion,1,view,,,,
 project-hub,Project Hub,SUPPORTED,project-hub,1,view,,,,crypto
 projects,Projects,UNSUPPORTED,projects,1,view,"denied Node built-ins in sandbox: child_process, fs",,,child_process fs os path util
@@ -1978,7 +1977,7 @@ quick-jump,Quick Jump,UNSUPPORTED,quick-jump,1,view,denied Node built-ins in san
 quick-latex,LaTeX to Image,UNSUPPORTED,quick-latex,1,view,denied Node built-ins in sandbox: fs,declares command `arguments[]` — not passed by runtime yet,,fs path
 quick-notes,Quick Notes,UNSUPPORTED,quick-notes,6,view|no-view,denied Node built-ins in sandbox: fs,declares command `arguments[]` — not passed by runtime yet,,fs path
 quick-open-project,Quick Open Project,UNSUPPORTED,quick-open-project,1,view,"denied Node built-ins in sandbox: child_process, fs",,,child_process fs os
-quick-quit,Quick Quit,UNSUPPORTED,quick-quit,4,view|no-view,,,@raycast/api:// Import the Application type (not in Invoke surface — needs review),crypto
+quick-quit,Quick Quit,SUPPORTED,quick-quit,4,view|no-view,,,,crypto
 quick-references,Quick References,UNSUPPORTED,quick-references,1,view,denied Node built-ins in sandbox: fs,,,fs os path
 quick-search,Quick Search,SUPPORTED,quick-search,4,no-view,,,,
 quick-toshl,Quick Toshl,UNSUPPORTED,quick-toshl,12,view,denied Node built-ins in sandbox: child_process,,,child_process
@@ -2352,8 +2351,7 @@ smallpdf,Smallpdf,SUPPORTED,smallpdf,1,view,,,,
 smallweb,Smallweb,UNSUPPORTED,smallweb,2,view|no-view,denied Node built-ins in sandbox: fs,BrowserExtension: loads; throws if called (browser bridge not wired),,fs path util
 smart-calendars-ai-create-events-using-ai,Smart Calendars AI – Create Events / Reminders Using AI,UNSUPPORTED,smart-calendars-ai-create-events-using-ai,3,no-view|view,denied Node built-ins in sandbox: fs,,,fs path url
 smart-reply,Smart Reply - AI-Powered Multilingual Response Generator,SUPPORTED,smart-reply,1,view,,,,
-smartthings-connector,SmartThings Connector,UNSUPPORTED,smartthings-connector,5,view,,,"@raycast/api:// useNavigation (not in Invoke surface — needs review) | @raycast/api:// Entfernen Sie diesen Import
-  Action (not in Invoke surface — needs review)",
+smartthings-connector,SmartThings Connector,SUPPORTED,smartthings-connector,5,view,,,,
 smultron,Smultron,SUPPORTED,smultron,1,no-view,,,,
 snake,Snake,SUPPORTED,snake,1,view,,,,
 snap-jot,SnapJot,UNSUPPORTED,snap-jot,3,view,denied Node built-ins in sandbox: fs,,,fs path

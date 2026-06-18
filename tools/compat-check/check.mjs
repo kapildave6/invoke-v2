@@ -224,9 +224,12 @@ function namedImportsFrom(source, moduleName) {
     }
     const brace = clause.match(/\{([^}]*)\}/);
     if (brace) {
-      for (let part of brace[1].split(",")) {
+      // Strip // line and /* */ block comments inside the braces (multi-line imports often comment
+      // individual names) so comment text isn't parsed as an imported identifier.
+      const inner = brace[1].replace(/\/\/[^\n]*/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
+      for (let part of inner.split(",")) {
         part = part.trim().replace(/^type\s+/, "");
-        if (!part) continue;
+        if (!part || !/^[A-Za-z_$]/.test(part)) continue; // skip blanks / non-identifiers
         const name = part.split(/\s+as\s+/)[0].trim();
         if (name) names.add(name);
       }

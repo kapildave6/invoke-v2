@@ -2,9 +2,9 @@
   "root": "/Users/test/Documents/code/extensions/extensions",
   "trusted": true,
   "counts": {
-    "SUPPORTED": 1500,
-    "DEGRADED": 1451,
-    "UNSUPPORTED": 10
+    "SUPPORTED": 1502,
+    "DEGRADED": 1452,
+    "UNSUPPORTED": 7
   },
   "topGaps": [
     [
@@ -34,10 +34,6 @@
     [
       "namespace import of @raycast/api",
       7
-    ],
-    [
-      "@raycast/api",
-      3
     ]
   ],
   "results": [
@@ -56987,13 +56983,13 @@
       "name": "project-code-to-text",
       "title": "Project Code to Text",
       "dir": "project-code-to-text",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
-        "// Keep LaunchProps\n  Clipboard",
         "Action",
         "ActionPanel",
+        "Clipboard",
         "Detail",
         "Form",
         "Icon",
@@ -57014,9 +57010,7 @@
       "degraded": [
         "uses Node built-ins (ok in trusted mode): fs"
       ],
-      "unknown": [
-        "@raycast/api:// Keep LaunchProps\n  Clipboard (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "project-companion",
@@ -58849,11 +58843,10 @@
       "name": "quick-quit",
       "title": "Quick Quit",
       "dir": "quick-quit",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 4,
       "modes": "view|no-view",
       "apiImports": [
-        "// Import the Application type",
         "Action",
         "ActionPanel",
         "Alert",
@@ -58880,9 +58873,7 @@
       ],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:// Import the Application type (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "quick-references",
@@ -69889,12 +69880,11 @@
       "name": "smartthings-connector",
       "title": "SmartThings Connector",
       "dir": "smartthings-connector",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 5,
       "modes": "view",
       "apiImports": [
-        "// Entfernen Sie diesen Import\n  Action",
-        "// useNavigation",
+        "Action",
         "ActionPanel",
         "Color",
         "CopyToClipboardAction",
@@ -69910,10 +69900,7 @@
       "builtins": [],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:// useNavigation (not in Invoke surface — needs review)",
-        "@raycast/api:// Entfernen Sie diesen Import\n  Action (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "smultron",
