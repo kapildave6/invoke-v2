@@ -99,7 +99,7 @@ const SAFE_BUILTINS = new Set([
   "process", "os",
 ]);
 
-const SUPPORTED_MODES = new Set(["view", "no-view"]);
+const SUPPORTED_MODES = new Set(["view", "no-view", "menu-bar"]);
 
 // ---------------------------------------------------------------------------
 // CLI args
@@ -322,15 +322,9 @@ function classifyExtension({ dir, pkg }) {
   }
 
   // AI extension / tools manifest features
-  if (Array.isArray(pkg.tools) && pkg.tools.length) {
-    blockers.push(`declares AI tools[] (${pkg.tools.length}) — AI extensions not supported`);
-  }
-  if (pkg.ai) {
-    degraded.push("declares extension-level `ai` instructions — ignored");
-  }
-  if (commands.some((c) => c.interval)) {
-    degraded.push("declares background `interval` command(s) — not scheduled");
-  }
+  // AI tools[] (manifest) are supported (M4): the model can call them via the agent loop.
+  // extension-level `ai` instructions are now honored by the @-mode agent loop (M4).
+  // background `interval` commands are scheduled now (M4).
   if (commands.some((c) => Array.isArray(c.arguments) && c.arguments.length)) {
     degraded.push("declares command `arguments[]` — not passed by runtime yet");
   }
