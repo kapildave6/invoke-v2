@@ -472,7 +472,7 @@ export const LocalStorage = {
 
 export const environment = {
   appearance: "dark" as "dark" | "light",
-  launchType: LaunchType.UserInitiated as string,
+  launchType: (process.env.INVOKE_LAUNCH_TYPE as string) || LaunchType.UserInitiated,
   commandName: process.env.INVOKE_COMMAND ?? "",
   commandMode: process.env.INVOKE_MODE ?? "view",
   // The extension's assets/ dir and a writable per-extension support dir (host-provided). Extensions

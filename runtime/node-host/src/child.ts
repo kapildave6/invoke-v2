@@ -121,7 +121,7 @@ async function main(): Promise<void> {
   // Raycast LaunchProps: command arguments (search-bar fields) the host collected, plus launch metadata.
   let launchArguments: Record<string, unknown> = {};
   try { launchArguments = JSON.parse(process.env.INVOKE_ARGUMENTS || "{}"); } catch { launchArguments = {}; }
-  const launchProps = { arguments: launchArguments, launchType: "userInitiated", launchContext: {} };
+  const launchProps = { arguments: launchArguments, launchType: process.env.INVOKE_LAUNCH_TYPE || "userInitiated", launchContext: {} };
 
   // no-view: run the command's default export as a headless action (no UI), then exit.
   if (process.env.INVOKE_MODE === "no-view") {

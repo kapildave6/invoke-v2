@@ -29,6 +29,10 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private let ai = AIService()
     private let settingsWindow = SettingsWindow()
     private var menuBar: MenuBarController?  // hosts menu-bar command-mode extensions as NSStatusItems
+    // Background `interval` commands (Raycast): run headlessly on a timer with launchType "background".
+    private struct IntervalSpec { let cmdId, extKey, rel, cname: String; let seconds: TimeInterval; let prefsSpec: [[String: Any]] }
+    private var intervalSpecs: [IntervalSpec] = []
+    private var intervalTimers: [Timer] = []
     private lazy var commands: [RootCommand] = makeCommands()
 
     private enum Mode { case root, clipboard, emoji, screenshots, snippets, quicklinks, extensionView, aiAnswer, nativeForm, aiChat }
@@ -262,6 +266,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         }
         AppSettings.shared.reconcileLaunchAtLogin() // didSet is skipped for the in-init assignment
         reloadCommandHotkeys() // user-assigned per-command hotkeys from Settings
+        scheduleIntervals() // start background interval commands (intervalSpecs populated by discovery above)
 
         renderRoot(calcCard: nil) // initial: Suggestions
         palette.show()
@@ -2317,6 +2322,10 @@ public final class AppController: NSObject, NSApplicationDelegate {
                     let iconPath = resolveIcon(c["icon"]) ?? extIconPath
                     // Raycast command arguments (collected before the command runs; distinct from prefs).
                     let argSpec = (c["arguments"] as? [[String: Any]]) ?? []
+                    // Background `interval` (e.g. "10m"): schedule a headless run on a timer.
+                    if let iv = c["interval"] as? String, let secs = Self.parseInterval(iv) {
+                        intervalSpecs.append(IntervalSpec(cmdId: cmdId, extKey: extKey, rel: rel, cname: cname, seconds: secs, prefsSpec: prefsSpec))
+                    }
                     if cmode == "menu-bar" {
                         // Many extensions title their menu-bar command identically to a sibling command;
                         // mark it so the two are distinguishable in the list.
@@ -2546,6 +2555,56 @@ public final class AppController: NSObject, NSApplicationDelegate {
         h.launch(repoRoot: repoRoot, entryRelPath: entryRelPath, command: command, preferences: preferences,
                  mode: "no-view", trusted: AppSettings.shared.isTrusted(Self.extGrantKey(forId: id)),
                  assetsPath: paths.assets, supportPath: paths.support, arguments: arguments)
+    }
+
+    // MARK: - Background interval commands
+
+    /// Parse a Raycast interval string ("30s", "10m", "1h", "1d") into seconds. nil if unrecognized.
+    private static func parseInterval(_ s: String) -> TimeInterval? {
+        let t = s.trimmingCharacters(in: .whitespaces).lowercased()
+        guard let unit = t.last, let n = Double(t.dropLast()) else { return Double(t) }
+        switch unit {
+        case "s": return n
+        case "m": return n * 60
+        case "h": return n * 3600
+        case "d": return n * 86400
+        default: return Double(t) // bare number → seconds
+        }
+    }
+
+    /// Start repeating timers for every discovered `interval` command. Enforce a sane floor so a tiny
+    /// interval can't hammer the machine. Called once after commands are built.
+    private func scheduleIntervals() {
+        intervalTimers.forEach { $0.invalidate() }
+        intervalTimers = []
+        for spec in intervalSpecs {
+            let period = max(60, spec.seconds) // floor at 60s regardless of manifest (battery/CPU)
+            let t = Timer.scheduledTimer(withTimeInterval: period, repeats: true) { [weak self] _ in
+                self?.runBackgroundInterval(spec)
+            }
+            intervalTimers.append(t)
+            print("[invoke:interval] scheduled \(spec.cmdId) every \(Int(period))s")
+        }
+    }
+
+    /// Run an interval command headlessly in the background (launchType "background"), no palette.
+    private func runBackgroundInterval(_ spec: IntervalSpec) {
+        let prefs = resolvePreferencesJSON(extKey: spec.extKey, spec: spec.prefsSpec)
+        let key = UUID()
+        let h = ExtensionHost()
+        h.onLog = { msg in print("[invoke:interval:\(spec.cname)] \(msg)") }
+        let savedExtId = spec.cmdId
+        h.onCapability = { [weak self] m, p in
+            let prev = self?.currentExtId; self?.currentExtId = savedExtId
+            defer { self?.currentExtId = prev ?? "" }
+            return self?.handleCapability(m, p) ?? .null
+        }
+        h.onTerminate = { [weak self] in DispatchQueue.main.async { self?.noViewHosts[key] = nil } }
+        noViewHosts[key] = h
+        let paths = extensionPaths(id: spec.cmdId, entryRelPath: spec.rel)
+        h.launch(repoRoot: repoRoot, entryRelPath: spec.rel, command: spec.cname, preferences: prefs,
+                 mode: "no-view", trusted: AppSettings.shared.isTrusted(Self.extGrantKey(forId: spec.cmdId)),
+                 assetsPath: paths.assets, supportPath: paths.support, launchType: "background")
     }
 
     // MARK: - Required-preferences onboarding (Raycast parity)
