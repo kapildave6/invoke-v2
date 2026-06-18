@@ -2349,8 +2349,11 @@ public final class AppController: NSObject, NSApplicationDelegate {
                     let iconPath = resolveIcon(c["icon"]) ?? extIconPath
                     // Raycast command arguments (collected before the command runs; distinct from prefs).
                     let argSpec = (c["arguments"] as? [[String: Any]]) ?? []
-                    // Background `interval` (e.g. "10m"): schedule a headless run on a timer.
-                    if let iv = c["interval"] as? String, let secs = Self.parseInterval(iv) {
+                    // Background `interval` (e.g. "10m"): schedule a headless run on a timer — ONLY for
+                    // no-view commands. A menu-bar/view command run as no-view would call its React
+                    // component as a plain function → "useState of null". (Menu-bar refresh, when toggled
+                    // on, is handled by the live menu-bar host, not the interval scheduler.)
+                    if cmode == "no-view", let iv = c["interval"] as? String, let secs = Self.parseInterval(iv) {
                         intervalSpecs.append(IntervalSpec(cmdId: cmdId, extKey: extKey, rel: rel, cname: cname, seconds: secs, prefsSpec: prefsSpec))
                     }
                     if cmode == "menu-bar" {
