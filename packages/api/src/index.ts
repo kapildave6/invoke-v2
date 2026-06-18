@@ -670,7 +670,9 @@ export async function launchCommand(_options: {
   arguments?: Record<string, unknown>; context?: unknown; fallbackText?: string;
 }): Promise<void> { return unsupported("launchCommand"); }
 /** Update the current command's root-list subtitle. Host wiring pending — no-op so callers don't break. */
-export async function updateCommandMetadata(_metadata: { subtitle?: string | null }): Promise<void> {}
+export async function updateCommandMetadata(metadata: { subtitle?: string | null }): Promise<void> {
+  await rpc("command.updateMetadata", { subtitle: metadata?.subtitle ?? null });
+}
 /** Read the active browser tab via a companion browser extension. Not wired yet; throws only if called. */
 export const BrowserExtension = {
   getContent: (_options?: unknown): Promise<string> => unsupported("BrowserExtension.getContent"),

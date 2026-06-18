@@ -36,6 +36,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
     // AI-extension tools (manifest tools[]): per-extension list, used by the @-mode agent loop.
     private struct AIToolSpec { let name, description, rel: String }
     private var aiExtTools: [String: [AIToolSpec]] = [:]
+    // Per-command subtitle overrides set via updateCommandMetadata (keyed by command id).
+    private var cmdSubtitleOverride: [String: String] = [:]
     private lazy var commands: [RootCommand] = makeCommands()
 
     private enum Mode { case root, clipboard, emoji, screenshots, snippets, quicklinks, extensionView, aiAnswer, nativeForm, aiChat }
@@ -1001,7 +1003,11 @@ public final class AppController: NSObject, NSApplicationDelegate {
         return exact + rest
     }
 
-    private func itemNode(id: Int, title: String, subtitle: String?, kind: String, appPath: String?, icon: String?, commandId: String?, alias: String? = nil, iconPath: String? = nil) -> ViewNode {
+    private func itemNode(id: Int, title titleArg: String, subtitle subtitleArg: String?, kind: String, appPath: String?, icon: String?, commandId: String?, alias: String? = nil, iconPath: String? = nil) -> ViewNode {
+        let title = titleArg
+        // A command can update its own subtitle via updateCommandMetadata (Raycast) — e.g. a "days until"
+        // command showing the live count in the launcher. Apply any override.
+        let subtitle = (commandId.flatMap { cmdSubtitleOverride[$0] }) ?? subtitleArg
         var accessories: [JSONValue] = []
         if let alias, !alias.isEmpty { accessories.append(.object(["tag": .string(alias)])) }
         accessories.append(.object(["text": .string(kind)]))
@@ -1905,6 +1911,13 @@ public final class AppController: NSObject, NSApplicationDelegate {
         case "captureException":
             // Diagnostic only (no UI). The message body isn't logged — it may carry user content.
             print("[invoke:ext] captureException from \(currentExtId)")
+            return .null
+        case "command.updateMetadata":
+            // updateCommandMetadata({subtitle}): set the command's subtitle in the launcher (currentExtId
+            // is the command id). Re-render the root if it's showing so the new subtitle appears.
+            if case .string(let sub)? = arg("subtitle") { cmdSubtitleOverride[currentExtId] = sub }
+            else { cmdSubtitleOverride[currentExtId] = nil }
+            if mode == .root { renderRoot(calcCard: nil) }
             return .null
         case "cache.set":
             cacheStorageSet(arg("key")?.stringValue ?? "", value: arg("value")?.stringValue ?? "")

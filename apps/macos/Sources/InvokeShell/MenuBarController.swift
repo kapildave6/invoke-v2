@@ -65,24 +65,38 @@ final class MenuBarController {
     // MARK: - Rendering the tree → NSStatusItem + NSMenu
 
     private func rebuild(_ cmdId: String) {
-        guard let entry = entries[cmdId] else { return }
+        guard let entry = entries[cmdId] else { print("[invoke:menubar] rebuild: no entry for \(cmdId)"); return }
         // The extension renders a single MenuBarExtra at the surface root.
-        guard let mb = firstNode(entry.host.tree.root, type: "menubar-extra") else { return }
+        guard let mb = firstNode(entry.host.tree.root, type: "menubar-extra") else {
+            print("[invoke:menubar] rebuild: no menubar-extra node yet (root has \(entry.host.tree.root.children.count) children: \(entry.host.tree.root.children.map { $0.type }))")
+            return
+        }
+        let fullTitle = mb.props["title"]?.stringValue ?? ""
+        let iconStr = mb.props["icon"]?.stringValue
 
-        // Status-bar button: prefer the title; fall back to an SF-symbol icon, else the command's first letter.
-        if let title = mb.props["title"]?.stringValue, !title.isEmpty {
-            entry.statusItem.button?.image = nil
-            entry.statusItem.button?.title = title
-        } else if let icon = mb.props["icon"]?.stringValue,
-                  let img = NSImage(systemSymbolName: icon, accessibilityDescription: nil) {
+        // Keep the status-bar button COMPACT so it stays visible on a crowded / notched menu bar (a long
+        // title gets pushed under the notch and vanishes). Priority: SF-symbol icon → emoji icon → a
+        // short title (capped). The full title always appears as a header at the top of the dropdown.
+        if let icon = iconStr, let img = NSImage(systemSymbolName: icon, accessibilityDescription: nil) {
             entry.statusItem.button?.title = ""
-            entry.statusItem.button?.image = img
+            entry.statusItem.button?.image = img // an SF symbol
+        } else if let icon = iconStr, !icon.isEmpty, icon.unicodeScalars.contains(where: { $0.properties.isEmoji && $0.value > 0x238C }) {
+            entry.statusItem.button?.image = nil
+            entry.statusItem.button?.title = icon // an emoji — narrow + always visible
+        } else if !fullTitle.isEmpty {
+            entry.statusItem.button?.image = nil
+            entry.statusItem.button?.title = fullTitle.count > 20 ? String(fullTitle.prefix(19)) + "…" : fullTitle
         } else {
             entry.statusItem.button?.title = "●"
         }
 
         let menu = NSMenu()
         entry.actions = []
+        // Full title as a header so the (possibly long) text is readable even when the button is compact.
+        if !fullTitle.isEmpty {
+            let header = NSMenuItem(title: fullTitle, action: nil, keyEquivalent: ""); header.isEnabled = false
+            menu.addItem(header); menu.addItem(.separator())
+        }
         appendChildren(of: mb, to: menu, entry: entry)
 
         // Standard footer: remove this menu-bar command.
