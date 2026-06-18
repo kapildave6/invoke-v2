@@ -2,9 +2,9 @@
   "root": "/Users/test/Documents/code/extensions/extensions",
   "trusted": false,
   "counts": {
-    "SUPPORTED": 1489,
-    "DEGRADED": 432,
-    "UNSUPPORTED": 1040
+    "SUPPORTED": 1500,
+    "DEGRADED": 435,
+    "UNSUPPORTED": 1026
   },
   "topGaps": [
     [
@@ -28,20 +28,16 @@
       42
     ],
     [
-      "@raycast/utils",
-      19
-    ],
-    [
       "runPowerShellScript",
       18
     ],
     [
-      "@raycast/api",
-      9
-    ],
-    [
       "namespace import of @raycast/api",
       7
+    ],
+    [
+      "@raycast/api",
+      3
     ]
   ],
   "results": [
@@ -5041,9 +5037,7 @@
         "denied Node built-ins in sandbox: fs"
       ],
       "degraded": [],
-      "unknown": [
-        "@raycast/utils:DeeplinkType (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "base-stats",
@@ -13886,9 +13880,7 @@
         "denied Node built-ins in sandbox: fs"
       ],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:fetch (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "cpanel",
@@ -16844,7 +16836,7 @@
       "name": "deta-space",
       "title": "Deta Space",
       "dir": "deta-space",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 5,
       "modes": "view",
       "apiImports": [
@@ -16873,9 +16865,7 @@
       "builtins": [],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/utils:CachedPromiseOptions (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "deutscherwetterdienst",
@@ -17387,7 +17377,7 @@
       "name": "dicom",
       "title": "DICOM",
       "dir": "dicom",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
@@ -17405,9 +17395,7 @@
       ],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/utils:useStreamJSON (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "dict-cc",
@@ -22355,7 +22343,7 @@
       "name": "feedbin",
       "title": "Feedbin",
       "dir": "feedbin",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 6,
       "modes": "view|menu-bar|no-view",
       "apiImports": [
@@ -22401,9 +22389,7 @@
         "launchCommand: loads; throws if called (inter-command launch not wired)",
         "declares command `arguments[]` — not passed by runtime yet"
       ],
-      "unknown": [
-        "@raycast/utils:CachedPromiseOptions (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "feedly",
@@ -23843,9 +23829,7 @@
         "denied Node built-ins in sandbox: fs"
       ],
       "degraded": [],
-      "unknown": [
-        "@raycast/utils:AsyncState (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "floaty",
@@ -30093,9 +30077,7 @@
       "degraded": [
         "launchCommand: loads; throws if called (inter-command launch not wired)"
       ],
-      "unknown": [
-        "@raycast/utils:useStreamJSON (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "hazeover",
@@ -30209,7 +30191,7 @@
       "name": "height",
       "title": "Height",
       "dir": "height",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 5,
       "modes": "view",
       "apiImports": [
@@ -30245,9 +30227,7 @@
       "degraded": [
         "launchCommand: loads; throws if called (inter-command launch not wired)"
       ],
-      "unknown": [
-        "@raycast/utils:CachedPromiseOptions (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "helium",
@@ -30375,7 +30355,7 @@
       "name": "helm-chart",
       "title": "Helm Chart",
       "dir": "helm-chart",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
@@ -30392,9 +30372,7 @@
       ],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/utils:Response (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "helm-docs",
@@ -42322,7 +42300,7 @@
       "name": "masked-link-generator",
       "title": "Masked Link Generator",
       "dir": "masked-link-generator",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 1,
       "modes": "no-view",
       "apiImports": [
@@ -42346,9 +42324,7 @@
       "degraded": [
         "declares command `arguments[]` — not passed by runtime yet"
       ],
-      "unknown": [
-        "@raycast/utils:Response (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "masscode",
@@ -45916,9 +45892,7 @@
       "degraded": [
         "declares command `arguments[]` — not passed by runtime yet"
       ],
-      "unknown": [
-        "@raycast/api:ArgumentsLaunchProps (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "music-assistant-controls",
@@ -48125,7 +48099,7 @@
       "name": "node-release-notes",
       "title": "Node Release Notes",
       "dir": "node-release-notes",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
@@ -48143,9 +48117,7 @@
       "builtins": [],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/utils:AsyncState (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "node-version-manager",
@@ -49155,7 +49127,7 @@
       "name": "nusmods",
       "title": "NUSMods",
       "dir": "nusmods",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
@@ -49177,9 +49149,7 @@
       "builtins": [],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/utils:useStreamJSON (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "nuxt",
@@ -53531,7 +53501,7 @@
       "name": "paynow",
       "title": "Paynow.gg",
       "dir": "paynow",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 5,
       "modes": "view",
       "apiImports": [
@@ -53559,10 +53529,7 @@
       "builtins": [],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/utils:CachedPromiseOptions (not implemented in Invoke)",
-        "@raycast/utils:PaginationOptions (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "paypal-invoices",
@@ -53652,7 +53619,7 @@
       "name": "pcloud",
       "title": "pCloud",
       "dir": "pcloud",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
@@ -53674,9 +53641,7 @@
       "builtins": [],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/utils:Response (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "pdb-explorer",
@@ -53868,7 +53833,7 @@
       "name": "pera-explorer",
       "title": "Pera Algorand Explorer",
       "dir": "pera-explorer",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
@@ -53886,9 +53851,7 @@
       "builtins": [],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/utils:Response (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "percentage-calculator",
@@ -55109,7 +55072,7 @@
       "name": "pitchcast",
       "title": "Pitchcast - Pitchfork Reviews Search",
       "dir": "pitchcast",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
@@ -55127,9 +55090,7 @@
       ],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/utils:Response (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "pitchfork",
@@ -55285,7 +55246,7 @@
       "name": "plane",
       "title": "Plane",
       "dir": "plane",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 3,
       "modes": "view",
       "apiImports": [
@@ -55316,9 +55277,7 @@
       "builtins": [],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/utils:PaginationOptions (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "planetscale",
@@ -60879,9 +60838,7 @@
       "degraded": [
         "useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox"
       ],
-      "unknown": [
-        "@raycast/utils:AsyncState (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "raycast-kozip-extension",
@@ -61311,9 +61268,7 @@
       "degraded": [
         "BrowserExtension: loads; throws if called (browser bridge not wired)"
       ],
-      "unknown": [
-        "@raycast/api:WindowManagement (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "raycast-rsync-extension",
@@ -66057,9 +66012,7 @@
         "denied Node built-ins in sandbox: fs"
       ],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:OpenWithAction (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "script-kit",
@@ -71376,9 +71329,7 @@
         "denied Node built-ins in sandbox: fs"
       ],
       "degraded": [],
-      "unknown": [
-        "@raycast/utils:DeeplinkType (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "spike",
@@ -77430,9 +77381,7 @@
       "degraded": [
         "launchCommand: loads; throws if called (inter-command launch not wired)"
       ],
-      "unknown": [
-        "@raycast/utils:CachedPromiseOptions (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "toggle-desktop-visibility",
@@ -79464,9 +79413,7 @@
         "denied Node built-ins in sandbox: fs"
       ],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:render (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "uk-bank-holidays",
@@ -84276,7 +84223,7 @@
       "name": "window-layouts",
       "title": "Window Layouts",
       "dir": "window-layouts",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 27,
       "modes": "no-view|view",
       "apiImports": [
@@ -84304,9 +84251,7 @@
       "builtins": [],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:WindowManagement (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "window-sizer",

@@ -54,6 +54,7 @@ const API_SUPPORTED = new Set([
   "Tool", // AI-extension tools (M4) — Tool.Confirmation
   "updateCommandMetadata", // command subtitle updates (now implemented)
   "MenuBarExtra", // menu-bar command mode (M4)
+  "render", "fetch", "WindowManagement", "OpenWithAction", // long-tail (~100%)
 ]);
 
 // `@raycast/api` exports that exist but are stubbed/no-op (run, but degraded).
@@ -79,7 +80,7 @@ const UTILS_SUPPORTED = new Set([
   // M1 pure-JS parity helpers
   "getFavicon", "getAvatarIcon", "getProgressIcon", "MutatePromise",
   "useLocalStorage", "useFrecencySorting", "withCache", "createDeeplink", "useAI",
-  "OAuthService", "withAccessToken", "getAccessToken", "WithAccessTokenComponentOrFn",
+  "OAuthService", "withAccessToken", "getAccessToken", "WithAccessTokenComponentOrFn", "useStreamJSON",
 ]);
 
 // `@raycast/utils` exports that run but are degraded / trusted-only.
@@ -99,6 +100,7 @@ const TYPE_ONLY_HINTS = new Set([
   "ItemProps", "FormItemRef", "RequestInit", "Response", "FileIcon",
   "CachedPromiseOptions", "AsyncState", "PaginationOptions",
   "ListItem", "ListSection", "ActionPanelItem", "AlertActionStyle", "DeeplinkType",
+  "ArgumentsLaunchProps",
 ]);
 
 // Node built-ins allowed inside the sandbox (safe-builtins.json + os shim).
@@ -316,6 +318,7 @@ function classifyExtension({ dir, pkg }) {
   // @raycast/utils usage
   for (const n of utilsNames) {
     if (UTILS_SUPPORTED.has(n)) continue;
+    if (TYPE_ONLY_HINTS.has(n)) continue; // type-only (erased at runtime)
     if (UTILS_DEGRADED.has(n)) degraded.push(`${n}: ${UTILS_DEGRADED.get(n)}`);
     else unknown.push(`@raycast/utils:${n} (not implemented in Invoke)`);
   }

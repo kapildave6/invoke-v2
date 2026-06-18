@@ -765,3 +765,32 @@ export function withAccessToken<T extends Record<string, unknown>>(
 function isLikelyComponent(fn: unknown): boolean {
   return typeof fn === "function" && /^[A-Z]/.test((fn as { name?: string }).name ?? "");
 }
+
+/** Raycast's useStreamJSON — streams a large JSON array from a URL/file. We approximate: fetch the
+ *  whole resource, parse the array, optionally filter/transform; good enough for the common case
+ *  (true incremental streaming + temp-file caching is a later refinement). */
+export interface UseStreamJSONOptions<T> {
+  initialData?: T[];
+  filter?: (item: T) => boolean;
+  transform?: (item: unknown) => T;
+  dataPath?: string; // a key in the response object holding the array
+  execute?: boolean;
+  onError?: (e: Error) => void;
+}
+export function useStreamJSON<T = unknown>(url: string, options: UseStreamJSONOptions<T> = {}): AsyncState<T[]> & { data: T[] } {
+  const execute = options.execute === undefined ? true : options.execute;
+  const state = usePromise<T[]>(async () => {
+    if (!execute) return options.initialData ?? [];
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    let json: unknown = await res.json();
+    if (options.dataPath && json && typeof json === "object") json = (json as Record<string, unknown>)[options.dataPath];
+    let arr = (Array.isArray(json) ? json : []) as unknown[];
+    if (options.transform) arr = arr.map(options.transform);
+    let out = arr as T[];
+    if (options.filter) out = out.filter(options.filter);
+    return out;
+  }, [url, execute]);
+  useEffect(() => { if (state.error) options.onError?.(state.error); }, [state.error]); // eslint-disable-line react-hooks/exhaustive-deps
+  return { ...state, data: state.data ?? options.initialData ?? [] };
+}

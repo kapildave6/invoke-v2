@@ -752,6 +752,11 @@ export const PasteAction = Action.Paste;
 export const OpenAction = Action.Open;
 export const PushAction = Action.Push;
 export const SubmitFormAction = Action.SubmitForm;
+// Action.OpenWith — open a file with a chosen app (degrades to Action.Open) + its v1 alias.
+const openWith = (props: { path?: string; target?: string } & CommonActionProps): ReactElement =>
+  Action.Open({ target: String(props.path ?? props.target ?? ""), ...props });
+(Action as unknown as Record<string, unknown>).OpenWith = openWith;
+export const OpenWithAction = openWith;
 export const ToastStyle = Toast.Style;
 export const ImageMask = Image.Mask;
 export const getLocalStorageItem = LocalStorage.getItem;
@@ -769,5 +774,18 @@ export function randomId(): string {
 }
 // v1 imperative search reset — no imperative search handle yet, so a harmless no-op keeps the import alive.
 export async function clearSearchBar(_options?: { forceScrollToTop?: boolean }): Promise<void> {}
+
+// Raycast v1 imperative render(<Command/>) — the modern model renders the default export, so this is a
+// compat no-op that keeps the import alive (v1 extensions calling it still load).
+export function render(_element: ReactNode): void {}
+// Some extensions import `fetch` from @raycast/api; it's just the platform fetch.
+export const fetch = globalThis.fetch?.bind(globalThis);
+// Window management (Raycast's WindowManagement) — not wired; methods throw only if called.
+export const WindowManagement = {
+  getActiveWindow: (): Promise<unknown> => unsupported("WindowManagement.getActiveWindow"),
+  getWindowsOnActiveDesktop: (): Promise<unknown[]> => unsupported("WindowManagement.getWindowsOnActiveDesktop"),
+  setWindowBounds: (_opts?: unknown): Promise<void> => unsupported("WindowManagement.setWindowBounds"),
+  getDesktops: (): Promise<unknown[]> => unsupported("WindowManagement.getDesktops"),
+};
 
 export type { ReactNode };
