@@ -45,7 +45,10 @@ final class MenuBarController {
         host.onCommit = { [weak self] _ in self?.rebuild(cmdId) }
         host.onCapability = { [weak self] m, p in self?.capability?(extKey, m, p) ?? .null }
         host.onCapabilityAsync = { [weak self] m, p, reply in self?.capabilityAsync?(extKey, m, p, reply) ?? false }
-        host.onTerminate = { [weak self] in self?.remove(cmdId) }
+        // A menu-bar command renders once and its process EXITS (Raycast model — the menu is then static
+        // until refreshed/clicked). Do NOT remove the status item when the child ends; keep showing the
+        // rendered menu. The status item is removed only by an explicit toggle-off / "Remove from Menu Bar".
+        host.onTerminate = {}
         host.onLog = { msg in print("[invoke:menubar:\(command)] \(msg)") }
         host.launch(repoRoot: repoRoot, entryRelPath: entryRelPath, command: command, preferences: preferences,
                     mode: "menu-bar", trusted: trusted, assetsPath: assetsPath, supportPath: supportPath)
