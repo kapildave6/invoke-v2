@@ -8,9 +8,9 @@
 
 | Status | Count | % |
 |---|---:|---:|
-| SUPPORTED | 1473 | 49.7% |
-| DEGRADED | 1423 | 48.1% |
-| UNSUPPORTED | 65 | 2.2% |
+| SUPPORTED | 1489 | 50.3% |
+| DEGRADED | 1437 | 48.5% |
+| UNSUPPORTED | 35 | 1.2% |
 
 ## Top gaps (extensions blocked/degraded per missing capability)
 
@@ -20,17 +20,13 @@
 | declares command `arguments[]` — not passed by runtime yet | 481 |
 | launchCommand | 250 |
 | BrowserExtension | 47 |
-| useExec | 41 |
-| @raycast/utils | 37 |
-| @raycast/api | 30 |
+| useExec | 42 |
+| @raycast/utils | 19 |
 | runPowerShellScript | 18 |
+| @raycast/api | 9 |
 | namespace import of @raycast/api | 7 |
 
-## UNSUPPORTED (65)
-
-### `1loc` — 1 LOC - JavaScript Utilities in Single Line of Code
-- dir: `1loc` · commands: 1 · modes: view
-- Needs review: @raycast/utils:getPreferenceValues (not implemented in Invoke); @raycast/utils:List (not implemented in Invoke)
+## UNSUPPORTED (35)
 
 ### `apple-passwords` — Apple Password
 - dir: `apple-passwords` · commands: 2 · modes: view|no-view
@@ -41,11 +37,6 @@
 - dir: `bartender` · commands: 4 · modes: no-view|view
 - Degraded: uses Node built-ins (ok in trusted mode): fs
 - Needs review: @raycast/utils:DeeplinkType (not implemented in Invoke)
-
-### `claude-sessions` — Claude Sessions
-- dir: `claude-sessions` · commands: 2 · modes: view
-- Degraded: uses Node built-ins (ok in trusted mode): fs, child_process
-- Needs review: @raycast/api:useState (not in Invoke surface — needs review); @raycast/api:useEffect (not in Invoke surface — needs review); @raycast/api:readdir (not in Invoke surface — needs review); @raycast/api:stat (not in Invoke surface — needs review); @raycast/utils:useState (not implemented in Invoke); @raycast/utils:useEffect (not implemented in Invoke)
 
 ### `comet` — Comet
 - dir: `comet` · commands: 7 · modes: view|no-view
@@ -62,11 +53,6 @@
 - Degraded: uses Node built-ins (ok in trusted mode): fs
 - Needs review: namespace import of @raycast/api (member usage unverified)
 
-### `deepwiki` — DeepWiki
-- dir: `deepwiki` · commands: 3 · modes: no-view|view
-- Degraded: BrowserExtension: loads; throws if called (browser bridge not wired); launchCommand: loads; throws if called (inter-command launch not wired); declares command `arguments[]` — not passed by runtime yet
-- Needs review: @raycast/utils:LaunchProps (not implemented in Invoke); @raycast/utils:open (not implemented in Invoke); @raycast/utils:Action (not implemented in Invoke); @raycast/utils:ActionPanel (not implemented in Invoke); @raycast/utils:Icon (not implemented in Invoke); @raycast/utils:launchCommand (not implemented in Invoke); @raycast/utils:LaunchType (not implemented in Invoke); @raycast/utils:List (not implemented in Invoke); @raycast/utils:showToast (not implemented in Invoke); @raycast/utils:Toast (not implemented in Invoke)
-
 ### `deta-space` — Deta Space
 - dir: `deta-space` · commands: 5 · modes: view
 - Needs review: @raycast/utils:CachedPromiseOptions (not implemented in Invoke)
@@ -75,55 +61,20 @@
 - dir: `dicom` · commands: 1 · modes: view
 - Needs review: @raycast/utils:useStreamJSON (not implemented in Invoke)
 
-### `dlmoji` — DLmoji
-- dir: `dlmoji` · commands: 1 · modes: view
-- Needs review: @raycast/api:checkEmojiOnly (not in Invoke surface — needs review)
-
-### `dota-2` — Dota 2
-- dir: `dota-2` · commands: 2 · modes: view
-- Needs review: @raycast/api:useState (not in Invoke surface — needs review); @raycast/api:useEffect (not in Invoke surface — needs review); @raycast/api:useMemo (not in Invoke surface — needs review)
-
 ### `feedbin` — Feedbin
 - dir: `feedbin` · commands: 6 · modes: view|menu-bar|no-view
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares command `arguments[]` — not passed by runtime yet
 - Needs review: @raycast/utils:CachedPromiseOptions (not implemented in Invoke)
 
-### `flight-miles-calculator` — Flight Miles Calculator
-- dir: `flight-miles-calculator` · commands: 1 · modes: view
-- Needs review: @raycast/utils:Form (not implemented in Invoke); @raycast/utils:Action (not implemented in Invoke); @raycast/utils:ActionPanel (not implemented in Invoke); @raycast/utils:Icon (not implemented in Invoke); @raycast/utils:useNavigation (not implemented in Invoke)
-
 ### `flighty` — Flighty
 - dir: `flighty` · commands: 1 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): fs
-- Needs review: @raycast/api:useState (not in Invoke surface — needs review); @raycast/api:useEffect (not in Invoke surface — needs review); @raycast/utils:AsyncState (not implemented in Invoke); @raycast/utils:useState (not implemented in Invoke); @raycast/utils:useEffect (not implemented in Invoke)
-
-### `floaty` — Floaty
-- dir: `floaty` · commands: 4 · modes: view|no-view
-- Degraded: uses Node built-ins (ok in trusted mode): fs
-- Needs review: @raycast/api:useCallback (not in Invoke surface — needs review); @raycast/api:useEffect (not in Invoke surface — needs review); @raycast/api:useMemo (not in Invoke surface — needs review); @raycast/api:useRef (not in Invoke surface — needs review); @raycast/api:useState (not in Invoke surface — needs review); @raycast/utils:useCallback (not implemented in Invoke); @raycast/utils:useEffect (not implemented in Invoke); @raycast/utils:useMemo (not implemented in Invoke); @raycast/utils:useRef (not implemented in Invoke); @raycast/utils:useState (not implemented in Invoke); @raycast/utils:Toast (not implemented in Invoke); @raycast/utils:closeMainWindow (not implemented in Invoke); @raycast/utils:showHUD (not implemented in Invoke); @raycast/utils:showToast (not implemented in Invoke)
-
-### `focustask` — FocusTask
-- dir: `focustask` · commands: 3 · modes: menu-bar|view
-- Needs review: @raycast/utils:Action (not implemented in Invoke); @raycast/utils:ActionPanel (not implemented in Invoke); @raycast/utils:Form (not implemented in Invoke); @raycast/utils:Icon (not implemented in Invoke); @raycast/utils:popToRoot (not implemented in Invoke); @raycast/utils:showToast (not implemented in Invoke); @raycast/utils:Toast (not implemented in Invoke); @raycast/utils:open (not implemented in Invoke)
-
-### `github-trending` — GitHub Trending
-- dir: `github-trending` · commands: 1 · modes: view
-- Needs review: @raycast/utils:Action (not implemented in Invoke); @raycast/utils:ActionPanel (not implemented in Invoke); @raycast/utils:Detail (not implemented in Invoke); @raycast/utils:Icon (not implemented in Invoke)
+- Needs review: @raycast/utils:AsyncState (not implemented in Invoke)
 
 ### `google-chrome` — Google Chrome
 - dir: `google-chrome` · commands: 10 · modes: view|no-view
 - Degraded: uses Node built-ins (ok in trusted mode): fs, child_process
 - Needs review: namespace import of @raycast/api (member usage unverified)
-
-### `groq-tools` — GROQ Tools
-- dir: `groq-tools` · commands: 3 · modes: view|no-view
-- Degraded: declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): fs
-- Needs review: @raycast/api:useState (not in Invoke surface — needs review); @raycast/api:useEffect (not in Invoke surface — needs review); @raycast/api:readFile (not in Invoke surface — needs review)
-
-### `hammerspoon` — Hammerspoon
-- dir: `hammerspoon` · commands: 10 · modes: no-view|view
-- Degraded: uses Node built-ins (ok in trusted mode): fs
-- Needs review: @raycast/api:useContext (not in Invoke surface — needs review); @raycast/api:useState (not in Invoke surface — needs review); @raycast/api:useMemo (not in Invoke surface — needs review); @raycast/utils:closeMainWindow (not implemented in Invoke); @raycast/utils:ActionPanel (not implemented in Invoke); @raycast/utils:List (not implemented in Invoke); @raycast/utils:Action (not implemented in Invoke); @raycast/utils:Icon (not implemented in Invoke); @raycast/utils:Color (not implemented in Invoke); @raycast/utils:getPreferenceValues (not implemented in Invoke); @raycast/utils:open (not implemented in Invoke); @raycast/utils:Application (not implemented in Invoke); @raycast/utils:showHUD (not implemented in Invoke); @raycast/utils:showToast (not implemented in Invoke); @raycast/utils:Toast (not implemented in Invoke); @raycast/utils:popToRoot (not implemented in Invoke); @raycast/utils:Detail (not implemented in Invoke); @raycast/utils:useContext (not implemented in Invoke); @raycast/utils:useState (not implemented in Invoke); @raycast/utils:useMemo (not implemented in Invoke)
 
 ### `haystack` — Haystack
 - dir: `haystack` · commands: 4 · modes: view|no-view
@@ -139,32 +90,14 @@
 - dir: `helm-chart` · commands: 1 · modes: view
 - Needs review: @raycast/utils:Response (not implemented in Invoke)
 
-### `hypersonic` — Hypersonic
-- dir: `hypersonic` · commands: 2 · modes: view|menu-bar
-- Degraded: launchCommand: loads; throws if called (inter-command launch not wired)
-- Needs review: @raycast/api:TransparentEmpty (not in Invoke surface — needs review); @raycast/api:useDatabases (not in Invoke surface — needs review); @raycast/api:useFilter (not in Invoke surface — needs review); @raycast/api:useAuth (not in Invoke surface — needs review); @raycast/api:Tag (not in Invoke surface — needs review); @raycast/api:AuthorizationAction (not in Invoke surface — needs review); @raycast/api:OpenPreferencesAction (not in Invoke surface — needs review); @raycast/api:discord (not in Invoke surface — needs review); @raycast/api:figma (not in Invoke surface — needs review); @raycast/api:github (not in Invoke surface — needs review); @raycast/api:gitlab (not in Invoke surface — needs review); @raycast/api:linear (not in Invoke surface — needs review); @raycast/api:notion (not in Invoke surface — needs review); @raycast/api:slack (not in Invoke surface — needs review); @raycast/api:x (not in Invoke surface — needs review); @raycast/api:youtube (not in Invoke surface — needs review); @raycast/api:reauthorize (not in Invoke surface — needs review); @raycast/api:Project (not in Invoke surface — needs review); @raycast/api:useMemo (not in Invoke surface — needs review); @raycast/api:useState (not in Invoke surface — needs review); @raycast/api:getTodos (not in Invoke surface — needs review); @raycast/api:Filter (not in Invoke surface — needs review); @raycast/utils:useDatabases (not implemented in Invoke); @raycast/utils:useFilter (not implemented in Invoke); @raycast/utils:Tag (not implemented in Invoke); @raycast/utils:Project (not implemented in Invoke); @raycast/utils:Action (not implemented in Invoke); @raycast/utils:ActionPanel (not implemented in Invoke); @raycast/utils:Color (not implemented in Invoke); @raycast/utils:Icon (not implemented in Invoke); @raycast/utils:Image (not implemented in Invoke); @raycast/utils:Filter (not implemented in Invoke); @raycast/utils:loadPreferences (not implemented in Invoke); @raycast/utils:parseTodosToDoneWorkString (not implemented in Invoke); @raycast/utils:getTodos (not implemented in Invoke)
-
 ### `invisible-text-detector` — Invisible Text Detector
 - dir: `invisible-text-detector` · commands: 3 · modes: view|no-view
 - Needs review: namespace import of @raycast/api (member usage unverified)
-
-### `jira-search` — Jira Search
-- dir: `jira-search` · commands: 5 · modes: view|no-view
-- Degraded: uses Node built-ins (ok in trusted mode): fs
-- Needs review: @raycast/api:ResultItem (not in Invoke surface — needs review); @raycast/api:SearchCommand (not in Invoke surface — needs review); @raycast/api:jiraFetchObject (not in Invoke surface — needs review); @raycast/api:jiraUrl (not in Invoke surface — needs review)
 
 ### `masked-link-generator` — Masked Link Generator
 - dir: `masked-link-generator` · commands: 1 · modes: no-view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
 - Needs review: @raycast/utils:Response (not implemented in Invoke)
-
-### `mastodon-search` — Mastodon Search
-- dir: `mastodon-search` · commands: 1 · modes: view
-- Needs review: @raycast/api:useMemo (not in Invoke surface — needs review); @raycast/api:useState (not in Invoke surface — needs review); @raycast/utils:useMemo (not implemented in Invoke)
-
-### `memo` — Memo
-- dir: `memo` · commands: 2 · modes: view
-- Needs review: @raycast/api:Page (not in Invoke surface — needs review); @raycast/api:Api (not in Invoke surface — needs review); @raycast/api:RaycastAdapter (not in Invoke surface — needs review); @raycast/api:useEffect (not in Invoke surface — needs review); @raycast/api:useState (not in Invoke surface — needs review); @raycast/api:Saver (not in Invoke surface — needs review)
 
 ### `mozilla-vpn` — Mozilla VPN Connect
 - dir: `mozilla-vpn` · commands: 1 · modes: view
@@ -189,32 +122,9 @@
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired); uses Node built-ins (ok in trusted mode): fs
 - Needs review: namespace import of @raycast/api (member usage unverified)
 
-### `omnivore` — Omnivore
-- dir: `omnivore` · commands: 2 · modes: view|no-view
-- Degraded: declares command `arguments[]` — not passed by runtime yet
-- Needs review: @raycast/utils:getPreferenceValues (not implemented in Invoke)
-
-### `openverse` — Openverse
-- dir: `openverse` · commands: 1 · modes: view
-- Degraded: uses Node built-ins (ok in trusted mode): fs
-- Needs review: @raycast/api:existsSync (not in Invoke surface — needs review); @raycast/api:runAppleScript (not in Invoke surface — needs review); @raycast/api:useEffect (not in Invoke surface — needs review); @raycast/api:useRef (not in Invoke surface — needs review); @raycast/api:useState (not in Invoke surface — needs review)
-
-### `otter` — Otter Bookmarks
-- dir: `otter` · commands: 4 · modes: view|menu-bar
-- Needs review: @raycast/api:useCachedPromise (not in Invoke surface — needs review); @raycast/utils:List (not implemented in Invoke); @raycast/utils:ActionPanel (not implemented in Invoke); @raycast/utils:Action (not implemented in Invoke); @raycast/utils:Icon (not implemented in Invoke); @raycast/utils:Detail (not implemented in Invoke); @raycast/utils:getPreferenceValues (not implemented in Invoke); @raycast/utils:Image (not implemented in Invoke); @raycast/utils:MenuBarExtra (not implemented in Invoke); @raycast/utils:open (not implemented in Invoke); @raycast/utils:Keyboard (not implemented in Invoke); @raycast/utils:openExtensionPreferences (not implemented in Invoke); @raycast/utils:useFetchRecentItems (not implemented in Invoke)
-
-### `parrot-translate` — Parrot Translate
-- dir: `parrot-translate` · commands: 1 · modes: view
-- Degraded: uses Node built-ins (ok in trusted mode): child_process
-- Needs review: @raycast/api:exec (not in Invoke surface — needs review); @raycast/api:execFile (not in Invoke surface — needs review); @raycast/api:COPY_TYPE (not in Invoke surface — needs review)
-
 ### `paynow` — Paynow.gg
 - dir: `paynow` · commands: 5 · modes: view
 - Needs review: @raycast/utils:CachedPromiseOptions (not implemented in Invoke); @raycast/utils:PaginationOptions (not implemented in Invoke)
-
-### `paystack` — Paystack
-- dir: `paystack` · commands: 8 · modes: view
-- Needs review: @raycast/utils:showToast (not implemented in Invoke); @raycast/utils:Toast (not implemented in Invoke); @raycast/utils:List (not implemented in Invoke); @raycast/utils:ActionPanel (not implemented in Invoke); @raycast/utils:Action (not implemented in Invoke); @raycast/utils:openExtensionPreferences (not implemented in Invoke); @raycast/utils:Icon (not implemented in Invoke); @raycast/utils:Form (not implemented in Invoke); @raycast/utils:Clipboard (not implemented in Invoke); @raycast/utils:confirmAlert (not implemented in Invoke); @raycast/utils:Alert (not implemented in Invoke)
 
 ### `pcloud` — pCloud
 - dir: `pcloud` · commands: 1 · modes: view
@@ -242,10 +152,6 @@
 - dir: `quick-quit` · commands: 4 · modes: view|no-view
 - Needs review: @raycast/api:// Import the Application type (not in Invoke surface — needs review)
 
-### `random-color` — Random Color
-- dir: `random-color` · commands: 2 · modes: no-view|view
-- Needs review: @raycast/api:randomColor (not in Invoke surface — needs review)
-
 ### `raycast-jq` — Jq
 - dir: `raycast-jq` · commands: 1 · modes: view
 - Degraded: useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox; uses Node built-ins (ok in trusted mode): child_process, fs
@@ -255,28 +161,6 @@
 - dir: `raycast-port` · commands: 3 · modes: no-view
 - Degraded: BrowserExtension: loads; throws if called (browser bridge not wired); uses Node built-ins (ok in trusted mode): child_process
 - Needs review: @raycast/api:WindowManagement (not in Invoke surface — needs review)
-
-### `readeck` — Readeck
-- dir: `readeck` · commands: 2 · modes: view
-- Needs review: @raycast/utils:Action (not implemented in Invoke); @raycast/utils:ActionPanel (not implemented in Invoke); @raycast/utils:Icon (not implemented in Invoke); @raycast/utils:Form (not implemented in Invoke); @raycast/utils:showToast (not implemented in Invoke); @raycast/utils:Toast (not implemented in Invoke); @raycast/utils:getPreferenceValues (not implemented in Invoke); @raycast/utils:List (not implemented in Invoke)
-
-### `readwise-to-tana` — Readwise to Tana
-- dir: `readwise-to-tana` · commands: 1 · modes: view
-- Needs review: @raycast/utils:getPreferenceValues (not implemented in Invoke)
-
-### `repository-manager` — Repository Manager
-- dir: `repository-manager` · commands: 1 · modes: view
-- Degraded: uses Node built-ins (ok in trusted mode): child_process, fs
-- Needs review: @raycast/api:useMemo (not in Invoke surface — needs review); @raycast/api:useCallback (not in Invoke surface — needs review); @raycast/api:useEffect (not in Invoke surface — needs review); @raycast/api:useRef (not in Invoke surface — needs review); @raycast/api:useState (not in Invoke surface — needs review); @raycast/api:existsSync (not in Invoke surface — needs review); @raycast/api:readFileSync (not in Invoke surface — needs review); @raycast/utils:Action (not implemented in Invoke); @raycast/utils:ActionPanel (not implemented in Invoke); @raycast/utils:AI (not implemented in Invoke); @raycast/utils:Detail (not implemented in Invoke); @raycast/utils:Icon (not implemented in Invoke); @raycast/utils:environment (not implemented in Invoke); @raycast/utils:useNavigation (not implemented in Invoke); @raycast/utils:Color (not implemented in Invoke); @raycast/utils:Image (not implemented in Invoke); @raycast/utils:List (not implemented in Invoke); @raycast/utils:Clipboard (not implemented in Invoke); @raycast/utils:Toast (not implemented in Invoke); @raycast/utils:showToast (not implemented in Invoke); @raycast/utils:confirmAlert (not implemented in Invoke); @raycast/utils:useEffect (not implemented in Invoke); @raycast/utils:useMemo (not implemented in Invoke); @raycast/utils:useRef (not implemented in Invoke); @raycast/utils:useState (not implemented in Invoke)
-
-### `rsync-commands` — Rsync Commands
-- dir: `rsync-commands` · commands: 1 · modes: view
-- Degraded: uses Node built-ins (ok in trusted mode): child_process
-- Needs review: @raycast/api:useCallback (not in Invoke surface — needs review); @raycast/api:memo (not in Invoke surface — needs review); @raycast/api:useState (not in Invoke surface — needs review); @raycast/api:useEffect (not in Invoke surface — needs review)
-
-### `scrapbox-search` — Scrapbox Search
-- dir: `scrapbox-search` · commands: 1 · modes: view
-- Needs review: @raycast/api:useEffect (not in Invoke surface — needs review); @raycast/api:useState (not in Invoke surface — needs review); @raycast/utils:useEffect (not implemented in Invoke); @raycast/utils:useState (not implemented in Invoke)
 
 ### `script-commands` — Script Commands Store – Find and manage your Raycast Script Commands
 - dir: `script-commands` · commands: 1 · modes: view
@@ -293,19 +177,6 @@
 - Degraded: uses Node built-ins (ok in trusted mode): fs
 - Needs review: @raycast/utils:DeeplinkType (not implemented in Invoke)
 
-### `sun-moon-times` — Sun/Moon Times
-- dir: `sun-moon-times` · commands: 1 · modes: view
-- Needs review: @raycast/utils:List (not implemented in Invoke)
-
-### `supergenpass` — SuperGenPass
-- dir: `superpassgen` · commands: 1 · modes: view
-- Needs review: @raycast/api:useState (not in Invoke surface — needs review)
-
-### `supernova` — Supernova
-- dir: `supernova` · commands: 6 · modes: view|no-view
-- Degraded: uses Node built-ins (ok in trusted mode): fs, child_process
-- Needs review: @raycast/api:Asset (not in Invoke surface — needs review); @raycast/api:AssetGroup (not in Invoke surface — needs review); @raycast/api:DesignComponent (not in Invoke surface — needs review); @raycast/api:DesignSystemVersion (not in Invoke surface — needs review); @raycast/api:DocSearchResultData (not in Invoke surface — needs review); @raycast/api:DocumentationGroup (not in Invoke surface — needs review); @raycast/api:DocumentationPage (not in Invoke surface — needs review); @raycast/api:Token (not in Invoke surface — needs review); @raycast/api:TokenGroup (not in Invoke surface — needs review); @raycast/api:DesignSystem (not in Invoke surface — needs review); @raycast/api:Supernova (not in Invoke surface — needs review); @raycast/api:Workspace (not in Invoke surface — needs review); @raycast/api:AssetFormat (not in Invoke surface — needs review); @raycast/api:AssetScale (not in Invoke surface — needs review); @raycast/api:ComponentPropertyLinkElementType (not in Invoke surface — needs review); @raycast/api:ComponentPropertyType (not in Invoke surface — needs review); @raycast/api:RenderedAsset (not in Invoke surface — needs review)
-
 ### `toggl-track` — Toggl Track
 - dir: `toggl-track` · commands: 7 · modes: view|menu-bar
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired); uses Node built-ins (ok in trusted mode): child_process
@@ -320,14 +191,7 @@
 - dir: `window-layouts` · commands: 27 · modes: no-view|view
 - Needs review: @raycast/api:WindowManagement (not in Invoke surface — needs review)
 
-### `zenmux-manager` — ZenMux Manager
-- dir: `zenmux-manager` · commands: 2 · modes: no-view|view
-- Degraded: uses Node built-ins (ok in trusted mode): fs, child_process
-- Needs review: @raycast/api:name: "Search tool imports the routing table" (not in Invoke surface — needs review); @raycast/api:passed:
-      searchTool.includes('from "../zenmux-doc-routing"') &&
-      searchTool.includes("routingMatches") (not in Invoke surface — needs review)
-
-## DEGRADED (1423)
+## DEGRADED (1437)
 
 ### `0x0` — 0x0
 - dir: `0x0` · commands: 1 · modes: view
@@ -953,6 +817,10 @@
 - dir: `claude-code-launcher` · commands: 1 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): fs, child_process
 
+### `claude-sessions` — Claude Sessions
+- dir: `claude-sessions` · commands: 2 · modes: view
+- Degraded: uses Node built-ins (ok in trusted mode): fs, child_process
+
 ### `claudecast` — ClaudeCast
 - dir: `claudecast` · commands: 10 · modes: view|no-view|menu-bar
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired); uses Node built-ins (ok in trusted mode): fs, child_process, readline
@@ -1332,6 +1200,10 @@
 ### `deepseeker` — Deepseek Quick Actions
 - dir: `deepseeker` · commands: 12 · modes: view|no-view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
+
+### `deepwiki` — DeepWiki
+- dir: `deepwiki` · commands: 3 · modes: no-view|view
+- Degraded: BrowserExtension: loads; throws if called (browser bridge not wired); launchCommand: loads; throws if called (inter-command launch not wired); declares command `arguments[]` — not passed by runtime yet
 
 ### `default-web-browser-manager` — Default Web Browser Manager
 - dir: `default-web-browser-manager` · commands: 2 · modes: view|no-view
@@ -1825,6 +1697,10 @@
 - dir: `flibusta-search` · commands: 1 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): fs
 
+### `floaty` — Floaty
+- dir: `floaty` · commands: 4 · modes: view|no-view
+- Degraded: uses Node built-ins (ok in trusted mode): fs
+
 ### `flow` — Flow Timer
 - dir: `flow` · commands: 10 · modes: no-view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
@@ -2197,6 +2073,10 @@
 - dir: `groq` · commands: 14 · modes: view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
 
+### `groq-tools` — GROQ Tools
+- dir: `groq-tools` · commands: 3 · modes: view|no-view
+- Degraded: declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): fs
+
 ### `grpcui` — gRPC UI
 - dir: `grpcui` · commands: 3 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): fs, child_process
@@ -2232,6 +2112,10 @@
 ### `hakuna` — Hakuna
 - dir: `hakuna` · commands: 9 · modes: view|menu-bar|no-view
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired)
+
+### `hammerspoon` — Hammerspoon
+- dir: `hammerspoon` · commands: 10 · modes: no-view|view
+- Degraded: uses Node built-ins (ok in trusted mode): fs
 
 ### `handoff-toggle` — Handoff Toggle
 - dir: `handoff-toggle` · commands: 2 · modes: no-view
@@ -2380,6 +2264,10 @@
 ### `huggingcast` — Huggingcast
 - dir: `huggingcast` · commands: 6 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): fs
+
+### `hypersonic` — Hypersonic
+- dir: `hypersonic` · commands: 2 · modes: view|menu-bar
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired)
 
 ### `hyrule-compendium-search` — Hyrule Compendium Search
 - dir: `hyrule-compendium-search` · commands: 2 · modes: view
@@ -2584,6 +2472,10 @@
 ### `jira` — Jira
 - dir: `jira` · commands: 9 · modes: view
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired); uses Node built-ins (ok in trusted mode): fs
+
+### `jira-search` — Jira Search
+- dir: `jira-search` · commands: 5 · modes: view|no-view
+- Degraded: uses Node built-ins (ok in trusted mode): fs
 
 ### `jira-search-self-hosted` — Jira Search (Self-Hosted)
 - dir: `jira-search-self-hosted` · commands: 4 · modes: view
@@ -3525,6 +3417,10 @@
 - dir: `omnifocus` · commands: 3 · modes: no-view|view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
 
+### `omnivore` — Omnivore
+- dir: `omnivore` · commands: 2 · modes: view|no-view
+- Degraded: declares command `arguments[]` — not passed by runtime yet
+
 ### `onbo` — Onbo: New Grad & Internship Tracker
 - dir: `onbo` · commands: 3 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): fs
@@ -3628,6 +3524,10 @@
 ### `openstreetmap-search` — OpenStreetMap Search
 - dir: `openstreetmap-search` · commands: 3 · modes: view|no-view
 - Degraded: declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): child_process
+
+### `openverse` — Openverse
+- dir: `openverse` · commands: 1 · modes: view
+- Degraded: uses Node built-ins (ok in trusted mode): fs
 
 ### `openvpn` — OpenVPN
 - dir: `openvpn` · commands: 3 · modes: view|no-view
@@ -3744,6 +3644,10 @@
 ### `parcel` — Parcel
 - dir: `parcel` · commands: 2 · modes: view
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired)
+
+### `parrot-translate` — Parrot Translate
+- dir: `parrot-translate` · commands: 1 · modes: view
+- Degraded: uses Node built-ins (ok in trusted mode): child_process
 
 ### `parse-logs` — Parse Logs
 - dir: `parse-logs` · commands: 1 · modes: view
@@ -4469,6 +4373,10 @@
 - dir: `repo-launcher` · commands: 2 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): fs, child_process
 
+### `repository-manager` — Repository Manager
+- dir: `repository-manager` · commands: 1 · modes: view
+- Degraded: useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox; uses Node built-ins (ok in trusted mode): child_process, fs
+
 ### `research` — Deep Research
 - dir: `deep-research` · commands: 1 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): fs
@@ -4520,6 +4428,10 @@
 ### `rss-reader` — RSS Reader
 - dir: `rss-reader` · commands: 3 · modes: view
 - Degraded: BrowserExtension: loads; throws if called (browser bridge not wired)
+
+### `rsync-commands` — Rsync Commands
+- dir: `rsync-commands` · commands: 1 · modes: view
+- Degraded: uses Node built-ins (ok in trusted mode): child_process
 
 ### `ruby-evaluate` — Ruby Evaluate
 - dir: `ruby-evaluate` · commands: 1 · modes: view
@@ -5076,6 +4988,10 @@
 ### `supernotes` — Supernotes
 - dir: `supernotes` · commands: 4 · modes: view|no-view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
+
+### `supernova` — Supernova
+- dir: `supernova` · commands: 6 · modes: view|no-view
+- Degraded: uses Node built-ins (ok in trusted mode): fs, child_process
 
 ### `superwhisper` — Superwhisper - Offline Voice to Text
 - dir: `superwhisper` · commands: 6 · modes: no-view|view
@@ -5977,6 +5893,10 @@
 - dir: `zen-mode` · commands: 3 · modes: no-view|view
 - Degraded: uses Node built-ins (ok in trusted mode): child_process
 
+### `zenmux-manager` — ZenMux Manager
+- dir: `zenmux-manager` · commands: 2 · modes: no-view|view
+- Degraded: uses Node built-ins (ok in trusted mode): fs, child_process
+
 ### `zerion` — Zerion
 - dir: `zerion` · commands: 9 · modes: view|menu-bar|no-view
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares command `arguments[]` — not passed by runtime yet
@@ -6021,6 +5941,6 @@
 - dir: `zshrc-manager` · commands: 1 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): fs
 
-## SUPPORTED (1473)
+## SUPPORTED (1489)
 
-`2fa-directory`, `5devs`, `8-ball`, `8-divide`, `aave-search`, `acqua`, `active-mississaugua`, `adguard-home`, `adhan-time`, `ado-search`, `adonisjs-documentation`, `advanced-replace`, `advice-slip`, `affine`, `ai-by-vercel`, `ai-code-namer`, `ai-humanizer`, `ai-stats`, `ai-text-to-calendar`, `ai-usage-tracker`, `aimlab`, `airplane`, `airpods-noise-control`, `airport`, `airsy`, `airsync`, `aiven`, `aleph`, `aliyun-flow`, `alloy`, `alpaca-trading`, `alpinejs`, `alwaysdata`, `amazon-search`, `amphetamine`, `analog-film-library`, `android-versions`, `anilist-airing-schedule`, `anki`, `anna-s-archive`, `antisocials`, `anybox`, `anycoffee`, `anytype`, `apify`, `apis-guru-search`, `appgrid`, `apple-books`, `apple-developer-docs`, `apple-devices`, `apple-stocks-search`, `apply-inline-code`, `appwrite`, `arabic-keyboard`, `aranet-co2-monitor`, `arc-helper`, `arca`, `archisteamfarm`, `are-na`, `array-this`, `ars-technica`, `arxiv`, `asana`, `asciimath-to-latex-converter`, `asoiaf`, `asyncapi`, `atomberg-raycast-extension`, `atomic`, `attio`, `audio-writer`, `auth0-management`, `autumn`, `avatar`, `axios-docs`, `background-sounds`, `backstage`, `bahn-info`, `balatro-compendium`, `bamboohr`, `banca-d-italia-currency-converter`, `base-stats`, `base-ui-docs`, `base64`, `bash-commands`, `battery-health`, `bazinga-tools`, `bbc-news-headlines`, `beancount-meta`, `beardtown`, `beat-per-minute`, `beehiiv`, `beeminder`, `bento`, `berlin-public-transportation`, `beszel`, `betaseries`, `better-uptime`, `betterdiscord-store`, `bhagavad-gita-quotes`, `biaodian`, `bibigpt-summarize-audiovideo-with-ai`, `big-o`, `bikeshare-station-status`, `bilibili-search`, `bing-search`, `bing-wallpaper`, `binge-clock`, `bintools`, `bitaxe-status`, `bitbucket`, `bitbucket-search-self-hosted`, `bitcoin-price`, `bitfinex`, `bitly-url-shortener`, `bitrise`, `bklit-analytics`, `blockchain-explorer-search`, `blockchain-gas-tracker`, `bmrks`, `board-game-geek`, `bonk-price`, `bookstack`, `bored`, `botpress`, `braintick`, `brasileirao-serie-a`, `brave-search`, `brave-search-with-results`, `bring`, `browser-tabs`, `bsr-entsorgung`, `bttv-emote`, `buddy`, `bugmenot`, `buildkite`, `bundesliga`, `bundlephobia-search`, `bunq`, `caaals`, `cacher`, `cal-com-share-meeting-links`, `calendar`, `calendly`, `camper-calc`, `can-i-php`, `can-i-use`, `cangjie`, `canva`, `canvascast`, `capacities`, `capture`, `carbon-code-screenshot-for-raycast`, `catenary-raycast`, `catppuccin`, `cc0-lib`, `ccf-what`, `ccfddl`, `chainscout`, `change-case`, `change-scroll-direction`, `changedetection-io`, `charming-chatgpt`, `chartmogul`, `chatbase`, `chatgpt3-prompt`, `chatwork-search`, `cheatsheets`, `check-citi-bike-availability`, `checklist`, `cheetah`, `chess-com`, `chhoto`, `china-ip-address`, `chinese-character-converter`, `chinese-lottery`, `chinese-numbers`, `choose-a-license`, `chords-and-tabs`, `chronometer`, `chuck-norris-facts`, `cilium-docs`, `cinemas-nos`, `circle-ci`, `circleback`, `citation-generator`, `cl-indicators`, `clarify`, `clash`, `claude`, `claude-code-cheatsheet`, `clean-agent-text`, `clean-text`, `clear-clipboard`, `climbing-grade-converter`, `clip-swap`, `clipboard-editor`, `clipboard-formatter`, `clipboard-sequential-paste`, `clipboard-type`, `clipboard-utilities`, `clipmate`, `clipmenu`, `clockify`, `close-finder`, `cloudflare`, `cloudflare-ai`, `cloudflare-email-routing`, `cocart-docs`, `cocoa-core-data-timestamp-converter`, `coda-bookmarks-search`, `code-review-emojis`, `code-smells`, `codeblocks`, `codegeex`, `codemagic`, `codesnap`, `cognimemo`, `coin-caster`, `coinbase-pro`, `coingecko`, `coinpaprika`, `collected-notes`, `cometapi`, `comma-separator`, `commercequest`, `commit-issue-parser`, `commit-message-generator`, `commitlint`, `common-directory`, `composerize`, `confluence`, `consoledev`, `control-d`, `control-viscosity`, `conventional-comments`, `conventional-commits`, `convert-typescript-to-javascript`, `converter`, `convex`, `coolify`, `copy-notion-markdown-link`, `copy-path`, `copy-skeet-link`, `cosmic-bookmarks`, `count-numbers`, `country-lookup`, `cpf-cnpj-generator`, `cran-e-search`, `cratecast`, `creem`, `cricketcast`, `crisp`, `cron`, `cron-description`, `crunchbase`, `crypto-price`, `crypto-search`, `csfd`, `css-calculations`, `css-gg`, `css-tricks`, `cuid-generator`, `curator-bio`, `currency-exchange`, `cursor`, `cursor-costs`, `cursors`, `curto-io-url-shortener`, `customer-io`, `cyberchef`, `cypress-docs`, `dad-jokes`, `daisyui`, `daminik`, `danbooru`, `dashlane`, `dashlane-vault`, `databuddy`, `date-converter`, `days-until-christmas`, `dbt-documentation`, `dbtcloud`, `debank`, `decentraland`, `deduplicator`, `deepl-api-usage`, `defichain-dobby`, `definitelytyped`, `defiscan`, `dekudeals`, `delivery-tracker`, `deployhq`, `design-skills`, `designer-excuses`, `designer-news`, `deutscherwetterdienst`, `dev-to`, `devcontainer-features`, `developer-excuse`, `devenv-docs`, `devin`, `devonthink`, `devutils`, `dex-screener`, `dexcom-reader`, `dice-and-coin`, `dice-tiles`, `diff-checker`, `digitalocean`, `directus`, `discogs`, `discord-timestamps`, `discordjs-documentation`, `disney`, `distraction-tracker`, `django-docs`, `djangopackages`, `dns-lookup`, `docker`, `dockerhub`, `dodo-payments`, `dog-images`, `doge-tracker`, `dokploy`, `dolar-cripto-ar`, `dolar-hoy`, `dollar-blue`, `domainr`, `done-bear`, `donut`, `doppler-share-secrets`, `dotnet-api-browser`, `dotnet-docs-search`, `dotween-eases`, `douban`, `dovetail`, `dpm-lol`, `dr-news`, `dreamhost`, `dribbble`, `drug-search`, `drupal-org`, `duck-duck-go-search`, `duck-facts`, `duckduckgo-email`, `duden`, `dutch-article`, `dynamic-font-size`, `e18e-module-replacements`, `early-tools-news`, `easings`, `easyvariable`, `ebird`, `ecosia-search`, `effect-docs`, `ekstraklasa`, `element`, `elgato-key-light`, `elixir`, `elm-search`, `elron`, `ember-api-documentation`, `emissions-calculator`, `end-of-life`, `endel`, `ens-name-lookup`, `envoyer`, `epoch-to-timestamp`, `escape-regexp-characters`, `espn`, `esports-pass`, `essay`, `esv-bible`, `ethereum-gas-tracker`, `ethereum-price`, `ethereum-utils`, `eurovision-song-contest`, `evaluate-math-expression`, `evil-insult`, `evm-codes`, `excalidraw`, `excel-formula-beautifier`, `exivo`, `explain-command`, `expo`, `f1-standings`, `fabric`, `facetime`, `fake-financial-data`, `fake-swedish-personal-number`, `fakecrime-upload`, `fancy-text`, `fantasy-premier-league-rankings`, `farcaster`, `fastly`, `fastmail-masked-email`, `fathom-analytics`, `fathom-analytics-stats`, `favoro`, `fbi`, `featurebase`, `feedly`, `feishu-document-creator`, `fhir`, `fibonacci-sequence`, `figma-files-raycast-extension`, `figma-learn-companion`, `figma-shortcuts`, `figma-variables`, `filament`, `file-tree-generator`, `fillerama`, `finary`, `findnearby`, `fingertip`, `finnish-dictionary`, `firecrawl`, `firefly-iii`, `fix-language`, `fluctuation`, `fluent-outdoors`, `flux`, `flycheck-raycast`, `flypy`, `font-awesome`, `forgejo`, `format-graphql`, `formizee`, `framer-motion`, `frankerfacez`, `freeagent`, `freedns`, `freshrss`, `frill`, `fronius-inverter`, `ftrack`, `fuelx`, `fumadocs`, `game-scout`, `gandi`, `gcp-search`, `geist-ui-components`, `geoconverter`, `geoguesser`, `geohash-encode-decode`, `get-cat-images`, `get-direct-link`, `gg-deals`, `ghost-docs`, `gift-stardew-valley`, `git-branch-name-generator`, `git-commands`, `gitee`, `github-cli-manual`, `github-codespaces`, `github-gist`, `github-menu-bar`, `github-profile`, `github-repository-search`, `github-review-requests`, `github-spark`, `github-status`, `github-users`, `gitlab-docs`, `gitmoji`, `gleam-packages`, `glide`, `glyph-search`, `go-links`, `go-package-search`, `golden-ratio`, `gomander`, `goodlinks`, `google-advanced-search`, `google-finance`, `google-fonts`, `google-meet`, `google-scholar`, `google-search`, `google-tasks`, `google-trends`, `gotify`, `govee`, `gradle-plugins`, `grafana`, `grafbase`, `grammaring`, `graphcdn`, `greip`, `grist`, `grokipedia`, `groundhog-day`, `growthbook`, `gumroad`, `habr-media`, `hacker-news`, `hackmd`, `hardcover`, `hashnode`, `hatena-bookmark`, `hazeover`, `headlines`, `hebrew-date-zmanim`, `helldivers2`, `hellonext-changelogs`, `helm-docs`, `hemolog`, `hephaestus`, `heroicons`, `hestiacp-admin`, `hetrixtools`, `hevy`, `hexlify`, `hide-all-apps`, `hide-mail`, `hidemyemail`, `holodex`, `holopin`, `homebox`, `homepage`, `homey`, `hoogle`, `host-switch`, `hostloc`, `howlongtobeat`, `hsdecks`, `html-colors`, `http-dot-cat`, `http-mime`, `hubspot`, `hugging-face`, `humaans`, `hupu`, `hyper-focus`, `iata-code-decoder`, `icd10-lookup`, `iching-divination`, `icloud-global-pricing-comparison`, `ifanr`, `image-diff-checker`, `image-host`, `imessage-2fa`, `in-the-time-zone`, `inbound`, `incident-io`, `incognito-clone`, `inertiajs-documentation`, `infomaniak`, `initium`, `inkdrop`, `inpost-parcel-lockers`, `input-source-switcher`, `inspire-search`, `instant-domain-search`, `instapaper`, `intention-clarifier`, `ionos-sync`, `ios-resolution`, `ipa-translator`, `ipcheck-ing`, `iptv`, `is-it-toxic-to`, `isdown`, `itch-io`, `jalali-date-convertor`, `james-webb-space-telescope`, `jellyfin`, `jetpack-commands`, `jira-time-tracking`, `jisho`, `jitsi`, `jotform`, `json-editor`, `json-format`, `json-to-go`, `json-to-toon-converter`, `json2ts`, `jsr`, `jsrepo`, `jue-jin`, `jup-agg`, `jurassic-ninja-site-generator`, `just-delete-me`, `justcolorpicker-raycast`, `kaalam`, `kafka-ui`, `kagi-news`, `kagi-search`, `kalshi`, `kaneo-for-raycast`, `kaomoji-search`, `keeper-security`, `keeply`, `kef-control`, `keychain-password-gen`, `keygen`, `kimi`, `kimi-for-coding`, `kind-words`, `kindle-paste`, `kinopio-inbox`, `kinopoisk`, `klu-ai`, `knowwa`, `korean-date-converter`, `korean-spell-checker`, `koyeb`, `kubernetes`, `kubernetes-docs`, `kutt`, `laby-net`, `lacinka`, `laliga`, `laracasts`, `larajobs-search`, `laravel-artisan`, `laravel-cloud`, `laravel-livewire`, `laravel-nova`, `laravel-shift`, `laravel-vapor`, `large-type`, `lark`, `lark-applink`, `latest-news`, `latex-math-symbols`, `launchdarkly`, `lavinprognoser`, `lazygit-keybindings`, `leap-new`, `learning-snacks`, `leetcode`, `lego-bricks`, `leitnerbox`, `lemmy`, `lemon-squeezy`, `lenscast`, `letta`, `lgtmeow`, `liba-ro_shortener`, `lichess-org`, `life-progress`, `lifx`, `lifx-advanced-controller`, `lightdash-navigator`, `lightning-time`, `lightshot-gallery`, `ligue-1`, `lingo-rep-raycast`, `linguee`, `link-cleaner`, `linkding`, `linux-command`, `liquipedia-matches`, `literal`, `liveblocks`, `llm-stats`, `llms-txt`, `loan-calculator`, `lobehub-icons`, `lobsters`, `logsnag`, `logtail`, `lol-esports`, `lookaway`, `lotr`, `lucide-animated`, `lucide-icons`, `luma`, `lume`, `lunatask`, `lunchmoney`, `luxafor-controller`, `lyne`, `lyrics`, `mac-app-store-search`, `macrumors`, `macstories`, `macupdater`, `magic-home`, `mail-to-self`, `mailerlite-stats`, `mailersend`, `mailtrap`, `make-dot-com`, `make-with-notion-2024`, `manage-clickup-tasks`, `mandarin-chinese-dictionary`, `manga-calendar`, `manotori`, `manus`, `manus-manager`, `marble`, `marginnote`, `markdown-codeblock`, `markdown-converter`, `markdown-preview`, `markdown-reference`, `markdown-this`, `markdown-to-jira`, `markdown-to-plain-text`, `markdown-to-rich-text`, `markprompt`, `masscode`, `math-functions`, `matter`, `mattermost`, `mayar`, `maybe`, `mbta-tracker`, `md-to-excel`, `medialister-marketplace-helper`, `meduza`, `mem`, `mem0`, `memberstack`, `meme-generator`, `mempool`, `menubar-weather`, `mercado-libre`, `mercury`, `metabase`, `metacritic`, `metaphor`, `meteoblue-lookup`, `metube`, `microblog`, `microsoft-teams`, `microsoft-teams-calling`, `midas`, `migadu`, `mikrus`, `minecast`, `minecraft-color-codes`, `minecraft-crafting-recipes`, `miniflux`, `minimax-ai`, `minisim`, `minttr`, `miraie-ac-control`, `mistral`, `mite`, `mittwald`, `mixpanel`, `mobius-materials`, `mochi`, `modrinth`, `modrinth-search`, `moji`, `mollie-for-raycast`, `monday-com`, `moneybird`, `moneylover`, `monkeytype`, `monobank`, `monocle`, `monse`, `monzo`, `moon-phrase`, `mousehunt-helper`, `mui-documentation`, `multi-links`, `multilinks`, `multipass`, `multiviewer`, `music-news`, `music-timer`, `musicbrainz`, `musicthread`, `must`, `mutedeck`, `mxroute`, `myanimelist-search`, `myip`, `mymind`, `mynaui-icons`, `name-com`, `namecheap`, `namuwiki`, `nano-games`, `nasa`, `nativebase-docs`, `nature-remo`, `naver-search`, `navidrome`, `nba-game-viewer`, `near-rewards`, `neodb`, `neon`, `nepali-calendar`, `nepali-date-converter`, `netease-music`, `netnewswire`, `neurooo-translate`, `new-relic`, `new-york-times`, `next-lens`, `next-run`, `nextcloud`, `nextdns`, `nfl-information`, `nft-search`, `ngrok`, `nif`, `nif-fresquinho`, `nixpkgs-search`, `nl-news-headlines`, `no-as-a-service`, `nocal`, `node-js-evaluate`, `nordic-energy-prices`, `nos-nieuws`, `nostr`, `not-diamond`, `notaday`, `note-in-google-doc`, `notilight-controller`, `notion_researcher`, `notra`, `nouns`, `novu`, `nowplaying-cli`, `ns-nl-search`, `nsis-reference`, `nts`, `nu-nieuws`, `nuget`, `number-facts`, `numpad`, `nyc-train-tracker`, `nzbget`, `obs-control`, `octopus-energy`, `odin`, `odoo-companion`, `office-quotes`, `oh-my-zsh-git-alias`, `ohdear`, `ohmyzsh-plugins`, `ok-json`, `oklch-color-converter`, `oktasearch`, `olacv`, `ollama-mind-map-generator`, `olympic-games`, `omg-lol`, `omni-news`, `one-tab-group`, `one-time-secret`, `onelook-thesaurus`, `ones`, `open-camera-menu-bar`, `open-docker`, `open-gem-documentation`, `open-in-shopify-admin`, `open-latest-url-from-clipboard`, `open-props`, `open-with-app`, `openrouter-model-search`, `openrouter-models-finder`, `openrouter-quick-actions`, `openstatus`, `openweathermap`, `opsgenie`, `orbita`, `orion`, `osrs-wiki`, `ossinsight`, `otp-inbox`, `ottomatic`, `outline-page`, `ovhcloud`, `owledge-raycast`, `owncloud`, `ozbargain-deals`, `pagerduty`, `palette-colors`, `pandas-documentation-search`, `pangu-for-raycast`, `paperform`, `papersize`, `paperspace`, `parabol`, `parcel-tracker`, `parse`, `password-generator`, `paste-from-apple-books`, `pastebin`, `pastefy`, `pastery`, `paymenter`, `paypal-invoices`, `pbr-assistant`, `penflow-ai`, `penpot`, `perry`, `personio`, `pestphp-documentation`, `pexels`, `phare-io-uptime`, `phind-search`, `phonetic-typing`, `phosphor-icons`, `php-docs`, `php-toolbox`, `pinboard`, `pinia-docs`, `pinwork`, `pip`, `pitchfork`, `pivot`, `pkg-swap`, `planetscale`, `planning-center`, `plausible-analytics`, `playtester`, `playwright-docs`, `plex`, `ploi`, `pm2`, `pocketbase`, `podcasts`, `pokemon-tcg-pocket-binder`, `polar`, `polars-documentation-search`, `polished`, `pollen-count`, `polymarket`, `pomo`, `popcorn`, `port`, `portal-wholesale`, `portuguese-primeira-liga`, `position-size-calculator`, `postey`, `postiz`, `postman`, `potter-db`, `premier-league`, `prettier`, `primer`, `printer-status`, `prisma-cli-commands`, `prisma-postgres`, `productboard`, `productlane`, `project-companion`, `project-hub`, `promptnote`, `prompts-chat`, `protobuf2typescript`, `proton-version`, `protondb`, `prowlarr`, `proxmox`, `proxyman`, `psn`, `pub-dev`, `public-bug-bounty-and-vulnerability-disclosure-programs`, `publico`, `publora`, `pubme`, `pulsemcp`, `pumble`, `punto`, `purpleair`, `px-to-rem-converter`, `qonto`, `qotp`, `qovery`, `qq-music-controls`, `query-domains`, `quick-access-for-zeroheight`, `quick-access-infomaniak`, `quick-event`, `quick-search`, `quickfile`, `quicksnip`, `quicktime`, `quicktype`, `quikwallet`, `quoterism-raycast`, `r-pkg-search`, `radicle`, `rae-dictionary-raycast`, `rails-routes`, `railway`, `rain-radars`, `rainaissance`, `ram-prices`, `ramda-documentation`, `random`, `random-date-generator`, `random-email`, `random-password-generator`, `random-us-phone-number`, `ratio-calculator`, `ray-boop`, `ray-so`, `raycafe`, `raycast-airtable-extension`, `raycast-bard-ai`, `raycast-clip`, `raycast-datadog`, `raycast-diki`, `raycast-explorer`, `raycast-fly`, `raycast-icons`, `raycast-ios-hig`, `raycast-kozip-extension`, `raycast-language-tool`, `raycast-link-lock`, `raycast-manual`, `raycast-monkeytype-theme`, `raycast-norwegian-public-transport`, `raycast-nrm`, `raycast-ordbokene`, `raycast-tapo-smart-devices`, `raycast-textlint-rule-aws-service-name`, `raycast-timeular`, `raycast-timezone-converter`, `raycast-transistorfm`, `raycast-translate-ge`, `raycast-urbandictionary-word-of-the-day`, `raycast-weekly-newsletter`, `raycast-wemo`, `raydocs`, `raytyping`, `rdir`, `rdw-kentekencheck`, `re-mind`, `react-native-directory`, `reading-time`, `readwise`, `readymetrics`, `rebrandly`, `recap`, `recents`, `recurly`, `reddit-search`, `redirect-trace`, `redis`, `redmine`, `refresh-browsers`, `refresh-wifi`, `regex-repl`, `regex-tester`, `rehooks`, `reka-ui`, `remo-notes`, `remove-window-from-set`, `render`, `repology-search`, `rescuetime-focus-session-trigger`, `resend-wallpaper`, `resmo`, `retool-documentation`, `retrac`, `rewardful`, `rewiser`, `rg-adguard-links`, `ricescore`, `rick-and-morty`, `ring-intercom`, `risk-reward-calculator`, `rize-io-sessions`, `roblox-creator-docs`, `rocket-chat`, `roll-d20`, `rollcast`, `rollup-wtf`, `rtl-reader`, `rule-of-three`, `ruler`, `runcloud`, `rusbase`, `rust-docs`, `sadaqah-box`, `safe-secret`, `sage-hr`, `sanity`, `sat-scorer`, `sav`, `save-to-cubox`, `saved-items`, `savvycal`, `say-no-to-notch`, `scaleway`, `schoology`, `scira`, `scratchpad`, `screen-studio`, `screenocr`, `screenpipe`, `seafile`, `search-ansible-documentation`, `search-astro-docs`, `search-clojuredocs`, `search-composer-packagist`, `search-github-stars`, `search-hex`, `search-joplin-notes`, `search-justwatch`, `search-mdn`, `search-notion`, `search-npm`, `search-oeis`, `search-private-npm-packages`, `search-regexp`, `search-rubygems`, `search-shopify-liquid-documentation`, `search-with-algolia`, `searchcaster`, `sec-filings-search`, `security-search`, `semantic-scholar`, `send-to-flomo`, `sendportal`, `sendy`, `sentry`, `serialcast`, `serie-a`, `serverless-framework-docs`, `session`, `setlist-fm`, `sevalla`, `shadcn-svelte`, `shadcn-ui`, `shadcn-vue`, `shakespearify`, `shape-calendar`, `sharding-tools`, `shelve`, `shiori`, `ship24-client`, `shlink`, `shopify-dev-docs-search`, `shopify-developer-changelog`, `shopify-theme-resources`, `shopinfo-app`, `short-io`, `shortcut`, `shroud-email`, `sidecar-connect`, `signal`, `simple-login`, `simplebackups`, `simplelogin`, `single-focus`, `singularityapp`, `sip`, `sketch`, `skyscanner-flights`, `sm-ms`, `smallpdf`, `smart-reply`, `smultron`, `snake`, `sncftraintimes`, `sniffer`, `social-network-trends`, `solana-explorer`, `solana-wallets-generation`, `solidtime`, `solusvm-1-client`, `solusvm-2`, `sonarr`, `sonu-stream`, `sound-search`, `spatie-documentation`, `speedcubing`, `spell`, `spike`, `spinupwp`, `splatoon`, `splitwise`, `splix`, `spoiler-converter`, `spoqify`, `sportssync`, `spotify-beta`, `spryker-docs`, `sql-format`, `sql-reference-search`, `squeeze`, `st-andrews-main-library-occupancy`, `stagehand`, `standing-desk-tracker`, `starling`, `stashpad-docs`, `statamic-docs`, `steam-player-counts`, `stock-lookup`, `stock-tracker`, `stockholm-public-transport`, `stoicquotes`, `storyblok`, `storybook-launcher`, `storybook-search`, `storytime`, `strapi-raycast-extension`, `strftime-cheatsheet`, `string-formatter`, `subflow`, `substack`, `subwatch`, `summation`, `supabase`, `supabase-docs`, `superhuman`, `supermemory`, `surf-check`, `surfs-up`, `surge-outbound-switcher`, `svelte-docs`, `svga-player`, `swap-commas-dots`, `swift-evolution`, `swift-package-index`, `swiss-ov`, `swiss-train-times`, `switch-game-play-history`, `switchhosts`, `synology-download-station`, `syntax-fm`, `table-converter`, `tableau-navigator`, `tabletop-dice-roller`, `tabnews`, `tailwind-size-conversion`, `tallinn-transport`, `tally`, `tana`, `tana-paste`, `tarot`, `tasklink`, `taskplane`, `tategaki`, `tautulli`, `tc-no-generator`, `teamgantt`, `teamup-rooms`, `techcrunch`, `tella`, `tembo`, `tempo`, `temporary-email`, `tennis-standings`, `terminal`, `terminaldotshop`, `terraform-doc`, `tesla`, `teslamate`, `tex2typst`, `text-enhance`, `text-format-improver`, `text-rewrap`, `text-shortcuts`, `tfl`, `thaw`, `the-matrix-of-destiny`, `the-noble-quran`, `the-verge`, `thermoconvert`, `thesaurus`, `thingiverse`, `thrasher-magazine`, `threads-video-downloader`, `tibia-helper`, `tidal-controller`, `tiktoken`, `time`, `time-calculator`, `time-converter`, `time-logger`, `time-teller`, `time-until-i-do`, `timecamp`, `timecrowd-tracker`, `timely`, `timezone-buddy`, `tints-and-shades`, `tiny-tycho`, `tinyfaces-nft`, `tldr`, `tmdb`, `tny`, `toggle-fn`, `toggle-grayscale`, `tokenizer`, `tomito-controls`, `ton-address`, `toncoin-price`, `toolbox`, `transform`, `translit`, `transmit`, `trello`, `trenit`, `trimmy`, `trustmrr`, `truth-or-dare`, `tscheck-in`, `tududi`, `tuneblade`, `tunnelblick`, `tuple`, `tuya-smart`, `tv-remote`, `tv2---denmark`, `tw-colorpicker`, `twenty`, `twingate`, `twitch-chat`, `twitter`, `twitter-trendscast`, `twos`, `tyme-3-time-tracker`, `tynyfy`, `type-snob`, `type-the-alphabet`, `typeform`, `typefully`, `typer`, `typescript-documentation-search`, `typescript-mock-generator`, `typographer`, `typst-symbols`, `typst-universe`, `udemy-coupons`, `uk-bank-holidays`, `ulid`, `ultrahuman`, `ulysses`, `umami`, `unify-path-separator`, `unirate-currency`, `united-nations`, `unitex`, `universal-inbox`, `universities`, `unix-timestamp`, `unix-timestamp-converter`, `unkey`, `unleash-feature-toggle`, `unogs`, `unsure-calc`, `untis`, `upcoming-holidays`, `uplabs`, `upstash`, `uptime-kuma`, `uptime-robot`, `url-parse`, `url-tools`, `url-unshortener`, `useless-facts`, `usememos`, `user-agent`, `utc-workbench`, `v2ex`, `v2ex-viewer`, `v2raya-control`, `vade-mecum`, `val-town`, `valheim-wiki`, `valkey-commands-search`, `valorant-esports`, `vanguard-backup`, `vanishlink`, `vant-documentation`, `vartiq`, `vc-ru-news`, `veganify-application`, `vietnamese-calendar`, `vietqr-transfer`, `vim-bro`, `virtfusion`, `virtual-pet`, `virtualizor-enduser`, `viscosity`, `vision-directory`, `visitor-queue`, `vn-textify`, `vocab`, `vocabula-lat`, `voicenotes`, `volumio-control`, `vue-router-docs`, `vuejobs`, `vuejs-documentation`, `vuetify-docs`, `vueuse-functions`, `vultr`, `wakatime`, `wave`, `wcag`, `web-converter`, `web-page-design-mode`, `web3-profile`, `web3bio`, `webflow-sites`, `webhook-sender`, `webkit-developer-docs`, `websocket-debugging`, `what-happened-today`, `whentomeet`, `where-is-my-cursor`, `whimsical`, `who-is-off-today`, `whoop`, `wiggle-text`, `window-sizer`, `wistia`, `wled-controller`, `wolfram-alpha`, `woo-marketplace-search`, `word-count`, `word-search`, `wordpress-docs`, `wordpress-icon-finder`, `wordpress-manager`, `wordpress-plugins`, `work-time-countdown`, `workflowy-inbox`, `world-clock`, `world-cup`, `wp-cli-command-explorer`, `wrike`, `xbox-friends`, `xid`, `xkcd`, `xkcd-password-generator`, `xqc`, `y-combinator`, `yamli`, `yandex-music`, `yandex-smart-home`, `yap`, `yazio-tracker`, `yield-calculator`, `yopass`, `you-com-search`, `youdao-translate`, `youform`, `yourls`, `youtrack`, `youtube-companion`, `youtube-music`, `youtube-search`, `youtube-shorts-to-normal-video-page`, `youtube-subscriber-count`, `youversion-suggest`, `yr-weather-forecast`, `yu-gi-oh-card-lookup`, `za-fake-id-number-generator`, `zalgo-text`, `zefix`, `zeitraum`, `zenblog`, `zendesk`, `zendesk-admin`, `zeplin-project-raycast-extension`, `zero`, `zerodha-portfolio-kite-coin`, `zerossl`, `znotch`, `zo-raycast`, `zod-documentation`, `zodme`, `zoo`, `zoom-meeting-control`, `zyntra`
+`1loc`, `2fa-directory`, `5devs`, `8-ball`, `8-divide`, `aave-search`, `acqua`, `active-mississaugua`, `adguard-home`, `adhan-time`, `ado-search`, `adonisjs-documentation`, `advanced-replace`, `advice-slip`, `affine`, `ai-by-vercel`, `ai-code-namer`, `ai-humanizer`, `ai-stats`, `ai-text-to-calendar`, `ai-usage-tracker`, `aimlab`, `airplane`, `airpods-noise-control`, `airport`, `airsy`, `airsync`, `aiven`, `aleph`, `aliyun-flow`, `alloy`, `alpaca-trading`, `alpinejs`, `alwaysdata`, `amazon-search`, `amphetamine`, `analog-film-library`, `android-versions`, `anilist-airing-schedule`, `anki`, `anna-s-archive`, `antisocials`, `anybox`, `anycoffee`, `anytype`, `apify`, `apis-guru-search`, `appgrid`, `apple-books`, `apple-developer-docs`, `apple-devices`, `apple-stocks-search`, `apply-inline-code`, `appwrite`, `arabic-keyboard`, `aranet-co2-monitor`, `arc-helper`, `arca`, `archisteamfarm`, `are-na`, `array-this`, `ars-technica`, `arxiv`, `asana`, `asciimath-to-latex-converter`, `asoiaf`, `asyncapi`, `atomberg-raycast-extension`, `atomic`, `attio`, `audio-writer`, `auth0-management`, `autumn`, `avatar`, `axios-docs`, `background-sounds`, `backstage`, `bahn-info`, `balatro-compendium`, `bamboohr`, `banca-d-italia-currency-converter`, `base-stats`, `base-ui-docs`, `base64`, `bash-commands`, `battery-health`, `bazinga-tools`, `bbc-news-headlines`, `beancount-meta`, `beardtown`, `beat-per-minute`, `beehiiv`, `beeminder`, `bento`, `berlin-public-transportation`, `beszel`, `betaseries`, `better-uptime`, `betterdiscord-store`, `bhagavad-gita-quotes`, `biaodian`, `bibigpt-summarize-audiovideo-with-ai`, `big-o`, `bikeshare-station-status`, `bilibili-search`, `bing-search`, `bing-wallpaper`, `binge-clock`, `bintools`, `bitaxe-status`, `bitbucket`, `bitbucket-search-self-hosted`, `bitcoin-price`, `bitfinex`, `bitly-url-shortener`, `bitrise`, `bklit-analytics`, `blockchain-explorer-search`, `blockchain-gas-tracker`, `bmrks`, `board-game-geek`, `bonk-price`, `bookstack`, `bored`, `botpress`, `braintick`, `brasileirao-serie-a`, `brave-search`, `brave-search-with-results`, `bring`, `browser-tabs`, `bsr-entsorgung`, `bttv-emote`, `buddy`, `bugmenot`, `buildkite`, `bundesliga`, `bundlephobia-search`, `bunq`, `caaals`, `cacher`, `cal-com-share-meeting-links`, `calendar`, `calendly`, `camper-calc`, `can-i-php`, `can-i-use`, `cangjie`, `canva`, `canvascast`, `capacities`, `capture`, `carbon-code-screenshot-for-raycast`, `catenary-raycast`, `catppuccin`, `cc0-lib`, `ccf-what`, `ccfddl`, `chainscout`, `change-case`, `change-scroll-direction`, `changedetection-io`, `charming-chatgpt`, `chartmogul`, `chatbase`, `chatgpt3-prompt`, `chatwork-search`, `cheatsheets`, `check-citi-bike-availability`, `checklist`, `cheetah`, `chess-com`, `chhoto`, `china-ip-address`, `chinese-character-converter`, `chinese-lottery`, `chinese-numbers`, `choose-a-license`, `chords-and-tabs`, `chronometer`, `chuck-norris-facts`, `cilium-docs`, `cinemas-nos`, `circle-ci`, `circleback`, `citation-generator`, `cl-indicators`, `clarify`, `clash`, `claude`, `claude-code-cheatsheet`, `clean-agent-text`, `clean-text`, `clear-clipboard`, `climbing-grade-converter`, `clip-swap`, `clipboard-editor`, `clipboard-formatter`, `clipboard-sequential-paste`, `clipboard-type`, `clipboard-utilities`, `clipmate`, `clipmenu`, `clockify`, `close-finder`, `cloudflare`, `cloudflare-ai`, `cloudflare-email-routing`, `cocart-docs`, `cocoa-core-data-timestamp-converter`, `coda-bookmarks-search`, `code-review-emojis`, `code-smells`, `codeblocks`, `codegeex`, `codemagic`, `codesnap`, `cognimemo`, `coin-caster`, `coinbase-pro`, `coingecko`, `coinpaprika`, `collected-notes`, `cometapi`, `comma-separator`, `commercequest`, `commit-issue-parser`, `commit-message-generator`, `commitlint`, `common-directory`, `composerize`, `confluence`, `consoledev`, `control-d`, `control-viscosity`, `conventional-comments`, `conventional-commits`, `convert-typescript-to-javascript`, `converter`, `convex`, `coolify`, `copy-notion-markdown-link`, `copy-path`, `copy-skeet-link`, `cosmic-bookmarks`, `count-numbers`, `country-lookup`, `cpf-cnpj-generator`, `cran-e-search`, `cratecast`, `creem`, `cricketcast`, `crisp`, `cron`, `cron-description`, `crunchbase`, `crypto-price`, `crypto-search`, `csfd`, `css-calculations`, `css-gg`, `css-tricks`, `cuid-generator`, `curator-bio`, `currency-exchange`, `cursor`, `cursor-costs`, `cursors`, `curto-io-url-shortener`, `customer-io`, `cyberchef`, `cypress-docs`, `dad-jokes`, `daisyui`, `daminik`, `danbooru`, `dashlane`, `dashlane-vault`, `databuddy`, `date-converter`, `days-until-christmas`, `dbt-documentation`, `dbtcloud`, `debank`, `decentraland`, `deduplicator`, `deepl-api-usage`, `defichain-dobby`, `definitelytyped`, `defiscan`, `dekudeals`, `delivery-tracker`, `deployhq`, `design-skills`, `designer-excuses`, `designer-news`, `deutscherwetterdienst`, `dev-to`, `devcontainer-features`, `developer-excuse`, `devenv-docs`, `devin`, `devonthink`, `devutils`, `dex-screener`, `dexcom-reader`, `dice-and-coin`, `dice-tiles`, `diff-checker`, `digitalocean`, `directus`, `discogs`, `discord-timestamps`, `discordjs-documentation`, `disney`, `distraction-tracker`, `django-docs`, `djangopackages`, `dlmoji`, `dns-lookup`, `docker`, `dockerhub`, `dodo-payments`, `dog-images`, `doge-tracker`, `dokploy`, `dolar-cripto-ar`, `dolar-hoy`, `dollar-blue`, `domainr`, `done-bear`, `donut`, `doppler-share-secrets`, `dota-2`, `dotnet-api-browser`, `dotnet-docs-search`, `dotween-eases`, `douban`, `dovetail`, `dpm-lol`, `dr-news`, `dreamhost`, `dribbble`, `drug-search`, `drupal-org`, `duck-duck-go-search`, `duck-facts`, `duckduckgo-email`, `duden`, `dutch-article`, `dynamic-font-size`, `e18e-module-replacements`, `early-tools-news`, `easings`, `easyvariable`, `ebird`, `ecosia-search`, `effect-docs`, `ekstraklasa`, `element`, `elgato-key-light`, `elixir`, `elm-search`, `elron`, `ember-api-documentation`, `emissions-calculator`, `end-of-life`, `endel`, `ens-name-lookup`, `envoyer`, `epoch-to-timestamp`, `escape-regexp-characters`, `espn`, `esports-pass`, `essay`, `esv-bible`, `ethereum-gas-tracker`, `ethereum-price`, `ethereum-utils`, `eurovision-song-contest`, `evaluate-math-expression`, `evil-insult`, `evm-codes`, `excalidraw`, `excel-formula-beautifier`, `exivo`, `explain-command`, `expo`, `f1-standings`, `fabric`, `facetime`, `fake-financial-data`, `fake-swedish-personal-number`, `fakecrime-upload`, `fancy-text`, `fantasy-premier-league-rankings`, `farcaster`, `fastly`, `fastmail-masked-email`, `fathom-analytics`, `fathom-analytics-stats`, `favoro`, `fbi`, `featurebase`, `feedly`, `feishu-document-creator`, `fhir`, `fibonacci-sequence`, `figma-files-raycast-extension`, `figma-learn-companion`, `figma-shortcuts`, `figma-variables`, `filament`, `file-tree-generator`, `fillerama`, `finary`, `findnearby`, `fingertip`, `finnish-dictionary`, `firecrawl`, `firefly-iii`, `fix-language`, `flight-miles-calculator`, `fluctuation`, `fluent-outdoors`, `flux`, `flycheck-raycast`, `flypy`, `focustask`, `font-awesome`, `forgejo`, `format-graphql`, `formizee`, `framer-motion`, `frankerfacez`, `freeagent`, `freedns`, `freshrss`, `frill`, `fronius-inverter`, `ftrack`, `fuelx`, `fumadocs`, `game-scout`, `gandi`, `gcp-search`, `geist-ui-components`, `geoconverter`, `geoguesser`, `geohash-encode-decode`, `get-cat-images`, `get-direct-link`, `gg-deals`, `ghost-docs`, `gift-stardew-valley`, `git-branch-name-generator`, `git-commands`, `gitee`, `github-cli-manual`, `github-codespaces`, `github-gist`, `github-menu-bar`, `github-profile`, `github-repository-search`, `github-review-requests`, `github-spark`, `github-status`, `github-trending`, `github-users`, `gitlab-docs`, `gitmoji`, `gleam-packages`, `glide`, `glyph-search`, `go-links`, `go-package-search`, `golden-ratio`, `gomander`, `goodlinks`, `google-advanced-search`, `google-finance`, `google-fonts`, `google-meet`, `google-scholar`, `google-search`, `google-tasks`, `google-trends`, `gotify`, `govee`, `gradle-plugins`, `grafana`, `grafbase`, `grammaring`, `graphcdn`, `greip`, `grist`, `grokipedia`, `groundhog-day`, `growthbook`, `gumroad`, `habr-media`, `hacker-news`, `hackmd`, `hardcover`, `hashnode`, `hatena-bookmark`, `hazeover`, `headlines`, `hebrew-date-zmanim`, `helldivers2`, `hellonext-changelogs`, `helm-docs`, `hemolog`, `hephaestus`, `heroicons`, `hestiacp-admin`, `hetrixtools`, `hevy`, `hexlify`, `hide-all-apps`, `hide-mail`, `hidemyemail`, `holodex`, `holopin`, `homebox`, `homepage`, `homey`, `hoogle`, `host-switch`, `hostloc`, `howlongtobeat`, `hsdecks`, `html-colors`, `http-dot-cat`, `http-mime`, `hubspot`, `hugging-face`, `humaans`, `hupu`, `hyper-focus`, `iata-code-decoder`, `icd10-lookup`, `iching-divination`, `icloud-global-pricing-comparison`, `ifanr`, `image-diff-checker`, `image-host`, `imessage-2fa`, `in-the-time-zone`, `inbound`, `incident-io`, `incognito-clone`, `inertiajs-documentation`, `infomaniak`, `initium`, `inkdrop`, `inpost-parcel-lockers`, `input-source-switcher`, `inspire-search`, `instant-domain-search`, `instapaper`, `intention-clarifier`, `ionos-sync`, `ios-resolution`, `ipa-translator`, `ipcheck-ing`, `iptv`, `is-it-toxic-to`, `isdown`, `itch-io`, `jalali-date-convertor`, `james-webb-space-telescope`, `jellyfin`, `jetpack-commands`, `jira-time-tracking`, `jisho`, `jitsi`, `jotform`, `json-editor`, `json-format`, `json-to-go`, `json-to-toon-converter`, `json2ts`, `jsr`, `jsrepo`, `jue-jin`, `jup-agg`, `jurassic-ninja-site-generator`, `just-delete-me`, `justcolorpicker-raycast`, `kaalam`, `kafka-ui`, `kagi-news`, `kagi-search`, `kalshi`, `kaneo-for-raycast`, `kaomoji-search`, `keeper-security`, `keeply`, `kef-control`, `keychain-password-gen`, `keygen`, `kimi`, `kimi-for-coding`, `kind-words`, `kindle-paste`, `kinopio-inbox`, `kinopoisk`, `klu-ai`, `knowwa`, `korean-date-converter`, `korean-spell-checker`, `koyeb`, `kubernetes`, `kubernetes-docs`, `kutt`, `laby-net`, `lacinka`, `laliga`, `laracasts`, `larajobs-search`, `laravel-artisan`, `laravel-cloud`, `laravel-livewire`, `laravel-nova`, `laravel-shift`, `laravel-vapor`, `large-type`, `lark`, `lark-applink`, `latest-news`, `latex-math-symbols`, `launchdarkly`, `lavinprognoser`, `lazygit-keybindings`, `leap-new`, `learning-snacks`, `leetcode`, `lego-bricks`, `leitnerbox`, `lemmy`, `lemon-squeezy`, `lenscast`, `letta`, `lgtmeow`, `liba-ro_shortener`, `lichess-org`, `life-progress`, `lifx`, `lifx-advanced-controller`, `lightdash-navigator`, `lightning-time`, `lightshot-gallery`, `ligue-1`, `lingo-rep-raycast`, `linguee`, `link-cleaner`, `linkding`, `linux-command`, `liquipedia-matches`, `literal`, `liveblocks`, `llm-stats`, `llms-txt`, `loan-calculator`, `lobehub-icons`, `lobsters`, `logsnag`, `logtail`, `lol-esports`, `lookaway`, `lotr`, `lucide-animated`, `lucide-icons`, `luma`, `lume`, `lunatask`, `lunchmoney`, `luxafor-controller`, `lyne`, `lyrics`, `mac-app-store-search`, `macrumors`, `macstories`, `macupdater`, `magic-home`, `mail-to-self`, `mailerlite-stats`, `mailersend`, `mailtrap`, `make-dot-com`, `make-with-notion-2024`, `manage-clickup-tasks`, `mandarin-chinese-dictionary`, `manga-calendar`, `manotori`, `manus`, `manus-manager`, `marble`, `marginnote`, `markdown-codeblock`, `markdown-converter`, `markdown-preview`, `markdown-reference`, `markdown-this`, `markdown-to-jira`, `markdown-to-plain-text`, `markdown-to-rich-text`, `markprompt`, `masscode`, `mastodon-search`, `math-functions`, `matter`, `mattermost`, `mayar`, `maybe`, `mbta-tracker`, `md-to-excel`, `medialister-marketplace-helper`, `meduza`, `mem`, `mem0`, `memberstack`, `meme-generator`, `memo`, `mempool`, `menubar-weather`, `mercado-libre`, `mercury`, `metabase`, `metacritic`, `metaphor`, `meteoblue-lookup`, `metube`, `microblog`, `microsoft-teams`, `microsoft-teams-calling`, `midas`, `migadu`, `mikrus`, `minecast`, `minecraft-color-codes`, `minecraft-crafting-recipes`, `miniflux`, `minimax-ai`, `minisim`, `minttr`, `miraie-ac-control`, `mistral`, `mite`, `mittwald`, `mixpanel`, `mobius-materials`, `mochi`, `modrinth`, `modrinth-search`, `moji`, `mollie-for-raycast`, `monday-com`, `moneybird`, `moneylover`, `monkeytype`, `monobank`, `monocle`, `monse`, `monzo`, `moon-phrase`, `mousehunt-helper`, `mui-documentation`, `multi-links`, `multilinks`, `multipass`, `multiviewer`, `music-news`, `music-timer`, `musicbrainz`, `musicthread`, `must`, `mutedeck`, `mxroute`, `myanimelist-search`, `myip`, `mymind`, `mynaui-icons`, `name-com`, `namecheap`, `namuwiki`, `nano-games`, `nasa`, `nativebase-docs`, `nature-remo`, `naver-search`, `navidrome`, `nba-game-viewer`, `near-rewards`, `neodb`, `neon`, `nepali-calendar`, `nepali-date-converter`, `netease-music`, `netnewswire`, `neurooo-translate`, `new-relic`, `new-york-times`, `next-lens`, `next-run`, `nextcloud`, `nextdns`, `nfl-information`, `nft-search`, `ngrok`, `nif`, `nif-fresquinho`, `nixpkgs-search`, `nl-news-headlines`, `no-as-a-service`, `nocal`, `node-js-evaluate`, `nordic-energy-prices`, `nos-nieuws`, `nostr`, `not-diamond`, `notaday`, `note-in-google-doc`, `notilight-controller`, `notion_researcher`, `notra`, `nouns`, `novu`, `nowplaying-cli`, `ns-nl-search`, `nsis-reference`, `nts`, `nu-nieuws`, `nuget`, `number-facts`, `numpad`, `nyc-train-tracker`, `nzbget`, `obs-control`, `octopus-energy`, `odin`, `odoo-companion`, `office-quotes`, `oh-my-zsh-git-alias`, `ohdear`, `ohmyzsh-plugins`, `ok-json`, `oklch-color-converter`, `oktasearch`, `olacv`, `ollama-mind-map-generator`, `olympic-games`, `omg-lol`, `omni-news`, `one-tab-group`, `one-time-secret`, `onelook-thesaurus`, `ones`, `open-camera-menu-bar`, `open-docker`, `open-gem-documentation`, `open-in-shopify-admin`, `open-latest-url-from-clipboard`, `open-props`, `open-with-app`, `openrouter-model-search`, `openrouter-models-finder`, `openrouter-quick-actions`, `openstatus`, `openweathermap`, `opsgenie`, `orbita`, `orion`, `osrs-wiki`, `ossinsight`, `otp-inbox`, `otter`, `ottomatic`, `outline-page`, `ovhcloud`, `owledge-raycast`, `owncloud`, `ozbargain-deals`, `pagerduty`, `palette-colors`, `pandas-documentation-search`, `pangu-for-raycast`, `paperform`, `papersize`, `paperspace`, `parabol`, `parcel-tracker`, `parse`, `password-generator`, `paste-from-apple-books`, `pastebin`, `pastefy`, `pastery`, `paymenter`, `paypal-invoices`, `paystack`, `pbr-assistant`, `penflow-ai`, `penpot`, `perry`, `personio`, `pestphp-documentation`, `pexels`, `phare-io-uptime`, `phind-search`, `phonetic-typing`, `phosphor-icons`, `php-docs`, `php-toolbox`, `pinboard`, `pinia-docs`, `pinwork`, `pip`, `pitchfork`, `pivot`, `pkg-swap`, `planetscale`, `planning-center`, `plausible-analytics`, `playtester`, `playwright-docs`, `plex`, `ploi`, `pm2`, `pocketbase`, `podcasts`, `pokemon-tcg-pocket-binder`, `polar`, `polars-documentation-search`, `polished`, `pollen-count`, `polymarket`, `pomo`, `popcorn`, `port`, `portal-wholesale`, `portuguese-primeira-liga`, `position-size-calculator`, `postey`, `postiz`, `postman`, `potter-db`, `premier-league`, `prettier`, `primer`, `printer-status`, `prisma-cli-commands`, `prisma-postgres`, `productboard`, `productlane`, `project-companion`, `project-hub`, `promptnote`, `prompts-chat`, `protobuf2typescript`, `proton-version`, `protondb`, `prowlarr`, `proxmox`, `proxyman`, `psn`, `pub-dev`, `public-bug-bounty-and-vulnerability-disclosure-programs`, `publico`, `publora`, `pubme`, `pulsemcp`, `pumble`, `punto`, `purpleair`, `px-to-rem-converter`, `qonto`, `qotp`, `qovery`, `qq-music-controls`, `query-domains`, `quick-access-for-zeroheight`, `quick-access-infomaniak`, `quick-event`, `quick-search`, `quickfile`, `quicksnip`, `quicktime`, `quicktype`, `quikwallet`, `quoterism-raycast`, `r-pkg-search`, `radicle`, `rae-dictionary-raycast`, `rails-routes`, `railway`, `rain-radars`, `rainaissance`, `ram-prices`, `ramda-documentation`, `random`, `random-color`, `random-date-generator`, `random-email`, `random-password-generator`, `random-us-phone-number`, `ratio-calculator`, `ray-boop`, `ray-so`, `raycafe`, `raycast-airtable-extension`, `raycast-bard-ai`, `raycast-clip`, `raycast-datadog`, `raycast-diki`, `raycast-explorer`, `raycast-fly`, `raycast-icons`, `raycast-ios-hig`, `raycast-kozip-extension`, `raycast-language-tool`, `raycast-link-lock`, `raycast-manual`, `raycast-monkeytype-theme`, `raycast-norwegian-public-transport`, `raycast-nrm`, `raycast-ordbokene`, `raycast-tapo-smart-devices`, `raycast-textlint-rule-aws-service-name`, `raycast-timeular`, `raycast-timezone-converter`, `raycast-transistorfm`, `raycast-translate-ge`, `raycast-urbandictionary-word-of-the-day`, `raycast-weekly-newsletter`, `raycast-wemo`, `raydocs`, `raytyping`, `rdir`, `rdw-kentekencheck`, `re-mind`, `react-native-directory`, `readeck`, `reading-time`, `readwise`, `readwise-to-tana`, `readymetrics`, `rebrandly`, `recap`, `recents`, `recurly`, `reddit-search`, `redirect-trace`, `redis`, `redmine`, `refresh-browsers`, `refresh-wifi`, `regex-repl`, `regex-tester`, `rehooks`, `reka-ui`, `remo-notes`, `remove-window-from-set`, `render`, `repology-search`, `rescuetime-focus-session-trigger`, `resend-wallpaper`, `resmo`, `retool-documentation`, `retrac`, `rewardful`, `rewiser`, `rg-adguard-links`, `ricescore`, `rick-and-morty`, `ring-intercom`, `risk-reward-calculator`, `rize-io-sessions`, `roblox-creator-docs`, `rocket-chat`, `roll-d20`, `rollcast`, `rollup-wtf`, `rtl-reader`, `rule-of-three`, `ruler`, `runcloud`, `rusbase`, `rust-docs`, `sadaqah-box`, `safe-secret`, `sage-hr`, `sanity`, `sat-scorer`, `sav`, `save-to-cubox`, `saved-items`, `savvycal`, `say-no-to-notch`, `scaleway`, `schoology`, `scira`, `scrapbox-search`, `scratchpad`, `screen-studio`, `screenocr`, `screenpipe`, `seafile`, `search-ansible-documentation`, `search-astro-docs`, `search-clojuredocs`, `search-composer-packagist`, `search-github-stars`, `search-hex`, `search-joplin-notes`, `search-justwatch`, `search-mdn`, `search-notion`, `search-npm`, `search-oeis`, `search-private-npm-packages`, `search-regexp`, `search-rubygems`, `search-shopify-liquid-documentation`, `search-with-algolia`, `searchcaster`, `sec-filings-search`, `security-search`, `semantic-scholar`, `send-to-flomo`, `sendportal`, `sendy`, `sentry`, `serialcast`, `serie-a`, `serverless-framework-docs`, `session`, `setlist-fm`, `sevalla`, `shadcn-svelte`, `shadcn-ui`, `shadcn-vue`, `shakespearify`, `shape-calendar`, `sharding-tools`, `shelve`, `shiori`, `ship24-client`, `shlink`, `shopify-dev-docs-search`, `shopify-developer-changelog`, `shopify-theme-resources`, `shopinfo-app`, `short-io`, `shortcut`, `shroud-email`, `sidecar-connect`, `signal`, `simple-login`, `simplebackups`, `simplelogin`, `single-focus`, `singularityapp`, `sip`, `sketch`, `skyscanner-flights`, `sm-ms`, `smallpdf`, `smart-reply`, `smultron`, `snake`, `sncftraintimes`, `sniffer`, `social-network-trends`, `solana-explorer`, `solana-wallets-generation`, `solidtime`, `solusvm-1-client`, `solusvm-2`, `sonarr`, `sonu-stream`, `sound-search`, `spatie-documentation`, `speedcubing`, `spell`, `spike`, `spinupwp`, `splatoon`, `splitwise`, `splix`, `spoiler-converter`, `spoqify`, `sportssync`, `spotify-beta`, `spryker-docs`, `sql-format`, `sql-reference-search`, `squeeze`, `st-andrews-main-library-occupancy`, `stagehand`, `standing-desk-tracker`, `starling`, `stashpad-docs`, `statamic-docs`, `steam-player-counts`, `stock-lookup`, `stock-tracker`, `stockholm-public-transport`, `stoicquotes`, `storyblok`, `storybook-launcher`, `storybook-search`, `storytime`, `strapi-raycast-extension`, `strftime-cheatsheet`, `string-formatter`, `subflow`, `substack`, `subwatch`, `summation`, `sun-moon-times`, `supabase`, `supabase-docs`, `supergenpass`, `superhuman`, `supermemory`, `surf-check`, `surfs-up`, `surge-outbound-switcher`, `svelte-docs`, `svga-player`, `swap-commas-dots`, `swift-evolution`, `swift-package-index`, `swiss-ov`, `swiss-train-times`, `switch-game-play-history`, `switchhosts`, `synology-download-station`, `syntax-fm`, `table-converter`, `tableau-navigator`, `tabletop-dice-roller`, `tabnews`, `tailwind-size-conversion`, `tallinn-transport`, `tally`, `tana`, `tana-paste`, `tarot`, `tasklink`, `taskplane`, `tategaki`, `tautulli`, `tc-no-generator`, `teamgantt`, `teamup-rooms`, `techcrunch`, `tella`, `tembo`, `tempo`, `temporary-email`, `tennis-standings`, `terminal`, `terminaldotshop`, `terraform-doc`, `tesla`, `teslamate`, `tex2typst`, `text-enhance`, `text-format-improver`, `text-rewrap`, `text-shortcuts`, `tfl`, `thaw`, `the-matrix-of-destiny`, `the-noble-quran`, `the-verge`, `thermoconvert`, `thesaurus`, `thingiverse`, `thrasher-magazine`, `threads-video-downloader`, `tibia-helper`, `tidal-controller`, `tiktoken`, `time`, `time-calculator`, `time-converter`, `time-logger`, `time-teller`, `time-until-i-do`, `timecamp`, `timecrowd-tracker`, `timely`, `timezone-buddy`, `tints-and-shades`, `tiny-tycho`, `tinyfaces-nft`, `tldr`, `tmdb`, `tny`, `toggle-fn`, `toggle-grayscale`, `tokenizer`, `tomito-controls`, `ton-address`, `toncoin-price`, `toolbox`, `transform`, `translit`, `transmit`, `trello`, `trenit`, `trimmy`, `trustmrr`, `truth-or-dare`, `tscheck-in`, `tududi`, `tuneblade`, `tunnelblick`, `tuple`, `tuya-smart`, `tv-remote`, `tv2---denmark`, `tw-colorpicker`, `twenty`, `twingate`, `twitch-chat`, `twitter`, `twitter-trendscast`, `twos`, `tyme-3-time-tracker`, `tynyfy`, `type-snob`, `type-the-alphabet`, `typeform`, `typefully`, `typer`, `typescript-documentation-search`, `typescript-mock-generator`, `typographer`, `typst-symbols`, `typst-universe`, `udemy-coupons`, `uk-bank-holidays`, `ulid`, `ultrahuman`, `ulysses`, `umami`, `unify-path-separator`, `unirate-currency`, `united-nations`, `unitex`, `universal-inbox`, `universities`, `unix-timestamp`, `unix-timestamp-converter`, `unkey`, `unleash-feature-toggle`, `unogs`, `unsure-calc`, `untis`, `upcoming-holidays`, `uplabs`, `upstash`, `uptime-kuma`, `uptime-robot`, `url-parse`, `url-tools`, `url-unshortener`, `useless-facts`, `usememos`, `user-agent`, `utc-workbench`, `v2ex`, `v2ex-viewer`, `v2raya-control`, `vade-mecum`, `val-town`, `valheim-wiki`, `valkey-commands-search`, `valorant-esports`, `vanguard-backup`, `vanishlink`, `vant-documentation`, `vartiq`, `vc-ru-news`, `veganify-application`, `vietnamese-calendar`, `vietqr-transfer`, `vim-bro`, `virtfusion`, `virtual-pet`, `virtualizor-enduser`, `viscosity`, `vision-directory`, `visitor-queue`, `vn-textify`, `vocab`, `vocabula-lat`, `voicenotes`, `volumio-control`, `vue-router-docs`, `vuejobs`, `vuejs-documentation`, `vuetify-docs`, `vueuse-functions`, `vultr`, `wakatime`, `wave`, `wcag`, `web-converter`, `web-page-design-mode`, `web3-profile`, `web3bio`, `webflow-sites`, `webhook-sender`, `webkit-developer-docs`, `websocket-debugging`, `what-happened-today`, `whentomeet`, `where-is-my-cursor`, `whimsical`, `who-is-off-today`, `whoop`, `wiggle-text`, `window-sizer`, `wistia`, `wled-controller`, `wolfram-alpha`, `woo-marketplace-search`, `word-count`, `word-search`, `wordpress-docs`, `wordpress-icon-finder`, `wordpress-manager`, `wordpress-plugins`, `work-time-countdown`, `workflowy-inbox`, `world-clock`, `world-cup`, `wp-cli-command-explorer`, `wrike`, `xbox-friends`, `xid`, `xkcd`, `xkcd-password-generator`, `xqc`, `y-combinator`, `yamli`, `yandex-music`, `yandex-smart-home`, `yap`, `yazio-tracker`, `yield-calculator`, `yopass`, `you-com-search`, `youdao-translate`, `youform`, `yourls`, `youtrack`, `youtube-companion`, `youtube-music`, `youtube-search`, `youtube-shorts-to-normal-video-page`, `youtube-subscriber-count`, `youversion-suggest`, `yr-weather-forecast`, `yu-gi-oh-card-lookup`, `za-fake-id-number-generator`, `zalgo-text`, `zefix`, `zeitraum`, `zenblog`, `zendesk`, `zendesk-admin`, `zeplin-project-raycast-extension`, `zero`, `zerodha-portfolio-kite-coin`, `zerossl`, `znotch`, `zo-raycast`, `zod-documentation`, `zodme`, `zoo`, `zoom-meeting-control`, `zyntra`

@@ -2,9 +2,9 @@
   "root": "/Users/test/Documents/code/extensions/extensions",
   "trusted": false,
   "counts": {
-    "SUPPORTED": 1473,
-    "DEGRADED": 429,
-    "UNSUPPORTED": 1059
+    "SUPPORTED": 1489,
+    "DEGRADED": 432,
+    "UNSUPPORTED": 1040
   },
   "topGaps": [
     [
@@ -25,19 +25,19 @@
     ],
     [
       "useExec",
-      41
+      42
     ],
     [
       "@raycast/utils",
-      37
-    ],
-    [
-      "@raycast/api",
-      30
+      19
     ],
     [
       "runPowerShellScript",
       18
+    ],
+    [
+      "@raycast/api",
+      9
     ],
     [
       "namespace import of @raycast/api",
@@ -152,7 +152,7 @@
       "name": "1loc",
       "title": "1 LOC - JavaScript Utilities in Single Line of Code",
       "dir": "1loc",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
@@ -162,18 +162,14 @@
         "getPreferenceValues"
       ],
       "utilsImports": [
-        "List",
-        "getPreferenceValues"
+        "useFetch"
       ],
       "builtins": [
         "buffer"
       ],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/utils:getPreferenceValues (not implemented in Invoke)",
-        "@raycast/utils:List (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "1password",
@@ -10549,15 +10545,24 @@
       "commands": 2,
       "modes": "view",
       "apiImports": [
-        "readdir",
-        "stat",
+        "Action",
+        "ActionPanel",
+        "Alert",
+        "Color",
+        "Form",
+        "Icon",
+        "Keyboard",
+        "List",
+        "Toast",
+        "closeMainWindow",
+        "confirmAlert",
+        "getPreferenceValues",
+        "showToast",
         "trash",
-        "useEffect",
-        "useState"
+        "useNavigation"
       ],
       "utilsImports": [
-        "useEffect",
-        "useState"
+        "showFailureToast"
       ],
       "builtins": [
         "child_process",
@@ -10569,14 +10574,7 @@
         "denied Node built-ins in sandbox: fs, child_process"
       ],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:useState (not in Invoke surface — needs review)",
-        "@raycast/api:useEffect (not in Invoke surface — needs review)",
-        "@raycast/api:readdir (not in Invoke surface — needs review)",
-        "@raycast/api:stat (not in Invoke surface — needs review)",
-        "@raycast/utils:useState (not implemented in Invoke)",
-        "@raycast/utils:useEffect (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "claudecast",
@@ -16232,7 +16230,7 @@
       "name": "deepwiki",
       "title": "DeepWiki",
       "dir": "deepwiki",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 3,
       "modes": "no-view|view",
       "apiImports": [
@@ -16251,16 +16249,7 @@
         "showToast"
       ],
       "utilsImports": [
-        "Action",
-        "ActionPanel",
-        "Icon",
-        "LaunchProps",
-        "LaunchType",
-        "List",
-        "Toast",
-        "launchCommand",
-        "open",
-        "showToast"
+        "showFailureToast"
       ],
       "builtins": [
         "url"
@@ -16271,18 +16260,7 @@
         "launchCommand: loads; throws if called (inter-command launch not wired)",
         "declares command `arguments[]` — not passed by runtime yet"
       ],
-      "unknown": [
-        "@raycast/utils:LaunchProps (not implemented in Invoke)",
-        "@raycast/utils:open (not implemented in Invoke)",
-        "@raycast/utils:Action (not implemented in Invoke)",
-        "@raycast/utils:ActionPanel (not implemented in Invoke)",
-        "@raycast/utils:Icon (not implemented in Invoke)",
-        "@raycast/utils:launchCommand (not implemented in Invoke)",
-        "@raycast/utils:LaunchType (not implemented in Invoke)",
-        "@raycast/utils:List (not implemented in Invoke)",
-        "@raycast/utils:showToast (not implemented in Invoke)",
-        "@raycast/utils:Toast (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "default-web-browser-manager",
@@ -18178,18 +18156,22 @@
       "name": "dlmoji",
       "title": "DLmoji",
       "dir": "dlmoji",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
-        "Component",
-        "Fragment",
+        "Action",
+        "ActionPanel",
+        "Clipboard",
+        "Color",
+        "Detail",
+        "Icon",
+        "Keyboard",
+        "List",
         "LocalStorage",
         "Toast",
-        "checkEmojiOnly",
         "environment",
         "getPreferenceValues",
-        "preferences",
         "showToast"
       ],
       "utilsImports": [],
@@ -18198,9 +18180,7 @@
       ],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:checkEmojiOnly (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "dnb-book-lookup",
@@ -18888,26 +18868,19 @@
       "name": "dota-2",
       "title": "Dota 2",
       "dir": "dota-2",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 2,
       "modes": "view",
       "apiImports": [
         "Action",
         "ActionPanel",
-        "List",
-        "useEffect",
-        "useMemo",
-        "useState"
+        "List"
       ],
       "utilsImports": [],
       "builtins": [],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:useState (not in Invoke surface — needs review)",
-        "@raycast/api:useEffect (not in Invoke surface — needs review)",
-        "@raycast/api:useMemo (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "dotmate",
@@ -23820,7 +23793,7 @@
       "name": "flight-miles-calculator",
       "title": "Flight Miles Calculator",
       "dir": "flight-miles-calculator",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
@@ -23832,22 +23805,13 @@
         "useNavigation"
       ],
       "utilsImports": [
-        "Action",
-        "ActionPanel",
-        "Form",
-        "Icon",
-        "useNavigation"
+        "showFailureToast",
+        "useFetch"
       ],
       "builtins": [],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/utils:Form (not implemented in Invoke)",
-        "@raycast/utils:Action (not implemented in Invoke)",
-        "@raycast/utils:ActionPanel (not implemented in Invoke)",
-        "@raycast/utils:Icon (not implemented in Invoke)",
-        "@raycast/utils:useNavigation (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "flighty",
@@ -23862,14 +23826,14 @@
         "Color",
         "Icon",
         "List",
-        "useEffect",
-        "useState"
+        "Toast",
+        "getApplications",
+        "open",
+        "showToast"
       ],
       "utilsImports": [
         "AsyncState",
-        "useEffect",
-        "useSQL",
-        "useState"
+        "useSQL"
       ],
       "builtins": [
         "fs",
@@ -23880,11 +23844,7 @@
       ],
       "degraded": [],
       "unknown": [
-        "@raycast/api:useState (not in Invoke surface — needs review)",
-        "@raycast/api:useEffect (not in Invoke surface — needs review)",
-        "@raycast/utils:AsyncState (not implemented in Invoke)",
-        "@raycast/utils:useState (not implemented in Invoke)",
-        "@raycast/utils:useEffect (not implemented in Invoke)"
+        "@raycast/utils:AsyncState (not implemented in Invoke)"
       ]
     },
     {
@@ -23895,26 +23855,18 @@
       "commands": 4,
       "modes": "view|no-view",
       "apiImports": [
+        "Action",
+        "ActionPanel",
+        "Icon",
+        "Image",
+        "List",
         "Toast",
         "closeMainWindow",
         "showHUD",
-        "showToast",
-        "useCallback",
-        "useEffect",
-        "useMemo",
-        "useRef",
-        "useState"
+        "showToast"
       ],
       "utilsImports": [
-        "Toast",
-        "closeMainWindow",
-        "showHUD",
-        "showToast",
-        "useCallback",
-        "useEffect",
-        "useMemo",
-        "useRef",
-        "useState"
+        "runAppleScript"
       ],
       "builtins": [
         "fs"
@@ -23923,22 +23875,7 @@
         "denied Node built-ins in sandbox: fs"
       ],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:useCallback (not in Invoke surface — needs review)",
-        "@raycast/api:useEffect (not in Invoke surface — needs review)",
-        "@raycast/api:useMemo (not in Invoke surface — needs review)",
-        "@raycast/api:useRef (not in Invoke surface — needs review)",
-        "@raycast/api:useState (not in Invoke surface — needs review)",
-        "@raycast/utils:useCallback (not implemented in Invoke)",
-        "@raycast/utils:useEffect (not implemented in Invoke)",
-        "@raycast/utils:useMemo (not implemented in Invoke)",
-        "@raycast/utils:useRef (not implemented in Invoke)",
-        "@raycast/utils:useState (not implemented in Invoke)",
-        "@raycast/utils:Toast (not implemented in Invoke)",
-        "@raycast/utils:closeMainWindow (not implemented in Invoke)",
-        "@raycast/utils:showHUD (not implemented in Invoke)",
-        "@raycast/utils:showToast (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "flow",
@@ -24259,7 +24196,7 @@
       "name": "focustask",
       "title": "FocusTask",
       "dir": "focustask",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 3,
       "modes": "menu-bar|view",
       "apiImports": [
@@ -24278,29 +24215,14 @@
         "useNavigation"
       ],
       "utilsImports": [
-        "Action",
-        "ActionPanel",
-        "Form",
-        "Icon",
-        "Toast",
-        "open",
-        "popToRoot",
-        "showToast",
-        "useCachedPromise"
+        "FormValidation",
+        "useCachedPromise",
+        "useForm"
       ],
       "builtins": [],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/utils:Action (not implemented in Invoke)",
-        "@raycast/utils:ActionPanel (not implemented in Invoke)",
-        "@raycast/utils:Form (not implemented in Invoke)",
-        "@raycast/utils:Icon (not implemented in Invoke)",
-        "@raycast/utils:popToRoot (not implemented in Invoke)",
-        "@raycast/utils:showToast (not implemented in Invoke)",
-        "@raycast/utils:Toast (not implemented in Invoke)",
-        "@raycast/utils:open (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "folder-cleaner",
@@ -27274,7 +27196,7 @@
       "name": "github-trending",
       "title": "GitHub Trending",
       "dir": "github-trending",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
@@ -27288,20 +27210,12 @@
         "useNavigation"
       ],
       "utilsImports": [
-        "Action",
-        "ActionPanel",
-        "Detail",
-        "Icon"
+        "useFetch"
       ],
       "builtins": [],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/utils:Action (not implemented in Invoke)",
-        "@raycast/utils:ActionPanel (not implemented in Invoke)",
-        "@raycast/utils:Detail (not implemented in Invoke)",
-        "@raycast/utils:Icon (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "github-users",
@@ -29288,15 +29202,18 @@
       "commands": 3,
       "modes": "view|no-view",
       "apiImports": [
+        "Action",
+        "ActionPanel",
         "Clipboard",
-        "ComponentType",
-        "Dispatch",
-        "SetStateAction",
+        "Detail",
+        "Form",
+        "Icon",
+        "LaunchProps",
+        "Toast",
+        "environment",
         "getSelectedText",
-        "readFile",
         "showHUD",
-        "useEffect",
-        "useState"
+        "showToast"
       ],
       "utilsImports": [],
       "builtins": [
@@ -29309,11 +29226,7 @@
       "degraded": [
         "declares command `arguments[]` — not passed by runtime yet"
       ],
-      "unknown": [
-        "@raycast/api:useState (not in Invoke surface — needs review)",
-        "@raycast/api:useEffect (not in Invoke surface — needs review)",
-        "@raycast/api:readFile (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "groundhog-day",
@@ -29794,34 +29707,20 @@
         "List",
         "Toast",
         "closeMainWindow",
+        "environment",
         "getApplications",
         "getPreferenceValues",
         "open",
         "popToRoot",
         "showHUD",
         "showToast",
-        "useContext",
-        "useMemo",
-        "useState"
+        "useNavigation"
       ],
       "utilsImports": [
-        "Action",
-        "ActionPanel",
-        "Application",
-        "Color",
-        "Detail",
-        "Icon",
-        "List",
-        "Toast",
-        "closeMainWindow",
-        "getPreferenceValues",
-        "open",
-        "popToRoot",
-        "showHUD",
-        "showToast",
-        "useContext",
-        "useMemo",
-        "useState"
+        "runAppleScript",
+        "showFailureToast",
+        "useCachedPromise",
+        "useCachedState"
       ],
       "builtins": [
         "fs",
@@ -29831,28 +29730,7 @@
         "denied Node built-ins in sandbox: fs"
       ],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:useContext (not in Invoke surface — needs review)",
-        "@raycast/api:useState (not in Invoke surface — needs review)",
-        "@raycast/api:useMemo (not in Invoke surface — needs review)",
-        "@raycast/utils:closeMainWindow (not implemented in Invoke)",
-        "@raycast/utils:ActionPanel (not implemented in Invoke)",
-        "@raycast/utils:List (not implemented in Invoke)",
-        "@raycast/utils:Action (not implemented in Invoke)",
-        "@raycast/utils:Icon (not implemented in Invoke)",
-        "@raycast/utils:Color (not implemented in Invoke)",
-        "@raycast/utils:getPreferenceValues (not implemented in Invoke)",
-        "@raycast/utils:open (not implemented in Invoke)",
-        "@raycast/utils:Application (not implemented in Invoke)",
-        "@raycast/utils:showHUD (not implemented in Invoke)",
-        "@raycast/utils:showToast (not implemented in Invoke)",
-        "@raycast/utils:Toast (not implemented in Invoke)",
-        "@raycast/utils:popToRoot (not implemented in Invoke)",
-        "@raycast/utils:Detail (not implemented in Invoke)",
-        "@raycast/utils:useContext (not implemented in Invoke)",
-        "@raycast/utils:useState (not implemented in Invoke)",
-        "@raycast/utils:useMemo (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "handoff-toggle",
@@ -32183,64 +32061,42 @@
       "name": "hypersonic",
       "title": "Hypersonic",
       "dir": "hypersonic",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 2,
       "modes": "view|menu-bar",
       "apiImports": [
         "Action",
         "ActionPanel",
-        "AuthorizationAction",
+        "Alert",
         "Clipboard",
         "Color",
         "Detail",
-        "Filter",
         "Form",
         "Icon",
         "Image",
         "LaunchType",
         "List",
         "LocalStorage",
+        "MenuBarExtra",
         "OAuth",
-        "OpenPreferencesAction",
-        "Project",
-        "Tag",
-        "TransparentEmpty",
-        "discord",
-        "figma",
+        "Toast",
+        "confirmAlert",
+        "environment",
         "getApplications",
-        "getTodos",
-        "github",
-        "gitlab",
         "launchCommand",
-        "linear",
-        "notion",
-        "reauthorize",
+        "open",
+        "openCommandPreferences",
         "showHUD",
-        "slack",
-        "useAuth",
-        "useDatabases",
-        "useFilter",
-        "useMemo",
-        "useNavigation",
-        "useState",
-        "x",
-        "youtube"
+        "showToast",
+        "useNavigation"
       ],
       "utilsImports": [
-        "Action",
-        "ActionPanel",
-        "Color",
-        "Filter",
-        "Icon",
-        "Image",
-        "Project",
-        "Tag",
-        "getTodos",
-        "loadPreferences",
-        "parseTodosToDoneWorkString",
+        "FormValidation",
+        "getAvatarIcon",
+        "getProgressIcon",
         "useCachedPromise",
-        "useDatabases",
-        "useFilter",
+        "useCachedState",
+        "useForm",
         "usePromise"
       ],
       "builtins": [],
@@ -32248,43 +32104,7 @@
       "degraded": [
         "launchCommand: loads; throws if called (inter-command launch not wired)"
       ],
-      "unknown": [
-        "@raycast/api:TransparentEmpty (not in Invoke surface — needs review)",
-        "@raycast/api:useDatabases (not in Invoke surface — needs review)",
-        "@raycast/api:useFilter (not in Invoke surface — needs review)",
-        "@raycast/api:useAuth (not in Invoke surface — needs review)",
-        "@raycast/api:Tag (not in Invoke surface — needs review)",
-        "@raycast/api:AuthorizationAction (not in Invoke surface — needs review)",
-        "@raycast/api:OpenPreferencesAction (not in Invoke surface — needs review)",
-        "@raycast/api:discord (not in Invoke surface — needs review)",
-        "@raycast/api:figma (not in Invoke surface — needs review)",
-        "@raycast/api:github (not in Invoke surface — needs review)",
-        "@raycast/api:gitlab (not in Invoke surface — needs review)",
-        "@raycast/api:linear (not in Invoke surface — needs review)",
-        "@raycast/api:notion (not in Invoke surface — needs review)",
-        "@raycast/api:slack (not in Invoke surface — needs review)",
-        "@raycast/api:x (not in Invoke surface — needs review)",
-        "@raycast/api:youtube (not in Invoke surface — needs review)",
-        "@raycast/api:reauthorize (not in Invoke surface — needs review)",
-        "@raycast/api:Project (not in Invoke surface — needs review)",
-        "@raycast/api:useMemo (not in Invoke surface — needs review)",
-        "@raycast/api:useState (not in Invoke surface — needs review)",
-        "@raycast/api:getTodos (not in Invoke surface — needs review)",
-        "@raycast/api:Filter (not in Invoke surface — needs review)",
-        "@raycast/utils:useDatabases (not implemented in Invoke)",
-        "@raycast/utils:useFilter (not implemented in Invoke)",
-        "@raycast/utils:Tag (not implemented in Invoke)",
-        "@raycast/utils:Project (not implemented in Invoke)",
-        "@raycast/utils:Action (not implemented in Invoke)",
-        "@raycast/utils:ActionPanel (not implemented in Invoke)",
-        "@raycast/utils:Color (not implemented in Invoke)",
-        "@raycast/utils:Icon (not implemented in Invoke)",
-        "@raycast/utils:Image (not implemented in Invoke)",
-        "@raycast/utils:Filter (not implemented in Invoke)",
-        "@raycast/utils:loadPreferences (not implemented in Invoke)",
-        "@raycast/utils:parseTodosToDoneWorkString (not implemented in Invoke)",
-        "@raycast/utils:getTodos (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "hyrule-compendium-search",
@@ -34977,15 +34797,13 @@
       "apiImports": [
         "Action",
         "ActionPanel",
+        "Color",
+        "Icon",
         "Image",
         "List",
-        "ResultItem",
-        "SearchCommand",
         "Toast",
         "environment",
         "getPreferenceValues",
-        "jiraFetchObject",
-        "jiraUrl",
         "showToast"
       ],
       "utilsImports": [],
@@ -34997,12 +34815,7 @@
         "denied Node built-ins in sandbox: fs"
       ],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:ResultItem (not in Invoke surface — needs review)",
-        "@raycast/api:SearchCommand (not in Invoke surface — needs review)",
-        "@raycast/api:jiraFetchObject (not in Invoke surface — needs review)",
-        "@raycast/api:jiraUrl (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "jira-search-self-hosted",
@@ -42613,7 +42426,7 @@
       "name": "mastodon-search",
       "title": "Mastodon Search",
       "dir": "mastodon-search",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
@@ -42622,21 +42435,17 @@
         "Icon",
         "Image",
         "List",
+        "Toast",
         "getPreferenceValues",
-        "useMemo",
-        "useState"
+        "showToast"
       ],
       "utilsImports": [
-        "useMemo"
+        "useFetch"
       ],
       "builtins": [],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:useMemo (not in Invoke surface — needs review)",
-        "@raycast/api:useState (not in Invoke surface — needs review)",
-        "@raycast/utils:useMemo (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "material-icons",
@@ -43191,42 +43000,28 @@
       "name": "memo",
       "title": "Memo",
       "dir": "memo",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 2,
       "modes": "view",
       "apiImports": [
         "Action",
         "ActionPanel",
-        "Api",
         "Clipboard",
         "Detail",
         "Form",
         "List",
         "LocalStorage",
         "OAuth",
-        "OAuthClient",
-        "Page",
-        "RaycastAdapter",
-        "Saver",
         "Toast",
         "popToRoot",
         "showHUD",
-        "showToast",
-        "useEffect",
-        "useState"
+        "showToast"
       ],
       "utilsImports": [],
       "builtins": [],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:Page (not in Invoke surface — needs review)",
-        "@raycast/api:Api (not in Invoke surface — needs review)",
-        "@raycast/api:RaycastAdapter (not in Invoke surface — needs review)",
-        "@raycast/api:useEffect (not in Invoke surface — needs review)",
-        "@raycast/api:useState (not in Invoke surface — needs review)",
-        "@raycast/api:Saver (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "memorable-generate-password",
@@ -50352,7 +50147,7 @@
       "name": "omnivore",
       "title": "Omnivore",
       "dir": "omnivore",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 2,
       "modes": "view|no-view",
       "apiImports": [
@@ -50367,16 +50162,14 @@
         "showToast"
       ],
       "utilsImports": [
-        "getPreferenceValues"
+        "useFetch"
       ],
       "builtins": [],
       "blockers": [],
       "degraded": [
         "declares command `arguments[]` — not passed by runtime yet"
       ],
-      "unknown": [
-        "@raycast/utils:getPreferenceValues (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "onbo",
@@ -51626,13 +51419,14 @@
         "ActionPanel",
         "Color",
         "Detail",
+        "Grid",
         "Icon",
-        "RequestInit",
-        "existsSync",
-        "runAppleScript",
-        "useEffect",
-        "useRef",
-        "useState"
+        "LocalStorage",
+        "Toast",
+        "environment",
+        "getPreferenceValues",
+        "showHUD",
+        "showToast"
       ],
       "utilsImports": [],
       "builtins": [
@@ -51642,13 +51436,7 @@
         "denied Node built-ins in sandbox: fs"
       ],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:existsSync (not in Invoke surface — needs review)",
-        "@raycast/api:runAppleScript (not in Invoke surface — needs review)",
-        "@raycast/api:useEffect (not in Invoke surface — needs review)",
-        "@raycast/api:useRef (not in Invoke surface — needs review)",
-        "@raycast/api:useState (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "openvpn",
@@ -52228,7 +52016,7 @@
       "name": "otter",
       "title": "Otter Bookmarks",
       "dir": "otter",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 4,
       "modes": "view|menu-bar",
       "apiImports": [
@@ -52246,44 +52034,18 @@
         "getPreferenceValues",
         "open",
         "openExtensionPreferences",
-        "showToast",
-        "useCachedPromise"
+        "showToast"
       ],
       "utilsImports": [
-        "Action",
-        "ActionPanel",
-        "Detail",
-        "Icon",
-        "Image",
-        "Keyboard",
-        "List",
-        "MenuBarExtra",
-        "getPreferenceValues",
-        "open",
-        "openExtensionPreferences",
-        "useCachedPromise",
-        "useFetchRecentItems"
+        "getFavicon",
+        "useCachedPromise"
       ],
       "builtins": [
         "url"
       ],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:useCachedPromise (not in Invoke surface — needs review)",
-        "@raycast/utils:List (not implemented in Invoke)",
-        "@raycast/utils:ActionPanel (not implemented in Invoke)",
-        "@raycast/utils:Action (not implemented in Invoke)",
-        "@raycast/utils:Icon (not implemented in Invoke)",
-        "@raycast/utils:Detail (not implemented in Invoke)",
-        "@raycast/utils:getPreferenceValues (not implemented in Invoke)",
-        "@raycast/utils:Image (not implemented in Invoke)",
-        "@raycast/utils:MenuBarExtra (not implemented in Invoke)",
-        "@raycast/utils:open (not implemented in Invoke)",
-        "@raycast/utils:Keyboard (not implemented in Invoke)",
-        "@raycast/utils:openExtensionPreferences (not implemented in Invoke)",
-        "@raycast/utils:useFetchRecentItems (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "ottomatic",
@@ -53208,13 +52970,13 @@
       "apiImports": [
         "Action",
         "ActionPanel",
-        "COPY_TYPE",
+        "Clipboard",
         "Color",
         "Icon",
         "List",
-        "exec",
-        "execFile",
-        "getPreferenceValues"
+        "Toast",
+        "getPreferenceValues",
+        "showToast"
       ],
       "utilsImports": [],
       "builtins": [
@@ -53226,11 +52988,7 @@
         "denied Node built-ins in sandbox: child_process"
       ],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:exec (not in Invoke surface — needs review)",
-        "@raycast/api:execFile (not in Invoke surface — needs review)",
-        "@raycast/api:COPY_TYPE (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "parse",
@@ -53843,7 +53601,7 @@
       "name": "paystack",
       "title": "Paystack",
       "dir": "paystack",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 8,
       "modes": "view",
       "apiImports": [
@@ -53861,34 +53619,14 @@
         "showToast"
       ],
       "utilsImports": [
-        "Action",
-        "ActionPanel",
-        "Alert",
-        "Clipboard",
-        "Form",
-        "Icon",
-        "List",
-        "Toast",
-        "confirmAlert",
-        "openExtensionPreferences",
-        "showToast"
+        "FormValidation",
+        "useCachedPromise",
+        "useForm"
       ],
       "builtins": [],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/utils:showToast (not implemented in Invoke)",
-        "@raycast/utils:Toast (not implemented in Invoke)",
-        "@raycast/utils:List (not implemented in Invoke)",
-        "@raycast/utils:ActionPanel (not implemented in Invoke)",
-        "@raycast/utils:Action (not implemented in Invoke)",
-        "@raycast/utils:openExtensionPreferences (not implemented in Invoke)",
-        "@raycast/utils:Icon (not implemented in Invoke)",
-        "@raycast/utils:Form (not implemented in Invoke)",
-        "@raycast/utils:Clipboard (not implemented in Invoke)",
-        "@raycast/utils:confirmAlert (not implemented in Invoke)",
-        "@raycast/utils:Alert (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "pbr-assistant",
@@ -60184,23 +59922,24 @@
       "name": "random-color",
       "title": "Random Color",
       "dir": "random-color",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 2,
       "modes": "no-view|view",
       "apiImports": [
         "Action",
         "ActionPanel",
+        "Clipboard",
         "Grid",
         "Icon",
-        "randomColor"
+        "closeMainWindow",
+        "getPreferenceValues",
+        "showHUD"
       ],
       "utilsImports": [],
       "builtins": [],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:randomColor (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "random-date-generator",
@@ -62685,7 +62424,7 @@
       "name": "readeck",
       "title": "Readeck",
       "dir": "readeck",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 2,
       "modes": "view",
       "apiImports": [
@@ -62699,28 +62438,13 @@
         "showToast"
       ],
       "utilsImports": [
-        "Action",
-        "ActionPanel",
-        "Form",
-        "Icon",
-        "List",
-        "Toast",
-        "getPreferenceValues",
-        "showToast"
+        "useFetch",
+        "useForm"
       ],
       "builtins": [],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/utils:Action (not implemented in Invoke)",
-        "@raycast/utils:ActionPanel (not implemented in Invoke)",
-        "@raycast/utils:Icon (not implemented in Invoke)",
-        "@raycast/utils:Form (not implemented in Invoke)",
-        "@raycast/utils:showToast (not implemented in Invoke)",
-        "@raycast/utils:Toast (not implemented in Invoke)",
-        "@raycast/utils:getPreferenceValues (not implemented in Invoke)",
-        "@raycast/utils:List (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "reader-mode",
@@ -62855,7 +62579,7 @@
       "name": "readwise-to-tana",
       "title": "Readwise to Tana",
       "dir": "readwise-to-tana",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
@@ -62870,14 +62594,12 @@
         "useNavigation"
       ],
       "utilsImports": [
-        "getPreferenceValues"
+        "useFetch"
       ],
       "builtins": [],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/utils:getPreferenceValues (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "readymetrics",
@@ -64142,37 +63864,19 @@
         "closeMainWindow",
         "confirmAlert",
         "environment",
-        "existsSync",
         "getPreferenceValues",
         "open",
-        "readFileSync",
+        "openExtensionPreferences",
         "showToast",
-        "useCallback",
-        "useEffect",
-        "useMemo",
-        "useNavigation",
-        "useRef",
-        "useState"
+        "useNavigation"
       ],
       "utilsImports": [
-        "AI",
-        "Action",
-        "ActionPanel",
-        "Clipboard",
-        "Color",
-        "Detail",
-        "Icon",
-        "Image",
-        "List",
-        "Toast",
-        "confirmAlert",
-        "environment",
-        "showToast",
-        "useEffect",
-        "useMemo",
-        "useNavigation",
-        "useRef",
-        "useState"
+        "showFailureToast",
+        "useAI",
+        "useCachedPromise",
+        "useCachedState",
+        "useExec",
+        "usePromise"
       ],
       "builtins": [
         "child_process",
@@ -64184,34 +63888,10 @@
       "blockers": [
         "denied Node built-ins in sandbox: child_process, fs"
       ],
-      "degraded": [],
-      "unknown": [
-        "@raycast/api:useMemo (not in Invoke surface — needs review)",
-        "@raycast/api:useCallback (not in Invoke surface — needs review)",
-        "@raycast/api:useEffect (not in Invoke surface — needs review)",
-        "@raycast/api:useRef (not in Invoke surface — needs review)",
-        "@raycast/api:useState (not in Invoke surface — needs review)",
-        "@raycast/api:existsSync (not in Invoke surface — needs review)",
-        "@raycast/api:readFileSync (not in Invoke surface — needs review)",
-        "@raycast/utils:Action (not implemented in Invoke)",
-        "@raycast/utils:ActionPanel (not implemented in Invoke)",
-        "@raycast/utils:AI (not implemented in Invoke)",
-        "@raycast/utils:Detail (not implemented in Invoke)",
-        "@raycast/utils:Icon (not implemented in Invoke)",
-        "@raycast/utils:environment (not implemented in Invoke)",
-        "@raycast/utils:useNavigation (not implemented in Invoke)",
-        "@raycast/utils:Color (not implemented in Invoke)",
-        "@raycast/utils:Image (not implemented in Invoke)",
-        "@raycast/utils:List (not implemented in Invoke)",
-        "@raycast/utils:Clipboard (not implemented in Invoke)",
-        "@raycast/utils:Toast (not implemented in Invoke)",
-        "@raycast/utils:showToast (not implemented in Invoke)",
-        "@raycast/utils:confirmAlert (not implemented in Invoke)",
-        "@raycast/utils:useEffect (not implemented in Invoke)",
-        "@raycast/utils:useMemo (not implemented in Invoke)",
-        "@raycast/utils:useRef (not implemented in Invoke)",
-        "@raycast/utils:useState (not implemented in Invoke)"
-      ]
+      "degraded": [
+        "useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox"
+      ],
+      "unknown": []
     },
     {
       "name": "rescuetime-focus-session-trigger",
@@ -65129,16 +64809,18 @@
       "apiImports": [
         "Action",
         "ActionPanel",
-        "FC",
+        "Alert",
+        "Clipboard",
+        "Detail",
         "Form",
         "Icon",
         "List",
         "LocalStorage",
-        "memo",
-        "useCallback",
-        "useEffect",
-        "useNavigation",
-        "useState"
+        "Toast",
+        "confirmAlert",
+        "getPreferenceValues",
+        "showToast",
+        "useNavigation"
       ],
       "utilsImports": [],
       "builtins": [
@@ -65148,12 +64830,7 @@
         "denied Node built-ins in sandbox: child_process"
       ],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:useCallback (not in Invoke surface — needs review)",
-        "@raycast/api:memo (not in Invoke surface — needs review)",
-        "@raycast/api:useState (not in Invoke surface — needs review)",
-        "@raycast/api:useEffect (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "rtl-reader",
@@ -66095,27 +65772,25 @@
       "name": "scrapbox-search",
       "title": "Scrapbox Search",
       "dir": "scrapbox-search",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
-        "Response",
-        "useEffect",
-        "useState"
+        "Action",
+        "ActionPanel",
+        "Icon",
+        "List",
+        "Toast",
+        "getPreferenceValues",
+        "showToast"
       ],
       "utilsImports": [
-        "useEffect",
-        "useState"
+        "useCachedState"
       ],
       "builtins": [],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:useEffect (not in Invoke surface — needs review)",
-        "@raycast/api:useState (not in Invoke surface — needs review)",
-        "@raycast/utils:useEffect (not implemented in Invoke)",
-        "@raycast/utils:useState (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "scratchpad",
@@ -73432,7 +73107,7 @@
       "name": "sun-moon-times",
       "title": "Sun/Moon Times",
       "dir": "sun-moon-times",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
@@ -73447,14 +73122,12 @@
         "showToast"
       ],
       "utilsImports": [
-        "List"
+        "useFetch"
       ],
       "builtins": [],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/utils:List (not implemented in Invoke)"
-      ]
+      "unknown": []
     },
     {
       "name": "supabase",
@@ -73537,20 +73210,25 @@
       "name": "supergenpass",
       "title": "SuperGenPass",
       "dir": "superpassgen",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
+        "Action",
+        "ActionPanel",
+        "Clipboard",
+        "Form",
+        "Toast",
+        "closeMainWindow",
         "getPreferenceValues",
-        "useState"
+        "popToRoot",
+        "showToast"
       ],
       "utilsImports": [],
       "builtins": [],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:useState (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "superhuman",
@@ -73651,32 +73329,16 @@
       "apiImports": [
         "Action",
         "ActionPanel",
-        "Asset",
-        "AssetFormat",
-        "AssetGroup",
-        "AssetScale",
-        "Component",
-        "ComponentPropertyLinkElementType",
-        "ComponentPropertyType",
-        "DesignComponent",
-        "DesignSystem",
-        "DesignSystemVersion",
+        "Cache",
+        "Clipboard",
         "Detail",
-        "DocSearchResultData",
-        "DocumentationGroup",
-        "DocumentationPage",
         "Form",
         "Grid",
         "Icon",
         "Image",
         "List",
         "LocalStorage",
-        "RenderedAsset",
-        "Supernova",
         "Toast",
-        "Token",
-        "TokenGroup",
-        "Workspace",
         "environment",
         "getPreferenceValues",
         "open",
@@ -73695,25 +73357,7 @@
         "denied Node built-ins in sandbox: fs, child_process"
       ],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:Asset (not in Invoke surface — needs review)",
-        "@raycast/api:AssetGroup (not in Invoke surface — needs review)",
-        "@raycast/api:DesignComponent (not in Invoke surface — needs review)",
-        "@raycast/api:DesignSystemVersion (not in Invoke surface — needs review)",
-        "@raycast/api:DocSearchResultData (not in Invoke surface — needs review)",
-        "@raycast/api:DocumentationGroup (not in Invoke surface — needs review)",
-        "@raycast/api:DocumentationPage (not in Invoke surface — needs review)",
-        "@raycast/api:Token (not in Invoke surface — needs review)",
-        "@raycast/api:TokenGroup (not in Invoke surface — needs review)",
-        "@raycast/api:DesignSystem (not in Invoke surface — needs review)",
-        "@raycast/api:Supernova (not in Invoke surface — needs review)",
-        "@raycast/api:Workspace (not in Invoke surface — needs review)",
-        "@raycast/api:AssetFormat (not in Invoke surface — needs review)",
-        "@raycast/api:AssetScale (not in Invoke surface — needs review)",
-        "@raycast/api:ComponentPropertyLinkElementType (not in Invoke surface — needs review)",
-        "@raycast/api:ComponentPropertyType (not in Invoke surface — needs review)",
-        "@raycast/api:RenderedAsset (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "superwhisper",
@@ -87860,9 +87504,7 @@
         "Toast",
         "environment",
         "getPreferenceValues",
-        "name: \"Search tool imports the routing table\"",
         "openExtensionPreferences",
-        "passed:\n      searchTool.includes('from \"../zenmux-doc-routing\"') &&\n      searchTool.includes(\"routingMatches\")",
         "showToast",
         "updateCommandMetadata"
       ],
@@ -87879,10 +87521,7 @@
         "denied Node built-ins in sandbox: fs, child_process"
       ],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:name: \"Search tool imports the routing table\" (not in Invoke surface — needs review)",
-        "@raycast/api:passed:\n      searchTool.includes('from \"../zenmux-doc-routing\"') &&\n      searchTool.includes(\"routingMatches\") (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "zeplin-project-raycast-extension",

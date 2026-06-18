@@ -2,7 +2,7 @@ name,title,status,dir,commands,modes,blockers,degraded,unknown_apis,node_builtin
 0x0,0x0,DEGRADED,0x0,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs path
 1-click-confetti,1-Click Confetti,DEGRADED,1-click-confetti,2,menu-bar|no-view,,uses Node built-ins (ok in trusted mode): child_process,,child_process
 1bookmark,1Bookmark,DEGRADED,1bookmark,3,view,,"uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs os path util
-1loc,1 LOC - JavaScript Utilities in Single Line of Code,UNSUPPORTED,1loc,1,view,,,@raycast/utils:getPreferenceValues (not implemented in Invoke) | @raycast/utils:List (not implemented in Invoke),buffer
+1loc,1 LOC - JavaScript Utilities in Single Line of Code,SUPPORTED,1loc,1,view,,,,buffer
 1password,1Password,DEGRADED,1password,4,view|no-view,,"useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox | uses Node built-ins (ok in trusted mode): fs, child_process",,child_process crypto fs os path
 2fa-directory,2FA Directory,SUPPORTED,2fa-directory,1,view,,,,
 40-questions,40 Questions - Yearly Reflection,DEGRADED,40-questions,3,view|no-view,,declares command `arguments[]` — not passed by runtime yet,,
@@ -348,7 +348,7 @@ claude,Claude,SUPPORTED,claude,5,view,,,,
 claude-code-cheatsheet,Claude Code Cheatsheet,SUPPORTED,claude-code-cheatsheet,1,view,,,,
 claude-code-config-switcher,Claude Code Switcher,DEGRADED,claude-code-config-switcher,3,view,,"uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs os path util
 claude-code-launcher,Claude Code Launcher,DEGRADED,claude-code-launcher,1,view,,"uses Node built-ins (ok in trusted mode): fs, child_process",,child_process crypto fs os path util
-claude-sessions,Claude Sessions,UNSUPPORTED,claude-sessions,2,view,,"uses Node built-ins (ok in trusted mode): fs, child_process",@raycast/api:useState (not in Invoke surface — needs review) | @raycast/api:useEffect (not in Invoke surface — needs review) | @raycast/api:readdir (not in Invoke surface — needs review) | @raycast/api:stat (not in Invoke surface — needs review) | @raycast/utils:useState (not implemented in Invoke) | @raycast/utils:useEffect (not implemented in Invoke),child_process fs os path
+claude-sessions,Claude Sessions,DEGRADED,claude-sessions,2,view,,"uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs os path
 claudecast,ClaudeCast,DEGRADED,claudecast,10,view|no-view|menu-bar,,"launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): fs, child_process, readline",,child_process crypto fs os path readline util
 clean-agent-text,Clean Agent Text,SUPPORTED,clean-agent-text,1,no-view,,,,
 clean-keyboard,Clean Keyboard,DEGRADED,clean-keyboard,1,view,,uses Node built-ins (ok in trusted mode): child_process,,child_process os
@@ -543,7 +543,7 @@ deduplicator,Deduplicator,SUPPORTED,deduplicator,1,view,,,,
 deepcast,Deepcast,DEGRADED,deepcast,33,view|no-view,,launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet,,
 deepl-api-usage,DeepL API Usage,SUPPORTED,deepl-api-usage,1,view,,,,
 deepseeker,Deepseek Quick Actions,DEGRADED,deepseeker,12,view|no-view,,declares command `arguments[]` — not passed by runtime yet,,
-deepwiki,DeepWiki,UNSUPPORTED,deepwiki,3,no-view|view,,BrowserExtension: loads; throws if called (browser bridge not wired) | launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet,@raycast/utils:LaunchProps (not implemented in Invoke) | @raycast/utils:open (not implemented in Invoke) | @raycast/utils:Action (not implemented in Invoke) | @raycast/utils:ActionPanel (not implemented in Invoke) | @raycast/utils:Icon (not implemented in Invoke) | @raycast/utils:launchCommand (not implemented in Invoke) | @raycast/utils:LaunchType (not implemented in Invoke) | @raycast/utils:List (not implemented in Invoke) | @raycast/utils:showToast (not implemented in Invoke) | @raycast/utils:Toast (not implemented in Invoke),url
+deepwiki,DeepWiki,DEGRADED,deepwiki,3,no-view|view,,BrowserExtension: loads; throws if called (browser bridge not wired) | launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet,,url
 default-web-browser-manager,Default Web Browser Manager,DEGRADED,default-web-browser-manager,2,view|no-view,,uses Node built-ins (ok in trusted mode): child_process,,child_process
 defbro,Defbro,DEGRADED,defbro,1,view,,"uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs util
 defichain-dobby,Defichain Dobby,SUPPORTED,defichain-dobby,1,view,,,,
@@ -609,7 +609,7 @@ displayplacer,Display Placer,DEGRADED,displayplacer,7,view|no-view,,uses Node bu
 distraction-tracker,Distraction Tracker,SUPPORTED,distraction-tracker,2,view,,,,crypto
 django-docs,Django Docs,SUPPORTED,django-docs,2,view|no-view,,,,
 djangopackages,Django Packages,SUPPORTED,djangopackages,1,view,,,,
-dlmoji,DLmoji,UNSUPPORTED,dlmoji,1,view,,,@raycast/api:checkEmojiOnly (not in Invoke surface — needs review),querystring
+dlmoji,DLmoji,SUPPORTED,dlmoji,1,view,,,,querystring
 dnb-book-lookup,DNB Book Lookup,DEGRADED,dnb-book-lookup,1,view,,declares command `arguments[]` — not passed by runtime yet,,
 dns-lookup,DNS Lookup,SUPPORTED,dns-lookup,1,view,,,,
 do-not-disturb,Do Not Disturb,DEGRADED,do-not-disturb,4,no-view,,uses Node built-ins (ok in trusted mode): child_process,,child_process
@@ -635,7 +635,7 @@ doorstopper,Doorstopper,DEGRADED,doorstopper,5,no-view|menu-bar,,launchCommand: 
 doppler-share-secrets,Doppler Share Secrets,SUPPORTED,doppler-share-secrets,3,view,,,,
 dot-new,dot-new,DEGRADED,dot-new,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs path
 dot-underscore-files-cleaner,Dot Underscore Files Cleaner,DEGRADED,dot-underscore-files-cleaner,1,no-view,,uses Node built-ins (ok in trusted mode): child_process,,child_process
-dota-2,Dota 2,UNSUPPORTED,dota-2,2,view,,,@raycast/api:useState (not in Invoke surface — needs review) | @raycast/api:useEffect (not in Invoke surface — needs review) | @raycast/api:useMemo (not in Invoke surface — needs review),
+dota-2,Dota 2,SUPPORTED,dota-2,2,view,,,,
 dotmate,Dotmate,DEGRADED,dotmate,5,view|no-view,,launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): fs,,fs os path
 dotnet-api-browser,.NET API Browser,SUPPORTED,dotnet-api-browser,1,view,,,,url
 dotnet-docs-search,.NET Documentation Search,SUPPORTED,dotnet-docs-search,1,view,,,,
@@ -805,9 +805,9 @@ fizzy,Fizzy,DEGRADED,fizzy,3,view,,uses Node built-ins (ok in trusted mode): fs,
 flashspace,FlashSpace,DEGRADED,flashspace,27,view|no-view,,"useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox | uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs os path
 flaticon,Flaticon — Search Icons,DEGRADED,flaticon,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs
 flibusta-search,Flibusta Search,DEGRADED,flibusta-search,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs os path
-flight-miles-calculator,Flight Miles Calculator,UNSUPPORTED,flight-miles-calculator,1,view,,,@raycast/utils:Form (not implemented in Invoke) | @raycast/utils:Action (not implemented in Invoke) | @raycast/utils:ActionPanel (not implemented in Invoke) | @raycast/utils:Icon (not implemented in Invoke) | @raycast/utils:useNavigation (not implemented in Invoke),
-flighty,Flighty,UNSUPPORTED,flighty,1,view,,uses Node built-ins (ok in trusted mode): fs,@raycast/api:useState (not in Invoke surface — needs review) | @raycast/api:useEffect (not in Invoke surface — needs review) | @raycast/utils:AsyncState (not implemented in Invoke) | @raycast/utils:useState (not implemented in Invoke) | @raycast/utils:useEffect (not implemented in Invoke),fs os
-floaty,Floaty,UNSUPPORTED,floaty,4,view|no-view,,uses Node built-ins (ok in trusted mode): fs,@raycast/api:useCallback (not in Invoke surface — needs review) | @raycast/api:useEffect (not in Invoke surface — needs review) | @raycast/api:useMemo (not in Invoke surface — needs review) | @raycast/api:useRef (not in Invoke surface — needs review) | @raycast/api:useState (not in Invoke surface — needs review) | @raycast/utils:useCallback (not implemented in Invoke) | @raycast/utils:useEffect (not implemented in Invoke) | @raycast/utils:useMemo (not implemented in Invoke) | @raycast/utils:useRef (not implemented in Invoke) | @raycast/utils:useState (not implemented in Invoke) | @raycast/utils:Toast (not implemented in Invoke) | @raycast/utils:closeMainWindow (not implemented in Invoke) | @raycast/utils:showHUD (not implemented in Invoke) | @raycast/utils:showToast (not implemented in Invoke),fs
+flight-miles-calculator,Flight Miles Calculator,SUPPORTED,flight-miles-calculator,1,view,,,,
+flighty,Flighty,UNSUPPORTED,flighty,1,view,,uses Node built-ins (ok in trusted mode): fs,@raycast/utils:AsyncState (not implemented in Invoke),fs os
+floaty,Floaty,DEGRADED,floaty,4,view|no-view,,uses Node built-ins (ok in trusted mode): fs,,fs
 flow,Flow Timer,DEGRADED,flow,10,no-view,,declares command `arguments[]` — not passed by runtime yet,,
 fluctuation,Fluctuation,SUPPORTED,fluctuation,1,view,,,,
 fluent-outdoors,Fluent Outdoors,SUPPORTED,fluent-outdoors,1,view,,,,path
@@ -820,7 +820,7 @@ flypy,Flypy Code Query,SUPPORTED,flypy-code-query,1,view,,,,
 focus,Focus,DEGRADED,focus,9,no-view|view,,declares command `arguments[]` — not passed by runtime yet,,
 focus-anchor,Focus Anchor,DEGRADED,focus-anchor,1,no-view,,declares command `arguments[]` — not passed by runtime yet,,
 focus-flow,Focusflow - a Study Clock,DEGRADED,focus-flow,9,view|menu-bar|no-view,,launchCommand: loads; throws if called (inter-command launch not wired),,
-focustask,FocusTask,UNSUPPORTED,focustask,3,menu-bar|view,,,@raycast/utils:Action (not implemented in Invoke) | @raycast/utils:ActionPanel (not implemented in Invoke) | @raycast/utils:Form (not implemented in Invoke) | @raycast/utils:Icon (not implemented in Invoke) | @raycast/utils:popToRoot (not implemented in Invoke) | @raycast/utils:showToast (not implemented in Invoke) | @raycast/utils:Toast (not implemented in Invoke) | @raycast/utils:open (not implemented in Invoke),
+focustask,FocusTask,SUPPORTED,focustask,3,menu-bar|view,,,,
 folder-cleaner,Folder Cleaner,DEGRADED,folder-cleaner,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs path
 folder-organizer,Folder Organizer,DEGRADED,folder-organizer,3,no-view|view,,"uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs os path
 folder-search,Folder Search,DEGRADED,folder-search,2,view,,"uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs os path
@@ -913,7 +913,7 @@ github-review-requests,GitHub Review Requests,SUPPORTED,github-review-requests,2
 github-search,GitHub Search,DEGRADED,github-search,2,view,,launchCommand: loads; throws if called (inter-command launch not wired),,
 github-spark,GitHub Spark,SUPPORTED,github-spark,1,view,,,,
 github-status,GitHub Status,SUPPORTED,github-status,1,view,,,,
-github-trending,GitHub Trending,UNSUPPORTED,github-trending,1,view,,,@raycast/utils:Action (not implemented in Invoke) | @raycast/utils:ActionPanel (not implemented in Invoke) | @raycast/utils:Detail (not implemented in Invoke) | @raycast/utils:Icon (not implemented in Invoke),
+github-trending,GitHub Trending,SUPPORTED,github-trending,1,view,,,,
 github-users,GitHub Users Search,SUPPORTED,github-users,1,view,,,,
 gitignore,Gitignore,DEGRADED,gitignore,1,view,,"uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs path stream
 gitlab,GitLab,DEGRADED,gitlab,24,view|menu-bar|no-view,,"launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): https, fs",,crypto fs https path stream util
@@ -976,7 +976,7 @@ grist,Grist,SUPPORTED,grist,1,view,,,,
 grok-ai,Grok AI,DEGRADED,grok-ai,3,view,,uses Node built-ins (ok in trusted mode): fs,,fs os path
 grokipedia,Grokipedia,SUPPORTED,grokipedia,1,view,,,,url
 groq,Groq,DEGRADED,groq,14,view,,declares command `arguments[]` — not passed by runtime yet,,
-groq-tools,GROQ Tools,UNSUPPORTED,groq-tools,3,view|no-view,,declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs,@raycast/api:useState (not in Invoke surface — needs review) | @raycast/api:useEffect (not in Invoke surface — needs review) | @raycast/api:readFile (not in Invoke surface — needs review),fs path
+groq-tools,GROQ Tools,DEGRADED,groq-tools,3,view|no-view,,declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs,,fs path
 groundhog-day,Groundhog Day,SUPPORTED,groundhog-day,1,view,,,,
 growthbook,Growthbook,SUPPORTED,growthbook,1,view,,,,
 grpcui,gRPC UI,DEGRADED,grpcui,3,view,,"uses Node built-ins (ok in trusted mode): fs, child_process",,child_process crypto fs
@@ -992,7 +992,7 @@ hacker-news,Hacker News,SUPPORTED,hacker-news,1,view,,,,os
 hacker-news-top-stories,Hacker News Top Stories,DEGRADED,hacker-news-top-stories,1,menu-bar,,uses Node built-ins (ok in trusted mode): child_process,,child_process os util
 hackmd,HackMD,SUPPORTED,hackmd,4,view,,,,url
 hakuna,Hakuna,DEGRADED,hakuna,9,view|menu-bar|no-view,,launchCommand: loads; throws if called (inter-command launch not wired),,
-hammerspoon,Hammerspoon,UNSUPPORTED,hammerspoon,10,no-view|view,,uses Node built-ins (ok in trusted mode): fs,@raycast/api:useContext (not in Invoke surface — needs review) | @raycast/api:useState (not in Invoke surface — needs review) | @raycast/api:useMemo (not in Invoke surface — needs review) | @raycast/utils:closeMainWindow (not implemented in Invoke) | @raycast/utils:ActionPanel (not implemented in Invoke) | @raycast/utils:List (not implemented in Invoke) | @raycast/utils:Action (not implemented in Invoke) | @raycast/utils:Icon (not implemented in Invoke) | @raycast/utils:Color (not implemented in Invoke) | @raycast/utils:getPreferenceValues (not implemented in Invoke) | @raycast/utils:open (not implemented in Invoke) | @raycast/utils:Application (not implemented in Invoke) | @raycast/utils:showHUD (not implemented in Invoke) | @raycast/utils:showToast (not implemented in Invoke) | @raycast/utils:Toast (not implemented in Invoke) | @raycast/utils:popToRoot (not implemented in Invoke) | @raycast/utils:Detail (not implemented in Invoke) | @raycast/utils:useContext (not implemented in Invoke) | @raycast/utils:useState (not implemented in Invoke) | @raycast/utils:useMemo (not implemented in Invoke),fs path
+hammerspoon,Hammerspoon,DEGRADED,hammerspoon,10,no-view|view,,uses Node built-ins (ok in trusted mode): fs,,fs path
 handoff-toggle,Handoff Toggle,DEGRADED,handoff-toggle,2,no-view,,uses Node built-ins (ok in trusted mode): child_process,,child_process os path
 handy,Handy,DEGRADED,handy,9,no-view|view,,"uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs os path
 hardcover,Hardcover,SUPPORTED,hardcover,7,view,,,,
@@ -1070,7 +1070,7 @@ huggingcast,Huggingcast,DEGRADED,huggingcast,6,view,,uses Node built-ins (ok in 
 humaans,Humaans,SUPPORTED,humaans,6,view|no-view,,,,assert url
 hupu,Hupu,SUPPORTED,hupu,1,view,,,,
 hyper-focus,Hyper Focus,SUPPORTED,hyper-focus,1,view,,,,assert os path
-hypersonic,Hypersonic,UNSUPPORTED,hypersonic,2,view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired),@raycast/api:TransparentEmpty (not in Invoke surface — needs review) | @raycast/api:useDatabases (not in Invoke surface — needs review) | @raycast/api:useFilter (not in Invoke surface — needs review) | @raycast/api:useAuth (not in Invoke surface — needs review) | @raycast/api:Tag (not in Invoke surface — needs review) | @raycast/api:AuthorizationAction (not in Invoke surface — needs review) | @raycast/api:OpenPreferencesAction (not in Invoke surface — needs review) | @raycast/api:discord (not in Invoke surface — needs review) | @raycast/api:figma (not in Invoke surface — needs review) | @raycast/api:github (not in Invoke surface — needs review) | @raycast/api:gitlab (not in Invoke surface — needs review) | @raycast/api:linear (not in Invoke surface — needs review) | @raycast/api:notion (not in Invoke surface — needs review) | @raycast/api:slack (not in Invoke surface — needs review) | @raycast/api:x (not in Invoke surface — needs review) | @raycast/api:youtube (not in Invoke surface — needs review) | @raycast/api:reauthorize (not in Invoke surface — needs review) | @raycast/api:Project (not in Invoke surface — needs review) | @raycast/api:useMemo (not in Invoke surface — needs review) | @raycast/api:useState (not in Invoke surface — needs review) | @raycast/api:getTodos (not in Invoke surface — needs review) | @raycast/api:Filter (not in Invoke surface — needs review) | @raycast/utils:useDatabases (not implemented in Invoke) | @raycast/utils:useFilter (not implemented in Invoke) | @raycast/utils:Tag (not implemented in Invoke) | @raycast/utils:Project (not implemented in Invoke) | @raycast/utils:Action (not implemented in Invoke) | @raycast/utils:ActionPanel (not implemented in Invoke) | @raycast/utils:Color (not implemented in Invoke) | @raycast/utils:Icon (not implemented in Invoke) | @raycast/utils:Image (not implemented in Invoke) | @raycast/utils:Filter (not implemented in Invoke) | @raycast/utils:loadPreferences (not implemented in Invoke) | @raycast/utils:parseTodosToDoneWorkString (not implemented in Invoke) | @raycast/utils:getTodos (not implemented in Invoke),
+hypersonic,Hypersonic,DEGRADED,hypersonic,2,view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired),,
 hyrule-compendium-search,Hyrule Compendium Search,DEGRADED,hyrule-compendium-search,2,view,,launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet,,
 iata-code-decoder,IATA Code Decoder,SUPPORTED,iata-code-decoder,3,view,,,,
 icd10-lookup,ICD10 Lookup,SUPPORTED,icd10-lookup,1,view,,,,
@@ -1157,7 +1157,7 @@ jenkins,Jenkins,DEGRADED,jenkins,1,view,,"uses Node built-ins (ok in trusted mod
 jetbrains,JetBrains Toolbox Recent Projects,DEGRADED,jetbrains,2,view|menu-bar,,"uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs os path util
 jetpack-commands,Jetpack Commands,SUPPORTED,jetpack-commands,46,no-view|view,,,,
 jira,Jira,DEGRADED,jira,9,view,,launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): fs,,fs os
-jira-search,Jira Search,UNSUPPORTED,jira-search,5,view|no-view,,uses Node built-ins (ok in trusted mode): fs,@raycast/api:ResultItem (not in Invoke surface — needs review) | @raycast/api:SearchCommand (not in Invoke surface — needs review) | @raycast/api:jiraFetchObject (not in Invoke surface — needs review) | @raycast/api:jiraUrl (not in Invoke surface — needs review),fs path
+jira-search,Jira Search,DEGRADED,jira-search,5,view|no-view,,uses Node built-ins (ok in trusted mode): fs,,fs path
 jira-search-self-hosted,Jira Search (Self-Hosted),DEGRADED,jira-search-self-hosted,4,view,,"uses Node built-ins (ok in trusted mode): fs, https",,fs https path
 jira-self-hosted,Jira (Self-Hosted),DEGRADED,jira-self-hosted,9,view,,launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): fs,,fs os
 jira-time-tracking,Jira Time Tracking,SUPPORTED,jira-time-tracking,1,view,,,,
@@ -1418,7 +1418,7 @@ markprompt,Markprompt,SUPPORTED,markprompt,1,view,,,,crypto
 masked-link-generator,Masked Link Generator,UNSUPPORTED,masked-link-generator,1,no-view,,declares command `arguments[]` — not passed by runtime yet,@raycast/utils:Response (not implemented in Invoke),url
 masscode,massCode,SUPPORTED,masscode,1,view,,,,
 mastodon,Mastodon,DEGRADED,mastodon,6,view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): fs,,fs timers
-mastodon-search,Mastodon Search,UNSUPPORTED,mastodon-search,1,view,,,@raycast/api:useMemo (not in Invoke surface — needs review) | @raycast/api:useState (not in Invoke surface — needs review) | @raycast/utils:useMemo (not implemented in Invoke),
+mastodon-search,Mastodon Search,SUPPORTED,mastodon-search,1,view,,,,
 material-icons,Material Icons,DEGRADED,material-icons,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs os path stream util
 math-functions,Math Functions,SUPPORTED,math-functions,1,view,,,,
 matter,Matter,SUPPORTED,matter,2,view|no-view,,,,
@@ -1437,7 +1437,7 @@ mem,Mem,SUPPORTED,mem,1,view,,,,
 mem0,Mem0,SUPPORTED,mem0,3,view,,,,
 memberstack,Memberstack,SUPPORTED,memberstack,1,view,,,,
 meme-generator,Meme Generator,SUPPORTED,meme-generator,2,view,,,,path url
-memo,Memo,UNSUPPORTED,memo,2,view,,,@raycast/api:Page (not in Invoke surface — needs review) | @raycast/api:Api (not in Invoke surface — needs review) | @raycast/api:RaycastAdapter (not in Invoke surface — needs review) | @raycast/api:useEffect (not in Invoke surface — needs review) | @raycast/api:useState (not in Invoke surface — needs review) | @raycast/api:Saver (not in Invoke surface — needs review),
+memo,Memo,SUPPORTED,memo,2,view,,,,
 memorable-generate-password,Memorable Password Generator,DEGRADED,memorable-generate-password,1,view,,declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs,,fs path
 memory,Memory,DEGRADED,memory,1,view,,"uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs path
 memos,Memos,DEGRADED,memos,4,no-view|view,,declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs,,assert fs path url
@@ -1680,7 +1680,7 @@ olympic-games,Olympic Games,SUPPORTED,olympic-games,1,view,,,,
 omg-lol,omg.lol,SUPPORTED,omg-lol,7,view|no-view,,,,
 omni-news,Omni News,SUPPORTED,omni-news,1,view,,,,path url
 omnifocus,OmniFocus,DEGRADED,omnifocus,3,no-view|view,,declares command `arguments[]` — not passed by runtime yet,,
-omnivore,Omnivore,UNSUPPORTED,omnivore,2,view|no-view,,declares command `arguments[]` — not passed by runtime yet,@raycast/utils:getPreferenceValues (not implemented in Invoke),
+omnivore,Omnivore,DEGRADED,omnivore,2,view|no-view,,declares command `arguments[]` — not passed by runtime yet,,
 onbo,Onbo: New Grad & Internship Tracker,DEGRADED,onbo,3,view,,uses Node built-ins (ok in trusted mode): fs,,fs path
 one-tab-group,One Tab Group,SUPPORTED,one-tab-group,1,view,,,,
 one-thing,One Thing,DEGRADED,one-thing,3,menu-bar|view|no-view,,launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet,,
@@ -1722,7 +1722,7 @@ openrouter-models-finder,OpenRouter Models Finder,SUPPORTED,openrouter-models-fi
 openrouter-quick-actions,Openrouter Quick Actions,SUPPORTED,openrouter-quick-actions,5,view|no-view,,,,
 openstatus,OpenStatus,SUPPORTED,openstatus,5,view,,,,
 openstreetmap-search,OpenStreetMap Search,DEGRADED,openstreetmap-search,3,view|no-view,,declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): child_process,,child_process
-openverse,Openverse,UNSUPPORTED,openverse,1,view,,uses Node built-ins (ok in trusted mode): fs,@raycast/api:existsSync (not in Invoke surface — needs review) | @raycast/api:runAppleScript (not in Invoke surface — needs review) | @raycast/api:useEffect (not in Invoke surface — needs review) | @raycast/api:useRef (not in Invoke surface — needs review) | @raycast/api:useState (not in Invoke surface — needs review),fs
+openverse,Openverse,DEGRADED,openverse,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs
 openvpn,OpenVPN,DEGRADED,openvpn,3,view|no-view,,uses Node built-ins (ok in trusted mode): child_process,,child_process util
 openweathermap,OpenWeatherMap,SUPPORTED,openweathermap,1,view,,,,url
 opera,Opera,DEGRADED,opera,4,view,,"uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs os path util
@@ -1742,7 +1742,7 @@ oss-browser,OSS Browser,DEGRADED,oss-browser,1,view,,uses Node built-ins (ok in 
 ossinsight,OSS Insight,SUPPORTED,ossinsight,1,view,,,,
 otp-auth,OTP Auth,DEGRADED,otp-auth,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs
 otp-inbox,OTP Inbox,SUPPORTED,otp-inbox,1,view,,,,
-otter,Otter Bookmarks,UNSUPPORTED,otter,4,view|menu-bar,,,@raycast/api:useCachedPromise (not in Invoke surface — needs review) | @raycast/utils:List (not implemented in Invoke) | @raycast/utils:ActionPanel (not implemented in Invoke) | @raycast/utils:Action (not implemented in Invoke) | @raycast/utils:Icon (not implemented in Invoke) | @raycast/utils:Detail (not implemented in Invoke) | @raycast/utils:getPreferenceValues (not implemented in Invoke) | @raycast/utils:Image (not implemented in Invoke) | @raycast/utils:MenuBarExtra (not implemented in Invoke) | @raycast/utils:open (not implemented in Invoke) | @raycast/utils:Keyboard (not implemented in Invoke) | @raycast/utils:openExtensionPreferences (not implemented in Invoke) | @raycast/utils:useFetchRecentItems (not implemented in Invoke),url
+otter,Otter Bookmarks,SUPPORTED,otter,4,view|menu-bar,,,,url
 ottomatic,Ottomatic,SUPPORTED,ottomatic,2,view,,,,
 oura,Oura,DEGRADED,oura,9,view|no-view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet,,
 outline-document-search,Outline Document Search,DEGRADED,outline-document-search,2,view,,launchCommand: loads; throws if called (inter-command launch not wired),,
@@ -1775,7 +1775,7 @@ parachord,Parachord,DEGRADED,parachord,12,no-view|view,,declares command `argume
 parallels-virtual-machines,Parallels Virtual Machines,DEGRADED,parallels-virtual-machines,2,view|no-view,,useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox | uses Node built-ins (ok in trusted mode): child_process,,child_process
 parcel,Parcel,DEGRADED,parcel,2,view,,launchCommand: loads; throws if called (inter-command launch not wired),,
 parcel-tracker,Parcel Tracker,SUPPORTED,parcel-tracker,2,view,,,,
-parrot-translate,Parrot Translate,UNSUPPORTED,parrot-translate,1,view,,uses Node built-ins (ok in trusted mode): child_process,@raycast/api:exec (not in Invoke surface — needs review) | @raycast/api:execFile (not in Invoke surface — needs review) | @raycast/api:COPY_TYPE (not in Invoke surface — needs review),child_process crypto querystring
+parrot-translate,Parrot Translate,DEGRADED,parrot-translate,1,view,,uses Node built-ins (ok in trusted mode): child_process,,child_process crypto querystring
 parse,Parse - Speed Reader,SUPPORTED,parse,1,view,,,,
 parse-logs,Parse Logs,DEGRADED,parse-logs,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs path
 party-parrot,Party Parrot,DEGRADED,party-parrot,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs path
@@ -1796,7 +1796,7 @@ pastery,Pastery,SUPPORTED,pastery,1,view,,,,
 paymenter,Paymenter,SUPPORTED,paymenter,3,view,,,,
 paynow,Paynow.gg,UNSUPPORTED,paynow,5,view,,,@raycast/utils:CachedPromiseOptions (not implemented in Invoke) | @raycast/utils:PaginationOptions (not implemented in Invoke),
 paypal-invoices,PayPal Invoices,SUPPORTED,paypal-invoices,2,view,,,,
-paystack,Paystack,UNSUPPORTED,paystack,8,view,,,@raycast/utils:showToast (not implemented in Invoke) | @raycast/utils:Toast (not implemented in Invoke) | @raycast/utils:List (not implemented in Invoke) | @raycast/utils:ActionPanel (not implemented in Invoke) | @raycast/utils:Action (not implemented in Invoke) | @raycast/utils:openExtensionPreferences (not implemented in Invoke) | @raycast/utils:Icon (not implemented in Invoke) | @raycast/utils:Form (not implemented in Invoke) | @raycast/utils:Clipboard (not implemented in Invoke) | @raycast/utils:confirmAlert (not implemented in Invoke) | @raycast/utils:Alert (not implemented in Invoke),
+paystack,Paystack,SUPPORTED,paystack,8,view,,,,
 pbr-assistant,PBR Assistant,SUPPORTED,pbr-assistant,1,view,,,,
 pcloud,pCloud,UNSUPPORTED,pcloud,1,view,,,@raycast/utils:Response (not implemented in Invoke),
 pdb-explorer,PDB Explorer,DEGRADED,pdb-explorer,1,view,,declares command `arguments[]` — not passed by runtime yet,,
@@ -2008,7 +2008,7 @@ raindrop-io,Raindrop.io,DEGRADED,raindrop-io,5,view|no-view,,BrowserExtension: l
 ram-prices,RAM Prices,SUPPORTED,ram-prices,2,view|menu-bar,,,,
 ramda-documentation,Ramda Documentation,SUPPORTED,ramda-documentation,1,view,,,,
 random,Random Data Generator,SUPPORTED,random-data-generator,2,view|no-view,,,,
-random-color,Random Color,UNSUPPORTED,random-color,2,no-view|view,,,@raycast/api:randomColor (not in Invoke surface — needs review),
+random-color,Random Color,SUPPORTED,random-color,2,no-view|view,,,,
 random-date-generator,Random Date Generator,SUPPORTED,random-date-generator,1,view,,,,
 random-email,Random Email,SUPPORTED,random-email,2,no-view,,,,
 random-fart,Random Fart,DEGRADED,random-fart,1,no-view,,"uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs path
@@ -2093,12 +2093,12 @@ react-docs,React Documentation,DEGRADED,react-docs,1,view,,uses Node built-ins (
 react-icons,React Icons,DEGRADED,react-icons,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs
 react-native-directory,React Native Directory,SUPPORTED,react-native-directory,1,view,,,,
 read-ai,Read AI - Text to Speech,DEGRADED,read-ai,3,no-view|view,,"uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs os path util
-readeck,Readeck,UNSUPPORTED,readeck,2,view,,,@raycast/utils:Action (not implemented in Invoke) | @raycast/utils:ActionPanel (not implemented in Invoke) | @raycast/utils:Icon (not implemented in Invoke) | @raycast/utils:Form (not implemented in Invoke) | @raycast/utils:showToast (not implemented in Invoke) | @raycast/utils:Toast (not implemented in Invoke) | @raycast/utils:getPreferenceValues (not implemented in Invoke) | @raycast/utils:List (not implemented in Invoke),
+readeck,Readeck,SUPPORTED,readeck,2,view,,,,
 reader-mode,Reader Mode,DEGRADED,reader-mode,3,view,,BrowserExtension: loads; throws if called (browser bridge not wired) | declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs,,fs os path
 reading-time,Reading Time,SUPPORTED,reading-time,1,view,,,,
 readwise,Readwise,SUPPORTED,readwise,5,no-view|view,,,,
 readwise-reader,Readwise Reader,DEGRADED,readwise-reader,11,no-view|view,,BrowserExtension: loads; throws if called (browser bridge not wired) | declares command `arguments[]` — not passed by runtime yet,,
-readwise-to-tana,Readwise to Tana,UNSUPPORTED,readwise-to-tana,1,view,,,@raycast/utils:getPreferenceValues (not implemented in Invoke),
+readwise-to-tana,Readwise to Tana,SUPPORTED,readwise-to-tana,1,view,,,,
 readymetrics,Ready,SUPPORTED,readymetrics,1,view,,,,
 real-calc,Real Calc,DEGRADED,real-calc,2,view|no-view,,declares command `arguments[]` — not passed by runtime yet,,
 real-debrid-manager,Real-Debrid Manager,DEGRADED,real-debrid-manager,5,view|no-view,,uses Node built-ins (ok in trusted mode): fs,,fs
@@ -2140,7 +2140,7 @@ render,Render,SUPPORTED,render,1,view,,,,
 replicate,Replicate,DEGRADED,replicate,1,view,,uses Node built-ins (ok in trusted mode): fs,,crypto fs os path
 repo-launcher,Repo Launcher,DEGRADED,repo-launcher,2,view,,"uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs path util
 repology-search,Repology Search,SUPPORTED,repology-search,1,view,,,,
-repository-manager,Repository Manager,UNSUPPORTED,repository-manager,1,view,,"uses Node built-ins (ok in trusted mode): child_process, fs",@raycast/api:useMemo (not in Invoke surface — needs review) | @raycast/api:useCallback (not in Invoke surface — needs review) | @raycast/api:useEffect (not in Invoke surface — needs review) | @raycast/api:useRef (not in Invoke surface — needs review) | @raycast/api:useState (not in Invoke surface — needs review) | @raycast/api:existsSync (not in Invoke surface — needs review) | @raycast/api:readFileSync (not in Invoke surface — needs review) | @raycast/utils:Action (not implemented in Invoke) | @raycast/utils:ActionPanel (not implemented in Invoke) | @raycast/utils:AI (not implemented in Invoke) | @raycast/utils:Detail (not implemented in Invoke) | @raycast/utils:Icon (not implemented in Invoke) | @raycast/utils:environment (not implemented in Invoke) | @raycast/utils:useNavigation (not implemented in Invoke) | @raycast/utils:Color (not implemented in Invoke) | @raycast/utils:Image (not implemented in Invoke) | @raycast/utils:List (not implemented in Invoke) | @raycast/utils:Clipboard (not implemented in Invoke) | @raycast/utils:Toast (not implemented in Invoke) | @raycast/utils:showToast (not implemented in Invoke) | @raycast/utils:confirmAlert (not implemented in Invoke) | @raycast/utils:useEffect (not implemented in Invoke) | @raycast/utils:useMemo (not implemented in Invoke) | @raycast/utils:useRef (not implemented in Invoke) | @raycast/utils:useState (not implemented in Invoke),child_process fs os path util
+repository-manager,Repository Manager,DEGRADED,repository-manager,1,view,,"useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox | uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs os path util
 rescuetime-focus-session-trigger,RescueTime,SUPPORTED,rescuetime-focus-session-trigger,8,view|no-view,,,,
 research,Deep Research,DEGRADED,deep-research,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs path
 resend,Resend,DEGRADED,resend,4,view,,uses Node built-ins (ok in trusted mode): fs,,fs path
@@ -2172,7 +2172,7 @@ rollcast,Rollcast,SUPPORTED,rollcast,1,view,,,,
 rollup-wtf,Rollup.wtf,SUPPORTED,rollup-wtf,2,view,,,,
 rounding-number,Rounding Number,DEGRADED,rounding-number,1,view,,declares command `arguments[]` — not passed by runtime yet,,
 rss-reader,RSS Reader,DEGRADED,rss-reader,3,view,,BrowserExtension: loads; throws if called (browser bridge not wired),,crypto
-rsync-commands,Rsync Commands,UNSUPPORTED,rsync-commands,1,view,,uses Node built-ins (ok in trusted mode): child_process,@raycast/api:useCallback (not in Invoke surface — needs review) | @raycast/api:memo (not in Invoke surface — needs review) | @raycast/api:useState (not in Invoke surface — needs review) | @raycast/api:useEffect (not in Invoke surface — needs review),child_process
+rsync-commands,Rsync Commands,DEGRADED,rsync-commands,1,view,,uses Node built-ins (ok in trusted mode): child_process,,child_process
 rtl-reader,RTL Reader,SUPPORTED,rtl-reader,1,view,,,,
 ruby-evaluate,Ruby Evaluate,DEGRADED,ruby-evaluate,1,view,,uses Node built-ins (ok in trusted mode): child_process,,child_process
 rule-of-three,Rule of Three,SUPPORTED,rule-of-three,1,view,,,,
@@ -2206,7 +2206,7 @@ schoology,Schoology - Grade Viewer,SUPPORTED,schoology,2,view|no-view,,,,
 scira,Scira,SUPPORTED,scira,1,view,,,,
 scoop,Scoop,DEGRADED,scoop,5,view,,uses Node built-ins (ok in trusted mode): child_process,,child_process util
 scrapbook,Scrapbook,DEGRADED,scrapbook,3,view,,launchCommand: loads; throws if called (inter-command launch not wired),,
-scrapbox-search,Scrapbox Search,UNSUPPORTED,scrapbox-search,1,view,,,@raycast/api:useEffect (not in Invoke surface — needs review) | @raycast/api:useState (not in Invoke surface — needs review) | @raycast/utils:useEffect (not implemented in Invoke) | @raycast/utils:useState (not implemented in Invoke),
+scrapbox-search,Scrapbox Search,SUPPORTED,scrapbox-search,1,view,,,,
 scratchpad,Scratchpad,SUPPORTED,scratchpad,1,view,,,,os
 scrcpy,Scrcpy,DEGRADED,scrcpy,1,view,,uses Node built-ins (ok in trusted mode): child_process,,child_process
 screen-math,Screen Math,DEGRADED,screen-math,1,no-view,,"uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs path
@@ -2451,15 +2451,15 @@ substack,Substack,SUPPORTED,substack,2,view,,,,
 subwatch,Subwatch,SUPPORTED,subwatch,2,view,,,,
 summarize-youtube-video-with-ai,Summarize YouTube Videos with AI,DEGRADED,summarize-youtube-video-with-ai,5,view,,BrowserExtension: loads; throws if called (browser bridge not wired) | declares command `arguments[]` — not passed by runtime yet,,
 summation,Summation - Sum Calculator,SUPPORTED,summation,1,view,,,,
-sun-moon-times,Sun/Moon Times,UNSUPPORTED,sun-moon-times,1,view,,,@raycast/utils:List (not implemented in Invoke),
+sun-moon-times,Sun/Moon Times,SUPPORTED,sun-moon-times,1,view,,,,
 supabase,Supabase,SUPPORTED,supabase,1,view,,,,
 supabase-cron-monitor,Supabase Cron Monitor,DEGRADED,supabase-cron-monitor,3,view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired),,
 supabase-docs,Supabase Documentation,SUPPORTED,supabase-docs,1,view,,,,
-supergenpass,SuperGenPass,UNSUPPORTED,superpassgen,1,view,,,@raycast/api:useState (not in Invoke surface — needs review),
+supergenpass,SuperGenPass,SUPPORTED,superpassgen,1,view,,,,
 superhuman,Superhuman,SUPPORTED,superhuman,1,no-view,,,,
 supermemory,Supermemory,SUPPORTED,supermemory,3,view,,,,
 supernotes,Supernotes,DEGRADED,supernotes,4,view|no-view,,declares command `arguments[]` — not passed by runtime yet,,
-supernova,Supernova,UNSUPPORTED,supernova,6,view|no-view,,"uses Node built-ins (ok in trusted mode): fs, child_process",@raycast/api:Asset (not in Invoke surface — needs review) | @raycast/api:AssetGroup (not in Invoke surface — needs review) | @raycast/api:DesignComponent (not in Invoke surface — needs review) | @raycast/api:DesignSystemVersion (not in Invoke surface — needs review) | @raycast/api:DocSearchResultData (not in Invoke surface — needs review) | @raycast/api:DocumentationGroup (not in Invoke surface — needs review) | @raycast/api:DocumentationPage (not in Invoke surface — needs review) | @raycast/api:Token (not in Invoke surface — needs review) | @raycast/api:TokenGroup (not in Invoke surface — needs review) | @raycast/api:DesignSystem (not in Invoke surface — needs review) | @raycast/api:Supernova (not in Invoke surface — needs review) | @raycast/api:Workspace (not in Invoke surface — needs review) | @raycast/api:AssetFormat (not in Invoke surface — needs review) | @raycast/api:AssetScale (not in Invoke surface — needs review) | @raycast/api:ComponentPropertyLinkElementType (not in Invoke surface — needs review) | @raycast/api:ComponentPropertyType (not in Invoke surface — needs review) | @raycast/api:RenderedAsset (not in Invoke surface — needs review),child_process fs os
+supernova,Supernova,DEGRADED,supernova,6,view|no-view,,"uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs os
 superwhisper,Superwhisper - Offline Voice to Text,DEGRADED,superwhisper,6,no-view|view,,uses Node built-ins (ok in trusted mode): fs,,fs os path
 surf-check,Surf Check,SUPPORTED,surf-check,1,view,,,,
 surfed,Surfed,DEGRADED,surfed,1,view,,"uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs util
@@ -2939,9 +2939,7 @@ zen-mode,Zen Mode,DEGRADED,zen-mode,3,no-view|view,,uses Node built-ins (ok in t
 zenblog,Zenblog,SUPPORTED,zenblog,1,view,,,,
 zendesk,Zendesk — Search Support Center,SUPPORTED,zendesk,1,view,,,,
 zendesk-admin,Zendesk — Admin,SUPPORTED,zendesk-admin,2,view,,,,
-zenmux-manager,ZenMux Manager,UNSUPPORTED,zenmux-manager,2,no-view|view,,"uses Node built-ins (ok in trusted mode): fs, child_process","@raycast/api:name: ""Search tool imports the routing table"" (not in Invoke surface — needs review) | @raycast/api:passed:
-      searchTool.includes('from ""../zenmux-doc-routing""') &&
-      searchTool.includes(""routingMatches"") (not in Invoke surface — needs review)",child_process fs os path
+zenmux-manager,ZenMux Manager,DEGRADED,zenmux-manager,2,no-view|view,,"uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs os path
 zeplin-project-raycast-extension,Zeplin Project Search,SUPPORTED,zeplin-project-search,1,view,,,,
 zerion,Zerion,DEGRADED,zerion,9,view|menu-bar|no-view,,launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet,,
 zero,Zero,SUPPORTED,zero,1,no-view,,,,

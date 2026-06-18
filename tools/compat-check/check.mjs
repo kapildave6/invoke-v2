@@ -202,8 +202,11 @@ function namedImportsFrom(source, moduleName) {
   // import * as NS from "mod";
   // const { a } = require("mod");
   const escMod = moduleName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  // Bound the import clause to a SINGLE statement: the per-char negative lookahead stops the clause from
+  // swallowing a preceding `import`/`from` (semicolon-less code otherwise lets `[^;]*?` span multiple
+  // imports and mis-attribute another module's names to this one).
   const importRe = new RegExp(
-    `import\\s+([^;]*?)\\s+from\\s+["']${escMod}["']`,
+    `import\\s+((?:(?!\\bfrom\\b|\\bimport\\b)[^;])*?)\\s+from\\s+["']${escMod}["']`,
     "g"
   );
   const requireRe = new RegExp(
