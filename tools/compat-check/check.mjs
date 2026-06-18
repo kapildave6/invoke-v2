@@ -51,6 +51,9 @@ const API_SUPPORTED = new Set([
   "trash", "showInFinder", "getSelectedFinderItems",
   "AI", // AI.ask (remediation 05)
   "OAuth", "OAuthClient", // OAuth PKCE (M4)
+  "Tool", // AI-extension tools (M4) — Tool.Confirmation
+  "updateCommandMetadata", // command subtitle updates (now implemented)
+  "MenuBarExtra", // menu-bar command mode (M4)
 ]);
 
 // `@raycast/api` exports that exist but are stubbed/no-op (run, but degraded).
@@ -58,7 +61,6 @@ const API_DEGRADED = new Map([
   // M1 load-stubs — import succeeds; throw (or no-op) only if actually called
   ["launchCommand", "loads; throws if called (inter-command launch not wired)"],
   ["BrowserExtension", "loads; throws if called (browser bridge not wired)"],
-  ["updateCommandMetadata", "loads; no-op (command metadata updates not wired)"],
 ]);
 
 // `@raycast/api` exports that are stubbed to THROW — hard blockers.
@@ -86,10 +88,17 @@ const UTILS_DEGRADED = new Map([
   ["runPowerShellScript", "Windows-only; throws on macOS (import loads)"],
 ]);
 
-// Type-only imports we should not penalise (no runtime footprint).
+// Type-only imports we should not penalise — esbuild erases them at runtime, so importing one never
+// breaks the module even without a runtime value. (Static analysis can't see `import type`, so the
+// well-known Raycast type exports are enumerated here.)
 const TYPE_ONLY_HINTS = new Set([
   "LaunchProps", "PreferenceValues", "Application", "FileSystemItem", "Color",
-  "Image", "Keyboard", "Toast",
+  "Image", "Keyboard", "Toast", "Navigation", "Environment", "Preferences",
+  "ImageLike", "FormValue", "FormValues", "KeyEquivalent", "KeyboardShortcut",
+  "Component", "ComponentType", "FC", "Fragment", "Dispatch", "SetStateAction",
+  "ItemProps", "FormItemRef", "RequestInit", "Response", "FileIcon",
+  "CachedPromiseOptions", "AsyncState", "PaginationOptions",
+  "ListItem", "ListSection", "ActionPanelItem", "AlertActionStyle", "DeeplinkType",
 ]);
 
 // Node built-ins allowed inside the sandbox (safe-builtins.json + os shim).

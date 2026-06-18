@@ -2,9 +2,9 @@
   "root": "/Users/test/Documents/code/extensions/extensions",
   "trusted": true,
   "counts": {
-    "SUPPORTED": 1416,
-    "DEGRADED": 1399,
-    "UNSUPPORTED": 146
+    "SUPPORTED": 1473,
+    "DEGRADED": 1423,
+    "UNSUPPORTED": 65
   },
   "topGaps": [
     [
@@ -20,14 +20,6 @@
       250
     ],
     [
-      "@raycast/api",
-      112
-    ],
-    [
-      "updateCommandMetadata",
-      88
-    ],
-    [
       "BrowserExtension",
       47
     ],
@@ -38,6 +30,10 @@
     [
       "@raycast/utils",
       37
+    ],
+    [
+      "@raycast/api",
+      30
     ],
     [
       "runPowerShellScript",
@@ -507,7 +503,7 @@
       "name": "acqua",
       "title": "Acqua",
       "dir": "acqua",
-      "status": "DEGRADED",
+      "status": "SUPPORTED",
       "commands": 2,
       "modes": "view|menu-bar",
       "apiImports": [
@@ -522,9 +518,7 @@
       ],
       "builtins": [],
       "blockers": [],
-      "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)"
-      ],
+      "degraded": [],
       "unknown": []
     },
     {
@@ -1395,7 +1389,7 @@
       "name": "airpods-noise-control",
       "title": "AirPods Noise Control",
       "dir": "airpods-noise-control",
-      "status": "DEGRADED",
+      "status": "SUPPORTED",
       "commands": 2,
       "modes": "no-view",
       "apiImports": [
@@ -1412,9 +1406,7 @@
         "os"
       ],
       "blockers": [],
-      "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)"
-      ],
+      "degraded": [],
       "unknown": []
     },
     {
@@ -2556,7 +2548,7 @@
       "name": "anytype",
       "title": "Anytype",
       "dir": "anytype",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 5,
       "modes": "view",
       "apiImports": [
@@ -2590,9 +2582,7 @@
       "builtins": [],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "apfel",
@@ -2698,7 +2688,7 @@
       "name": "app",
       "title": "App Creator",
       "dir": "app-creator",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
@@ -2723,9 +2713,7 @@
       "degraded": [
         "uses Node built-ins (ok in trusted mode): fs"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "app-icon-generator",
@@ -2927,7 +2915,6 @@
       ],
       "blockers": [],
       "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "uses Node built-ins (ok in trusted mode): child_process, fs"
       ],
       "unknown": []
@@ -3125,7 +3112,7 @@
       "name": "apple-notes",
       "title": "Apple Notes",
       "dir": "apple-notes",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 7,
       "modes": "view|no-view|menu-bar",
       "apiImports": [
@@ -3171,9 +3158,7 @@
       "degraded": [
         "declares command `arguments[]` — not passed by runtime yet"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "apple-passwords",
@@ -3247,7 +3232,7 @@
       "name": "apple-reminders",
       "title": "Apple Reminders",
       "dir": "apple-reminders",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 7,
       "modes": "view|menu-bar|no-view",
       "apiImports": [
@@ -3298,9 +3283,7 @@
         "declares command `arguments[]` — not passed by runtime yet",
         "uses Node built-ins (ok in trusted mode): child_process"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "apple-stocks-search",
@@ -3625,7 +3608,7 @@
       "name": "are-na",
       "title": "Are.na",
       "dir": "are-na",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 7,
       "modes": "view",
       "apiImports": [
@@ -3664,9 +3647,7 @@
       ],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "area-code-lookup",
@@ -3830,7 +3811,6 @@
       ],
       "blockers": [],
       "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "uses Node built-ins (ok in trusted mode): fs, child_process"
       ],
       "unknown": []
@@ -4089,7 +4069,7 @@
       "name": "atomic",
       "title": "Atomic Data",
       "dir": "atomic",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
@@ -4107,9 +4087,7 @@
       "builtins": [],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:Preferences (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "atproto-utilities",
@@ -4222,7 +4200,6 @@
       ],
       "blockers": [],
       "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "launchCommand: loads; throws if called (inter-command launch not wired)",
         "uses Node built-ins (ok in trusted mode): fs, https"
       ],
@@ -4824,7 +4801,7 @@
       "name": "bamboohr",
       "title": "BambooHR",
       "dir": "bamboohr",
-      "status": "DEGRADED",
+      "status": "SUPPORTED",
       "commands": 4,
       "modes": "view",
       "apiImports": [
@@ -4842,9 +4819,7 @@
       ],
       "builtins": [],
       "blockers": [],
-      "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)"
-      ],
+      "degraded": [],
       "unknown": []
     },
     {
@@ -5337,7 +5312,7 @@
       "name": "bear",
       "title": "Bear Notes",
       "dir": "bear",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 4,
       "modes": "view|menu-bar",
       "apiImports": [
@@ -5373,9 +5348,7 @@
         "launchCommand: loads; throws if called (inter-command launch not wired)",
         "uses Node built-ins (ok in trusted mode): fs"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "beardtown",
@@ -5539,7 +5512,7 @@
       "name": "beeper",
       "title": "Beeper Desktop",
       "dir": "beeper",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 6,
       "modes": "view|no-view",
       "apiImports": [
@@ -5586,9 +5559,7 @@
       "degraded": [
         "uses Node built-ins (ok in trusted mode): fs"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "bento",
@@ -5902,7 +5873,7 @@
       "name": "betterdisplay",
       "title": "BetterDisplay",
       "dir": "betterdisplay",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
@@ -5931,9 +5902,7 @@
       "degraded": [
         "uses Node built-ins (ok in trusted mode): child_process"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "bettertouchtool",
@@ -6184,7 +6153,7 @@
       "name": "bikeshare-station-status",
       "title": "Bikeshare Station Status",
       "dir": "bikeshare-station-status",
-      "status": "DEGRADED",
+      "status": "SUPPORTED",
       "commands": 2,
       "modes": "view|menu-bar",
       "apiImports": [
@@ -6206,9 +6175,7 @@
       ],
       "builtins": [],
       "blockers": [],
-      "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)"
-      ],
+      "degraded": [],
       "unknown": []
     },
     {
@@ -7939,7 +7906,7 @@
       "name": "bugmenot",
       "title": "BugMeNot",
       "dir": "bugmenot",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
@@ -7957,9 +7924,7 @@
       ],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:ListItem (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "buildkite",
@@ -8302,7 +8267,7 @@
       "name": "cal-com-share-meeting-links",
       "title": "Cal.com",
       "dir": "cal-com-share-meeting-links",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 5,
       "modes": "view",
       "apiImports": [
@@ -8335,9 +8300,7 @@
       "builtins": [],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "calendar",
@@ -8982,7 +8945,6 @@
       ],
       "blockers": [],
       "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox",
         "uses Node built-ins (ok in trusted mode): child_process, fs, http"
       ],
@@ -9044,7 +9006,7 @@
       "name": "cerebras",
       "title": "Cerebras",
       "dir": "cerebras",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 8,
       "modes": "view",
       "apiImports": [
@@ -9095,9 +9057,7 @@
         "BrowserExtension: loads; throws if called (browser bridge not wired)",
         "uses Node built-ins (ok in trusted mode): http, fs"
       ],
-      "unknown": [
-        "@raycast/api:Navigation (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "certificate-viewer",
@@ -9430,7 +9390,7 @@
       "name": "chatgpt",
       "title": "ChatGPT",
       "dir": "chatgpt",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 10,
       "modes": "view",
       "apiImports": [
@@ -9484,9 +9444,7 @@
         "declares command `arguments[]` — not passed by runtime yet",
         "uses Node built-ins (ok in trusted mode): http, fs, child_process"
       ],
-      "unknown": [
-        "@raycast/api:Navigation (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "chatgpt-atlas",
@@ -10122,7 +10080,7 @@
       "name": "chronometer",
       "title": "Chronometer",
       "dir": "chronometer",
-      "status": "DEGRADED",
+      "status": "SUPPORTED",
       "commands": 4,
       "modes": "view|no-view",
       "apiImports": [
@@ -10138,9 +10096,7 @@
       "utilsImports": [],
       "builtins": [],
       "blockers": [],
-      "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)"
-      ],
+      "degraded": [],
       "unknown": []
     },
     {
@@ -10265,7 +10221,7 @@
       "name": "circle-ci",
       "title": "CircleCI Workflows",
       "dir": "circle-ci",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
@@ -10288,9 +10244,7 @@
       "builtins": [],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:ImageLike (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "circleback",
@@ -11007,7 +10961,7 @@
       "name": "clipmenu",
       "title": "ClipMenu",
       "dir": "clipmenu",
-      "status": "DEGRADED",
+      "status": "SUPPORTED",
       "commands": 1,
       "modes": "menu-bar",
       "apiImports": [
@@ -11023,9 +10977,7 @@
       ],
       "builtins": [],
       "blockers": [],
-      "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)"
-      ],
+      "degraded": [],
       "unknown": []
     },
     {
@@ -11660,7 +11612,7 @@
       "name": "code",
       "title": "Code Execution",
       "dir": "code-execution",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 1,
       "modes": "no-view",
       "apiImports": [
@@ -11677,9 +11629,7 @@
         "declares command `arguments[]` — not passed by runtime yet",
         "uses Node built-ins (ok in trusted mode): child_process"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "code-quarkus",
@@ -12128,7 +12078,6 @@
       ],
       "blockers": [],
       "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "launchCommand: loads; throws if called (inter-command launch not wired)",
         "useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox",
         "declares command `arguments[]` — not passed by runtime yet",
@@ -13124,7 +13073,7 @@
       "name": "contexts",
       "title": "Contexts",
       "dir": "contexts",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 2,
       "modes": "no-view|view",
       "apiImports": [
@@ -13147,9 +13096,7 @@
         "declares command `arguments[]` — not passed by runtime yet",
         "uses Node built-ins (ok in trusted mode): fs"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "control-d",
@@ -13201,7 +13148,7 @@
       "name": "conventional-comments",
       "title": "Conventional Comments",
       "dir": "conventional-comments",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 2,
       "modes": "view",
       "apiImports": [
@@ -13222,9 +13169,7 @@
       "builtins": [],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:FormValue (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "conventional-commits",
@@ -13564,7 +13509,7 @@
       "name": "copy-path",
       "title": "Copy Path",
       "dir": "copy-path",
-      "status": "DEGRADED",
+      "status": "SUPPORTED",
       "commands": 1,
       "modes": "no-view",
       "apiImports": [
@@ -13589,9 +13534,7 @@
         "os"
       ],
       "blockers": [],
-      "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)"
-      ],
+      "degraded": [],
       "unknown": []
     },
     {
@@ -13818,7 +13761,6 @@
       "builtins": [],
       "blockers": [],
       "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "launchCommand: loads; throws if called (inter-command launch not wired)"
       ],
       "unknown": []
@@ -14339,7 +14281,7 @@
       "name": "cron",
       "title": "Cron",
       "dir": "cron",
-      "status": "DEGRADED",
+      "status": "SUPPORTED",
       "commands": 2,
       "modes": "view",
       "apiImports": [
@@ -14363,9 +14305,7 @@
       ],
       "builtins": [],
       "blockers": [],
-      "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)"
-      ],
+      "degraded": [],
       "unknown": []
     },
     {
@@ -14804,7 +14744,7 @@
       "name": "curl",
       "title": "cURL",
       "dir": "curl",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 2,
       "modes": "view",
       "apiImports": [
@@ -14835,9 +14775,7 @@
       "degraded": [
         "uses Node built-ins (ok in trusted mode): child_process"
       ],
-      "unknown": [
-        "@raycast/api:Navigation (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "currency-exchange",
@@ -15393,7 +15331,7 @@
       "name": "dagster",
       "title": "Dagster",
       "dir": "dagster",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 4,
       "modes": "view|no-view",
       "apiImports": [
@@ -15423,12 +15361,9 @@
       ],
       "blockers": [],
       "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "uses Node built-ins (ok in trusted mode): fs"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "daily-sites",
@@ -15766,7 +15701,6 @@
       "builtins": [],
       "blockers": [],
       "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "launchCommand: loads; throws if called (inter-command launch not wired)"
       ],
       "unknown": []
@@ -15914,7 +15848,7 @@
       "name": "days-until-christmas",
       "title": "Days Until Christmas",
       "dir": "days-until-christmas",
-      "status": "DEGRADED",
+      "status": "SUPPORTED",
       "commands": 2,
       "modes": "no-view|menu-bar",
       "apiImports": [
@@ -15924,9 +15858,7 @@
       "utilsImports": [],
       "builtins": [],
       "blockers": [],
-      "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)"
-      ],
+      "degraded": [],
       "unknown": []
     },
     {
@@ -15962,7 +15894,6 @@
       "builtins": [],
       "blockers": [],
       "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "launchCommand: loads; throws if called (inter-command launch not wired)"
       ],
       "unknown": []
@@ -16049,7 +15980,7 @@
       "name": "debank",
       "title": "debank",
       "dir": "debank",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
@@ -16073,11 +16004,7 @@
       "builtins": [],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:ActionPanelItem (not in Invoke surface — needs review)",
-        "@raycast/api:AlertActionStyle (not in Invoke surface — needs review)",
-        "@raycast/api:ListSection (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "decentraland",
@@ -16652,7 +16579,7 @@
       "name": "deno-deploy",
       "title": "Deno Deploy",
       "dir": "deno-deploy",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 4,
       "modes": "view|no-view",
       "apiImports": [
@@ -16687,9 +16614,7 @@
       "degraded": [
         "uses Node built-ins (ok in trusted mode): fs"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "deployhq",
@@ -16875,7 +16800,6 @@
       "builtins": [],
       "blockers": [],
       "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "declares command `arguments[]` — not passed by runtime yet"
       ],
       "unknown": []
@@ -17384,7 +17308,7 @@
       "name": "dice-and-coin",
       "title": "Dice & Coin",
       "dir": "dice-and-coin",
-      "status": "DEGRADED",
+      "status": "SUPPORTED",
       "commands": 3,
       "modes": "no-view",
       "apiImports": [
@@ -17397,9 +17321,7 @@
       "utilsImports": [],
       "builtins": [],
       "blockers": [],
-      "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)"
-      ],
+      "degraded": [],
       "unknown": []
     },
     {
@@ -18211,8 +18133,6 @@
       "blockers": [],
       "degraded": [],
       "unknown": [
-        "@raycast/api:Component (not in Invoke surface — needs review)",
-        "@raycast/api:Fragment (not in Invoke surface — needs review)",
         "@raycast/api:checkEmojiOnly (not in Invoke surface — needs review)"
       ]
     },
@@ -18576,7 +18496,7 @@
       "name": "doge-tracker",
       "title": "Department of Government Efficiency Tracker",
       "dir": "doge-tracker",
-      "status": "DEGRADED",
+      "status": "SUPPORTED",
       "commands": 4,
       "modes": "view",
       "apiImports": [
@@ -18594,9 +18514,7 @@
       ],
       "builtins": [],
       "blockers": [],
-      "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)"
-      ],
+      "degraded": [],
       "unknown": []
     },
     {
@@ -18806,7 +18724,6 @@
       ],
       "blockers": [],
       "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "launchCommand: loads; throws if called (inter-command launch not wired)",
         "uses Node built-ins (ok in trusted mode): child_process"
       ],
@@ -19137,7 +19054,7 @@
       "name": "downloads-manager",
       "title": "Downloads Manager",
       "dir": "downloads-manager",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 7,
       "modes": "view|no-view",
       "apiImports": [
@@ -19182,9 +19099,7 @@
       "degraded": [
         "uses Node built-ins (ok in trusted mode): fs, child_process"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "dpm-lol",
@@ -19232,7 +19147,7 @@
       "name": "drafts",
       "title": "Drafts",
       "dir": "drafts",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 18,
       "modes": "view|no-view",
       "apiImports": [
@@ -19272,9 +19187,7 @@
       "degraded": [
         "declares command `arguments[]` — not passed by runtime yet"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "dreamhost",
@@ -19843,7 +19756,6 @@
       "blockers": [],
       "degraded": [
         "launchCommand: loads; throws if called (inter-command launch not wired)",
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "declares command `arguments[]` — not passed by runtime yet"
       ],
       "unknown": []
@@ -21408,7 +21320,6 @@
       "builtins": [],
       "blockers": [],
       "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "declares command `arguments[]` — not passed by runtime yet"
       ],
       "unknown": []
@@ -22293,7 +22204,7 @@
       "name": "fathom-analytics-stats",
       "title": "Fathom Analytics Stats",
       "dir": "fathom-analytics-stats",
-      "status": "DEGRADED",
+      "status": "SUPPORTED",
       "commands": 9,
       "modes": "view|menu-bar|no-view",
       "apiImports": [
@@ -22312,9 +22223,7 @@
       ],
       "builtins": [],
       "blockers": [],
-      "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)"
-      ],
+      "degraded": [],
       "unknown": []
     },
     {
@@ -22443,7 +22352,6 @@
       "blockers": [],
       "degraded": [
         "launchCommand: loads; throws if called (inter-command launch not wired)",
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "declares command `arguments[]` — not passed by runtime yet"
       ],
       "unknown": [
@@ -24177,7 +24085,7 @@
       "name": "focus",
       "title": "Focus",
       "dir": "focus",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 9,
       "modes": "no-view|view",
       "apiImports": [
@@ -24201,9 +24109,7 @@
       "degraded": [
         "declares command `arguments[]` — not passed by runtime yet"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "focus-anchor",
@@ -24975,7 +24881,7 @@
       "name": "freeagent",
       "title": "FreeAgent",
       "dir": "freeagent",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 8,
       "modes": "view",
       "apiImports": [
@@ -25000,9 +24906,7 @@
       "builtins": [],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "freedns",
@@ -25991,7 +25895,7 @@
       "name": "get-note",
       "title": "GetNote",
       "dir": "get-note",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 5,
       "modes": "view",
       "apiImports": [
@@ -26022,9 +25926,7 @@
       "degraded": [
         "uses Node built-ins (ok in trusted mode): fs"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "get-ssh-key",
@@ -26414,7 +26316,7 @@
       "name": "git-assistant",
       "title": "Git Assistant",
       "dir": "git-assistant",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
@@ -26444,9 +26346,7 @@
       "degraded": [
         "uses Node built-ins (ok in trusted mode): child_process, fs"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "git-batch-tools",
@@ -26838,7 +26738,7 @@
       "name": "github",
       "title": "GitHub",
       "dir": "github",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 20,
       "modes": "view|menu-bar",
       "apiImports": [
@@ -26899,9 +26799,7 @@
         "launchCommand: loads; throws if called (inter-command launch not wired)",
         "uses Node built-ins (ok in trusted mode): child_process, fs"
       ],
-      "unknown": [
-        "@raycast/api:Preferences (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "github-cli-manual",
@@ -27004,7 +26902,7 @@
       "name": "github-for-enterprise",
       "title": "GitHub Enterprise",
       "dir": "github-for-enterprise",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 8,
       "modes": "view|menu-bar",
       "apiImports": [
@@ -27045,9 +26943,7 @@
       "degraded": [
         "launchCommand: loads; throws if called (inter-command launch not wired)"
       ],
-      "unknown": [
-        "@raycast/api:FormValues (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "github-gist",
@@ -27095,7 +26991,7 @@
       "name": "github-menu-bar",
       "title": "GitHub Commits Menu",
       "dir": "github-menu-bar",
-      "status": "DEGRADED",
+      "status": "SUPPORTED",
       "commands": 1,
       "modes": "menu-bar",
       "apiImports": [
@@ -27114,9 +27010,7 @@
       "utilsImports": [],
       "builtins": [],
       "blockers": [],
-      "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)"
-      ],
+      "degraded": [],
       "unknown": []
     },
     {
@@ -27307,7 +27201,6 @@
       "blockers": [],
       "degraded": [],
       "unknown": [
-        "@raycast/api:KeyEquivalent (not in Invoke surface — needs review)",
         "@raycast/utils:Action (not implemented in Invoke)",
         "@raycast/utils:ActionPanel (not implemented in Invoke)",
         "@raycast/utils:Detail (not implemented in Invoke)",
@@ -28082,7 +27975,7 @@
       "name": "google-calendar",
       "title": "Google Calendar",
       "dir": "google-calendar",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 5,
       "modes": "view",
       "apiImports": [
@@ -28126,15 +28019,13 @@
       "degraded": [
         "launchCommand: loads; throws if called (inter-command launch not wired)"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "google-calendar-quickadd",
       "title": "Google Calendar Events Quick Add",
       "dir": "google-calendar-quickadd",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 2,
       "modes": "no-view|view",
       "apiImports": [
@@ -28163,9 +28054,7 @@
       "degraded": [
         "declares command `arguments[]` — not passed by runtime yet"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "google-chrome",
@@ -29041,7 +28930,7 @@
       "name": "granola",
       "title": "Granola",
       "dir": "granola",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 7,
       "modes": "view|no-view",
       "apiImports": [
@@ -29077,9 +28966,7 @@
       "degraded": [
         "uses Node built-ins (ok in trusted mode): fs"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "graphcalc",
@@ -29323,9 +29210,6 @@
         "uses Node built-ins (ok in trusted mode): fs"
       ],
       "unknown": [
-        "@raycast/api:ComponentType (not in Invoke surface — needs review)",
-        "@raycast/api:SetStateAction (not in Invoke surface — needs review)",
-        "@raycast/api:Dispatch (not in Invoke surface — needs review)",
         "@raycast/api:useState (not in Invoke surface — needs review)",
         "@raycast/api:useEffect (not in Invoke surface — needs review)",
         "@raycast/api:readFile (not in Invoke surface — needs review)"
@@ -29718,7 +29602,7 @@
       "name": "hackmd",
       "title": "HackMD",
       "dir": "hackmd",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 4,
       "modes": "view",
       "apiImports": [
@@ -29750,9 +29634,7 @@
       ],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "hakuna",
@@ -31960,7 +31842,6 @@
       ],
       "blockers": [],
       "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "uses Node built-ins (ok in trusted mode): tls, https, net, fs, http2, dns"
       ],
       "unknown": []
@@ -33982,7 +33863,6 @@
       ],
       "blockers": [],
       "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "launchCommand: loads; throws if called (inter-command launch not wired)",
         "uses Node built-ins (ok in trusted mode): fs"
       ],
@@ -34032,7 +33912,6 @@
       ],
       "blockers": [],
       "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "launchCommand: loads; throws if called (inter-command launch not wired)",
         "uses Node built-ins (ok in trusted mode): fs"
       ],
@@ -34220,7 +34099,6 @@
       ],
       "blockers": [],
       "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "declares command `arguments[]` — not passed by runtime yet",
         "uses Node built-ins (ok in trusted mode): net"
       ],
@@ -34533,7 +34411,7 @@
       "name": "iterm",
       "title": "iTerm",
       "dir": "iterm",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 11,
       "modes": "view",
       "apiImports": [
@@ -34571,9 +34449,7 @@
       "degraded": [
         "uses Node built-ins (ok in trusted mode): child_process, fs"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "itranslate",
@@ -34623,7 +34499,7 @@
       "name": "ivpn",
       "title": "IVPN",
       "dir": "ivpn",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 12,
       "modes": "no-view|view",
       "apiImports": [
@@ -34671,9 +34547,7 @@
         "declares command `arguments[]` — not passed by runtime yet",
         "uses Node built-ins (ok in trusted mode): child_process"
       ],
-      "unknown": [
-        "@raycast/api:Environment (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "iwork",
@@ -34897,7 +34771,7 @@
       "name": "jetpack-commands",
       "title": "Jetpack Commands",
       "dir": "jetpack-commands",
-      "status": "DEGRADED",
+      "status": "SUPPORTED",
       "commands": 46,
       "modes": "no-view|view",
       "apiImports": [
@@ -34924,9 +34798,7 @@
       ],
       "builtins": [],
       "blockers": [],
-      "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)"
-      ],
+      "degraded": [],
       "unknown": []
     },
     {
@@ -36191,7 +36063,6 @@
       ],
       "blockers": [],
       "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "uses Node built-ins (ok in trusted mode): child_process"
       ],
       "unknown": []
@@ -36423,7 +36294,7 @@
       "name": "kef-control",
       "title": "Control Kef",
       "dir": "kef-control",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 3,
       "modes": "view|menu-bar",
       "apiImports": [
@@ -36444,9 +36315,7 @@
       "builtins": [],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "keka",
@@ -36616,7 +36485,7 @@
       "name": "keygen",
       "title": "Keygen",
       "dir": "keygen",
-      "status": "DEGRADED",
+      "status": "SUPPORTED",
       "commands": 7,
       "modes": "view|no-view",
       "apiImports": [
@@ -36642,9 +36511,7 @@
       ],
       "builtins": [],
       "blockers": [],
-      "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)"
-      ],
+      "degraded": [],
       "unknown": []
     },
     {
@@ -36741,7 +36608,7 @@
       "name": "kill-process",
       "title": "Kill Process",
       "dir": "kill-process",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
@@ -36772,9 +36639,7 @@
       "degraded": [
         "uses Node built-ins (ok in trusted mode): child_process, fs"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "kimai",
@@ -36919,7 +36784,7 @@
       "name": "kinopio-inbox",
       "title": "Kinopio Inbox",
       "dir": "kinopio-inbox",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 2,
       "modes": "view|no-view",
       "apiImports": [
@@ -36937,9 +36802,7 @@
       "builtins": [],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:Preferences (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "kinopoisk",
@@ -37738,7 +37601,7 @@
       "name": "laravel-cloud",
       "title": "Laravel Cloud",
       "dir": "laravel-cloud",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 10,
       "modes": "view",
       "apiImports": [
@@ -37763,9 +37626,7 @@
       "builtins": [],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "laravel-docs",
@@ -37832,7 +37693,6 @@
       "blockers": [],
       "degraded": [
         "launchCommand: loads; throws if called (inter-command launch not wired)",
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "declares command `arguments[]` — not passed by runtime yet",
         "uses Node built-ins (ok in trusted mode): fs"
       ],
@@ -37872,7 +37732,6 @@
       ],
       "blockers": [],
       "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "uses Node built-ins (ok in trusted mode): fs"
       ],
       "unknown": []
@@ -38656,8 +38515,7 @@
       "builtins": [],
       "blockers": [],
       "degraded": [
-        "launchCommand: loads; throws if called (inter-command launch not wired)",
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)"
+        "launchCommand: loads; throws if called (inter-command launch not wired)"
       ],
       "unknown": []
     },
@@ -39041,7 +38899,7 @@
       "name": "life-progress",
       "title": "Life Progress",
       "dir": "life-progress",
-      "status": "DEGRADED",
+      "status": "SUPPORTED",
       "commands": 2,
       "modes": "view|menu-bar",
       "apiImports": [
@@ -39069,9 +38927,7 @@
       ],
       "builtins": [],
       "blockers": [],
-      "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)"
-      ],
+      "degraded": [],
       "unknown": []
     },
     {
@@ -40333,7 +40189,7 @@
       "name": "lokalise",
       "title": "Lokalise",
       "dir": "lokalise",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 3,
       "modes": "view|no-view",
       "apiImports": [
@@ -40366,9 +40222,7 @@
       "degraded": [
         "uses Node built-ins (ok in trusted mode): fs"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "lol-esports",
@@ -41313,7 +41167,6 @@
       "blockers": [],
       "degraded": [
         "launchCommand: loads; throws if called (inter-command launch not wired)",
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "uses Node built-ins (ok in trusted mode): fs, child_process"
       ],
       "unknown": []
@@ -41322,7 +41175,7 @@
       "name": "mail",
       "title": "Apple Mail",
       "dir": "mail",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 11,
       "modes": "no-view|view",
       "apiImports": [
@@ -41367,9 +41220,7 @@
       "degraded": [
         "uses Node built-ins (ok in trusted mode): fs"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "mail-finder",
@@ -41494,7 +41345,7 @@
       "name": "mailersend",
       "title": "MailerSend",
       "dir": "mailersend",
-      "status": "DEGRADED",
+      "status": "SUPPORTED",
       "commands": 5,
       "modes": "no-view|view",
       "apiImports": [
@@ -41519,9 +41370,7 @@
       ],
       "builtins": [],
       "blockers": [],
-      "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)"
-      ],
+      "degraded": [],
       "unknown": []
     },
     {
@@ -42969,7 +42818,7 @@
       "name": "media-converter",
       "title": "Media Converter",
       "dir": "media-converter",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 4,
       "modes": "view",
       "apiImports": [
@@ -43020,9 +42869,7 @@
         "launchCommand: loads; throws if called (inter-command launch not wired)",
         "uses Node built-ins (ok in trusted mode): fs, child_process, module"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "medialister-marketplace-helper",
@@ -43411,7 +43258,7 @@
       "name": "menubar-weather",
       "title": "Menubar Weather",
       "dir": "menubar-weather",
-      "status": "DEGRADED",
+      "status": "SUPPORTED",
       "commands": 1,
       "modes": "menu-bar",
       "apiImports": [
@@ -43430,9 +43277,7 @@
       ],
       "builtins": [],
       "blockers": [],
-      "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)"
-      ],
+      "degraded": [],
       "unknown": []
     },
     {
@@ -43533,7 +43378,7 @@
       "name": "messages",
       "title": "Messages",
       "dir": "messages",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 5,
       "modes": "view|menu-bar|no-view",
       "apiImports": [
@@ -43582,15 +43427,13 @@
       "degraded": [
         "launchCommand: loads; throws if called (inter-command launch not wired)"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "meta-music",
       "title": "Meta Music",
       "dir": "meta-music",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
@@ -43618,15 +43461,13 @@
       "degraded": [
         "uses Node built-ins (ok in trusted mode): fs"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "metabase",
       "title": "Metabase",
       "dir": "metabase",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
@@ -43644,9 +43485,7 @@
       "builtins": [],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "metacritic",
@@ -43745,7 +43584,7 @@
       "name": "metronome",
       "title": "Metronome",
       "dir": "metronome",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
@@ -43767,9 +43606,7 @@
       "degraded": [
         "declares command `arguments[]` — not passed by runtime yet"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "metube",
@@ -44655,7 +44492,7 @@
       "name": "mite",
       "title": "Mite",
       "dir": "mite",
-      "status": "DEGRADED",
+      "status": "SUPPORTED",
       "commands": 4,
       "modes": "view|no-view",
       "apiImports": [
@@ -44676,9 +44513,7 @@
       ],
       "builtins": [],
       "blockers": [],
-      "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)"
-      ],
+      "degraded": [],
       "unknown": []
     },
     {
@@ -46131,7 +45966,6 @@
       ],
       "blockers": [],
       "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "declares command `arguments[]` — not passed by runtime yet",
         "uses Node built-ins (ok in trusted mode): child_process"
       ],
@@ -46409,7 +46243,7 @@
       "name": "mutedeck",
       "title": "MuteDeck",
       "dir": "mutedeck",
-      "status": "DEGRADED",
+      "status": "SUPPORTED",
       "commands": 4,
       "modes": "view|no-view",
       "apiImports": [
@@ -46427,9 +46261,7 @@
       "utilsImports": [],
       "builtins": [],
       "blockers": [],
-      "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)"
-      ],
+      "degraded": [],
       "unknown": []
     },
     {
@@ -46703,7 +46535,7 @@
       "name": "name-com",
       "title": "Name.com",
       "dir": "name-com",
-      "status": "DEGRADED",
+      "status": "SUPPORTED",
       "commands": 2,
       "modes": "no-view|view",
       "apiImports": [
@@ -46732,9 +46564,7 @@
       ],
       "builtins": [],
       "blockers": [],
-      "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)"
-      ],
+      "degraded": [],
       "unknown": []
     },
     {
@@ -46795,7 +46625,6 @@
       "builtins": [],
       "blockers": [],
       "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "declares command `arguments[]` — not passed by runtime yet"
       ],
       "unknown": []
@@ -47218,7 +47047,7 @@
       "name": "nepali-date-converter",
       "title": "Nepali Date Converter",
       "dir": "nepali-date-converter",
-      "status": "DEGRADED",
+      "status": "SUPPORTED",
       "commands": 1,
       "modes": "no-view",
       "apiImports": [
@@ -47227,9 +47056,7 @@
       "utilsImports": [],
       "builtins": [],
       "blockers": [],
-      "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)"
-      ],
+      "degraded": [],
       "unknown": []
     },
     {
@@ -47732,7 +47559,7 @@
       "name": "nextdns",
       "title": "NextDNS",
       "dir": "nextdns",
-      "status": "DEGRADED",
+      "status": "SUPPORTED",
       "commands": 4,
       "modes": "view|no-view",
       "apiImports": [
@@ -47761,9 +47588,7 @@
       ],
       "builtins": [],
       "blockers": [],
-      "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)"
-      ],
+      "degraded": [],
       "unknown": []
     },
     {
@@ -47902,8 +47727,7 @@
       "builtins": [],
       "blockers": [],
       "degraded": [
-        "launchCommand: loads; throws if called (inter-command launch not wired)",
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)"
+        "launchCommand: loads; throws if called (inter-command launch not wired)"
       ],
       "unknown": []
     },
@@ -48075,8 +47899,7 @@
       "builtins": [],
       "blockers": [],
       "degraded": [
-        "launchCommand: loads; throws if called (inter-command launch not wired)",
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)"
+        "launchCommand: loads; throws if called (inter-command launch not wired)"
       ],
       "unknown": []
     },
@@ -49590,7 +49413,7 @@
       "name": "obsidian",
       "title": "Obsidian",
       "dir": "obsidian",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 12,
       "modes": "view|menu-bar",
       "apiImports": [
@@ -49634,15 +49457,13 @@
         "declares command `arguments[]` — not passed by runtime yet",
         "uses Node built-ins (ok in trusted mode): fs, child_process"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "obsidian-bookmarks",
       "title": "Obsidian Bookmarks",
       "dir": "obsidian-bookmarks",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 3,
       "modes": "view|no-view",
       "apiImports": [
@@ -49682,9 +49503,7 @@
         "BrowserExtension: loads; throws if called (browser bridge not wired)",
         "uses Node built-ins (ok in trusted mode): fs"
       ],
-      "unknown": [
-        "@raycast/api:FileIcon (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "obsidian-link-opener",
@@ -50486,7 +50305,6 @@
       "builtins": [],
       "blockers": [],
       "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "launchCommand: loads; throws if called (inter-command launch not wired)",
         "declares command `arguments[]` — not passed by runtime yet"
       ],
@@ -51149,7 +50967,6 @@
       ],
       "blockers": [],
       "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "declares command `arguments[]` — not passed by runtime yet",
         "uses Node built-ins (ok in trusted mode): child_process"
       ],
@@ -51312,7 +51129,6 @@
       "blockers": [],
       "degraded": [
         "launchCommand: loads; throws if called (inter-command launch not wired)",
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "uses Node built-ins (ok in trusted mode): fs, child_process"
       ],
       "unknown": []
@@ -51575,7 +51391,7 @@
       "name": "openstatus",
       "title": "OpenStatus",
       "dir": "openstatus",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 5,
       "modes": "view",
       "apiImports": [
@@ -51600,9 +51416,7 @@
       "builtins": [],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "openstreetmap-search",
@@ -51661,7 +51475,6 @@
         "uses Node built-ins (ok in trusted mode): fs"
       ],
       "unknown": [
-        "@raycast/api:RequestInit (not in Invoke surface — needs review)",
         "@raycast/api:existsSync (not in Invoke surface — needs review)",
         "@raycast/api:runAppleScript (not in Invoke surface — needs review)",
         "@raycast/api:useEffect (not in Invoke surface — needs review)",
@@ -51871,7 +51684,7 @@
       "name": "orbstack",
       "title": "OrbStack",
       "dir": "orbstack",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 2,
       "modes": "view",
       "apiImports": [
@@ -51900,15 +51713,13 @@
         "useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox",
         "uses Node built-ins (ok in trusted mode): child_process"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "origami",
       "title": "Origami",
       "dir": "origami",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 2,
       "modes": "view",
       "apiImports": [
@@ -51941,9 +51752,7 @@
       "degraded": [
         "launchCommand: loads; throws if called (inter-command launch not wired)"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "orion",
@@ -52362,7 +52171,6 @@
       "builtins": [],
       "blockers": [],
       "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "launchCommand: loads; throws if called (inter-command launch not wired)",
         "declares command `arguments[]` — not passed by runtime yet"
       ],
@@ -53584,7 +53392,6 @@
       ],
       "blockers": [],
       "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "declares command `arguments[]` — not passed by runtime yet"
       ],
       "unknown": []
@@ -54837,7 +54644,7 @@
       "name": "pick-your-wallpaper",
       "title": "Pick Your Wallpaper",
       "dir": "pick-your-wallpaper",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 2,
       "modes": "view|no-view",
       "apiImports": [
@@ -54868,9 +54675,7 @@
       "degraded": [
         "uses Node built-ins (ok in trusted mode): child_process, fs"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "pie-for-pi-hole",
@@ -54917,7 +54722,7 @@
       "name": "pieces-raycast",
       "title": "Pieces for Raycast",
       "dir": "pieces-raycast",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 9,
       "modes": "no-view|view",
       "apiImports": [
@@ -54962,9 +54767,7 @@
         "BrowserExtension: loads; throws if called (browser bridge not wired)",
         "uses Node built-ins (ok in trusted mode): fs, child_process"
       ],
-      "unknown": [
-        "@raycast/api:Preferences (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "pika",
@@ -56104,7 +55907,7 @@
       "name": "podcasts-now",
       "title": "Podcasts Now",
       "dir": "podcasts-now",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 2,
       "modes": "view|menu-bar",
       "apiImports": [
@@ -56135,9 +55938,7 @@
       "degraded": [
         "uses Node built-ins (ok in trusted mode): fs"
       ],
-      "unknown": [
-        "@raycast/api:Navigation (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "pokedex",
@@ -56701,7 +56502,6 @@
       ],
       "blockers": [],
       "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "uses Node built-ins (ok in trusted mode): fs"
       ],
       "unknown": []
@@ -56851,7 +56651,7 @@
       "name": "postey",
       "title": "Postey",
       "dir": "postey",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 5,
       "modes": "view",
       "apiImports": [
@@ -56884,9 +56684,7 @@
       "builtins": [],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "posthog",
@@ -58152,7 +57950,7 @@
       "name": "psn",
       "title": "PSN",
       "dir": "psn",
-      "status": "DEGRADED",
+      "status": "SUPPORTED",
       "commands": 3,
       "modes": "no-view|view",
       "apiImports": [
@@ -58173,9 +57971,7 @@
       "utilsImports": [],
       "builtins": [],
       "blockers": [],
-      "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)"
-      ],
+      "degraded": [],
       "unknown": []
     },
     {
@@ -58412,7 +58208,6 @@
       "builtins": [],
       "blockers": [],
       "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "launchCommand: loads; throws if called (inter-command launch not wired)",
         "declares command `arguments[]` — not passed by runtime yet"
       ],
@@ -60072,7 +59867,7 @@
       "name": "raindrop-io",
       "title": "Raindrop.io",
       "dir": "raindrop-io",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 5,
       "modes": "view|no-view",
       "apiImports": [
@@ -60113,9 +59908,7 @@
         "BrowserExtension: loads; throws if called (browser bridge not wired)",
         "declares command `arguments[]` — not passed by runtime yet"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "ram-prices",
@@ -61986,7 +61779,7 @@
       "name": "raycast-urbandictionary-word-of-the-day",
       "title": "Urban Dictionary Word of the Day",
       "dir": "raycast-urbandictionary-word-of-the-day",
-      "status": "DEGRADED",
+      "status": "SUPPORTED",
       "commands": 3,
       "modes": "no-view|view",
       "apiImports": [
@@ -62000,9 +61793,7 @@
       "utilsImports": [],
       "builtins": [],
       "blockers": [],
-      "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)"
-      ],
+      "degraded": [],
       "unknown": []
     },
     {
@@ -62313,7 +62104,7 @@
       "name": "raynab",
       "title": "Raynab — Manage Your Budgets",
       "dir": "raynab",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 7,
       "modes": "view|menu-bar",
       "apiImports": [
@@ -62353,9 +62144,7 @@
       "degraded": [
         "launchCommand: loads; throws if called (inter-command launch not wired)"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "raytaskwarrior",
@@ -63652,8 +63441,7 @@
       "builtins": [],
       "blockers": [],
       "degraded": [
-        "launchCommand: loads; throws if called (inter-command launch not wired)",
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)"
+        "launchCommand: loads; throws if called (inter-command launch not wired)"
       ],
       "unknown": []
     },
@@ -63661,7 +63449,7 @@
       "name": "remember-this",
       "title": "Remember This",
       "dir": "remember-this",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 3,
       "modes": "view|menu-bar",
       "apiImports": [
@@ -63693,9 +63481,7 @@
         "declares command `arguments[]` — not passed by runtime yet",
         "uses Node built-ins (ok in trusted mode): fs"
       ],
-      "unknown": [
-        "@raycast/api:ListItem (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "remix-icon",
@@ -64222,7 +64008,7 @@
       "name": "rescuetime-focus-session-trigger",
       "title": "RescueTime",
       "dir": "rescuetime-focus-session-trigger",
-      "status": "DEGRADED",
+      "status": "SUPPORTED",
       "commands": 8,
       "modes": "view|no-view",
       "apiImports": [
@@ -64243,9 +64029,7 @@
       ],
       "builtins": [],
       "blockers": [],
-      "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)"
-      ],
+      "degraded": [],
       "unknown": []
     },
     {
@@ -64279,7 +64063,7 @@
       "name": "resend",
       "title": "Resend",
       "dir": "resend",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 4,
       "modes": "view",
       "apiImports": [
@@ -64316,9 +64100,7 @@
       "degraded": [
         "uses Node built-ins (ok in trusted mode): fs"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "resend-wallpaper",
@@ -65086,7 +64868,7 @@
       "name": "rss-reader",
       "title": "RSS Reader",
       "dir": "rss-reader",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 3,
       "modes": "view",
       "apiImports": [
@@ -65124,9 +64906,7 @@
       "degraded": [
         "BrowserExtension: loads; throws if called (browser bridge not wired)"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "rsync-commands",
@@ -65158,7 +64938,6 @@
         "uses Node built-ins (ok in trusted mode): child_process"
       ],
       "unknown": [
-        "@raycast/api:FC (not in Invoke surface — needs review)",
         "@raycast/api:useCallback (not in Invoke surface — needs review)",
         "@raycast/api:memo (not in Invoke surface — needs review)",
         "@raycast/api:useState (not in Invoke surface — needs review)",
@@ -65259,7 +65038,7 @@
       "name": "runcloud",
       "title": "RunCloud",
       "dir": "runcloud",
-      "status": "DEGRADED",
+      "status": "SUPPORTED",
       "commands": 3,
       "modes": "view|no-view",
       "apiImports": [
@@ -65274,9 +65053,7 @@
       "utilsImports": [],
       "builtins": [],
       "blockers": [],
-      "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)"
-      ],
+      "degraded": [],
       "unknown": []
     },
     {
@@ -66119,7 +65896,6 @@
       "blockers": [],
       "degraded": [],
       "unknown": [
-        "@raycast/api:Response (not in Invoke surface — needs review)",
         "@raycast/api:useEffect (not in Invoke surface — needs review)",
         "@raycast/api:useState (not in Invoke surface — needs review)",
         "@raycast/utils:useEffect (not implemented in Invoke)",
@@ -66391,9 +66167,7 @@
         "uses Node built-ins (ok in trusted mode): fs"
       ],
       "unknown": [
-        "@raycast/api:OpenWithAction (not in Invoke surface — needs review)",
-        "@raycast/api:ImageLike (not in Invoke surface — needs review)",
-        "@raycast/api:KeyboardShortcut (not in Invoke surface — needs review)"
+        "@raycast/api:OpenWithAction (not in Invoke surface — needs review)"
       ]
     },
     {
@@ -67374,7 +67148,7 @@
       "name": "send-ai",
       "title": "SendAI",
       "dir": "send-ai",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 13,
       "modes": "view",
       "apiImports": [
@@ -67408,9 +67182,7 @@
         "declares command `arguments[]` — not passed by runtime yet",
         "uses Node built-ins (ok in trusted mode): fs"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "send-to-e-reader",
@@ -67445,7 +67217,7 @@
       "name": "send-to-flomo",
       "title": "Send to flomo",
       "dir": "send-to-flomo",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
@@ -67461,9 +67233,7 @@
       "builtins": [],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:FormValue (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "send-to-kindle",
@@ -68235,7 +68005,7 @@
       "name": "shape-calendar",
       "title": "Shape Calendar",
       "dir": "shape-calendar",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 3,
       "modes": "view|no-view",
       "apiImports": [
@@ -68259,12 +68029,8 @@
       ],
       "builtins": [],
       "blockers": [],
-      "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)"
-      ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "degraded": [],
+      "unknown": []
     },
     {
       "name": "sharding-tools",
@@ -69078,7 +68844,6 @@
       ],
       "blockers": [],
       "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "uses Node built-ins (ok in trusted mode): child_process"
       ],
       "unknown": []
@@ -69346,7 +69111,6 @@
       ],
       "blockers": [],
       "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "launchCommand: loads; throws if called (inter-command launch not wired)",
         "uses Node built-ins (ok in trusted mode): child_process"
       ],
@@ -69496,7 +69260,6 @@
       ],
       "blockers": [],
       "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "launchCommand: loads; throws if called (inter-command launch not wired)",
         "uses Node built-ins (ok in trusted mode): child_process"
       ],
@@ -69876,7 +69639,7 @@
       "name": "siri",
       "title": "Siri",
       "dir": "siri",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 1,
       "modes": "no-view",
       "apiImports": [
@@ -69894,9 +69657,7 @@
       "degraded": [
         "declares command `arguments[]` — not passed by runtime yet"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "sitespeakai",
@@ -69926,7 +69687,7 @@
       "name": "sketch",
       "title": "Sketch",
       "dir": "sketch",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 2,
       "modes": "view",
       "apiImports": [
@@ -69951,9 +69712,7 @@
       "builtins": [],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:KeyEquivalent (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "skills",
@@ -70554,7 +70313,7 @@
       "name": "snake",
       "title": "Snake",
       "dir": "snake",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
@@ -70574,9 +70333,7 @@
       "builtins": [],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:Environment (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "snap-jot",
@@ -71105,8 +70862,7 @@
       "builtins": [],
       "blockers": [],
       "degraded": [
-        "launchCommand: loads; throws if called (inter-command launch not wired)",
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)"
+        "launchCommand: loads; throws if called (inter-command launch not wired)"
       ],
       "unknown": []
     },
@@ -71212,7 +70968,6 @@
       "blockers": [],
       "degraded": [
         "launchCommand: loads; throws if called (inter-command launch not wired)",
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "uses Node built-ins (ok in trusted mode): child_process"
       ],
       "unknown": []
@@ -71264,7 +71019,6 @@
       ],
       "blockers": [],
       "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "launchCommand: loads; throws if called (inter-command launch not wired)",
         "uses Node built-ins (ok in trusted mode): http"
       ],
@@ -72105,7 +71859,6 @@
       "blockers": [],
       "degraded": [
         "launchCommand: loads; throws if called (inter-command launch not wired)",
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "runPowerShellScript: Windows-only; throws on macOS (import loads)",
         "declares command `arguments[]` — not passed by runtime yet"
       ],
@@ -72828,7 +72581,6 @@
       ],
       "blockers": [],
       "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "launchCommand: loads; throws if called (inter-command launch not wired)",
         "uses Node built-ins (ok in trusted mode): child_process"
       ],
@@ -73567,7 +73319,7 @@
       "name": "superhuman",
       "title": "Superhuman",
       "dir": "superhuman",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 1,
       "modes": "no-view",
       "apiImports": [
@@ -73580,9 +73332,7 @@
       "builtins": [],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "supermemory",
@@ -73711,7 +73461,6 @@
       "unknown": [
         "@raycast/api:Asset (not in Invoke surface — needs review)",
         "@raycast/api:AssetGroup (not in Invoke surface — needs review)",
-        "@raycast/api:Component (not in Invoke surface — needs review)",
         "@raycast/api:DesignComponent (not in Invoke surface — needs review)",
         "@raycast/api:DesignSystemVersion (not in Invoke surface — needs review)",
         "@raycast/api:DocSearchResultData (not in Invoke surface — needs review)",
@@ -74467,7 +74216,7 @@
       "name": "system-information",
       "title": "System Information",
       "dir": "system-information",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
@@ -74487,9 +74236,7 @@
       "degraded": [
         "uses Node built-ins (ok in trusted mode): child_process"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "t3-chat",
@@ -74629,7 +74376,7 @@
       "name": "tablepro",
       "title": "TablePro",
       "dir": "tablepro",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 9,
       "modes": "view|no-view|menu-bar",
       "apiImports": [
@@ -74679,9 +74426,7 @@
         "declares command `arguments[]` — not passed by runtime yet",
         "uses Node built-ins (ok in trusted mode): fs"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "tabler",
@@ -74878,7 +74623,6 @@
       ],
       "blockers": [],
       "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "uses Node built-ins (ok in trusted mode): child_process"
       ],
       "unknown": []
@@ -75168,7 +74912,7 @@
       "name": "teak-raycast",
       "title": "Teak",
       "dir": "teak-raycast",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 8,
       "modes": "view|no-view",
       "apiImports": [
@@ -75199,9 +74943,7 @@
         "BrowserExtension: loads; throws if called (browser bridge not wired)",
         "declares command `arguments[]` — not passed by runtime yet"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "team-time",
@@ -75234,8 +74976,7 @@
       "builtins": [],
       "blockers": [],
       "degraded": [
-        "launchCommand: loads; throws if called (inter-command launch not wired)",
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)"
+        "launchCommand: loads; throws if called (inter-command launch not wired)"
       ],
       "unknown": []
     },
@@ -75313,7 +75054,7 @@
       "name": "telegram",
       "title": "Telegram",
       "dir": "telegram",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 5,
       "modes": "view",
       "apiImports": [
@@ -75348,9 +75089,7 @@
       "degraded": [
         "uses Node built-ins (ok in trusted mode): fs"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "teleport",
@@ -75839,7 +75578,6 @@
       "blockers": [],
       "degraded": [
         "launchCommand: loads; throws if called (inter-command launch not wired)",
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "declares command `arguments[]` — not passed by runtime yet"
       ],
       "unknown": []
@@ -76382,7 +76120,7 @@
       "name": "things",
       "title": "Things",
       "dir": "things",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 10,
       "modes": "view|menu-bar|no-view",
       "apiImports": [
@@ -76431,9 +76169,7 @@
         "declares command `arguments[]` — not passed by runtime yet",
         "uses Node built-ins (ok in trusted mode): child_process, fs"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "thock",
@@ -76703,7 +76439,6 @@
       ],
       "blockers": [],
       "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "launchCommand: loads; throws if called (inter-command launch not wired)",
         "uses Node built-ins (ok in trusted mode): fs, http, child_process"
       ],
@@ -77878,7 +77613,6 @@
       ],
       "blockers": [],
       "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "uses Node built-ins (ok in trusted mode): child_process"
       ],
       "unknown": []
@@ -78037,7 +77771,7 @@
       "name": "toneclone",
       "title": "ToneClone",
       "dir": "toneclone",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 7,
       "modes": "view",
       "apiImports": [
@@ -78075,9 +77809,7 @@
         "BrowserExtension: loads; throws if called (browser bridge not wired)",
         "uses Node built-ins (ok in trusted mode): fs"
       ],
-      "unknown": [
-        "@raycast/api:KeyEquivalent (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "toolbox",
@@ -78140,7 +77872,6 @@
       ],
       "blockers": [],
       "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "declares command `arguments[]` — not passed by runtime yet",
         "uses Node built-ins (ok in trusted mode): fs, child_process"
       ],
@@ -79095,7 +78826,7 @@
       "name": "twenty",
       "title": "Twenty",
       "dir": "twenty",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
@@ -79126,10 +78857,7 @@
       ],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:ItemProps (not in Invoke surface — needs review)",
-        "@raycast/api:FormItemRef (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "twingate",
@@ -79515,7 +79243,7 @@
       "name": "typefully",
       "title": "Typefully",
       "dir": "typefully",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 5,
       "modes": "view",
       "apiImports": [
@@ -79550,15 +79278,13 @@
       "builtins": [],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "typer",
       "title": "Typer - Custom Text Hotkey",
       "dir": "typer",
-      "status": "DEGRADED",
+      "status": "SUPPORTED",
       "commands": 5,
       "modes": "no-view",
       "apiImports": [
@@ -79571,9 +79297,7 @@
       "utilsImports": [],
       "builtins": [],
       "blockers": [],
-      "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)"
-      ],
+      "degraded": [],
       "unknown": []
     },
     {
@@ -79847,7 +79571,7 @@
       "name": "uk-bank-holidays",
       "title": "UK Bank Holidays",
       "dir": "uk-bank-holidays",
-      "status": "DEGRADED",
+      "status": "SUPPORTED",
       "commands": 2,
       "modes": "view|no-view",
       "apiImports": [
@@ -79860,9 +79584,7 @@
       "utilsImports": [],
       "builtins": [],
       "blockers": [],
-      "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)"
-      ],
+      "degraded": [],
       "unknown": []
     },
     {
@@ -79889,7 +79611,7 @@
       "name": "ultrahuman",
       "title": "Ultrahuman",
       "dir": "ultrahuman",
-      "status": "DEGRADED",
+      "status": "SUPPORTED",
       "commands": 3,
       "modes": "view",
       "apiImports": [
@@ -79909,9 +79631,7 @@
       ],
       "builtins": [],
       "blockers": [],
-      "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)"
-      ],
+      "degraded": [],
       "unknown": []
     },
     {
@@ -82692,7 +82412,7 @@
       "name": "vmware-vcenter",
       "title": "VMware VCenter",
       "dir": "vmware-vcenter",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 4,
       "modes": "view",
       "apiImports": [
@@ -82724,9 +82444,7 @@
       "degraded": [
         "runPowerShellScript: Windows-only; throws on macOS (import loads)"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "vn-textify",
@@ -83871,7 +83589,6 @@
       ],
       "blockers": [],
       "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "uses Node built-ins (ok in trusted mode): fs"
       ],
       "unknown": []
@@ -84114,7 +83831,7 @@
       "name": "whatsapp",
       "title": "WhatsApp",
       "dir": "whatsapp",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 4,
       "modes": "view",
       "apiImports": [
@@ -84150,9 +83867,7 @@
       "degraded": [
         "uses Node built-ins (ok in trusted mode): child_process, fs"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "whentomeet",
@@ -84416,7 +84131,7 @@
       "name": "whoop",
       "title": "WHOOP",
       "dir": "whoop",
-      "status": "DEGRADED",
+      "status": "SUPPORTED",
       "commands": 3,
       "modes": "no-view|view",
       "apiImports": [
@@ -84436,9 +84151,7 @@
       ],
       "builtins": [],
       "blockers": [],
-      "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)"
-      ],
+      "degraded": [],
       "unknown": []
     },
     {
@@ -85038,7 +84751,6 @@
       ],
       "blockers": [],
       "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "uses Node built-ins (ok in trusted mode): fs"
       ],
       "unknown": []
@@ -85731,7 +85443,6 @@
       "builtins": [],
       "blockers": [],
       "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "declares command `arguments[]` — not passed by runtime yet"
       ],
       "unknown": []
@@ -85740,7 +85451,7 @@
       "name": "work-time-countdown",
       "title": "Work Time Countdown",
       "dir": "work-time-countdown",
-      "status": "DEGRADED",
+      "status": "SUPPORTED",
       "commands": 1,
       "modes": "menu-bar",
       "apiImports": [
@@ -85754,9 +85465,7 @@
       "utilsImports": [],
       "builtins": [],
       "blockers": [],
-      "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)"
-      ],
+      "degraded": [],
       "unknown": []
     },
     {
@@ -86245,7 +85954,7 @@
       "name": "xcode",
       "title": "Xcode",
       "dir": "xcode",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 21,
       "modes": "menu-bar|view|no-view",
       "apiImports": [
@@ -86295,10 +86004,7 @@
         "declares command `arguments[]` — not passed by runtime yet",
         "uses Node built-ins (ok in trusted mode): fs, child_process"
       ],
-      "unknown": [
-        "@raycast/api:Navigation (not in Invoke surface — needs review)",
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "xcode-cloud",
@@ -86832,8 +86538,7 @@
       "builtins": [],
       "blockers": [],
       "degraded": [
-        "launchCommand: loads; throws if called (inter-command launch not wired)",
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)"
+        "launchCommand: loads; throws if called (inter-command launch not wired)"
       ],
       "unknown": []
     },
@@ -87101,7 +86806,7 @@
       "name": "youtrack",
       "title": "YouTrack",
       "dir": "youtrack",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 2,
       "modes": "view",
       "apiImports": [
@@ -87136,9 +86841,7 @@
       "builtins": [],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "youtube",
@@ -87891,7 +87594,6 @@
       ],
       "blockers": [],
       "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "uses Node built-ins (ok in trusted mode): fs, child_process"
       ],
       "unknown": [
@@ -87974,7 +87676,7 @@
       "name": "zero",
       "title": "Zero",
       "dir": "zero",
-      "status": "UNSUPPORTED",
+      "status": "SUPPORTED",
       "commands": 1,
       "modes": "no-view",
       "apiImports": [
@@ -87989,9 +87691,7 @@
       "builtins": [],
       "blockers": [],
       "degraded": [],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "zerodha-portfolio-kite-coin",
@@ -88074,7 +87774,6 @@
       "builtins": [],
       "blockers": [],
       "degraded": [
-        "updateCommandMetadata: loads; no-op (command metadata updates not wired)",
         "declares command `arguments[]` — not passed by runtime yet"
       ],
       "unknown": []
@@ -88475,7 +88174,7 @@
       "name": "zsh-aliases",
       "title": "Zsh Aliases",
       "dir": "zsh-aliases",
-      "status": "UNSUPPORTED",
+      "status": "DEGRADED",
       "commands": 1,
       "modes": "view",
       "apiImports": [
@@ -88504,9 +88203,7 @@
       "degraded": [
         "uses Node built-ins (ok in trusted mode): fs"
       ],
-      "unknown": [
-        "@raycast/api:Tool (not in Invoke surface — needs review)"
-      ]
+      "unknown": []
     },
     {
       "name": "zshrc-manager",

@@ -14,7 +14,7 @@ aave-search,Aave Contract Search,SUPPORTED,aave-search,1,view,,,,
 ableton-live,Ableton Live,DEGRADED,ableton-live,1,view,,"uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs path util
 abstract-api,Abstract API,DEGRADED,abstract-api,8,view,,uses Node built-ins (ok in trusted mode): fs,,fs os
 accordance,Accordance,DEGRADED,accordance,6,view|no-view,,declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs,,fs os path
-acqua,Acqua,DEGRADED,acqua,2,view|menu-bar,,updateCommandMetadata: loads; no-op (command metadata updates not wired),,
+acqua,Acqua,SUPPORTED,acqua,2,view|menu-bar,,,,
 active-mississaugua,Active Mississaugua,SUPPORTED,active-mississaugua,2,view,,,,
 adb,Android Debug Bridge (Adb) Commands,DEGRADED,adb,20,no-view,,"launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs
 adguard-home,AdGuard Home,SUPPORTED,adguard-home,9,view,,,,
@@ -44,7 +44,7 @@ ai-usage-tracker,AI Usage Tracker,SUPPORTED,ai-usage-tracker,1,view,,,,
 aimlab,Aimlab Tracker,SUPPORTED,aimlab,4,view,,,,
 air-quality,Air Quality,DEGRADED,air-quality,2,view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired),,
 airplane,Airplane,SUPPORTED,airplane,2,no-view,,,,
-airpods-noise-control,AirPods Noise Control,DEGRADED,airpods-noise-control,2,no-view,,updateCommandMetadata: loads; no-op (command metadata updates not wired),,os
+airpods-noise-control,AirPods Noise Control,SUPPORTED,airpods-noise-control,2,no-view,,,,os
 airport,Airport - Discover TestFlight Apps,SUPPORTED,airport,1,view,,,,
 airsy,Airsy,SUPPORTED,airsy,2,view,,,,
 airsync,AirSync,SUPPORTED,airsync,9,view|no-view,,,,
@@ -83,17 +83,17 @@ antisocials,AntiSocials,SUPPORTED,antisocials,1,no-view,,,,
 any-website-search,Universal Website Search,DEGRADED,any-website-search,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs path url
 anybox,Anybox,SUPPORTED,anybox,15,view|no-view,,,,url
 anycoffee,Any Coffee,SUPPORTED,anycoffee,1,view,,,,
-anytype,Anytype,UNSUPPORTED,anytype,5,view,,,@raycast/api:Tool (not in Invoke surface — needs review),
+anytype,Anytype,SUPPORTED,anytype,5,view,,,,
 apfel,Apfel,DEGRADED,apfel,13,view|no-view,,"uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs os path util
 apify,Apify,SUPPORTED,apify,2,view,,,,
 apis-guru-search,APIs Guru Search,SUPPORTED,apis-guru-search,1,view,,,,
-app,App Creator,UNSUPPORTED,app-creator,1,view,,uses Node built-ins (ok in trusted mode): fs,@raycast/api:Tool (not in Invoke surface — needs review),fs path
+app,App Creator,DEGRADED,app-creator,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs path
 app-icon-generator,App Icon Generator,DEGRADED,app-icon-generator,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs path
 app-keeper-manager,App Keeper Manager,DEGRADED,app-keeper-manager,1,view,,uses Node built-ins (ok in trusted mode): child_process,,child_process
 app-store-connect,App Store Connect,DEGRADED,app-store-connect,6,view,,uses Node built-ins (ok in trusted mode): fs,,fs
 app-tag-manager,App Tag Manager,DEGRADED,app-tag-manager,3,view,,uses Node built-ins (ok in trusted mode): child_process,,child_process util
 app-updates,App Updates,DEGRADED,app-updates,4,view|menu-bar,,"launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs os util
-appcleaner,App Cleaner,DEGRADED,appcleaner,1,view,,"updateCommandMetadata: loads; no-op (command metadata updates not wired) | uses Node built-ins (ok in trusted mode): child_process, fs",,child_process events fs path
+appcleaner,App Cleaner,DEGRADED,appcleaner,1,view,,"uses Node built-ins (ok in trusted mode): child_process, fs",,child_process events fs path
 append-clipboard,Append Clipboard,DEGRADED,append-clipboard,3,no-view,,declares command `arguments[]` — not passed by runtime yet,,
 append-to-file,Append Text to File,DEGRADED,append-to-file,5,view|no-view,,"uses Node built-ins (ok in trusted mode): fs, child_process",,assert child_process crypto fs os path util
 appgrid,AppGrid,SUPPORTED,appgrid,1,view,,,,
@@ -101,10 +101,10 @@ apple-books,Apple Books,SUPPORTED,apple-books,1,view,,,,
 apple-developer-docs,Apple Developer Docs,SUPPORTED,apple-developer-docs,1,view,,,,
 apple-devices,Apple Devices,SUPPORTED,apple-devices,1,view,,,,
 apple-maps-search,Apple Maps Search,DEGRADED,apple-maps-search,3,no-view|view,,declares command `arguments[]` — not passed by runtime yet,,
-apple-notes,Apple Notes,UNSUPPORTED,apple-notes,7,view|no-view|menu-bar,,declares command `arguments[]` — not passed by runtime yet,@raycast/api:Tool (not in Invoke surface — needs review),os path
+apple-notes,Apple Notes,DEGRADED,apple-notes,7,view|no-view|menu-bar,,declares command `arguments[]` — not passed by runtime yet,,os path
 apple-passwords,Apple Password,UNSUPPORTED,apple-passwords,2,view|no-view,,"uses Node built-ins (ok in trusted mode): child_process, module, fs",namespace import of @raycast/api (member usage unverified),assert child_process fs module os path
 apple-photos,Apple Photos,DEGRADED,apple-photos,2,view|no-view,,"uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs os path util
-apple-reminders,Apple Reminders,UNSUPPORTED,apple-reminders,7,view|menu-bar|no-view,,launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): child_process,@raycast/api:Tool (not in Invoke surface — needs review),child_process crypto util
+apple-reminders,Apple Reminders,DEGRADED,apple-reminders,7,view|menu-bar|no-view,,launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): child_process,,child_process crypto util
 apple-stocks-search,Apple Stocks Search,SUPPORTED,apple-stocks-search,1,view,,,,
 apply-inline-code,Apply Inline Code,SUPPORTED,apply-inline-code,2,no-view|view,,,,
 appwrite,Appwrite,SUPPORTED,appwrite,1,view,,,,
@@ -115,13 +115,13 @@ arc-helper,Arc Helper,SUPPORTED,arc-helper,7,view,,,,
 arca,Arca,SUPPORTED,arca,3,view,,,,
 archisteamfarm,ArchiSteamFarm,SUPPORTED,archisteamfarm,2,view,,,,
 archiver,Archiver,DEGRADED,archiver,4,view|no-view,,uses Node built-ins (ok in trusted mode): fs,,buffer fs os path
-are-na,Are.na,UNSUPPORTED,are-na,7,view,,,@raycast/api:Tool (not in Invoke surface — needs review),os
+are-na,Are.na,SUPPORTED,are-na,7,view,,,,os
 area-code-lookup,Area & Country Codes,DEGRADED,area-code-lookup,1,view,,declares command `arguments[]` — not passed by runtime yet,,
 array-this,Array This,SUPPORTED,array-this,1,view,,,,
 ars-technica,Ars Technica,SUPPORTED,ars-technica,1,view,,,,os
 arxiv,ArXiv Search,SUPPORTED,arxiv,2,view,,,,url
 asana,Asana,SUPPORTED,asana,2,view,,,,
-ascii-art-wallpaper,ASCII Art Wallpaper,DEGRADED,ascii-art-wallpaper,3,view|no-view,,"updateCommandMetadata: loads; no-op (command metadata updates not wired) | uses Node built-ins (ok in trusted mode): fs, child_process",,child_process crypto fs path
+ascii-art-wallpaper,ASCII Art Wallpaper,DEGRADED,ascii-art-wallpaper,3,view|no-view,,"uses Node built-ins (ok in trusted mode): fs, child_process",,child_process crypto fs path
 asciimath-to-latex-converter,AsciiMath to LaTeX Converter,SUPPORTED,asciimath-to-latex-converter,1,view,,,,
 asoiaf,A Song of Ice and Fire,SUPPORTED,asoiaf,3,view,,,,
 aspect-raytio,Aspect Raytio,DEGRADED,aspect-raytio,1,view,,declares command `arguments[]` — not passed by runtime yet,,
@@ -130,10 +130,10 @@ asyncapi,AsyncAPI,SUPPORTED,asyncapi,4,view|no-view,,,,
 at-profile,@ Profile,DEGRADED,at-profile,6,view|no-view,,"declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs os path util
 atlassian-data-center,Atlassian Data Center (Self-Hosted),DEGRADED,atlassian-data-center,8,view,,uses Node built-ins (ok in trusted mode): fs,,fs path
 atomberg-raycast-extension,Atomberg - Smart Home Control,SUPPORTED,atomberg-raycast-extension,2,view,,,,
-atomic,Atomic Data,UNSUPPORTED,atomic,1,view,,,@raycast/api:Preferences (not in Invoke surface — needs review),
+atomic,Atomic Data,SUPPORTED,atomic,1,view,,,,
 atproto-utilities,AT Protocol Utilities,DEGRADED,atproto-utilities,2,view|no-view,,declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs,,fs path
 attio,Attio,SUPPORTED,attio,6,view,,,,
-audio-device,Set Audio Device,DEGRADED,audio-device,12,view|no-view,,"updateCommandMetadata: loads; no-op (command metadata updates not wired) | launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): fs, https",,crypto fs https path
+audio-device,Set Audio Device,DEGRADED,audio-device,12,view|no-view,,"launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): fs, https",,crypto fs https path
 audio-writer,Audio Writer,SUPPORTED,audio-writer,3,no-view,,,,
 auth0-management,Auth0 Management,SUPPORTED,auth0-management,7,view,,,,
 auto-quit-app,Auto Quit App,DEGRADED,auto-quit-app,2,view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired),,
@@ -154,7 +154,7 @@ bahn-info,German Train Info,SUPPORTED,bahn-info,1,view,,,,
 baidu-ocr,Baidu OCR,DEGRADED,baidu-ocr,1,no-view,,uses Node built-ins (ok in trusted mode): fs,,fs
 balatro-compendium,Balatro Compendium,SUPPORTED,balatro-compendium,12,view,,,,
 bamboo-self-hosted,Bamboo Search (Self Hosted),DEGRADED,bamboo-search-self-hosted,3,view,,uses Node built-ins (ok in trusted mode): https,,https
-bamboohr,BambooHR,DEGRADED,bamboohr,4,view,,updateCommandMetadata: loads; no-op (command metadata updates not wired),,
+bamboohr,BambooHR,SUPPORTED,bamboohr,4,view,,,,
 bambu-lab,Bambu Lab Controller,DEGRADED,bambu-lab,2,view,,uses Node built-ins (ok in trusted mode): fs,,fs path
 banca-d-italia-currency-converter,Banca d'Italia Currency Converter,SUPPORTED,banca-d-italia-currency-converter,1,view,,,,
 barassistant,Bar Assistant,DEGRADED,barassistant,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs path
@@ -172,14 +172,14 @@ battery-optimizer,Battery Optimizer,DEGRADED,battery-optimizer,5,view|no-view|me
 bazinga-tools,Bazinga Tools,SUPPORTED,bazinga-tools,1,view,,,,
 bbc-news-headlines,BBC News Headlines,SUPPORTED,bbc-news-headlines,1,view,,,,
 beancount-meta,Beancount Meta,SUPPORTED,beancount-mate,1,view,,,,
-bear,Bear Notes,UNSUPPORTED,bear,4,view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): fs,@raycast/api:Tool (not in Invoke surface — needs review),fs os path
+bear,Bear Notes,DEGRADED,bear,4,view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): fs,,fs os path
 beardtown,Beardtown,SUPPORTED,beardtown,1,view,,,,
 beat-per-minute,BPM Calculator,SUPPORTED,beat-per-minute,1,view,,,,
 bech32-converter,Bech32 Converter,DEGRADED,bech32-converter,1,no-view,,declares command `arguments[]` — not passed by runtime yet,,
 bed-time-calculator,Bed Time Calculator,DEGRADED,bed-time-calculator,3,view,,declares command `arguments[]` — not passed by runtime yet,,
 beehiiv,Beehiiv,SUPPORTED,beehiiv,4,view|menu-bar,,,,
 beeminder,Beeminder,SUPPORTED,beeminder,1,view,,,,
-beeper,Beeper Desktop,UNSUPPORTED,beeper,6,view|no-view,,uses Node built-ins (ok in trusted mode): fs,@raycast/api:Tool (not in Invoke surface — needs review),fs os path url
+beeper,Beeper Desktop,DEGRADED,beeper,6,view|no-view,,uses Node built-ins (ok in trusted mode): fs,,fs os path url
 bento,Bento Email,SUPPORTED,bento,13,view,,,,
 bento-me,Bento,DEGRADED,bento-me,1,view,,uses Node built-ins (ok in trusted mode): https,,https
 berlin-public-transportation,Berlin Public Transportation,SUPPORTED,berlin-public-transportation,1,view,,,,
@@ -190,7 +190,7 @@ better-deal,Better Deal,DEGRADED,better-deal,2,view,,declares command `arguments
 better-uptime,Better Uptime,SUPPORTED,better-uptime,6,view,,,,
 betteraudio,BetterAudio,DEGRADED,betteraudio,17,view|no-view|menu-bar,,"declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs
 betterdiscord-store,BetterDiscord Store,SUPPORTED,betterdiscord-search,1,view,,,,
-betterdisplay,BetterDisplay,UNSUPPORTED,betterdisplay,1,view,,uses Node built-ins (ok in trusted mode): child_process,@raycast/api:Tool (not in Invoke surface — needs review),child_process events util
+betterdisplay,BetterDisplay,DEGRADED,betterdisplay,1,view,,uses Node built-ins (ok in trusted mode): child_process,,child_process events util
 bettertouchtool,BetterTouchTool,DEGRADED,bettertouchtool,2,view,,useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox,,
 betterzip,BetterZip,DEGRADED,betterzip,3,no-view,,uses Node built-ins (ok in trusted mode): fs,,fs path
 bhagavad-gita-quotes,Bhagavad Gita Quotes,SUPPORTED,bhagavad-gita-quotes,1,view,,,,
@@ -200,7 +200,7 @@ bible,Bible,DEGRADED,bible,1,view,,declares command `arguments[]` — not passed
 bibmanager,Bibmanager,DEGRADED,bibmanager,1,view,,"uses Node built-ins (ok in trusted mode): child_process, readline",,child_process os path readline
 big-o,Big-O,SUPPORTED,big-o,1,view,,,,
 bike,Bike,DEGRADED,bike,13,view,,declares command `arguments[]` — not passed by runtime yet,,
-bikeshare-station-status,Bikeshare Station Status,DEGRADED,bikeshare-station-status,2,view|menu-bar,,updateCommandMetadata: loads; no-op (command metadata updates not wired),,
+bikeshare-station-status,Bikeshare Station Status,SUPPORTED,bikeshare-station-status,2,view|menu-bar,,,,
 bilibili,Bilibili,DEGRADED,Bilibili,5,view|no-view,,runPowerShellScript: Windows-only; throws on macOS (import loads) | uses Node built-ins (ok in trusted mode): child_process,,child_process crypto path
 bilibili-search,Bilibili Search,SUPPORTED,bilibili-search,1,view,,,,
 binance,Binance Portfolio,DEGRADED,binance,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs path
@@ -258,7 +258,7 @@ brreg,The Brønnøysund Register Centre Search,DEGRADED,brreg,1,view,,"uses Node
 bsr-entsorgung,BSR Entsorgung,SUPPORTED,bsr-entsorgung,2,view,,,,
 bttv-emote,BTTV Emote,SUPPORTED,bttv-emote,1,view,,,,
 buddy,Buddy,SUPPORTED,buddy,1,view,,,,
-bugmenot,BugMeNot,UNSUPPORTED,bugmenot,1,view,,,@raycast/api:ListItem (not in Invoke surface — needs review),url
+bugmenot,BugMeNot,SUPPORTED,bugmenot,1,view,,,,url
 buildkite,Buildkite,SUPPORTED,buildkite,2,view,,,,
 builtbybit,BuiltByBit,DEGRADED,builtbybit,4,view|no-view|menu-bar,,declares command `arguments[]` — not passed by runtime yet,,
 bunch,Bunch,DEGRADED,bunch,9,view|no-view,,"uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs os path
@@ -269,7 +269,7 @@ bunq,Bunq,SUPPORTED,bunq,1,view,,,,path
 caaals,Caaals Food Tracker,SUPPORTED,caaals,2,view,,,,
 cache-control-builder,Cache-Control Builder,DEGRADED,cache-control-builder,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs path
 cacher,Cacher - Code Snippet Organizer,SUPPORTED,cacher,2,view,,,,
-cal-com-share-meeting-links,Cal.com,UNSUPPORTED,cal-com-share-meeting-links,5,view,,,@raycast/api:Tool (not in Invoke surface — needs review),
+cal-com-share-meeting-links,Cal.com,SUPPORTED,cal-com-share-meeting-links,5,view,,,,
 calendar,Quick Calendar,SUPPORTED,calendar,1,view,,,,
 calendly,Calendly Share Meeting Links,SUPPORTED,calendly,1,view,,,,
 calibre-library,Calibre Library,DEGRADED,calibre-search,2,view,,"declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs os path util
@@ -292,10 +292,10 @@ catppuccin,Catppuccin,SUPPORTED,catppuccin,4,no-view|view,,,,
 cc0-lib,CC0-LIB - Browse CC0 Content,SUPPORTED,cc0-lib,1,view,,,,
 ccf-what,CCF What?,SUPPORTED,ccf-what,1,view,,,,
 ccfddl,CCF Conference,SUPPORTED,ccfddl,1,view,,,,
-ccusage,Claude Code Usage (ccusage),DEGRADED,ccusage,3,view|menu-bar|no-view,,"updateCommandMetadata: loads; no-op (command metadata updates not wired) | useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox | uses Node built-ins (ok in trusted mode): child_process, fs, http",,child_process fs http os path util
+ccusage,Claude Code Usage (ccusage),DEGRADED,ccusage,3,view|menu-bar|no-view,,"useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox | uses Node built-ins (ok in trusted mode): child_process, fs, http",,child_process fs http os path util
 cdnjs,cdnjs,DEGRADED,cdnjs,1,view,,declares command `arguments[]` — not passed by runtime yet,,
 center,Center,DEGRADED,center,4,view,,declares command `arguments[]` — not passed by runtime yet,,
-cerebras,Cerebras,UNSUPPORTED,cerebras,8,view,,"BrowserExtension: loads; throws if called (browser bridge not wired) | uses Node built-ins (ok in trusted mode): http, fs",@raycast/api:Navigation (not in Invoke surface — needs review),fs http os path
+cerebras,Cerebras,DEGRADED,cerebras,8,view,,"BrowserExtension: loads; throws if called (browser bridge not wired) | uses Node built-ins (ok in trusted mode): http, fs",,fs http os path
 certificate-viewer,Certificate Viewer,DEGRADED,certificate-viewer,2,view,,useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox | uses Node built-ins (ok in trusted mode): tls,,tls
 chainscout,Chainscout,SUPPORTED,chainscout,1,view,,,,
 chakra-ui-docs,Chakra UI Documentation,DEGRADED,chakra-ui-docs,4,view,,uses Node built-ins (ok in trusted mode): fs,,fs
@@ -307,7 +307,7 @@ charming-chatgpt,Charming ChatGPT,SUPPORTED,charming-chatgpt,1,view,,,,
 chartmogul,ChartMogul,SUPPORTED,chartmogul,2,view,,,,querystring
 chatbase,Chatbase,SUPPORTED,chatbase,1,view,,,,
 chatgo,ChatGo,DEGRADED,chatgo,6,view,,uses Node built-ins (ok in trusted mode): fs,,fs os path stream util
-chatgpt,ChatGPT,UNSUPPORTED,chatgpt,10,view,,"BrowserExtension: loads; throws if called (browser bridge not wired) | declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): http, fs, child_process",@raycast/api:Navigation (not in Invoke surface — needs review),child_process fs http os path util
+chatgpt,ChatGPT,DEGRADED,chatgpt,10,view,,"BrowserExtension: loads; throws if called (browser bridge not wired) | declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): http, fs, child_process",,child_process fs http os path util
 chatgpt-atlas,ChatGPT Atlas,DEGRADED,chatgpt-atlas,2,view,,uses Node built-ins (ok in trusted mode): fs,,fs os path
 chatgpt-quick-actions,ChatGPT Quick Actions,DEGRADED,chatgpt-quick-actions,8,view|no-view,,declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs,,fs path
 chatgpt-search,ChatGPT Search,DEGRADED,chatgpt-search,1,view,,declares command `arguments[]` — not passed by runtime yet,,
@@ -332,13 +332,13 @@ chinese-lottery,Chinese Lottery,SUPPORTED,chinese-lottery,1,view,,,,
 chinese-numbers,Chinese Numbers,SUPPORTED,chinese-numbers,1,view,,,,
 choose-a-license,Choose a License,SUPPORTED,choose-a-license,1,view,,,,
 chords-and-tabs,Chords and Tabs,SUPPORTED,chords-and-tabs,2,view,,,,
-chronometer,Chronometer,DEGRADED,chronometer,4,view|no-view,,updateCommandMetadata: loads; no-op (command metadata updates not wired),,
+chronometer,Chronometer,SUPPORTED,chronometer,4,view|no-view,,,,
 chuck-norris-facts,Chuck Norris Facts,SUPPORTED,chuck-norris-facts,1,view,,,,
 cider,Cider,DEGRADED,cider,12,view|no-view,,declares command `arguments[]` — not passed by runtime yet,,
 cidr,CIDR Conversion,DEGRADED,cidr,2,view,,declares command `arguments[]` — not passed by runtime yet,,
 cilium-docs,Cilium Docs,SUPPORTED,cilium-docs,1,view,,,,
 cinemas-nos,Cinemas NOS,SUPPORTED,cinemas-nos,1,view,,,,
-circle-ci,CircleCI Workflows,UNSUPPORTED,circle-ci,1,view,,,@raycast/api:ImageLike (not in Invoke surface — needs review),
+circle-ci,CircleCI Workflows,SUPPORTED,circle-ci,1,view,,,,
 circleback,Circleback,SUPPORTED,circleback,3,no-view|view,,,,
 citation-generator,Citation Generator,SUPPORTED,citation-generator,1,view,,,,
 cl-indicators,Chilean Indicators,SUPPORTED,cl-indicators,1,view,,,,
@@ -364,7 +364,7 @@ clipboard-sequential-paste,Clipboard Sequential Paste,SUPPORTED,clipboard-sequen
 clipboard-type,Clipboard Type,SUPPORTED,clipboard-type,1,no-view,,,,
 clipboard-utilities,Clipboard Utilities,SUPPORTED,clipboard-utilities,1,view,,,,
 clipmate,Clipmate AI,SUPPORTED,clipmate,1,view,,,,crypto
-clipmenu,ClipMenu,DEGRADED,clipmenu,1,menu-bar,,updateCommandMetadata: loads; no-op (command metadata updates not wired),,
+clipmenu,ClipMenu,SUPPORTED,clipmenu,1,menu-bar,,,,
 clippyx,CLIPPyX,DEGRADED,clippyx,3,view,,uses Node built-ins (ok in trusted mode): child_process,,child_process util
 clipsign,Clipsign,DEGRADED,clipsign,2,view,,uses Node built-ins (ok in trusted mode): fs,,fs path
 clipyai,Clipyai,DEGRADED,clipyai,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs
@@ -386,7 +386,7 @@ cocart-docs,CoCart Docs,SUPPORTED,cocart-docs,8,view|menu-bar,,,,
 cocktail-db,Cocktail DB,DEGRADED,cocktail-db,2,view,,declares command `arguments[]` — not passed by runtime yet,,
 cocoa-core-data-timestamp-converter,Cocoa Core Data Timestamp Converter,SUPPORTED,cocoa-core-data-timestamp-converter,3,no-view,,,,
 coda-bookmarks-search,Coda Bookmarks Search,SUPPORTED,coda-bookmarks-search,1,view,,,,
-code,Code Execution,UNSUPPORTED,code-execution,1,no-view,,declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): child_process,@raycast/api:Tool (not in Invoke surface — needs review),child_process
+code,Code Execution,DEGRADED,code-execution,1,no-view,,declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): child_process,,child_process
 code-quarkus,Code Quarkus,DEGRADED,code-quarkus,2,view,,"uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs path
 code-review-emojis,Code Review Emoji Guide,SUPPORTED,code-review-emojis,1,view,,,,
 code-runway,Code Runway,DEGRADED,code-runway,3,view,,"uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs os path util
@@ -401,7 +401,7 @@ codegrepper,Code Grepper,DEGRADED,codegrepper,1,view,,uses Node built-ins (ok in
 codemagic,Codemagic,SUPPORTED,codemagic,2,view,,,,
 codesnap,CodeSnap,SUPPORTED,codesnap,1,view,,,,
 codex-manager,Codex Manager,DEGRADED,codex-manager,3,view,,"launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs os path util
-coffee,Coffee,DEGRADED,coffee,9,no-view|view|menu-bar,,updateCommandMetadata: loads; no-op (command metadata updates not wired) | launchCommand: loads; throws if called (inter-command launch not wired) | useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox | declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): child_process,,child_process
+coffee,Coffee,DEGRADED,coffee,9,no-view|view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired) | useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox | declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): child_process,,child_process
 cognimemo,CogniMemo,SUPPORTED,cognimemo,2,view,,,,
 coin-caster,Coin Caster,SUPPORTED,coin-caster,1,view,,,,
 coinbase-pro,Coinbase Pro,SUPPORTED,coinbase-pro,1,view,,,,crypto
@@ -435,10 +435,10 @@ connect-to-vpn,Connect to VPN,DEGRADED,connect-to-vpn,3,no-view|view|menu-bar,,l
 consoledev,Console Dev,SUPPORTED,consoledev,3,view,,,,
 contentful,Contentful,DEGRADED,contentful,3,view,,declares command `arguments[]` — not passed by runtime yet,,
 context7,Context7,DEGRADED,context7,2,view,,declares command `arguments[]` — not passed by runtime yet,,url
-contexts,Contexts,UNSUPPORTED,contexts,2,no-view|view,,declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs,@raycast/api:Tool (not in Invoke surface — needs review),fs os path
+contexts,Contexts,DEGRADED,contexts,2,no-view|view,,declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs,,fs os path
 control-d,Control D,SUPPORTED,control-d,5,view,,,,
 control-viscosity,Control Viscosity,SUPPORTED,control-viscosity,3,no-view,,,,
-conventional-comments,Conventional Comments,UNSUPPORTED,conventional-comments,2,view,,,@raycast/api:FormValue (not in Invoke surface — needs review),
+conventional-comments,Conventional Comments,SUPPORTED,conventional-comments,2,view,,,,
 conventional-commits,Conventional Commits,SUPPORTED,conventional-commits,2,view,,,,
 convert-3d-models,Convert 3D Models,DEGRADED,convert-3d-models,4,view|no-view,,"uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs os path
 convert-px-to-vw-vh,Pixels to Viewport Width or Height,DEGRADED,convert-px-to-vw-vh,4,view|no-view|menu-bar,,declares command `arguments[]` — not passed by runtime yet,,
@@ -451,7 +451,7 @@ copee,Copee,DEGRADED,copee,3,no-view,,uses Node built-ins (ok in trusted mode): 
 copilot-workspace,Copilot Workspace,DEGRADED,copilot-workspace,2,no-view|view,,declares command `arguments[]` — not passed by runtime yet,,
 copy-gcp-icons,Copy GCP Icons,DEGRADED,copy-gcp-icons,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs path
 copy-notion-markdown-link,Copy Notion Markdown Link,SUPPORTED,copy-notion-markdown-link,1,no-view,,,,
-copy-path,Copy Path,DEGRADED,copy-path,1,no-view,,updateCommandMetadata: loads; no-op (command metadata updates not wired),,os
+copy-path,Copy Path,SUPPORTED,copy-path,1,no-view,,,,os
 copy-skeet-link,Copy Skeet Link,SUPPORTED,copy-skeet-link,1,view,,,,
 copy-text-files,Copy Text Files,DEGRADED,copy-text-files,1,no-view,,"uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs path
 copymoveto,CopyMoveTo,DEGRADED,copymoveto,3,view,,launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): fs,,fs path
@@ -459,7 +459,7 @@ copyq-clipboard-manager,CopyQ Clipboard Manager,DEGRADED,copyq-clipboard-manager
 corcel,Corcel AI,DEGRADED,corcel,4,view,,launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): fs,,crypto fs os path
 cosmic-bookmarks,Cosmic Bookmarks,SUPPORTED,cosmic-bookmarks,3,view|no-view|menu-bar,,,,
 count-numbers,Count Numbers,SUPPORTED,count-numbers,1,view,,,,
-counter,Counter,DEGRADED,counter,3,no-view,,updateCommandMetadata: loads; no-op (command metadata updates not wired) | launchCommand: loads; throws if called (inter-command launch not wired),,
+counter,Counter,DEGRADED,counter,3,no-view,,launchCommand: loads; throws if called (inter-command launch not wired),,
 country-lookup,Country Lookup,SUPPORTED,country-lookup,1,view,,,,
 covert-color,Convert Color,DEGRADED,covert-color,1,view,,declares command `arguments[]` — not passed by runtime yet,,
 coze,Coze,UNSUPPORTED,coze,3,view,,uses Node built-ins (ok in trusted mode): fs,@raycast/api:fetch (not in Invoke surface — needs review),fs
@@ -477,7 +477,7 @@ creem,Creem,SUPPORTED,creem,3,view,,,,
 cricketcast,CricketCast,SUPPORTED,cricketcast,3,view|menu-bar,,,,
 crisp,Crisp,SUPPORTED,crisp,1,view,,,,
 croc-transfer,Croc Transfer,DEGRADED,croc-transfer,4,view|no-view,,"declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs os path
-cron,Cron,DEGRADED,cron,2,view,,updateCommandMetadata: loads; no-op (command metadata updates not wired),,
+cron,Cron,SUPPORTED,cron,2,view,,,,
 cron-description,Cron Description,SUPPORTED,cron-description,1,view,,,,
 cron-manager,Cron Manager,DEGRADED,cron-manager,1,view,,uses Node built-ins (ok in trusted mode): child_process,,child_process util
 crossbell,Crossbell,DEGRADED,crossbell,5,no-view|view,,uses Node built-ins (ok in trusted mode): fs,,fs url
@@ -495,7 +495,7 @@ cta,CTA - Chicago Transit Authority,DEGRADED,cta,1,view,,declares command `argum
 cuid-generator,CUID Generator,SUPPORTED,cuid-generator,1,no-view,,,,
 cuid2-generator,Cuid2 Generator,DEGRADED,cuid2-generator,1,no-view,,declares command `arguments[]` — not passed by runtime yet,,
 curator-bio,Curator Bio,SUPPORTED,curator-bio,3,view,,,,crypto url
-curl,cURL,UNSUPPORTED,curl,2,view,,uses Node built-ins (ok in trusted mode): child_process,@raycast/api:Navigation (not in Invoke surface — needs review),child_process util
+curl,cURL,DEGRADED,curl,2,view,,uses Node built-ins (ok in trusted mode): child_process,,child_process util
 currency-exchange,Currency Exchange,SUPPORTED,currency-exchange,1,view,,,,
 cursor,Cursor Documentation,SUPPORTED,cursor,1,view,,,,url
 cursor-agents,Cursor Agents,DEGRADED,cursor-agents,3,view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): fs,,fs url
@@ -514,7 +514,7 @@ cyberduck,Cyberduck,DEGRADED,cyberduck,1,view,,uses Node built-ins (ok in truste
 cyberpanel,CyberPanel,DEGRADED,cyberpanel,9,no-view|view,,launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet,,crypto
 cypress-docs,Cypress Documentation,SUPPORTED,cypress-docs,1,view,,,,
 dad-jokes,Dad Jokes,SUPPORTED,dad-jokes,1,view,,,,
-dagster,Dagster,UNSUPPORTED,dagster,4,view|no-view,,updateCommandMetadata: loads; no-op (command metadata updates not wired) | uses Node built-ins (ok in trusted mode): fs,@raycast/api:Tool (not in Invoke surface — needs review),fs path
+dagster,Dagster,DEGRADED,dagster,4,view|no-view,,uses Node built-ins (ok in trusted mode): fs,,fs path
 daily-sites,Daily Sites - Site Launcher,DEGRADED,daily-sites,4,view,,BrowserExtension: loads; throws if called (browser bridge not wired) | uses Node built-ins (ok in trusted mode): fs,,fs path
 daisyui,daisyUI Colors & Components,SUPPORTED,daisyui,2,view,,,,
 daminik,Daminik,SUPPORTED,daminik,1,view,,,,
@@ -525,18 +525,18 @@ dash-off,Dash Off,DEGRADED,dash-off,2,no-view|view,,launchCommand: loads; throws
 dashlane,Dashlane,SUPPORTED,dashlane,1,no-view,,,,
 dashlane-vault,Dashlane Vault,SUPPORTED,dashlane-vault,4,view|no-view,,,,os path
 databuddy,Databuddy,SUPPORTED,databuddy,7,view,,,,
-datafast,Datafast,DEGRADED,datafast,7,view|menu-bar,,updateCommandMetadata: loads; no-op (command metadata updates not wired) | launchCommand: loads; throws if called (inter-command launch not wired),,
+datafast,Datafast,DEGRADED,datafast,7,view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired),,
 datahub,Datahub Utility,DEGRADED,datahub,2,no-view|view,,declares command `arguments[]` — not passed by runtime yet,,
 datawrapper,Datawrapper,DEGRADED,datawrapper,5,view|no-view,,declares command `arguments[]` — not passed by runtime yet,,
 date-converter,Date Converter,SUPPORTED,date-converter,1,view,,,,
 date-format-converter,Date Format Converter,DEGRADED,datetime-format-converter,2,view|no-view,,declares command `arguments[]` — not passed by runtime yet,,
 day-one,Day One,DEGRADED,day-one,1,view,,uses Node built-ins (ok in trusted mode): child_process,,child_process util
-days-until-christmas,Days Until Christmas,DEGRADED,days-until-christmas,2,no-view|menu-bar,,updateCommandMetadata: loads; no-op (command metadata updates not wired),,
-days2,Days 2 - Google Calendar Countdown,DEGRADED,days2,3,view|no-view,,updateCommandMetadata: loads; no-op (command metadata updates not wired) | launchCommand: loads; throws if called (inter-command launch not wired),,
+days-until-christmas,Days Until Christmas,SUPPORTED,days-until-christmas,2,no-view|menu-bar,,,,
+days2,Days 2 - Google Calendar Countdown,DEGRADED,days2,3,view|no-view,,launchCommand: loads; throws if called (inter-command launch not wired),,
 db-schema-explorer,DB Schema Explorer,DEGRADED,db-schema-explorer,3,view,,launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): fs,,fs path
 dbt-documentation,dbt Documentation,SUPPORTED,dbt-documentation,1,view,,,,
 dbtcloud,dbt Cloud,SUPPORTED,dbtCloud,1,view,,,,
-debank,debank,UNSUPPORTED,debank,1,view,,,@raycast/api:ActionPanelItem (not in Invoke surface — needs review) | @raycast/api:AlertActionStyle (not in Invoke surface — needs review) | @raycast/api:ListSection (not in Invoke surface — needs review),
+debank,debank,SUPPORTED,debank,1,view,,,,
 decentraland,Decentraland,SUPPORTED,decentraland,2,view,,,,
 decimal-2-time,Decimal 2 Time,DEGRADED,decimal-2-time,1,view,,declares command `arguments[]` — not passed by runtime yet,,
 deduplicator,Deduplicator,SUPPORTED,deduplicator,1,view,,,,
@@ -556,14 +556,14 @@ dekudeals,DekuDeals,SUPPORTED,dekudeals,1,view,,,,url
 delivery-tracker,Delivery Tracker,SUPPORTED,delivery-tracker,4,view|menu-bar,,,,crypto
 demo-flow,Demo Flow,DEGRADED,demo-flow,5,view|no-view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): fs,,crypto fs os path
 denmarks-address-web-api,DAWA - Danish Address Web API,DEGRADED,dawa,1,view,,declares command `arguments[]` — not passed by runtime yet,,
-deno-deploy,Deno Deploy,UNSUPPORTED,deno-deploy,4,view|no-view,,uses Node built-ins (ok in trusted mode): fs,@raycast/api:Tool (not in Invoke surface — needs review),fs
+deno-deploy,Deno Deploy,DEGRADED,deno-deploy,4,view|no-view,,uses Node built-ins (ok in trusted mode): fs,,fs
 deployhq,DeployHQ,SUPPORTED,deployhq,1,view,,,,
 descript-to-youtube-chapters,Descript to YouTube Chapters,DEGRADED,descript-to-youtube-chapters,1,no-view,,uses Node built-ins (ok in trusted mode): fs,,fs
 design-skills,Design Skills,SUPPORTED,design-skills,1,view,,,,
 designer-excuses,Designer Excuses,SUPPORTED,designer-excuses,1,no-view,,,,
 designer-news,Designer News,SUPPORTED,designer-news,1,view,,,,
 desktop-manager,Desktop Manager,DEGRADED,desktop-manager,6,view|no-view,,uses Node built-ins (ok in trusted mode): fs,,fs path
-desktoprenamer,DesktopRenamer,DEGRADED,desktoprenamer,10,no-view|view,,updateCommandMetadata: loads; no-op (command metadata updates not wired) | declares command `arguments[]` — not passed by runtime yet,,
+desktoprenamer,DesktopRenamer,DEGRADED,desktoprenamer,10,no-view|view,,declares command `arguments[]` — not passed by runtime yet,,
 deta-space,Deta Space,UNSUPPORTED,deta-space,5,view,,,@raycast/utils:CachedPromiseOptions (not implemented in Invoke),
 deutscherwetterdienst,Deutscher Wetterdienst,SUPPORTED,deutscherwetterdienst,1,view,,,,
 dev-cache-cleaner,Dev Cache Cleaner,DEGRADED,dev-cache-cleaner,3,view|no-view|menu-bar,,"uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs os path util
@@ -581,7 +581,7 @@ dex-screener,DEX Screener,SUPPORTED,dex-screener,1,view,,,,
 dexcom-reader,Dexcom Reader,SUPPORTED,dexcom-reader,1,view,,,,
 dia,Dia,DEGRADED,dia,7,view|no-view,,"declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs os path
 dia-skills,Dia Skills,DEGRADED,dia-skills,1,no-view,,declares command `arguments[]` — not passed by runtime yet,,url
-dice-and-coin,Dice & Coin,DEGRADED,dice-and-coin,3,no-view,,updateCommandMetadata: loads; no-op (command metadata updates not wired),,
+dice-and-coin,Dice & Coin,SUPPORTED,dice-and-coin,3,no-view,,,,
 dice-tiles,Dice Tiles,SUPPORTED,dice-tiles,1,view,,,,
 dicom,DICOM,UNSUPPORTED,dicom,1,view,,,@raycast/utils:useStreamJSON (not implemented in Invoke),path
 dict-cc,dict.cc,DEGRADED,dict-cc,3,view,,"uses Node built-ins (ok in trusted mode): fs, https",,fs https
@@ -609,7 +609,7 @@ displayplacer,Display Placer,DEGRADED,displayplacer,7,view|no-view,,uses Node bu
 distraction-tracker,Distraction Tracker,SUPPORTED,distraction-tracker,2,view,,,,crypto
 django-docs,Django Docs,SUPPORTED,django-docs,2,view|no-view,,,,
 djangopackages,Django Packages,SUPPORTED,djangopackages,1,view,,,,
-dlmoji,DLmoji,UNSUPPORTED,dlmoji,1,view,,,@raycast/api:Component (not in Invoke surface — needs review) | @raycast/api:Fragment (not in Invoke surface — needs review) | @raycast/api:checkEmojiOnly (not in Invoke surface — needs review),querystring
+dlmoji,DLmoji,UNSUPPORTED,dlmoji,1,view,,,@raycast/api:checkEmojiOnly (not in Invoke surface — needs review),querystring
 dnb-book-lookup,DNB Book Lookup,DEGRADED,dnb-book-lookup,1,view,,declares command `arguments[]` — not passed by runtime yet,,
 dns-lookup,DNS Lookup,SUPPORTED,dns-lookup,1,view,,,,
 do-not-disturb,Do Not Disturb,DEGRADED,do-not-disturb,4,no-view,,uses Node built-ins (ok in trusted mode): child_process,,child_process
@@ -623,7 +623,7 @@ docklock-plus,DockLock Plus,DEGRADED,docklock-plus,8,view|no-view,,uses Node bui
 docsearch,DocSearch,DEGRADED,docsearch,45,view,,declares command `arguments[]` — not passed by runtime yet,,
 dodo-payments,Dodo Payments,SUPPORTED,dodo-payments,9,view,,,,
 dog-images,Dog Images,SUPPORTED,dog-images,1,view,,,,
-doge-tracker,Department of Government Efficiency Tracker,DEGRADED,doge-tracker,4,view,,updateCommandMetadata: loads; no-op (command metadata updates not wired),,
+doge-tracker,Department of Government Efficiency Tracker,SUPPORTED,doge-tracker,4,view,,,,
 dokploy,Dokploy,SUPPORTED,dokploy,1,view,,,,
 dolar-cripto-ar,DolarCripto AR,SUPPORTED,dolar-cripto-ar,1,menu-bar,,,,
 dolar-hoy,Dolar Hoy Argentina,SUPPORTED,dolar-hoy,3,view,,,,
@@ -631,7 +631,7 @@ dollar-blue,Dollar Blue,SUPPORTED,dollar-blue,1,view,,,,
 domainr,Fastly Domain Search,SUPPORTED,domainr,1,view,,,,
 done-bear,Done Bear,SUPPORTED,done-bear,10,view|menu-bar,,,,crypto
 donut,Donut,SUPPORTED,donut,1,view,,,,
-doorstopper,Doorstopper,DEGRADED,doorstopper,5,no-view|menu-bar,,updateCommandMetadata: loads; no-op (command metadata updates not wired) | launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): child_process,,child_process
+doorstopper,Doorstopper,DEGRADED,doorstopper,5,no-view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): child_process,,child_process
 doppler-share-secrets,Doppler Share Secrets,SUPPORTED,doppler-share-secrets,3,view,,,,
 dot-new,dot-new,DEGRADED,dot-new,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs path
 dot-underscore-files-cleaner,Dot Underscore Files Cleaner,DEGRADED,dot-underscore-files-cleaner,1,no-view,,uses Node built-ins (ok in trusted mode): child_process,,child_process
@@ -644,10 +644,10 @@ douban,Douban,SUPPORTED,douban,7,view,,,,
 doubao-tts,Doubao TTS,DEGRADED,doubao-tts,4,no-view|view,,"uses Node built-ins (ok in trusted mode): child_process, fs",,child_process crypto fs os path
 doutu,DouTu,DEGRADED,doutu,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs
 dovetail,Dovetail,SUPPORTED,dovetail,3,view,,,,
-downloads-manager,Downloads Manager,UNSUPPORTED,downloads-manager,7,view|no-view,,"uses Node built-ins (ok in trusted mode): fs, child_process",@raycast/api:Tool (not in Invoke surface — needs review),child_process fs os path
+downloads-manager,Downloads Manager,DEGRADED,downloads-manager,7,view|no-view,,"uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs os path
 dpm-lol,dpm.lol,SUPPORTED,dpm-lol,2,view,,,,
 dr-news,DR News,SUPPORTED,dr-news,1,view,,,,
-drafts,Drafts,UNSUPPORTED,drafts,18,view|no-view,,declares command `arguments[]` — not passed by runtime yet,@raycast/api:Tool (not in Invoke surface — needs review),os
+drafts,Drafts,DEGRADED,drafts,18,view|no-view,,declares command `arguments[]` — not passed by runtime yet,,os
 dreamhost,DreamHost,SUPPORTED,dreamhost,1,view,,,,
 dribbble,Dribbble,SUPPORTED,dribbble,1,view,,,,
 dropover,Dropover,DEGRADED,dropover,2,no-view,,"uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs path
@@ -666,7 +666,7 @@ duckduckgo-email,DuckDuckGo Email,SUPPORTED,duckduckgo-email,1,no-view,,,,
 duckduckgo-image-search,DuckDuckGo Image Search,DEGRADED,duckduckgo-image-search,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs os path
 duden,Duden,SUPPORTED,duden,1,view,,,,
 dungeons-dragons,Dungeons & Dragons,DEGRADED,dungeons-and-dragons,6,view,,declares command `arguments[]` — not passed by runtime yet,,
-dust-tt,Ask Dust,DEGRADED,dust-tt,6,view,,launchCommand: loads; throws if called (inter-command launch not wired) | updateCommandMetadata: loads; no-op (command metadata updates not wired) | declares command `arguments[]` — not passed by runtime yet,,
+dust-tt,Ask Dust,DEGRADED,dust-tt,6,view,,launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet,,
 dutch-article,Dutch Article (Het of De),SUPPORTED,dutch-article,1,view,,,,
 dynamic-font-size,Dynamic Font Size,SUPPORTED,dynamic-font-size,1,view,,,,
 e18e-module-replacements,e18e Module Replacements,SUPPORTED,e18e-module-replacements,1,view,,,,
@@ -723,7 +723,7 @@ ets2-ats-profiles,ETS2/ATS Profiles,DEGRADED,ets2-ats-profiles,3,view,,uses Node
 eudic,Eudic,DEGRADED,eudic,3,no-view,,declares command `arguments[]` — not passed by runtime yet,,
 eurovision-song-contest,Eurovision Song Contest,SUPPORTED,eurovision-song-contest,4,view,,,,
 evaluate-math-expression,Evaluate Math Expression,SUPPORTED,evaluate-math-expression,1,no-view,,,,
-everhour,Everhour Time Tracking,DEGRADED,everhour,3,view|no-view,,updateCommandMetadata: loads; no-op (command metadata updates not wired) | declares command `arguments[]` — not passed by runtime yet,,
+everhour,Everhour Time Tracking,DEGRADED,everhour,3,view|no-view,,declares command `arguments[]` — not passed by runtime yet,,
 evernote,Evernote Instant Search,DEGRADED,evernote,2,view,,uses Node built-ins (ok in trusted mode): fs,,fs os path
 everything-search,Everything,DEGRADED,everything-search,2,view,,"declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs, https, child_process",,child_process crypto fs https os path util
 evil-insult,Evil Insult,SUPPORTED,evil-insult,1,view,,,,
@@ -754,11 +754,11 @@ fastly,Fastly,SUPPORTED,fastly,10,view,,,,crypto
 fastmail-masked-email,Fastmail Masked Email,SUPPORTED,fastmail-masked-email,3,view|no-view,,,,
 fathom,Fathom,DEGRADED,fathom,2,view,,launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): fs,,crypto fs os path
 fathom-analytics,Fathom Analytics,SUPPORTED,fathom-analytics,4,view|no-view,,,,
-fathom-analytics-stats,Fathom Analytics Stats,DEGRADED,fathom-analytics-stats,9,view|menu-bar|no-view,,updateCommandMetadata: loads; no-op (command metadata updates not wired),,
+fathom-analytics-stats,Fathom Analytics Stats,SUPPORTED,fathom-analytics-stats,9,view|menu-bar|no-view,,,,
 favoro,FAVORO,SUPPORTED,favoro,3,view|no-view,,,,
 fbi,FBI,SUPPORTED,fbi,2,view,,,,
 featurebase,Featurebase,SUPPORTED,featurebase,4,view,,,,
-feedbin,Feedbin,UNSUPPORTED,feedbin,6,view|menu-bar|no-view,,launchCommand: loads; throws if called (inter-command launch not wired) | updateCommandMetadata: loads; no-op (command metadata updates not wired) | declares command `arguments[]` — not passed by runtime yet,@raycast/utils:CachedPromiseOptions (not implemented in Invoke),
+feedbin,Feedbin,UNSUPPORTED,feedbin,6,view|menu-bar|no-view,,launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet,@raycast/utils:CachedPromiseOptions (not implemented in Invoke),
 feedly,Feedly,SUPPORTED,feedly,1,view,,,,
 feishu-document-creator,Feishu Document Creator,SUPPORTED,feishu-document-creator,4,no-view,,,,
 fetch-youtube-transcript,Fetch YouTube Transcript,DEGRADED,fetch-youtube-transcript,1,no-view,,"declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs os path
@@ -817,7 +817,7 @@ flutter-utils,Flutter Utils,DEGRADED,flutter-utils,1,view,,"uses Node built-ins 
 flux,F.lux Control,SUPPORTED,flux,7,view|no-view,,,,
 flycheck-raycast,FlyCheck,SUPPORTED,flycheck-raycast,1,view,,,,
 flypy,Flypy Code Query,SUPPORTED,flypy-code-query,1,view,,,,
-focus,Focus,UNSUPPORTED,focus,9,no-view|view,,declares command `arguments[]` — not passed by runtime yet,@raycast/api:Tool (not in Invoke surface — needs review),
+focus,Focus,DEGRADED,focus,9,no-view|view,,declares command `arguments[]` — not passed by runtime yet,,
 focus-anchor,Focus Anchor,DEGRADED,focus-anchor,1,no-view,,declares command `arguments[]` — not passed by runtime yet,,
 focus-flow,Focusflow - a Study Clock,DEGRADED,focus-flow,9,view|menu-bar|no-view,,launchCommand: loads; throws if called (inter-command launch not wired),,
 focustask,FocusTask,UNSUPPORTED,focustask,3,menu-bar|view,,,@raycast/utils:Action (not implemented in Invoke) | @raycast/utils:ActionPanel (not implemented in Invoke) | @raycast/utils:Form (not implemented in Invoke) | @raycast/utils:Icon (not implemented in Invoke) | @raycast/utils:popToRoot (not implemented in Invoke) | @raycast/utils:showToast (not implemented in Invoke) | @raycast/utils:Toast (not implemented in Invoke) | @raycast/utils:open (not implemented in Invoke),
@@ -841,7 +841,7 @@ foundry-cast-cli,Foundry Cast CLI,DEGRADED,foundry-cast-cli,1,view,,uses Node bu
 frame-crop-art,Frame Crop - Discover Art for Your TV,DEGRADED,frame-crop,2,view,,uses Node built-ins (ok in trusted mode): child_process,,child_process os util
 framer-motion,Framer Motion,SUPPORTED,framer-motion,2,view,,,,
 frankerfacez,FrankerFaceZ Emotes,SUPPORTED,frankerfacez,1,view,,,,
-freeagent,FreeAgent,UNSUPPORTED,freeagent,8,view,,,@raycast/api:Tool (not in Invoke surface — needs review),
+freeagent,FreeAgent,SUPPORTED,freeagent,8,view,,,,
 freedns,FreeDNS,SUPPORTED,freedns,1,view,,,,crypto
 freesound,Freesound,DEGRADED,freesound,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs path url
 french-company-search,French Company Search,DEGRADED,french-company-search,1,view,,"uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs os path
@@ -875,7 +875,7 @@ get-app-icon,Get App Icon,DEGRADED,get-app-icon,1,view,,"uses Node built-ins (ok
 get-cat-images,Cat Images,SUPPORTED,get-cat-images,2,view,,,,
 get-direct-link,Get Direct Link,SUPPORTED,get-direct-link,1,no-view,,,,
 get-favicon,Get Favicon,DEGRADED,get-favicon,3,no-view,,declares command `arguments[]` — not passed by runtime yet,,os path
-get-note,GetNote,UNSUPPORTED,get-note,5,view,,uses Node built-ins (ok in trusted mode): fs,@raycast/api:Tool (not in Invoke surface — needs review),fs path
+get-note,GetNote,DEGRADED,get-note,5,view,,uses Node built-ins (ok in trusted mode): fs,,fs path
 get-ssh-key,Get SSH Key,DEGRADED,get-ssh-key,2,no-view|view,,launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): fs,,fs os path
 getcompress,GetCompress,DEGRADED,getcompress,3,no-view|view,,runPowerShellScript: Windows-only; throws on macOS (import loads) | declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs,,fs os path
 getsound,GetSound,DEGRADED,getsound,3,no-view,,uses Node built-ins (ok in trusted mode): child_process,,child_process
@@ -888,7 +888,7 @@ gif-search,GIF Search,DEGRADED,gif-search,1,view,,uses Node built-ins (ok in tru
 gift-stardew-valley,Gift Stardew Valley,SUPPORTED,gift-stardew-valley,1,view,,,,
 gistly,Gistly,DEGRADED,gistly,3,view,,declares command `arguments[]` — not passed by runtime yet,,
 git,Git,DEGRADED,git,6,view,,"launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs, child_process",,child_process crypto fs os path
-git-assistant,Git Assistant,UNSUPPORTED,git-assistant,1,view,,"uses Node built-ins (ok in trusted mode): child_process, fs",@raycast/api:Tool (not in Invoke surface — needs review),child_process fs os path util
+git-assistant,Git Assistant,DEGRADED,git-assistant,1,view,,"uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs os path util
 git-batch-tools,Git Batch Tools,DEGRADED,git-batch-tools,2,view,,"uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs os path util
 git-branch-name-generator,Git Branch Name Generator,SUPPORTED,git-branch-name-generator,1,view,,,,
 git-buddy,Git Buddy,DEGRADED,git-buddy,3,view,,launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): child_process,,child_process path util
@@ -900,20 +900,20 @@ git-worktrees,Git Worktrees,DEGRADED,git-worktrees,4,view,,uses Node built-ins (
 gitcdn,GitCDN,DEGRADED,gitcdn,2,view|no-view,,uses Node built-ins (ok in trusted mode): fs,,fs path
 gitee,Gitee,SUPPORTED,gitee,4,view,,,,
 gitfox,Gitfox Repositories,DEGRADED,gitfox,3,view|menu-bar|no-view,,"uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs os path util
-github,GitHub,UNSUPPORTED,github,20,view|menu-bar,,"launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): child_process, fs",@raycast/api:Preferences (not in Invoke surface — needs review),child_process crypto fs os path stream util
+github,GitHub,DEGRADED,github,20,view|menu-bar,,"launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): child_process, fs",,child_process crypto fs os path stream util
 github-cli-manual,GitHub CLI Manual,SUPPORTED,github-cli-manual,1,view,,,,
 github-codespaces,GitHub Codespaces,SUPPORTED,github-codespaces,2,view|menu-bar,,,,
 github-copilot,GitHub Copilot,DEGRADED,github-copilot,5,view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired),,
-github-for-enterprise,GitHub Enterprise,UNSUPPORTED,github-for-enterprise,8,view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired),@raycast/api:FormValues (not in Invoke surface — needs review),
+github-for-enterprise,GitHub Enterprise,DEGRADED,github-for-enterprise,8,view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired),,
 github-gist,GitHub Gist,SUPPORTED,github-gist,2,view,,,,path
-github-menu-bar,GitHub Commits Menu,DEGRADED,github-menu-bar,1,menu-bar,,updateCommandMetadata: loads; no-op (command metadata updates not wired),,
+github-menu-bar,GitHub Commits Menu,SUPPORTED,github-menu-bar,1,menu-bar,,,,
 github-profile,GitHub Profile,SUPPORTED,github-profile,1,view,,,,
 github-repository-search,GitHub Repository Search,SUPPORTED,github-repository-search,1,view,,,,
 github-review-requests,GitHub Review Requests,SUPPORTED,github-review-requests,2,view|menu-bar,,,,
 github-search,GitHub Search,DEGRADED,github-search,2,view,,launchCommand: loads; throws if called (inter-command launch not wired),,
 github-spark,GitHub Spark,SUPPORTED,github-spark,1,view,,,,
 github-status,GitHub Status,SUPPORTED,github-status,1,view,,,,
-github-trending,GitHub Trending,UNSUPPORTED,github-trending,1,view,,,@raycast/api:KeyEquivalent (not in Invoke surface — needs review) | @raycast/utils:Action (not implemented in Invoke) | @raycast/utils:ActionPanel (not implemented in Invoke) | @raycast/utils:Detail (not implemented in Invoke) | @raycast/utils:Icon (not implemented in Invoke),
+github-trending,GitHub Trending,UNSUPPORTED,github-trending,1,view,,,@raycast/utils:Action (not implemented in Invoke) | @raycast/utils:ActionPanel (not implemented in Invoke) | @raycast/utils:Detail (not implemented in Invoke) | @raycast/utils:Icon (not implemented in Invoke),
 github-users,GitHub Users Search,SUPPORTED,github-users,1,view,,,,
 gitignore,Gitignore,DEGRADED,gitignore,1,view,,"uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs path stream
 gitlab,GitLab,DEGRADED,gitlab,24,view|menu-bar|no-view,,"launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): https, fs",,crypto fs https path stream util
@@ -939,8 +939,8 @@ goodlinks,GoodLinks,SUPPORTED,goodlinks,3,no-view|view,,,,
 goodreads,Goodreads,DEGRADED,goodreads,2,view,,declares command `arguments[]` — not passed by runtime yet,,
 google-advanced-search,Google Advanced Search,SUPPORTED,google-advanced-search,1,view,,,,
 google-books,Google Books,DEGRADED,google-books,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs os path
-google-calendar,Google Calendar,UNSUPPORTED,google-calendar,5,view,,launchCommand: loads; throws if called (inter-command launch not wired),@raycast/api:Tool (not in Invoke surface — needs review),crypto
-google-calendar-quickadd,Google Calendar Events Quick Add,UNSUPPORTED,google-calendar-quickadd,2,no-view|view,,declares command `arguments[]` — not passed by runtime yet,@raycast/api:Tool (not in Invoke surface — needs review),
+google-calendar,Google Calendar,DEGRADED,google-calendar,5,view,,launchCommand: loads; throws if called (inter-command launch not wired),,crypto
+google-calendar-quickadd,Google Calendar Events Quick Add,DEGRADED,google-calendar-quickadd,2,no-view|view,,declares command `arguments[]` — not passed by runtime yet,,
 google-chrome,Google Chrome,UNSUPPORTED,google-chrome,10,view|no-view,,"uses Node built-ins (ok in trusted mode): fs, child_process",namespace import of @raycast/api (member usage unverified),child_process fs os path url
 google-chrome-profiles,Google Chrome Profiles,DEGRADED,google-chrome-profiles,2,view|no-view,,"uses Node built-ins (ok in trusted mode): fs, child_process",,child_process crypto fs os path url
 google-cloud-run,Google Cloud Run,DEGRADED,google-cloud-run,1,view,,useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox,,
@@ -968,7 +968,7 @@ grafbase,Grafbase,SUPPORTED,grafbase,1,view,,,,
 gram,Gram,DEGRADED,gram,3,no-view|view,,"uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs os path url util
 grammari-x,Grammarix,DEGRADED,grammari-x,4,view,,declares command `arguments[]` — not passed by runtime yet,,
 grammaring,Grammaring,SUPPORTED,grammaring,2,no-view|view,,,,
-granola,Granola,UNSUPPORTED,granola,7,view|no-view,,uses Node built-ins (ok in trusted mode): fs,@raycast/api:Tool (not in Invoke surface — needs review),crypto fs os path
+granola,Granola,DEGRADED,granola,7,view|no-view,,uses Node built-ins (ok in trusted mode): fs,,crypto fs os path
 graphcalc,GraphCalc,DEGRADED,graphcalc,1,view,,declares command `arguments[]` — not passed by runtime yet,,
 graphcdn,Stellate (formerly GraphCDN),SUPPORTED,graphcdn,1,view,,,,
 greip,Greip,SUPPORTED,greip,3,view,,,,
@@ -976,7 +976,7 @@ grist,Grist,SUPPORTED,grist,1,view,,,,
 grok-ai,Grok AI,DEGRADED,grok-ai,3,view,,uses Node built-ins (ok in trusted mode): fs,,fs os path
 grokipedia,Grokipedia,SUPPORTED,grokipedia,1,view,,,,url
 groq,Groq,DEGRADED,groq,14,view,,declares command `arguments[]` — not passed by runtime yet,,
-groq-tools,GROQ Tools,UNSUPPORTED,groq-tools,3,view|no-view,,declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs,@raycast/api:ComponentType (not in Invoke surface — needs review) | @raycast/api:SetStateAction (not in Invoke surface — needs review) | @raycast/api:Dispatch (not in Invoke surface — needs review) | @raycast/api:useState (not in Invoke surface — needs review) | @raycast/api:useEffect (not in Invoke surface — needs review) | @raycast/api:readFile (not in Invoke surface — needs review),fs path
+groq-tools,GROQ Tools,UNSUPPORTED,groq-tools,3,view|no-view,,declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs,@raycast/api:useState (not in Invoke surface — needs review) | @raycast/api:useEffect (not in Invoke surface — needs review) | @raycast/api:readFile (not in Invoke surface — needs review),fs path
 groundhog-day,Groundhog Day,SUPPORTED,groundhog-day,1,view,,,,
 growthbook,Growthbook,SUPPORTED,growthbook,1,view,,,,
 grpcui,gRPC UI,DEGRADED,grpcui,3,view,,"uses Node built-ins (ok in trusted mode): fs, child_process",,child_process crypto fs
@@ -990,7 +990,7 @@ habits,SupaHabits,DEGRADED,supahabits,5,view,,launchCommand: loads; throws if ca
 habr-media,Habr News,SUPPORTED,habr-media,1,view,,,,
 hacker-news,Hacker News,SUPPORTED,hacker-news,1,view,,,,os
 hacker-news-top-stories,Hacker News Top Stories,DEGRADED,hacker-news-top-stories,1,menu-bar,,uses Node built-ins (ok in trusted mode): child_process,,child_process os util
-hackmd,HackMD,UNSUPPORTED,hackmd,4,view,,,@raycast/api:Tool (not in Invoke surface — needs review),url
+hackmd,HackMD,SUPPORTED,hackmd,4,view,,,,url
 hakuna,Hakuna,DEGRADED,hakuna,9,view|menu-bar|no-view,,launchCommand: loads; throws if called (inter-command launch not wired),,
 hammerspoon,Hammerspoon,UNSUPPORTED,hammerspoon,10,no-view|view,,uses Node built-ins (ok in trusted mode): fs,@raycast/api:useContext (not in Invoke surface — needs review) | @raycast/api:useState (not in Invoke surface — needs review) | @raycast/api:useMemo (not in Invoke surface — needs review) | @raycast/utils:closeMainWindow (not implemented in Invoke) | @raycast/utils:ActionPanel (not implemented in Invoke) | @raycast/utils:List (not implemented in Invoke) | @raycast/utils:Action (not implemented in Invoke) | @raycast/utils:Icon (not implemented in Invoke) | @raycast/utils:Color (not implemented in Invoke) | @raycast/utils:getPreferenceValues (not implemented in Invoke) | @raycast/utils:open (not implemented in Invoke) | @raycast/utils:Application (not implemented in Invoke) | @raycast/utils:showHUD (not implemented in Invoke) | @raycast/utils:showToast (not implemented in Invoke) | @raycast/utils:Toast (not implemented in Invoke) | @raycast/utils:popToRoot (not implemented in Invoke) | @raycast/utils:Detail (not implemented in Invoke) | @raycast/utils:useContext (not implemented in Invoke) | @raycast/utils:useState (not implemented in Invoke) | @raycast/utils:useMemo (not implemented in Invoke),fs path
 handoff-toggle,Handoff Toggle,DEGRADED,handoff-toggle,2,no-view,,uses Node built-ins (ok in trusted mode): child_process,,child_process os path
@@ -1062,7 +1062,7 @@ http-status-codes,HTTP Status Codes,DEGRADED,http-status-codes,1,view,,uses Node
 httpperf,HTTP Performance Analyzer,DEGRADED,httpperf,1,view,,uses Node built-ins (ok in trusted mode): child_process,,child_process util
 hubspot,HubSpot,SUPPORTED,hubspot,5,view,,,,
 hubspot-portal-launcher,HubSpot Portal Launcher,DEGRADED,hubspot-portal-launcher,3,view,,uses Node built-ins (ok in trusted mode): fs,,fs
-hue,Hue,DEGRADED,hue,4,view|no-view,,"updateCommandMetadata: loads; no-op (command metadata updates not wired) | uses Node built-ins (ok in trusted mode): tls, https, net, fs, http2, dns",,dns fs http2 https net stream tls url
+hue,Hue,DEGRADED,hue,4,view|no-view,,"uses Node built-ins (ok in trusted mode): tls, https, net, fs, http2, dns",,dns fs http2 https net stream tls url
 hue-palette,Hue Palette,DEGRADED,hue-palette,4,view,,declares command `arguments[]` — not passed by runtime yet,,
 hugeicons-ui,Hugeicons UI,DEGRADED,hugeicons-ui,4,view,,"uses Node built-ins (ok in trusted mode): fs, child_process",,child_process crypto fs os path url util
 hugging-face,Hugging Face,SUPPORTED,hugging-face,2,view,,,,
@@ -1125,14 +1125,14 @@ installed-extensions,Installed Extensions,DEGRADED,installed-extensions,1,view,,
 instant-domain-search,Instant Domain Search,SUPPORTED,instant-domain-search,1,view,,,,crypto
 instapaper,Instapaper,SUPPORTED,instapaper,1,no-view,,,,
 intention-clarifier,Intention Clarifier,SUPPORTED,intention-clarifier,2,view,,,,
-intermittent-fasting,Intermittent Fasting,DEGRADED,intermittent-fasting,2,view|menu-bar,,updateCommandMetadata: loads; no-op (command metadata updates not wired) | launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): fs,,fs path
-internet-radio,Internet Radio,DEGRADED,internet-radio,11,view|no-view|menu-bar,,updateCommandMetadata: loads; no-op (command metadata updates not wired) | launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): fs,,fs os
+intermittent-fasting,Intermittent Fasting,DEGRADED,intermittent-fasting,2,view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): fs,,fs path
+internet-radio,Internet Radio,DEGRADED,internet-radio,11,view|no-view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): fs,,fs os
 invisible-text-detector,Invisible Text Detector,UNSUPPORTED,invisible-text-detector,3,view|no-view,,,namespace import of @raycast/api (member usage unverified),
 invoice-generator,Invoice Generator,DEGRADED,invoice-generator,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs os path
 ionos-sync,IONOS Sync,SUPPORTED,ionos-sync,2,view,,,,
 ios-resolution,iOS Resolution,SUPPORTED,ios-resolution,1,view,,,,
 ip-finder,Ip Finder - Network Scanner,DEGRADED,ip-finder,1,view,,"uses Node built-ins (ok in trusted mode): child_process, dns",,child_process dns os util
-ip-geolocation,IP Geolocation,DEGRADED,ip-geolocation,3,view|no-view,,updateCommandMetadata: loads; no-op (command metadata updates not wired) | declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): net,,net os
+ip-geolocation,IP Geolocation,DEGRADED,ip-geolocation,3,view|no-view,,declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): net,,net os
 ip-tools,IP Tools,DEGRADED,ip-tools,9,view,,declares command `arguments[]` — not passed by runtime yet,,
 ipa-translator,IPA Translator,SUPPORTED,ipa-translator,4,view,,,,
 ipapi-is,ipapi.is,DEGRADED,ipapi-is,1,view,,declares command `arguments[]` — not passed by runtime yet,,
@@ -1145,9 +1145,9 @@ is-it-toxic-to,Is It Toxic To?,SUPPORTED,is-it-toxic-to,1,view,,,,
 isdown,IsDown,SUPPORTED,isdown,1,view,,,,
 ishader,iShader,DEGRADED,ishader,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs os path
 itch-io,itch.io,SUPPORTED,itch-io,2,view,,,,
-iterm,iTerm,UNSUPPORTED,iterm,11,view,,"uses Node built-ins (ok in trusted mode): child_process, fs",@raycast/api:Tool (not in Invoke surface — needs review),child_process fs os path util
+iterm,iTerm,DEGRADED,iterm,11,view,,"uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs os path util
 itranslate,iTranslate,DEGRADED,itranslate,4,view,,"uses Node built-ins (ok in trusted mode): child_process, fs",,child_process crypto fs os path querystring
-ivpn,IVPN,UNSUPPORTED,ivpn,12,no-view|view,,launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): child_process,@raycast/api:Environment (not in Invoke surface — needs review),child_process
+ivpn,IVPN,DEGRADED,ivpn,12,no-view|view,,launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): child_process,,child_process
 iwork,iWork,DEGRADED,iwork,19,no-view|view,,declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): child_process,,child_process
 jalali-date-convertor,Jalali Date Convertor,SUPPORTED,jalali-date-convertor,1,view,,,,
 james-webb-space-telescope,James Webb Space Telescope,SUPPORTED,james-webb-space-telescope,1,view,,,,
@@ -1155,7 +1155,7 @@ jellyamp,Jellyamp,DEGRADED,jellyamp,1,view,,"uses Node built-ins (ok in trusted 
 jellyfin,Jellyfin,SUPPORTED,jellyfin,4,view,,,,
 jenkins,Jenkins,DEGRADED,jenkins,1,view,,"uses Node built-ins (ok in trusted mode): http, https",,http https
 jetbrains,JetBrains Toolbox Recent Projects,DEGRADED,jetbrains,2,view|menu-bar,,"uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs os path util
-jetpack-commands,Jetpack Commands,DEGRADED,jetpack-commands,46,no-view|view,,updateCommandMetadata: loads; no-op (command metadata updates not wired),,
+jetpack-commands,Jetpack Commands,SUPPORTED,jetpack-commands,46,no-view|view,,,,
 jira,Jira,DEGRADED,jira,9,view,,launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): fs,,fs os
 jira-search,Jira Search,UNSUPPORTED,jira-search,5,view|no-view,,uses Node built-ins (ok in trusted mode): fs,@raycast/api:ResultItem (not in Invoke surface — needs review) | @raycast/api:SearchCommand (not in Invoke surface — needs review) | @raycast/api:jiraFetchObject (not in Invoke surface — needs review) | @raycast/api:jiraUrl (not in Invoke surface — needs review),fs path
 jira-search-self-hosted,Jira Search (Self-Hosted),DEGRADED,jira-search-self-hosted,4,view,,"uses Node built-ins (ok in trusted mode): fs, https",,fs https path
@@ -1198,31 +1198,31 @@ kaleidoscope,Kaleidoscope,DEGRADED,kaleidoscope,4,no-view,,declares command `arg
 kalshi,Kalshi,SUPPORTED,kalshi,1,view,,,,url
 kaneo-for-raycast,Kaneo,SUPPORTED,kaneo-for-raycast,3,view,,,,
 kaomoji-search,Kaomoji Search,SUPPORTED,kaomoji-search,1,view,,,,
-karabiner-profile-switcher,Karabiner Profile Switcher,DEGRADED,karabiner-profile-switcher,2,view|no-view,,updateCommandMetadata: loads; no-op (command metadata updates not wired) | uses Node built-ins (ok in trusted mode): child_process,,child_process util
+karabiner-profile-switcher,Karabiner Profile Switcher,DEGRADED,karabiner-profile-switcher,2,view|no-view,,uses Node built-ins (ok in trusted mode): child_process,,child_process util
 karakeep,Karakeep,DEGRADED,karakeep,11,view|no-view,,BrowserExtension: loads; throws if called (browser bridge not wired),,url
 kaset-control,Kaset Control,DEGRADED,kaset-control,12,menu-bar|view|no-view,,launchCommand: loads; throws if called (inter-command launch not wired),,
 kde-connect,KDE Connect,DEGRADED,kde-connect,2,view|no-view,,"declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs
 keepassxc,KeePassXC,DEGRADED,keepassxc,1,view,,uses Node built-ins (ok in trusted mode): child_process,,child_process process
 keeper-security,Keeper Security,SUPPORTED,keeper-security,4,view,,,,
 keeply,Keeply,SUPPORTED,keeply,2,view,,,,
-kef-control,Control Kef,UNSUPPORTED,kef-control,3,view|menu-bar,,,@raycast/api:Tool (not in Invoke surface — needs review),
+kef-control,Control Kef,SUPPORTED,kef-control,3,view|menu-bar,,,,
 keka,Keka,DEGRADED,keka,3,no-view,,uses Node built-ins (ok in trusted mode): fs,,fs
 key-value,Key Value,DEGRADED,key-value,2,view,,uses Node built-ins (ok in trusted mode): fs,,fs os path
 keyboard-brightness,Keyboard Brightness,DEGRADED,keyboard-brightness,4,no-view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): fs,,fs path
 keyboard-shortcut-sequences,Keyboard Shortcut Sequences,DEGRADED,keyboard-shortcut-sequences,2,view,,launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet,,
 keyboard-win-mac-switch,Keyboard Win Mac Switch,DEGRADED,keyboard-win-mac-switch,2,no-view,,uses Node built-ins (ok in trusted mode): child_process,,child_process
 keychain-password-gen,Apple-Like Password,SUPPORTED,keychain-password-gen,1,no-view,,,,crypto
-keygen,Keygen,DEGRADED,keygen,7,view|no-view,,updateCommandMetadata: loads; no-op (command metadata updates not wired),,
+keygen,Keygen,SUPPORTED,keygen,7,view|no-view,,,,
 keyraycast,KeyRaycast,DEGRADED,keyraycast,1,no-view,,"uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs os path
 kill-mcp,Kill MCP Servers,DEGRADED,kill-mcp,1,view,,"uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs os path
 kill-node-modules,Kill Node Modules,DEGRADED,kill-node-modules,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs path
-kill-process,Kill Process,UNSUPPORTED,kill-process,1,view,,"uses Node built-ins (ok in trusted mode): child_process, fs",@raycast/api:Tool (not in Invoke surface — needs review),child_process fs
+kill-process,Kill Process,DEGRADED,kill-process,1,view,,"uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs
 kimai,Kimai,DEGRADED,kimai,4,view|menu-bar|no-view,,launchCommand: loads; throws if called (inter-command launch not wired),,
 kimi,Kimi,SUPPORTED,kimi,5,view,,,,path url
 kimi-for-coding,Kimi for Coding,SUPPORTED,kimi-for-coding,1,view,,,,
 kind-words,Kind Words,SUPPORTED,kind-words,3,view|no-view,,,,
 kindle-paste,Kindle Paste,SUPPORTED,paste-from-kindle,1,no-view,,,,
-kinopio-inbox,Kinopio Inbox,UNSUPPORTED,kinopio-inbox,2,view|no-view,,,@raycast/api:Preferences (not in Invoke surface — needs review),
+kinopio-inbox,Kinopio Inbox,SUPPORTED,kinopio-inbox,2,view|no-view,,,,
 kinopoisk,Kinopoisk,SUPPORTED,kinopoisk,1,view,,,,
 kiro,Kiro,DEGRADED,kiro,5,view|no-view,,"uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs os path url util
 kitty,Kitty,DEGRADED,kitty,5,no-view|view,,"uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs os
@@ -1250,10 +1250,10 @@ lapack-blas-documentation-search,LAPACK/BLAS Documentation Search,DEGRADED,lapac
 laracasts,Laracasts,SUPPORTED,laracasts,1,view,,,,
 larajobs-search,Search LaraJobs,SUPPORTED,larajobs-search,2,view|menu-bar,,,,
 laravel-artisan,Laravel Artisan,SUPPORTED,laravel-artisan,1,view,,,,
-laravel-cloud,Laravel Cloud,UNSUPPORTED,laravel-cloud,10,view,,,@raycast/api:Tool (not in Invoke surface — needs review),
+laravel-cloud,Laravel Cloud,SUPPORTED,laravel-cloud,10,view,,,,
 laravel-docs,Laravel Docs,DEGRADED,laravel-docs,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs path
-laravel-forge,Laravel Forge,DEGRADED,laravel-forge,2,view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired) | updateCommandMetadata: loads; no-op (command metadata updates not wired) | declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs,,fs path
-laravel-herd,Laravel Herd,DEGRADED,laravel-herd,17,no-view|view,,updateCommandMetadata: loads; no-op (command metadata updates not wired) | uses Node built-ins (ok in trusted mode): fs,,fs os
+laravel-forge,Laravel Forge,DEGRADED,laravel-forge,2,view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs,,fs path
+laravel-herd,Laravel Herd,DEGRADED,laravel-herd,17,no-view|view,,uses Node built-ins (ok in trusted mode): fs,,fs os
 laravel-livewire,Laravel Livewire,SUPPORTED,laravel-livewire,1,view,,,,
 laravel-nova,Laravel Nova,SUPPORTED,laravel-nova,1,view,,,,
 laravel-shift,Laravel Shift for Docker,SUPPORTED,laravel-shift,1,view,,,,os
@@ -1280,7 +1280,7 @@ leader-key,Leader Key,DEGRADED,leader-key,1,view,,"uses Node built-ins (ok in tr
 leafcast,Leafcast,DEGRADED,leafcast,8,view|no-view,,launchCommand: loads; throws if called (inter-command launch not wired),,timers
 leap-new,Leap.new,SUPPORTED,leap-new,2,view|menu-bar,,,,
 learning-snacks,Learning Snacks,SUPPORTED,learning-snacks,1,view,,,,
-leave-time-calculator,Leave Time Calculator,DEGRADED,leave-time-calculator,2,no-view|view,,launchCommand: loads; throws if called (inter-command launch not wired) | updateCommandMetadata: loads; no-op (command metadata updates not wired),,
+leave-time-calculator,Leave Time Calculator,DEGRADED,leave-time-calculator,2,no-view|view,,launchCommand: loads; throws if called (inter-command launch not wired),,
 leetcode,LeetCode,SUPPORTED,leetcode,2,view,,,,
 lego-bricks,LEGO Bricks,SUPPORTED,lego-bricks,5,view,,,,
 leitnerbox,Leitner Box,SUPPORTED,leitnerbox,3,view,,,,
@@ -1296,7 +1296,7 @@ liba-ro_shortener,Liba.ro - URL Shortener,SUPPORTED,liba-ro,1,view,,,,
 libraries-io,Libraries.io,DEGRADED,libraries-io,3,view,,declares command `arguments[]` — not passed by runtime yet,,
 library-genesis,Library Genesis,DEGRADED,library-genesis,2,view,,uses Node built-ins (ok in trusted mode): https,,https os path
 lichess-org,Lichess.org,SUPPORTED,lichess-org,1,no-view,,,,
-life-progress,Life Progress,DEGRADED,life-progress,2,view|menu-bar,,updateCommandMetadata: loads; no-op (command metadata updates not wired),,
+life-progress,Life Progress,SUPPORTED,life-progress,2,view|menu-bar,,,,
 lift-calculator,Lift Calculator,DEGRADED,lift-calculator,3,view,,declares command `arguments[]` — not passed by runtime yet,,
 lifx,LIFX,SUPPORTED,lifx,5,view|no-view,,,,
 lifx-advanced-controller,LIFX Advanced Controller,SUPPORTED,lifx-controller,1,view,,,,
@@ -1339,7 +1339,7 @@ logos-launcher,Logos Launcher,DEGRADED,logos-launcher,10,no-view|view,,"declares
 logseq,Logseq,DEGRADED,logseq,3,view,,uses Node built-ins (ok in trusted mode): fs,,fs path
 logsnag,LogSnag,SUPPORTED,logsnag,2,view,,,,
 logtail,Logtail,SUPPORTED,logtail,4,view,,,,
-lokalise,Lokalise,UNSUPPORTED,lokalise,3,view|no-view,,uses Node built-ins (ok in trusted mode): fs,@raycast/api:Tool (not in Invoke surface — needs review),fs path
+lokalise,Lokalise,DEGRADED,lokalise,3,view|no-view,,uses Node built-ins (ok in trusted mode): fs,,fs path
 lol-esports,LoL Esports,SUPPORTED,lol-esports,2,view,,,,
 lookaway,Lookaway,SUPPORTED,lookaway,9,no-view|view,,,,
 looksee,"LookSee - A MAC, OUI, IAB Lookup",DEGRADED,looksee,2,view,,declares command `arguments[]` — not passed by runtime yet,,
@@ -1373,13 +1373,13 @@ macrumors,MacRumors,SUPPORTED,macrumors,1,view,,,,
 macstories,MacStories,SUPPORTED,macstories,1,view,,,,
 macupdater,MacUpdater,SUPPORTED,macupdater,2,view,,,,
 magic-home,Magic Home,SUPPORTED,magic-home,4,view|no-view,,,,
-magic-ingest,Magic Ingest,DEGRADED,magic-ingest,2,view,,"launchCommand: loads; throws if called (inter-command launch not wired) | updateCommandMetadata: loads; no-op (command metadata updates not wired) | uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs os path util
-mail,Apple Mail,UNSUPPORTED,mail,11,no-view|view,,uses Node built-ins (ok in trusted mode): fs,@raycast/api:Tool (not in Invoke surface — needs review),fs os path stream
+magic-ingest,Magic Ingest,DEGRADED,magic-ingest,2,view,,"launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs os path util
+mail,Apple Mail,DEGRADED,mail,11,no-view|view,,uses Node built-ins (ok in trusted mode): fs,,fs os path stream
 mail-finder,Mail Finder,DEGRADED,email-finder,3,view,,launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet,,
 mail-to-self,Mail to Self,SUPPORTED,mail-to-self,1,view,,,,
 mailboxlayer,mailboxlayer,DEGRADED,mailboxlayer,1,view,,declares command `arguments[]` — not passed by runtime yet,,
 mailerlite-stats,MailerLite Stats,SUPPORTED,mailerlite-stats,2,view,,,,
-mailersend,MailerSend,DEGRADED,mailersend,5,no-view|view,,updateCommandMetadata: loads; no-op (command metadata updates not wired),,
+mailersend,MailerSend,SUPPORTED,mailersend,5,no-view|view,,,,
 mailsy,Mailsy,DEGRADED,mailsy,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs
 mailtrap,Mailtrap,SUPPORTED,mailtrap,1,view,,,,
 mailwip,Mailwip,DEGRADED,mailwip,3,view,,launchCommand: loads; throws if called (inter-command launch not wired),,
@@ -1430,7 +1430,7 @@ maybe,Maybe,SUPPORTED,maybe,2,view,,,,
 mbta-tracker,MBTA Tracker,SUPPORTED,mbta-tracker,2,view,,,,
 mcp,Model Context Protocol,DEGRADED,mcp,1,view,,"uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs os path util
 md-to-excel,Markdown Table to Excel,SUPPORTED,md-to-excel,1,view,,,,
-media-converter,Media Converter,UNSUPPORTED,media-converter,4,view,,"launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): fs, child_process, module",@raycast/api:Tool (not in Invoke surface — needs review),assert child_process fs module os path querystring stream url util zlib
+media-converter,Media Converter,DEGRADED,media-converter,4,view,,"launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): fs, child_process, module",,assert child_process fs module os path querystring stream url util zlib
 medialister-marketplace-helper,Medialister Marketplace Helper,SUPPORTED,medialister-marketplace-helper,2,view,,,,
 meduza,Meduza,SUPPORTED,meduza,2,view,,,,
 mem,Mem,SUPPORTED,mem,1,view,,,,
@@ -1443,18 +1443,18 @@ memory,Memory,DEGRADED,memory,1,view,,"uses Node built-ins (ok in trusted mode):
 memos,Memos,DEGRADED,memos,4,no-view|view,,declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs,,assert fs path url
 mempool,Mempool,SUPPORTED,mempool,1,view,,,,
 menubar-calendar,Menubar Calendar,DEGRADED,menubar-calendar,2,menu-bar|view,,launchCommand: loads; throws if called (inter-command launch not wired),,
-menubar-weather,Menubar Weather,DEGRADED,menubar-weather,1,menu-bar,,updateCommandMetadata: loads; no-op (command metadata updates not wired),,
+menubar-weather,Menubar Weather,SUPPORTED,menubar-weather,1,menu-bar,,,,
 mercado-libre,Mercado Libre,SUPPORTED,mercado-libre,1,view,,,,
 mercury,Mercury,SUPPORTED,mercury,2,view,,,,
 mermaid-to-image,Mermaid to Image,DEGRADED,mermaid-to-image,1,view,,"uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs os path url util
-messages,Messages,UNSUPPORTED,messages,5,view|menu-bar|no-view,,launchCommand: loads; throws if called (inter-command launch not wired),@raycast/api:Tool (not in Invoke surface — needs review),os path
-meta-music,Meta Music,UNSUPPORTED,meta-music,1,view,,uses Node built-ins (ok in trusted mode): fs,@raycast/api:Tool (not in Invoke surface — needs review),fs os path
-metabase,Metabase,UNSUPPORTED,metabase,1,view,,,@raycast/api:Tool (not in Invoke surface — needs review),
+messages,Messages,DEGRADED,messages,5,view|menu-bar|no-view,,launchCommand: loads; throws if called (inter-command launch not wired),,os path
+meta-music,Meta Music,DEGRADED,meta-music,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs os path
+metabase,Metabase,SUPPORTED,metabase,1,view,,,,
 metacritic,Metacritic,SUPPORTED,metacritic,1,view,,,,
 metaphor,Metaphor,SUPPORTED,metaphor,2,view,,,,
 metaphorpsum,Metaphorpsum,DEGRADED,metaphorpsum,1,no-view,,declares command `arguments[]` — not passed by runtime yet,,
 meteoblue-lookup,Meteoblue Lookup,SUPPORTED,meteoblue-lookup,4,view,,,,
-metronome,Metronome,UNSUPPORTED,metronome,1,view,,declares command `arguments[]` — not passed by runtime yet,@raycast/api:Tool (not in Invoke surface — needs review),
+metronome,Metronome,DEGRADED,metronome,1,view,,declares command `arguments[]` — not passed by runtime yet,,
 metube,MeTube,SUPPORTED,metube,2,no-view|view,,,,
 micro-snitch-logs,Micro Snitch Logs,DEGRADED,micro-snitch-logs,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs os path
 microblog,Micro.blog,SUPPORTED,microblog,1,view,,,,
@@ -1484,7 +1484,7 @@ miraie-ac-control,MirAIe AC Control,SUPPORTED,miraie-ac-control,2,view|menu-bar,
 miro,Miro,DEGRADED,miro,3,view,,launchCommand: loads; throws if called (inter-command launch not wired),,
 mirror-displays,Mirror Displays,DEGRADED,mirror-displays,1,view,,uses Node built-ins (ok in trusted mode): child_process,,child_process path
 mistral,Mistral,SUPPORTED,mistral,3,view,,,,
-mite,Mite,DEGRADED,mite,4,view|no-view,,updateCommandMetadata: loads; no-op (command metadata updates not wired),,
+mite,Mite,SUPPORTED,mite,4,view|no-view,,,,
 mittwald,mittwald,SUPPORTED,mittwald,5,view,,,,
 mixpanel,Mixpanel,SUPPORTED,mixpanel,1,view,,,,
 mlb-scores,MLB Scores,DEGRADED,mlb-scores,3,view,,declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs,,fs path
@@ -1533,7 +1533,7 @@ multi-links,Open Multiple Links,SUPPORTED,multi-links,1,no-view,,,,
 multilinks,Multilinks,SUPPORTED,multilinks,3,view,,,,
 multipass,Multipass,SUPPORTED,multipass,1,view,,,,
 multiviewer,Multi Viewer,SUPPORTED,multiviewer,2,no-view|view,,,,
-music,Music,UNSUPPORTED,music,26,no-view|view|menu-bar,,updateCommandMetadata: loads; no-op (command metadata updates not wired) | declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): child_process,@raycast/api:ArgumentsLaunchProps (not in Invoke surface — needs review),child_process
+music,Music,UNSUPPORTED,music,26,no-view|view|menu-bar,,declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): child_process,@raycast/api:ArgumentsLaunchProps (not in Invoke surface — needs review),child_process
 music-assistant-controls,Music Assistant Controls,DEGRADED,music-assistant-controls,12,menu-bar|no-view|view,,launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): fs,,fs path
 music-link-converter,Music Link Converter,DEGRADED,music-link-converter,2,view,,launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet,,
 music-news,Music News,SUPPORTED,music-news,1,view,,,,
@@ -1543,7 +1543,7 @@ musicbrainz,MusicBrainz,SUPPORTED,musicbrainz,1,view,,,,
 musicthread,MusicThread,SUPPORTED,musicthread,2,view,,,,
 must,Must,SUPPORTED,must,1,view,,,,
 mute-microphone,Toggle Audio Input (Microphone),DEGRADED,mute-microphone,3,menu-bar|no-view,,launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): child_process,,child_process os path util
-mutedeck,MuteDeck,DEGRADED,mutedeck,4,view|no-view,,updateCommandMetadata: loads; no-op (command metadata updates not wired),,
+mutedeck,MuteDeck,SUPPORTED,mutedeck,4,view|no-view,,,,
 mxroute,MXroute,SUPPORTED,mxroute,1,view,,,,
 my-daily-log,My Daily Log,DEGRADED,my-daily-log,6,view,,declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs,,fs path
 myanimelist-search,Myanimelist Search,SUPPORTED,myanimelist-search,2,view,,,,crypto
@@ -1552,9 +1552,9 @@ myip,MyIP,SUPPORTED,myip,2,view|menu-bar,,,,os
 mymind,mymind,SUPPORTED,mymind,2,view,,,,
 mynaui-icons,MynaUI Icons,SUPPORTED,mynaui-icons,1,view,,,,
 n8n,n8n,DEGRADED,n8n,4,view|no-view,,"uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs
-name-com,Name.com,DEGRADED,name-com,2,no-view|view,,updateCommandMetadata: loads; no-op (command metadata updates not wired),,
+name-com,Name.com,SUPPORTED,name-com,2,no-view|view,,,,
 namecheap,Namecheap,SUPPORTED,namecheap,1,view,,,,
-namesilo,NameSilo,DEGRADED,namesilo,7,view|no-view,,updateCommandMetadata: loads; no-op (command metadata updates not wired) | declares command `arguments[]` — not passed by runtime yet,,
+namesilo,NameSilo,DEGRADED,namesilo,7,view|no-view,,declares command `arguments[]` — not passed by runtime yet,,
 namespaces,NameSpaces,DEGRADED,namespaces,1,view,,uses Node built-ins (ok in trusted mode): child_process,,child_process
 namuwiki,Namuwiki,SUPPORTED,namuwiki,3,view,,,,
 nano-games,Nano Games,SUPPORTED,nano-games,1,view,,,,
@@ -1571,7 +1571,7 @@ near-rewards,Near Rewards,SUPPORTED,near-rewards,1,view,,,,
 neodb,NeoDB,SUPPORTED,neodb,2,view,,,,
 neon,Neon,SUPPORTED,neon,2,view,,,,
 nepali-calendar,Nepali Calendar,SUPPORTED,nepali-calendar,1,view,,,,
-nepali-date-converter,Nepali Date Converter,DEGRADED,nepali-date-converter,1,no-view,,updateCommandMetadata: loads; no-op (command metadata updates not wired),,
+nepali-date-converter,Nepali Date Converter,SUPPORTED,nepali-date-converter,1,no-view,,,,
 nerd-font-picker,Nerd Font Picker,DEGRADED,nerd-font-picker,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs os path
 netbird,NetBird,DEGRADED,netbird,7,no-view|view,,uses Node built-ins (ok in trusted mode): child_process,,child_process util
 netease-music,NeteaseMusic,SUPPORTED,netease-music,10,no-view,,,,
@@ -1589,18 +1589,18 @@ next-lens,Next Lens,SUPPORTED,next-lens,2,view,,,,
 next-run,Next Run,SUPPORTED,next-run,1,view,,,,os
 next-up,Next Up,DEGRADED,next-up,5,view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): fs,,fs path
 nextcloud,Nextcloud,SUPPORTED,nextcloud,5,view,,,,path
-nextdns,NextDNS,DEGRADED,nextdns,4,view|no-view,,updateCommandMetadata: loads; no-op (command metadata updates not wired),,
+nextdns,NextDNS,SUPPORTED,nextdns,4,view|no-view,,,,
 nextjs-docs,Next.js Documentation,DEGRADED,nextjs-docs,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs path
 nfl-information,NFL,SUPPORTED,nfl-information,3,view,,,,
 nft-search,NFT Search,SUPPORTED,nft-search,1,view,,,,
 ngrok,Ngrok,SUPPORTED,ngrok,1,view,,,,
-nhk-program-search,NHK Program Search,DEGRADED,nhk-program-search,4,view|no-view,,launchCommand: loads; throws if called (inter-command launch not wired) | updateCommandMetadata: loads; no-op (command metadata updates not wired),,
+nhk-program-search,NHK Program Search,DEGRADED,nhk-program-search,4,view|no-view,,launchCommand: loads; throws if called (inter-command launch not wired),,
 nhl,NHL,DEGRADED,nhl,3,view,,declares command `arguments[]` — not passed by runtime yet,,
 nicnames,NicNames,DEGRADED,nicnames,3,view,,declares command `arguments[]` — not passed by runtime yet,,
 nif,NIF - Portugal Tax Number Lookup,SUPPORTED,nif,1,view,,,,
 nif-fresquinho,Portuguese Tax Number,SUPPORTED,nif-fresquinho,1,no-view,,,,
 night-light,Night Light,DEGRADED,night-light,4,no-view|view,,uses Node built-ins (ok in trusted mode): child_process,,child_process os
-nightscout,Nightscout,DEGRADED,nightscout,6,view|no-view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired) | updateCommandMetadata: loads; no-op (command metadata updates not wired),,
+nightscout,Nightscout,DEGRADED,nightscout,6,view|no-view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired),,
 nippon-colors,Nippon Colors,DEGRADED,nippon-colors,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs path
 niuma-logs,Niuma Logs,DEGRADED,niuma-logs,3,no-view|view,,declares command `arguments[]` — not passed by runtime yet,,
 nix-flake-templates,Nix Flake Templates,DEGRADED,nix-flake-templates,1,view,,"uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs path stream
@@ -1654,8 +1654,8 @@ nzbget,NZBGet,SUPPORTED,nzbget,2,view,,,,path
 oblique-strategies,Oblique Strategies,DEGRADED,oblique-strategies,3,view,,launchCommand: loads; throws if called (inter-command launch not wired),,
 obs-clippings,Obsidian Clippings,DEGRADED,obs-clippings,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs
 obs-control,OBS Control,SUPPORTED,obs-control,8,view|no-view,,,,
-obsidian,Obsidian,UNSUPPORTED,obsidian,12,view|menu-bar,,"declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs, child_process",@raycast/api:Tool (not in Invoke surface — needs review),child_process fs os path
-obsidian-bookmarks,Obsidian Bookmarks,UNSUPPORTED,obsidian-bookmarks,3,view|no-view,,BrowserExtension: loads; throws if called (browser bridge not wired) | uses Node built-ins (ok in trusted mode): fs,@raycast/api:FileIcon (not in Invoke surface — needs review),fs os path url
+obsidian,Obsidian,DEGRADED,obsidian,12,view|menu-bar,,"declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs os path
+obsidian-bookmarks,Obsidian Bookmarks,DEGRADED,obsidian-bookmarks,3,view|no-view,,BrowserExtension: loads; throws if called (browser bridge not wired) | uses Node built-ins (ok in trusted mode): fs,,fs os path url
 obsidian-link-opener,Obsidian Link Opener,UNSUPPORTED,obsidian-link-opener,3,view,,launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): fs,namespace import of @raycast/api (member usage unverified),fs os path
 obsidian-smart-capture,Obsidian Smart Capture,DEGRADED,obsidian-smart-capture,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs os path
 obsidian-tasks,Obsidian Tasks,DEGRADED,obsidian-tasks,5,view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired),,path
@@ -1683,7 +1683,7 @@ omnifocus,OmniFocus,DEGRADED,omnifocus,3,no-view|view,,declares command `argumen
 omnivore,Omnivore,UNSUPPORTED,omnivore,2,view|no-view,,declares command `arguments[]` — not passed by runtime yet,@raycast/utils:getPreferenceValues (not implemented in Invoke),
 onbo,Onbo: New Grad & Internship Tracker,DEGRADED,onbo,3,view,,uses Node built-ins (ok in trusted mode): fs,,fs path
 one-tab-group,One Tab Group,SUPPORTED,one-tab-group,1,view,,,,
-one-thing,One Thing,DEGRADED,one-thing,3,menu-bar|view|no-view,,updateCommandMetadata: loads; no-op (command metadata updates not wired) | launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet,,
+one-thing,One Thing,DEGRADED,one-thing,3,menu-bar|view|no-view,,launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet,,
 one-time-password,One Time Password,DEGRADED,one-time-password,1,view,,"runPowerShellScript: Windows-only; throws on macOS (import loads) | uses Node built-ins (ok in trusted mode): child_process, fs",,child_process crypto fs os util
 one-time-secret,One-Time Secret,SUPPORTED,one-time-secret,3,view|no-view,,,,
 onelook-thesaurus,OneLook Thesaurus,SUPPORTED,onelook-thesaurus,1,view,,,,
@@ -1706,12 +1706,12 @@ open-in-visual-studio-code,Open in Visual Studio Code,DEGRADED,open-in-visual-st
 open-laravel-herd-site,Open Laravel Herd Site,DEGRADED,open-laravel-herd-site,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs os path
 open-latest-url-from-clipboard,Open Latest URL from Clipboard,SUPPORTED,open-latest-url-from-clipboard,1,no-view,,,,
 open-link-in-specific-browser,Open Link in Specific Browser,DEGRADED,open-link-in-specific-browser,3,view|menu-bar|no-view,,uses Node built-ins (ok in trusted mode): net,,net
-open-path,Open Path,DEGRADED,open-path,1,no-view,,updateCommandMetadata: loads; no-op (command metadata updates not wired) | declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): child_process,,child_process os
+open-path,Open Path,DEGRADED,open-path,1,no-view,,declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): child_process,,child_process os
 open-props,Open Props,SUPPORTED,open-props,2,view,,,,
 open-with-app,Open With App,SUPPORTED,open-with-app,1,view,,,,os
 openai-gpt,OpenAI GPT,DEGRADED,openai-gpt,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs path
 openai-speak,OpenAI Speak,DEGRADED,openai-speak,1,no-view,,"uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs os path util
-openai-translator,OpenAI Translator,DEGRADED,openai-translator,8,view|no-view,,"launchCommand: loads; throws if called (inter-command launch not wired) | updateCommandMetadata: loads; no-op (command metadata updates not wired) | uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs stream
+openai-translator,OpenAI Translator,DEGRADED,openai-translator,8,view|no-view,,"launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs stream
 openclaw,OpenClaw,DEGRADED,openclaw,6,view|no-view,,declares command `arguments[]` — not passed by runtime yet,,
 opencode-sessions,OpenCode Sessions,DEGRADED,opencode-sessions,1,view,,"uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs os path
 openfortivpn,Openfortivpn,DEGRADED,openfortivpn,2,view|no-view,,"uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs util
@@ -1720,9 +1720,9 @@ openrouter-manager,OpenRouter Manager,DEGRADED,openrouter-manager,4,view,,launch
 openrouter-model-search,OpenRouter Model Search,SUPPORTED,openrouter-model-search,1,view,,,,
 openrouter-models-finder,OpenRouter Models Finder,SUPPORTED,openrouter-models-finder,1,view,,,,
 openrouter-quick-actions,Openrouter Quick Actions,SUPPORTED,openrouter-quick-actions,5,view|no-view,,,,
-openstatus,OpenStatus,UNSUPPORTED,openstatus,5,view,,,@raycast/api:Tool (not in Invoke surface — needs review),
+openstatus,OpenStatus,SUPPORTED,openstatus,5,view,,,,
 openstreetmap-search,OpenStreetMap Search,DEGRADED,openstreetmap-search,3,view|no-view,,declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): child_process,,child_process
-openverse,Openverse,UNSUPPORTED,openverse,1,view,,uses Node built-ins (ok in trusted mode): fs,@raycast/api:RequestInit (not in Invoke surface — needs review) | @raycast/api:existsSync (not in Invoke surface — needs review) | @raycast/api:runAppleScript (not in Invoke surface — needs review) | @raycast/api:useEffect (not in Invoke surface — needs review) | @raycast/api:useRef (not in Invoke surface — needs review) | @raycast/api:useState (not in Invoke surface — needs review),fs
+openverse,Openverse,UNSUPPORTED,openverse,1,view,,uses Node built-ins (ok in trusted mode): fs,@raycast/api:existsSync (not in Invoke surface — needs review) | @raycast/api:runAppleScript (not in Invoke surface — needs review) | @raycast/api:useEffect (not in Invoke surface — needs review) | @raycast/api:useRef (not in Invoke surface — needs review) | @raycast/api:useState (not in Invoke surface — needs review),fs
 openvpn,OpenVPN,DEGRADED,openvpn,3,view|no-view,,uses Node built-ins (ok in trusted mode): child_process,,child_process util
 openweathermap,OpenWeatherMap,SUPPORTED,openweathermap,1,view,,,,url
 opera,Opera,DEGRADED,opera,4,view,,"uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs os path util
@@ -1730,8 +1730,8 @@ opsgenie,Opsgenie,SUPPORTED,opsgenie,2,view,,,,
 opslevel,OpsLevel,DEGRADED,opslevel,1,view,,declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs,,fs
 orbit,Orbit,DEGRADED,orbit,3,no-view,,declares command `arguments[]` — not passed by runtime yet,,
 orbita,Órbita,SUPPORTED,orbita,1,view,,,,
-orbstack,OrbStack,UNSUPPORTED,orbstack,2,view,,useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox | uses Node built-ins (ok in trusted mode): child_process,@raycast/api:Tool (not in Invoke surface — needs review),child_process util
-origami,Origami,UNSUPPORTED,origami,2,view,,launchCommand: loads; throws if called (inter-command launch not wired),@raycast/api:Tool (not in Invoke surface — needs review),
+orbstack,OrbStack,DEGRADED,orbstack,2,view,,useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox | uses Node built-ins (ok in trusted mode): child_process,,child_process util
+origami,Origami,DEGRADED,origami,2,view,,launchCommand: loads; throws if called (inter-command launch not wired),,
 orion,Orion,SUPPORTED,orion,5,view,,,,os path url
 orshot,Orshot,DEGRADED,orshot,2,no-view,,declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs,,fs os path
 osint-web-check,OSINT Web Check,DEGRADED,osint-web-check,1,view,,"declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): dns, net, tls",,dns net tls
@@ -1744,7 +1744,7 @@ otp-auth,OTP Auth,DEGRADED,otp-auth,1,view,,uses Node built-ins (ok in trusted m
 otp-inbox,OTP Inbox,SUPPORTED,otp-inbox,1,view,,,,
 otter,Otter Bookmarks,UNSUPPORTED,otter,4,view|menu-bar,,,@raycast/api:useCachedPromise (not in Invoke surface — needs review) | @raycast/utils:List (not implemented in Invoke) | @raycast/utils:ActionPanel (not implemented in Invoke) | @raycast/utils:Action (not implemented in Invoke) | @raycast/utils:Icon (not implemented in Invoke) | @raycast/utils:Detail (not implemented in Invoke) | @raycast/utils:getPreferenceValues (not implemented in Invoke) | @raycast/utils:Image (not implemented in Invoke) | @raycast/utils:MenuBarExtra (not implemented in Invoke) | @raycast/utils:open (not implemented in Invoke) | @raycast/utils:Keyboard (not implemented in Invoke) | @raycast/utils:openExtensionPreferences (not implemented in Invoke) | @raycast/utils:useFetchRecentItems (not implemented in Invoke),url
 ottomatic,Ottomatic,SUPPORTED,ottomatic,2,view,,,,
-oura,Oura,DEGRADED,oura,9,view|no-view|menu-bar,,updateCommandMetadata: loads; no-op (command metadata updates not wired) | launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet,,
+oura,Oura,DEGRADED,oura,9,view|no-view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet,,
 outline-document-search,Outline Document Search,DEGRADED,outline-document-search,2,view,,launchCommand: loads; throws if called (inter-command launch not wired),,
 outline-page,Outline Page,SUPPORTED,outline-page,1,no-view,,,,
 ovhcloud,OVHcloud,SUPPORTED,ovh,1,view,,,,crypto
@@ -1786,7 +1786,7 @@ password-generator,Password Generator,SUPPORTED,password-generator,2,view,,,,cry
 password-link,Password.link,DEGRADED,password-link,4,view,,declares command `arguments[]` — not passed by runtime yet,,crypto
 password-store,Password Store,DEGRADED,password-store,1,view,,"uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs os url util
 password-strength,Password Strength,DEGRADED,password-strength,1,view,,declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs,,crypto fs path
-paste-as-plain-text,Paste as Plain Text,DEGRADED,paste-as-plain-text,1,no-view,,updateCommandMetadata: loads; no-op (command metadata updates not wired) | declares command `arguments[]` — not passed by runtime yet,,url
+paste-as-plain-text,Paste as Plain Text,DEGRADED,paste-as-plain-text,1,no-view,,declares command `arguments[]` — not passed by runtime yet,,url
 paste-from-apple-books,Paste from Apple Books,SUPPORTED,paste-from-apple-books,1,no-view,,,,
 paste-safely,Paste Safely,DEGRADED,paste-safely,2,view|no-view,,BrowserExtension: loads; throws if called (browser bridge not wired) | uses Node built-ins (ok in trusted mode): fs,,fs path
 paste-to-markdown,Paste to Markdown,DEGRADED,paste-to-markdown,1,no-view,,uses Node built-ins (ok in trusted mode): child_process,,child_process
@@ -1831,9 +1831,9 @@ pia-controls,Private Internet Access Controls,DEGRADED,pia-controls,4,no-view|vi
 pianoman,Pianoman,DEGRADED,pianoman,1,view,,declares command `arguments[]` — not passed by runtime yet,,
 picgo,PicGo,DEGRADED,picgo,4,view,,uses Node built-ins (ok in trusted mode): fs,,fs path process
 pick-random-raycast-extension,Pick Random,DEGRADED,pick-random,3,no-view,,declares command `arguments[]` — not passed by runtime yet,,
-pick-your-wallpaper,Pick Your Wallpaper,UNSUPPORTED,pick-your-wallpaper,2,view|no-view,,"uses Node built-ins (ok in trusted mode): child_process, fs",@raycast/api:Tool (not in Invoke surface — needs review),child_process fs path util zlib
+pick-your-wallpaper,Pick Your Wallpaper,DEGRADED,pick-your-wallpaper,2,view|no-view,,"uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs path util zlib
 pie-for-pi-hole,Pie for Pi-Hole,DEGRADED,pie-for-pihole,16,view|no-view,,"uses Node built-ins (ok in trusted mode): http, https, fs",,crypto fs http https os path
-pieces-raycast,Pieces for Raycast,UNSUPPORTED,pieces-raycast,9,no-view|view,,"launchCommand: loads; throws if called (inter-command launch not wired) | BrowserExtension: loads; throws if called (browser bridge not wired) | uses Node built-ins (ok in trusted mode): fs, child_process",@raycast/api:Preferences (not in Invoke surface — needs review),child_process crypto events fs os path url util
+pieces-raycast,Pieces for Raycast,DEGRADED,pieces-raycast,9,no-view|view,,"launchCommand: loads; throws if called (inter-command launch not wired) | BrowserExtension: loads; throws if called (browser bridge not wired) | uses Node built-ins (ok in trusted mode): fs, child_process",,child_process crypto events fs os path url util
 pika,Pika,DEGRADED,pika,2,view,,uses Node built-ins (ok in trusted mode): fs,,fs
 pin,Pin,DEGRADED,pin-raycast,5,no-view|view,,uses Node built-ins (ok in trusted mode): fs,,fs
 pinata,Pinata,DEGRADED,pinata,3,view,,uses Node built-ins (ok in trusted mode): fs,,fs
@@ -1871,7 +1871,7 @@ pm2,PM2,SUPPORTED,pm2,2,view|no-view,,,,path process
 pocket,Pocket,DEGRADED,pocket,6,view|no-view,,declares command `arguments[]` — not passed by runtime yet,,
 pocketbase,PocketBase,SUPPORTED,pocketbase,2,view,,,,
 podcasts,Podcasts,SUPPORTED,podcasts,5,no-view,,,,
-podcasts-now,Podcasts Now,UNSUPPORTED,podcasts-now,2,view|menu-bar,,uses Node built-ins (ok in trusted mode): fs,@raycast/api:Navigation (not in Invoke surface — needs review),fs
+podcasts-now,Podcasts Now,DEGRADED,podcasts-now,2,view|menu-bar,,uses Node built-ins (ok in trusted mode): fs,,fs
 pokedex,Pokédex,DEGRADED,pokedex,8,view,,declares command `arguments[]` — not passed by runtime yet,,
 pokemon-tcg-pocket-binder,Pokémon Tcg Pocket Binder,SUPPORTED,pokemon-tcg-pocket-binder,1,view,,,,
 polar,Polar,SUPPORTED,polar,3,view,,,,
@@ -1889,13 +1889,13 @@ port,Port.io,SUPPORTED,port,4,view,,,,
 port-from-project-name,Port from Project Name,DEGRADED,port-from-project-name,2,view,,declares command `arguments[]` — not passed by runtime yet,,crypto
 port-manager,Port Manager,DEGRADED,port-manager,4,no-view|view|menu-bar,,declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): child_process,,child_process path
 portal-wholesale,Portal Wholesale,SUPPORTED,portal-wholesale,1,view,,,,
-portfolio-tracker,Portfolio Tracker,DEGRADED,portfolio-tracker,3,view,,updateCommandMetadata: loads; no-op (command metadata updates not wired) | uses Node built-ins (ok in trusted mode): fs,,crypto fs os path
+portfolio-tracker,Portfolio Tracker,DEGRADED,portfolio-tracker,3,view,,uses Node built-ins (ok in trusted mode): fs,,crypto fs os path
 portless,Portless Active Routes,DEGRADED,portless,1,view,,useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox | uses Node built-ins (ok in trusted mode): fs,,fs path
 ports,Port Manager,DEGRADED,ports,2,view|no-view,,declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): child_process,,child_process util
 portuguese-primeira-liga,Portuguese Primeira Liga,SUPPORTED,portuguese-primeira-liga,3,view,,,,
 position-size-calculator,Position Size Calculator,SUPPORTED,position-size-calculator,1,view,,,,
 positron,Positron,DEGRADED,positron,3,view|no-view,,"uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs os path
-postey,Postey,UNSUPPORTED,postey,5,view,,,@raycast/api:Tool (not in Invoke surface — needs review),
+postey,Postey,SUPPORTED,postey,5,view,,,,
 posthog,PostHog,DEGRADED,posthog,5,view,,declares command `arguments[]` — not passed by runtime yet,,
 postiz,Postiz,SUPPORTED,postiz,3,view,,,,
 postman,Postman,SUPPORTED,postman,1,view,,,,
@@ -1938,7 +1938,7 @@ prowlarr,Prowlarr,SUPPORTED,prowlarr,1,view,,,,
 proxmox,Proxmox,SUPPORTED,proxmox,2,view,,,,
 proxyman,Proxyman,SUPPORTED,proxyman,13,no-view,,,,
 prusa,Prusa Printer Control,DEGRADED,prusa,4,view|menu-bar|no-view,,launchCommand: loads; throws if called (inter-command launch not wired),,
-psn,PSN,DEGRADED,psn,3,no-view|view,,updateCommandMetadata: loads; no-op (command metadata updates not wired),,
+psn,PSN,SUPPORTED,psn,3,no-view|view,,,,
 pub-dev,pub.dev,SUPPORTED,flutter-pub-dev-search,1,view,,,,
 public-bug-bounty-and-vulnerability-disclosure-programs,Public Bug Bounty and Vulnerability Disclosure Programs,SUPPORTED,public-bug-bounty-and-vulnerability-disclosure-programs,1,view,,,,
 publico,Publico,SUPPORTED,publico,3,view,,,,
@@ -1947,7 +1947,7 @@ pubme,PubMe Search,SUPPORTED,pubme,1,view,,,,
 pulsemcp,PulseMCP,SUPPORTED,pulsemcp,1,view,,,,
 pumble,Pumble,SUPPORTED,pumble,3,view,,,,
 punto,Punto Switcher,SUPPORTED,punto,1,no-view,,,,
-purelymail,Purelymail,DEGRADED,purelymail,11,view|no-view,,updateCommandMetadata: loads; no-op (command metadata updates not wired) | launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet,,
+purelymail,Purelymail,DEGRADED,purelymail,11,view|no-view,,launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet,,
 purpleair,PurpleAir,SUPPORTED,purpleair,1,view,,,,
 pushover,Pushover,DEGRADED,pushover,1,no-view,,declares command `arguments[]` — not passed by runtime yet,,
 putio,put.io,DEGRADED,putio,5,view,,declares command `arguments[]` — not passed by runtime yet,,
@@ -2004,7 +2004,7 @@ rails-routes,Rails Routes,SUPPORTED,rails-routes,1,view,,,,
 railway,Railway Project Search,SUPPORTED,railway,2,view,,,,
 rain-radars,Rain Radars,SUPPORTED,rain-radars,1,view,,,,
 rainaissance,Rainaissance,SUPPORTED,rainaissance,4,view|no-view,,,,
-raindrop-io,Raindrop.io,UNSUPPORTED,raindrop-io,5,view|no-view,,BrowserExtension: loads; throws if called (browser bridge not wired) | declares command `arguments[]` — not passed by runtime yet,@raycast/api:Tool (not in Invoke surface — needs review),
+raindrop-io,Raindrop.io,DEGRADED,raindrop-io,5,view|no-view,,BrowserExtension: loads; throws if called (browser bridge not wired) | declares command `arguments[]` — not passed by runtime yet,,
 ram-prices,RAM Prices,SUPPORTED,ram-prices,2,view|menu-bar,,,,
 ramda-documentation,Ramda Documentation,SUPPORTED,ramda-documentation,1,view,,,,
 random,Random Data Generator,SUPPORTED,random-data-generator,2,view|no-view,,,,
@@ -2070,7 +2070,7 @@ raycast-timeular,Timeular,SUPPORTED,timeular,1,view,,,,
 raycast-timezone-converter,Timezone Converter,SUPPORTED,timezone-converter,1,view,,,,
 raycast-transistorfm,TransistorFM,SUPPORTED,raycast-transistorfm,4,menu-bar|view,,,,
 raycast-translate-ge,Translate.ge,SUPPORTED,raycast-translate-ge,1,view,,,,
-raycast-urbandictionary-word-of-the-day,Urban Dictionary Word of the Day,DEGRADED,raycast-urbandictionary-word-of-the-day,3,no-view|view,,updateCommandMetadata: loads; no-op (command metadata updates not wired),,
+raycast-urbandictionary-word-of-the-day,Urban Dictionary Word of the Day,SUPPORTED,raycast-urbandictionary-word-of-the-day,3,no-view|view,,,,
 raycast-wallpaper,Raycast Wallpaper,DEGRADED,raycast-wallpaper,2,view|no-view,,runPowerShellScript: Windows-only; throws on macOS (import loads),,os
 raycast-wca,WCA,DEGRADED,raycast-wca,1,view,,declares command `arguments[]` — not passed by runtime yet,,
 raycast-weekly-newsletter,Raycast Weekly Newsletter,SUPPORTED,raycast-weekly-newsletter,3,view|no-view,,,,
@@ -2080,7 +2080,7 @@ raycaster,Raycaster,DEGRADED,raycaster,2,view,,launchCommand: loads; throws if c
 raydocs,Raycast API Documentation,SUPPORTED,raydocs,1,view,,,,crypto
 raydoom,RayDoom,DEGRADED,raydoom,2,view,,uses Node built-ins (ok in trusted mode): fs,,fs path
 raylog-markdown-tasks,Raylog - Markdown Tasks,DEGRADED,raylog-markdown-tasks,3,view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): fs,,assert crypto fs os path
-raynab,Raynab — Manage Your Budgets,UNSUPPORTED,raynab,7,view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired),@raycast/api:Tool (not in Invoke surface — needs review),
+raynab,Raynab — Manage Your Budgets,DEGRADED,raynab,7,view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired),,
 raytaskwarrior,Taskwarrior,DEGRADED,raytaskwarrior,3,view|no-view,,declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): child_process,,child_process util
 raytyping,Raytyping,SUPPORTED,raytyping,1,view,,,,
 razuna,Razuna - Add and Browse Files in Razuna,DEGRADED,razuna,4,view,,uses Node built-ins (ok in trusted mode): fs,,fs
@@ -2124,8 +2124,8 @@ regex-tester,Regex Tester,SUPPORTED,regex-tester,1,view,,,,
 rehooks,Rehooks,SUPPORTED,rehooks,2,view,,,,
 reka-ui,Reka UI,SUPPORTED,reka-ui,1,view,,,,
 relagit,RelaGit,DEGRADED,relagit,2,view,,"uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs os path
-remember-the-date,Remember the Date,DEGRADED,remember-the-date,4,view|menu-bar|no-view,,launchCommand: loads; throws if called (inter-command launch not wired) | updateCommandMetadata: loads; no-op (command metadata updates not wired),,
-remember-this,Remember This,UNSUPPORTED,remember-this,3,view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs,@raycast/api:ListItem (not in Invoke surface — needs review),fs path
+remember-the-date,Remember the Date,DEGRADED,remember-the-date,4,view|menu-bar|no-view,,launchCommand: loads; throws if called (inter-command launch not wired),,
+remember-this,Remember This,DEGRADED,remember-this,3,view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs,,fs path
 remix-icon,Remix Icon,DEGRADED,remix-icon,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs path url
 remo-notes,Remo,SUPPORTED,remo-notes,8,no-view|menu-bar|view,,,,
 remote-desktop,Remote Desktop,DEGRADED,remote-desktop,1,view,,runPowerShellScript: Windows-only; throws on macOS (import loads) | uses Node built-ins (ok in trusted mode): child_process,,child_process
@@ -2141,9 +2141,9 @@ replicate,Replicate,DEGRADED,replicate,1,view,,uses Node built-ins (ok in truste
 repo-launcher,Repo Launcher,DEGRADED,repo-launcher,2,view,,"uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs path util
 repology-search,Repology Search,SUPPORTED,repology-search,1,view,,,,
 repository-manager,Repository Manager,UNSUPPORTED,repository-manager,1,view,,"uses Node built-ins (ok in trusted mode): child_process, fs",@raycast/api:useMemo (not in Invoke surface — needs review) | @raycast/api:useCallback (not in Invoke surface — needs review) | @raycast/api:useEffect (not in Invoke surface — needs review) | @raycast/api:useRef (not in Invoke surface — needs review) | @raycast/api:useState (not in Invoke surface — needs review) | @raycast/api:existsSync (not in Invoke surface — needs review) | @raycast/api:readFileSync (not in Invoke surface — needs review) | @raycast/utils:Action (not implemented in Invoke) | @raycast/utils:ActionPanel (not implemented in Invoke) | @raycast/utils:AI (not implemented in Invoke) | @raycast/utils:Detail (not implemented in Invoke) | @raycast/utils:Icon (not implemented in Invoke) | @raycast/utils:environment (not implemented in Invoke) | @raycast/utils:useNavigation (not implemented in Invoke) | @raycast/utils:Color (not implemented in Invoke) | @raycast/utils:Image (not implemented in Invoke) | @raycast/utils:List (not implemented in Invoke) | @raycast/utils:Clipboard (not implemented in Invoke) | @raycast/utils:Toast (not implemented in Invoke) | @raycast/utils:showToast (not implemented in Invoke) | @raycast/utils:confirmAlert (not implemented in Invoke) | @raycast/utils:useEffect (not implemented in Invoke) | @raycast/utils:useMemo (not implemented in Invoke) | @raycast/utils:useRef (not implemented in Invoke) | @raycast/utils:useState (not implemented in Invoke),child_process fs os path util
-rescuetime-focus-session-trigger,RescueTime,DEGRADED,rescuetime-focus-session-trigger,8,view|no-view,,updateCommandMetadata: loads; no-op (command metadata updates not wired),,
+rescuetime-focus-session-trigger,RescueTime,SUPPORTED,rescuetime-focus-session-trigger,8,view|no-view,,,,
 research,Deep Research,DEGRADED,deep-research,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs path
-resend,Resend,UNSUPPORTED,resend,4,view,,uses Node built-ins (ok in trusted mode): fs,@raycast/api:Tool (not in Invoke surface — needs review),fs path
+resend,Resend,DEGRADED,resend,4,view,,uses Node built-ins (ok in trusted mode): fs,,fs path
 resend-wallpaper,Resend Wallpaper,SUPPORTED,resend-wallpaper,2,view|no-view,,,,os
 resmo,Resmo,SUPPORTED,resmo,1,view,,,,
 respace,Respace,DEGRADED,respace,3,view|no-view,,"declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): child_process, fs",,child_process crypto fs os path util
@@ -2171,13 +2171,13 @@ roll-d20,Roll D20,SUPPORTED,roll-d20,1,no-view,,,,
 rollcast,Rollcast,SUPPORTED,rollcast,1,view,,,,
 rollup-wtf,Rollup.wtf,SUPPORTED,rollup-wtf,2,view,,,,
 rounding-number,Rounding Number,DEGRADED,rounding-number,1,view,,declares command `arguments[]` — not passed by runtime yet,,
-rss-reader,RSS Reader,UNSUPPORTED,rss-reader,3,view,,BrowserExtension: loads; throws if called (browser bridge not wired),@raycast/api:Tool (not in Invoke surface — needs review),crypto
-rsync-commands,Rsync Commands,UNSUPPORTED,rsync-commands,1,view,,uses Node built-ins (ok in trusted mode): child_process,@raycast/api:FC (not in Invoke surface — needs review) | @raycast/api:useCallback (not in Invoke surface — needs review) | @raycast/api:memo (not in Invoke surface — needs review) | @raycast/api:useState (not in Invoke surface — needs review) | @raycast/api:useEffect (not in Invoke surface — needs review),child_process
+rss-reader,RSS Reader,DEGRADED,rss-reader,3,view,,BrowserExtension: loads; throws if called (browser bridge not wired),,crypto
+rsync-commands,Rsync Commands,UNSUPPORTED,rsync-commands,1,view,,uses Node built-ins (ok in trusted mode): child_process,@raycast/api:useCallback (not in Invoke surface — needs review) | @raycast/api:memo (not in Invoke surface — needs review) | @raycast/api:useState (not in Invoke surface — needs review) | @raycast/api:useEffect (not in Invoke surface — needs review),child_process
 rtl-reader,RTL Reader,SUPPORTED,rtl-reader,1,view,,,,
 ruby-evaluate,Ruby Evaluate,DEGRADED,ruby-evaluate,1,view,,uses Node built-ins (ok in trusted mode): child_process,,child_process
 rule-of-three,Rule of Three,SUPPORTED,rule-of-three,1,view,,,,
 ruler,Ruler,SUPPORTED,ruler,1,no-view,,,,
-runcloud,RunCloud,DEGRADED,runcloud,3,view|no-view,,updateCommandMetadata: loads; no-op (command metadata updates not wired),,
+runcloud,RunCloud,SUPPORTED,runcloud,3,view|no-view,,,,
 running-page,Running Page,DEGRADED,running-page,3,view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired),,
 rusbase,Rusbase,SUPPORTED,rusbase,3,view,,,,
 rust-docs,Rust Documentation,SUPPORTED,rust-docs,1,view,,,,
@@ -2206,7 +2206,7 @@ schoology,Schoology - Grade Viewer,SUPPORTED,schoology,2,view|no-view,,,,
 scira,Scira,SUPPORTED,scira,1,view,,,,
 scoop,Scoop,DEGRADED,scoop,5,view,,uses Node built-ins (ok in trusted mode): child_process,,child_process util
 scrapbook,Scrapbook,DEGRADED,scrapbook,3,view,,launchCommand: loads; throws if called (inter-command launch not wired),,
-scrapbox-search,Scrapbox Search,UNSUPPORTED,scrapbox-search,1,view,,,@raycast/api:Response (not in Invoke surface — needs review) | @raycast/api:useEffect (not in Invoke surface — needs review) | @raycast/api:useState (not in Invoke surface — needs review) | @raycast/utils:useEffect (not implemented in Invoke) | @raycast/utils:useState (not implemented in Invoke),
+scrapbox-search,Scrapbox Search,UNSUPPORTED,scrapbox-search,1,view,,,@raycast/api:useEffect (not in Invoke surface — needs review) | @raycast/api:useState (not in Invoke surface — needs review) | @raycast/utils:useEffect (not implemented in Invoke) | @raycast/utils:useState (not implemented in Invoke),
 scratchpad,Scratchpad,SUPPORTED,scratchpad,1,view,,,,os
 scrcpy,Scrcpy,DEGRADED,scrcpy,1,view,,uses Node built-ins (ok in trusted mode): child_process,,child_process
 screen-math,Screen Math,DEGRADED,screen-math,1,no-view,,"uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs path
@@ -2216,7 +2216,7 @@ screen-studio,Screen Studio,SUPPORTED,screen-studio,11,no-view,,,,
 screenocr,ScreenOCR,SUPPORTED,screenocr,4,view|no-view,,,,
 screenpipe,Screenpipe,SUPPORTED,screenpipe,1,view,,,,
 screenshot,Screenshot,DEGRADED,screenshot,8,no-view,,declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): child_process,,child_process
-script-commands,Script Commands Store – Find and manage your Raycast Script Commands,UNSUPPORTED,script-commands,1,view,,uses Node built-ins (ok in trusted mode): fs,@raycast/api:OpenWithAction (not in Invoke surface — needs review) | @raycast/api:ImageLike (not in Invoke surface — needs review) | @raycast/api:KeyboardShortcut (not in Invoke surface — needs review),crypto fs os path
+script-commands,Script Commands Store – Find and manage your Raycast Script Commands,UNSUPPORTED,script-commands,1,view,,uses Node built-ins (ok in trusted mode): fs,@raycast/api:OpenWithAction (not in Invoke surface — needs review),crypto fs os path
 script-kit,Run Script Kit Command,DEGRADED,script-kit,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs os path
 scrycast,Scrycast,DEGRADED,scrycast,5,view,,uses Node built-ins (ok in trusted mode): fs,,fs os path
 scss-compile,SCSS Compile,DEGRADED,scss-compile,2,view,,"uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs path
@@ -2253,9 +2253,9 @@ seedsnote,Seedsnote,DEGRADED,seedsnote,2,view,,uses Node built-ins (ok in truste
 sefaria,Sefaria,DEGRADED,sefaria,2,view,,declares command `arguments[]` — not passed by runtime yet,,
 selfh-st-icons,Selfh.st Icons,DEGRADED,selfh-st-icons,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs os path
 semantic-scholar,Semantic Scholar,SUPPORTED,semantic-scholar,1,view,,,,
-send-ai,SendAI,UNSUPPORTED,send-ai,13,view,,declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs,@raycast/api:Tool (not in Invoke surface — needs review),fs
+send-ai,SendAI,DEGRADED,send-ai,13,view,,declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs,,fs
 send-to-e-reader,Send to E-Reader,DEGRADED,send-to-e-reader,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs path
-send-to-flomo,Send to flomo,UNSUPPORTED,send-to-flomo,1,view,,,@raycast/api:FormValue (not in Invoke surface — needs review),
+send-to-flomo,Send to flomo,SUPPORTED,send-to-flomo,1,view,,,,
 send-to-kindle,Send to Kindle,DEGRADED,send-to-kindle,6,no-view|view,,"BrowserExtension: loads; throws if called (browser bridge not wired) | launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): net, tls, fs, child_process",,child_process crypto fs net os path tls util
 sendme,Sendme File Share,DEGRADED,sendme,2,view,,"uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs os path util
 sendportal,SendPortal,SUPPORTED,sendportal,2,view,,,,
@@ -2281,7 +2281,7 @@ shadcn-svelte,Shadcn/Svelte,SUPPORTED,shadcn-svelte,2,view,,,,
 shadcn-ui,shadcn/ui,SUPPORTED,shadcn-ui,4,view,,,,
 shadcn-vue,Shadcn/Vue,SUPPORTED,shadcn-vue,2,view,,,,
 shakespearify,Shakespearify,SUPPORTED,shakespearify,2,view,,,,
-shape-calendar,Shape Calendar,UNSUPPORTED,shape-calendar,3,view|no-view,,updateCommandMetadata: loads; no-op (command metadata updates not wired),@raycast/api:Tool (not in Invoke surface — needs review),
+shape-calendar,Shape Calendar,SUPPORTED,shape-calendar,3,view|no-view,,,,
 sharding-tools,Sharding Tools,SUPPORTED,sharding-tools,3,view,,,,
 share-a-quote,Share a Quote,DEGRADED,share-a-quote,1,no-view,,BrowserExtension: loads; throws if called (browser bridge not wired),,
 share-my-code,Share My Code,DEGRADED,share-my-code,3,view,,launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet,,
@@ -2307,7 +2307,7 @@ shortcut,Shortcut,SUPPORTED,shortcut,5,view,,,,
 shortcuts-search,Shortcuts Search,DEGRADED,shortcuts-search,4,view|no-view,,uses Node built-ins (ok in trusted mode): child_process,,child_process
 shottr,Shottr,DEGRADED,shottr,14,no-view,,declares command `arguments[]` — not passed by runtime yet,,
 shroud-email,Shroud.email,SUPPORTED,shroud-email,3,view,,,,
-shutdown-timer,Shutdown Timer,DEGRADED,shutdown-timer,3,no-view|view,,updateCommandMetadata: loads; no-op (command metadata updates not wired) | uses Node built-ins (ok in trusted mode): child_process,,child_process
+shutdown-timer,Shutdown Timer,DEGRADED,shutdown-timer,3,no-view|view,,uses Node built-ins (ok in trusted mode): child_process,,child_process
 sidecar,Sidecar,DEGRADED,sidecar,1,no-view,,uses Node built-ins (ok in trusted mode): child_process,,child_process util
 sidecar-connect,Sidecar Connect,SUPPORTED,sidecar-connect,4,no-view|view,,,,
 signal,Signal,SUPPORTED,signal,2,view,,,,
@@ -2316,11 +2316,11 @@ silent-mode,Silent Mode,DEGRADED,silent-mode,4,no-view|menu-bar,,launchCommand: 
 similarweb,Similarweb,DEGRADED,similarweb,2,view,,launchCommand: loads; throws if called (inter-command launch not wired) | BrowserExtension: loads; throws if called (browser bridge not wired) | declares command `arguments[]` — not passed by runtime yet,,
 simon,Simon,DEGRADED,simon,1,view,,uses Node built-ins (ok in trusted mode): child_process,,child_process
 simple-dictionary,Simple Dictionary,DEGRADED,simple-dictionary,3,view,,launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet,,
-simple-http,Simple Http,DEGRADED,simple-http,2,view|no-view,,updateCommandMetadata: loads; no-op (command metadata updates not wired) | launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): child_process,,child_process
+simple-http,Simple Http,DEGRADED,simple-http,2,view|no-view,,launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): child_process,,child_process
 simple-icons,Brand Icons - simpleicons.org,DEGRADED,simple-icons,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs os path process timers
 simple-login,SimpleLogin,SUPPORTED,simple-login,3,no-view|view,,,,
 simple-memo,Simple Memo,DEGRADED,simple-memo,3,view|no-view,,declares command `arguments[]` — not passed by runtime yet,,
-simple-reminder,Simple Reminder,DEGRADED,simple-reminder,3,view|no-view|menu-bar,,updateCommandMetadata: loads; no-op (command metadata updates not wired) | launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): child_process,,child_process crypto
+simple-reminder,Simple Reminder,DEGRADED,simple-reminder,3,view|no-view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): child_process,,child_process crypto
 simple-youdao,Simple Youdao Translate,DEGRADED,simple-youdao,1,view,,declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs,,crypto fs url
 simplebackups,SimpleBackups,SUPPORTED,simplebackups,1,view,,,,
 simplelogin,SimpleLogin,SUPPORTED,simplelogin,3,view,,,,
@@ -2333,9 +2333,9 @@ single-focus,Single Focus,SUPPORTED,single-focus,1,no-view,,,,
 singularityapp,SingularityApp,SUPPORTED,singularityapp,2,view,,,,
 sip,Sip,SUPPORTED,sip,5,no-view|view,,,,
 sips,Image Modification,DEGRADED,sips,12,no-view|view,,"declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs, child_process, https",,child_process crypto fs https os path
-siri,Siri,UNSUPPORTED,siri,1,no-view,,declares command `arguments[]` — not passed by runtime yet,@raycast/api:Tool (not in Invoke surface — needs review),
+siri,Siri,DEGRADED,siri,1,no-view,,declares command `arguments[]` — not passed by runtime yet,,
 sitespeakai,SiteSpeakAI,DEGRADED,sitespeakai,1,view,,declares command `arguments[]` — not passed by runtime yet,,
-sketch,Sketch,UNSUPPORTED,sketch,2,view,,,@raycast/api:KeyEquivalent (not in Invoke surface — needs review),
+sketch,Sketch,SUPPORTED,sketch,2,view,,,,
 skills,Skills,DEGRADED,skills,2,view,,"uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs os path util
 skyscanner-flights,Flight Search,SUPPORTED,skyscanner-flights,2,view,,,,
 slack,Slack,DEGRADED,slack,9,view|no-view,,runPowerShellScript: Windows-only; throws on macOS (import loads),,
@@ -2355,7 +2355,7 @@ smart-reply,Smart Reply - AI-Powered Multilingual Response Generator,SUPPORTED,s
 smartthings-connector,SmartThings Connector,UNSUPPORTED,smartthings-connector,5,view,,,"@raycast/api:// useNavigation (not in Invoke surface — needs review) | @raycast/api:// Entfernen Sie diesen Import
   Action (not in Invoke surface — needs review)",
 smultron,Smultron,SUPPORTED,smultron,1,no-view,,,,
-snake,Snake,UNSUPPORTED,snake,1,view,,,@raycast/api:Environment (not in Invoke surface — needs review),
+snake,Snake,SUPPORTED,snake,1,view,,,,
 snap-jot,SnapJot,DEGRADED,snap-jot,3,view,,uses Node built-ins (ok in trusted mode): fs,,fs path
 snapask,SnapAsk,DEGRADED,snapask,1,view,,declares command `arguments[]` — not passed by runtime yet,,
 snapocr-via-paddle,SnapOCR Via Paddle,DEGRADED,snapocr-via-paddle,3,no-view|view,,"uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs os path
@@ -2372,12 +2372,12 @@ solusvm-1-client,SolusVM 1 Client,SUPPORTED,solusvm-1-client,5,view|no-view,,,,
 solusvm-2,SolusVM 2,SUPPORTED,solusvm-2,3,view,,,,
 somafm,SomaFM,DEGRADED,somafm,2,view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): child_process,,child_process events path util
 sonarr,Sonarr,SUPPORTED,sonarr,9,view,,,,
-sonos,Sonos,DEGRADED,sonos,7,no-view|view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired) | updateCommandMetadata: loads; no-op (command metadata updates not wired),,
+sonos,Sonos,DEGRADED,sonos,7,no-view|view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired),,
 sonu-stream,Sonu,SUPPORTED,sonu-stream,1,view,,,,
 sort-mentions,Sort Mentions,DEGRADED,sort-mentions,2,no-view,,uses Node built-ins (ok in trusted mode): child_process,,child_process
 sound-search,Sound Search,SUPPORTED,sound-search,1,view,,,,
-soundboard,Soundboard,DEGRADED,soundboard,11,view|no-view,,launchCommand: loads; throws if called (inter-command launch not wired) | updateCommandMetadata: loads; no-op (command metadata updates not wired) | uses Node built-ins (ok in trusted mode): child_process,,child_process
-sourcegraph,Sourcegraph,DEGRADED,sourcegraph,7,view,,updateCommandMetadata: loads; no-op (command metadata updates not wired) | launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): http,,http path url
+soundboard,Soundboard,DEGRADED,soundboard,11,view|no-view,,launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): child_process,,child_process
+sourcegraph,Sourcegraph,DEGRADED,sourcegraph,7,view,,launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): http,,http path url
 sourcegraph-amp-dash-x,Amp Dash X,DEGRADED,sourcegraph-amp-dash-x,2,view,,uses Node built-ins (ok in trusted mode): fs,,fs os path
 sourcetree,Sourcetree,DEGRADED,sourcetree,1,view,,"uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs os util
 spacer,Spacer,DEGRADED,spacer,2,view,,launchCommand: loads; throws if called (inter-command launch not wired),,
@@ -2404,7 +2404,7 @@ spoqify,Spoqify,SUPPORTED,spoqify,2,no-view,,,,
 sportssync,Sportssync,SUPPORTED,sportssync,20,view|menu-bar,,,,
 spotify-beta,Spotify Beta,SUPPORTED,spotify-beta,1,view,,,,
 spotify-controls,Spotify Controls,DEGRADED,spotify-controls,22,no-view|menu-bar,,declares command `arguments[]` — not passed by runtime yet,,
-spotify-player,Spotify Player,DEGRADED,spotify-player,35,view|menu-bar|no-view,,launchCommand: loads; throws if called (inter-command launch not wired) | updateCommandMetadata: loads; no-op (command metadata updates not wired) | runPowerShellScript: Windows-only; throws on macOS (import loads) | declares command `arguments[]` — not passed by runtime yet,,
+spotify-player,Spotify Player,DEGRADED,spotify-player,35,view|menu-bar|no-view,,launchCommand: loads; throws if called (inter-command launch not wired) | runPowerShellScript: Windows-only; throws on macOS (import loads) | declares command `arguments[]` — not passed by runtime yet,,
 spring-initializr,Spring Initializr,DEGRADED,spring-initializr,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs path
 spryker-docs,Spryker Docs,SUPPORTED,spryker-docs,1,view,,,,
 sql-format,Format SQL,SUPPORTED,sql-format,4,no-view|view,,,,
@@ -2428,7 +2428,7 @@ stealth-ai-tool,Stealth AI,DEGRADED,stealth-ai-tool,10,view|no-view,,"launchComm
 steam,Steam,DEGRADED,steam,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs path
 steam-player-counts,Steam Player Counts,SUPPORTED,steam-player-counts,1,view,,,,
 steamgriddb,SteamGridDB,DEGRADED,steamgriddb,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs os path
-stickies,Stickies,DEGRADED,stickies,7,view|menu-bar|no-view,,updateCommandMetadata: loads; no-op (command metadata updates not wired) | launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): child_process,,child_process os path
+stickies,Stickies,DEGRADED,stickies,7,view|menu-bar|no-view,,launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): child_process,,child_process os path
 stock-lookup,Stock Lookup,SUPPORTED,stock-lookup,1,view,,,,crypto
 stock-tracker,Stock Tracker,SUPPORTED,stock-tracker,1,view,,,,
 stockholm-public-transport,Stockholm Public Transport,SUPPORTED,stockholm-public-transport,1,view,,,,
@@ -2456,10 +2456,10 @@ supabase,Supabase,SUPPORTED,supabase,1,view,,,,
 supabase-cron-monitor,Supabase Cron Monitor,DEGRADED,supabase-cron-monitor,3,view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired),,
 supabase-docs,Supabase Documentation,SUPPORTED,supabase-docs,1,view,,,,
 supergenpass,SuperGenPass,UNSUPPORTED,superpassgen,1,view,,,@raycast/api:useState (not in Invoke surface — needs review),
-superhuman,Superhuman,UNSUPPORTED,superhuman,1,no-view,,,@raycast/api:Tool (not in Invoke surface — needs review),
+superhuman,Superhuman,SUPPORTED,superhuman,1,no-view,,,,
 supermemory,Supermemory,SUPPORTED,supermemory,3,view,,,,
 supernotes,Supernotes,DEGRADED,supernotes,4,view|no-view,,declares command `arguments[]` — not passed by runtime yet,,
-supernova,Supernova,UNSUPPORTED,supernova,6,view|no-view,,"uses Node built-ins (ok in trusted mode): fs, child_process",@raycast/api:Asset (not in Invoke surface — needs review) | @raycast/api:AssetGroup (not in Invoke surface — needs review) | @raycast/api:Component (not in Invoke surface — needs review) | @raycast/api:DesignComponent (not in Invoke surface — needs review) | @raycast/api:DesignSystemVersion (not in Invoke surface — needs review) | @raycast/api:DocSearchResultData (not in Invoke surface — needs review) | @raycast/api:DocumentationGroup (not in Invoke surface — needs review) | @raycast/api:DocumentationPage (not in Invoke surface — needs review) | @raycast/api:Token (not in Invoke surface — needs review) | @raycast/api:TokenGroup (not in Invoke surface — needs review) | @raycast/api:DesignSystem (not in Invoke surface — needs review) | @raycast/api:Supernova (not in Invoke surface — needs review) | @raycast/api:Workspace (not in Invoke surface — needs review) | @raycast/api:AssetFormat (not in Invoke surface — needs review) | @raycast/api:AssetScale (not in Invoke surface — needs review) | @raycast/api:ComponentPropertyLinkElementType (not in Invoke surface — needs review) | @raycast/api:ComponentPropertyType (not in Invoke surface — needs review) | @raycast/api:RenderedAsset (not in Invoke surface — needs review),child_process fs os
+supernova,Supernova,UNSUPPORTED,supernova,6,view|no-view,,"uses Node built-ins (ok in trusted mode): fs, child_process",@raycast/api:Asset (not in Invoke surface — needs review) | @raycast/api:AssetGroup (not in Invoke surface — needs review) | @raycast/api:DesignComponent (not in Invoke surface — needs review) | @raycast/api:DesignSystemVersion (not in Invoke surface — needs review) | @raycast/api:DocSearchResultData (not in Invoke surface — needs review) | @raycast/api:DocumentationGroup (not in Invoke surface — needs review) | @raycast/api:DocumentationPage (not in Invoke surface — needs review) | @raycast/api:Token (not in Invoke surface — needs review) | @raycast/api:TokenGroup (not in Invoke surface — needs review) | @raycast/api:DesignSystem (not in Invoke surface — needs review) | @raycast/api:Supernova (not in Invoke surface — needs review) | @raycast/api:Workspace (not in Invoke surface — needs review) | @raycast/api:AssetFormat (not in Invoke surface — needs review) | @raycast/api:AssetScale (not in Invoke surface — needs review) | @raycast/api:ComponentPropertyLinkElementType (not in Invoke surface — needs review) | @raycast/api:ComponentPropertyType (not in Invoke surface — needs review) | @raycast/api:RenderedAsset (not in Invoke surface — needs review),child_process fs os
 superwhisper,Superwhisper - Offline Voice to Text,DEGRADED,superwhisper,6,no-view|view,,uses Node built-ins (ok in trusted mode): fs,,fs os path
 surf-check,Surf Check,SUPPORTED,surf-check,1,view,,,,
 surfed,Surfed,DEGRADED,surfed,1,view,,"uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs util
@@ -2485,19 +2485,19 @@ sync-folders,Sync Folders,DEGRADED,sync-folders,6,menu-bar|view|no-view,,"launch
 synology-download-station,Synology Download Station,SUPPORTED,synology-download-station,2,view,,,,
 synonyms,Synonyms,DEGRADED,synonyms,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs
 syntax-fm,Syntax.fm,SUPPORTED,syntax-fm,1,view,,,,
-system-information,System Information,UNSUPPORTED,system-information,1,view,,uses Node built-ins (ok in trusted mode): child_process,@raycast/api:Tool (not in Invoke surface — needs review),child_process os
+system-information,System Information,DEGRADED,system-information,1,view,,uses Node built-ins (ok in trusted mode): child_process,,child_process os
 t3-chat,T3 Chat,DEGRADED,t3-chat,1,no-view,,declares command `arguments[]` — not passed by runtime yet,,
 tabby,Tabby,DEGRADED,tabby,1,view,,"uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs os path
 table-converter,Table Converter,SUPPORTED,table-converter,1,view,,,,
 tableau-navigator,Tableau Navigator,SUPPORTED,tableau-navigator,1,view,,,,
 tableplus,TablePlus,DEGRADED,tableplus,2,view|menu-bar,,uses Node built-ins (ok in trusted mode): fs,,fs os path
-tablepro,TablePro,UNSUPPORTED,tablepro,9,view|no-view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs,@raycast/api:Tool (not in Invoke surface — needs review),crypto fs os path
+tablepro,TablePro,DEGRADED,tablepro,9,view|no-view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs,,crypto fs os path
 tabler,Tabler,DEGRADED,tabler,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs os path
 tabletop-dice-roller,Tabletop Dice Roller,SUPPORTED,tabletop-dice-roller,1,view,,,,
 tabnews,TabNews,SUPPORTED,tabnews,1,view,,,,
 tabstash,TabStash,DEGRADED,tabstash,2,view|no-view,,BrowserExtension: loads; throws if called (browser bridge not wired) | declares command `arguments[]` — not passed by runtime yet,,
 tails,Tails,DEGRADED,tails,4,view|no-view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs,,crypto fs os path stream url
-tailscale,Tailscale,DEGRADED,tailscale,11,view|no-view|menu-bar,,updateCommandMetadata: loads; no-op (command metadata updates not wired) | uses Node built-ins (ok in trusted mode): child_process,,child_process
+tailscale,Tailscale,DEGRADED,tailscale,11,view|no-view|menu-bar,,uses Node built-ins (ok in trusted mode): child_process,,child_process
 tailwind-size-conversion,Tailwind Size Conversion,SUPPORTED,px-to-tailwind,1,view,,,,
 tailwindcss,Tailwind CSS,DEGRADED,tailwindcss,4,view,,uses Node built-ins (ok in trusted mode): fs,,fs path
 tallinn-transport,Tallinn Transport,SUPPORTED,tallinn-transport,3,view,,,,
@@ -2510,12 +2510,12 @@ taskplane,Taskplane,SUPPORTED,taskplane,3,view|no-view,,,,
 tategaki,Tategaki,SUPPORTED,tategaki,1,view,,,,
 tautulli,Tautulli,SUPPORTED,tautulli,1,view,,,,
 tc-no-generator,Turkish Identification Number Generator,SUPPORTED,tc-no-generator,2,no-view,,,,
-teak-raycast,Teak,UNSUPPORTED,teak-raycast,8,view|no-view,,BrowserExtension: loads; throws if called (browser bridge not wired) | declares command `arguments[]` — not passed by runtime yet,@raycast/api:Tool (not in Invoke surface — needs review),
-team-time,Team Time,DEGRADED,team-time,4,view|no-view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired) | updateCommandMetadata: loads; no-op (command metadata updates not wired),,
+teak-raycast,Teak,DEGRADED,teak-raycast,8,view|no-view,,BrowserExtension: loads; throws if called (browser bridge not wired) | declares command `arguments[]` — not passed by runtime yet,,
+team-time,Team Time,DEGRADED,team-time,4,view|no-view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired),,
 teamgantt,TeamGantt,SUPPORTED,teamgantt,2,view,,,,url
 teamup-rooms,Teamup Rooms,SUPPORTED,teamup-rooms,1,view,,,,
 techcrunch,TechCrunch,SUPPORTED,techcrunch,1,view,,,,
-telegram,Telegram,UNSUPPORTED,telegram,5,view,,uses Node built-ins (ok in trusted mode): fs,@raycast/api:Tool (not in Invoke surface — needs review),crypto fs path
+telegram,Telegram,DEGRADED,telegram,5,view,,uses Node built-ins (ok in trusted mode): fs,,crypto fs path
 teleport,Teleport,DEGRADED,teleport,6,no-view|view,,useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox | declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): child_process,,child_process
 tella,Tella,SUPPORTED,tella,4,view,,,,
 tembo,Tembo,SUPPORTED,tembo,3,view|menu-bar,,,,
@@ -2532,7 +2532,7 @@ tesla,Tesla,SUPPORTED,tesla,18,view,,,,
 tesla-energy,Tesla Energy,DEGRADED,tesla-energy,2,view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired),,
 teslamate,TeslaMate,SUPPORTED,teslamate,2,view,,,,
 tex2typst,Tex2Typst,SUPPORTED,tex2typst,2,no-view,,,,
-text-decorator,Text Decorator,DEGRADED,text-decorator,3,no-view|view,,launchCommand: loads; throws if called (inter-command launch not wired) | updateCommandMetadata: loads; no-op (command metadata updates not wired) | declares command `arguments[]` — not passed by runtime yet,,
+text-decorator,Text Decorator,DEGRADED,text-decorator,3,no-view|view,,launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet,,
 text-differ,Text Differ,DEGRADED,text-differ,1,no-view,,uses Node built-ins (ok in trusted mode): child_process,,child_process
 text-enhance,Text Enhance,SUPPORTED,text-enhance,2,view,,,,
 text-format-improver,CJK Text Format Improver,SUPPORTED,text-format-improver,1,no-view,,,,
@@ -2553,7 +2553,7 @@ thermoconvert,ThermoConvert,SUPPORTED,thermo-convert,1,view,,,,
 thesaurus,Thesaurus,SUPPORTED,thesaurus,2,view,,,,
 thesvg,TheSVG,DEGRADED,thesvg,2,view|no-view,,declares command `arguments[]` — not passed by runtime yet,,
 thingiverse,Thingiverse,SUPPORTED,thingiverse,1,view,,,,
-things,Things,UNSUPPORTED,things,10,view|menu-bar|no-view,,"launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): child_process, fs",@raycast/api:Tool (not in Invoke surface — needs review),child_process fs os path util
+things,Things,DEGRADED,things,10,view|menu-bar|no-view,,"launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs os path util
 thock,Thock,DEGRADED,thock,2,no-view|view,,"uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs path util
 thrasher-magazine,Thrasher Magazine,SUPPORTED,thrasher-magazine,1,view,,,,
 threads,Threads,DEGRADED,threads,9,no-view|view,,declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs,,fs os
@@ -2562,7 +2562,7 @@ tibia-helper,Tibia Helper,SUPPORTED,tibia-helper,3,view,,,,
 ticktick,TickTick,DEGRADED,ticktick,6,view|no-view,,declares command `arguments[]` — not passed by runtime yet,,
 tidal,Tidal,DEGRADED,tidal,12,menu-bar|view|no-view,,"launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): child_process, fs, http",,child_process fs http path
 tidal-controller,Tidal Controller,SUPPORTED,tidal-controller,10,no-view|menu-bar,,,,
-tidyread---streamline-your-daily-reading,TidyRead - Streamline Your Daily Reading,DEGRADED,tidyread---streamline-your-daily-reading,5,view|no-view,,"updateCommandMetadata: loads; no-op (command metadata updates not wired) | launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): fs, http, child_process",,child_process fs http
+tidyread---streamline-your-daily-reading,TidyRead - Streamline Your Daily Reading,DEGRADED,tidyread---streamline-your-daily-reading,5,view|no-view,,"launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): fs, http, child_process",,child_process fs http
 tiktoken,Tiktoken,SUPPORTED,tiktoken,2,view,,,,
 tikz,TikZ,DEGRADED,tikz,1,view,,"uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs os path
 tim,Tim,DEGRADED,tim,7,no-view|view,,"uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs os path
@@ -2601,16 +2601,16 @@ toggl-track,Toggl Track,UNSUPPORTED,toggl-track,7,view|menu-bar,,launchCommand: 
 toggle-desktop-visibility,Toggle Desktop Visibility,DEGRADED,toggle-desktop-visibility,6,no-view,,uses Node built-ins (ok in trusted mode): child_process,,child_process
 toggle-fn,Toggle Fn,SUPPORTED,toggle-fn,1,no-view,,,,
 toggle-grayscale,Toggle Grayscale,SUPPORTED,toggle-grayscale,1,no-view,,,,
-toggle-menu-bar,Toggle Menu Bar,DEGRADED,toggle-menu-bar,1,no-view,,updateCommandMetadata: loads; no-op (command metadata updates not wired) | uses Node built-ins (ok in trusted mode): child_process,,child_process
+toggle-menu-bar,Toggle Menu Bar,DEGRADED,toggle-menu-bar,1,no-view,,uses Node built-ins (ok in trusted mode): child_process,,child_process
 toggle-proxy,Toggle Proxy,DEGRADED,toggle-proxy,6,menu-bar|view,,"uses Node built-ins (ok in trusted mode): fs, net",,crypto fs net os path
 toggle-scroll-bars-visibility,Toggle Scroll Bars Visibility,DEGRADED,toggle-scroll-bars-visibility,5,no-view,,uses Node built-ins (ok in trusted mode): child_process,,child_process
 tokenizer,Tokenizer,SUPPORTED,tokenizer,2,no-view,,,,
 tomito-controls,Tomito Controls,SUPPORTED,tomito-controls,8,no-view,,,,
 ton-address,TON Address,SUPPORTED,ton-address,1,view,,,,
 toncoin-price,Toncoin (TON) Price,SUPPORTED,toncoin-price,1,menu-bar,,,,
-toneclone,ToneClone,UNSUPPORTED,toneclone,7,view,,BrowserExtension: loads; throws if called (browser bridge not wired) | uses Node built-ins (ok in trusted mode): fs,@raycast/api:KeyEquivalent (not in Invoke surface — needs review),fs
+toneclone,ToneClone,DEGRADED,toneclone,7,view,,BrowserExtension: loads; throws if called (browser bridge not wired) | uses Node built-ins (ok in trusted mode): fs,,fs
 toolbox,ToolBox,SUPPORTED,toolbox,1,view,,,,
-toothpick,Toothpick,DEGRADED,toothpick,19,view|no-view,,"updateCommandMetadata: loads; no-op (command metadata updates not wired) | declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs path
+toothpick,Toothpick,DEGRADED,toothpick,19,view|no-view,,"declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs path
 torbox,TorBox,DEGRADED,torbox,3,view,,uses Node built-ins (ok in trusted mode): fs,,fs path
 torr-manager,Torr Manager,DEGRADED,torr-manager,4,view,,uses Node built-ins (ok in trusted mode): fs,,fs path stream url
 tourbox,TourBox,DEGRADED,tourbox,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs os path
@@ -2644,7 +2644,7 @@ tuya-smart,Tuya Smart,SUPPORTED,tuya-smart,1,view,,,,
 tv-remote,TV Remote,SUPPORTED,tv-remote,1,view,,,,os
 tv2---denmark,TV2 - Denmark,SUPPORTED,tv2---denmark,1,view,,,,
 tw-colorpicker,Tailwind CSS Colorpicker,SUPPORTED,tw-colorsearch,1,view,,,,
-twenty,Twenty,UNSUPPORTED,twenty,1,view,,,@raycast/api:ItemProps (not in Invoke surface — needs review) | @raycast/api:FormItemRef (not in Invoke surface — needs review),crypto
+twenty,Twenty,SUPPORTED,twenty,1,view,,,,crypto
 twingate,Twingate,SUPPORTED,twingate,2,view,,,,
 twitch,Twitch,DEGRADED,twitch,4,view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): child_process,,child_process
 twitch-chat,Twitch Chat,SUPPORTED,twitch-chat,1,view,,,,
@@ -2659,8 +2659,8 @@ tynyfy,Tynyfy - URL Shortener,SUPPORTED,tynyfy,1,view,,,,
 type-snob,Type Snob,SUPPORTED,type-snob,1,view,,,,
 type-the-alphabet,Type the Alphabet,SUPPORTED,type-the-alphabet,1,view,,,,
 typeform,Typeform Navigator,SUPPORTED,typeform-navigator,1,view,,,,
-typefully,Typefully,UNSUPPORTED,typefully,5,view,,,@raycast/api:Tool (not in Invoke surface — needs review),
-typer,Typer - Custom Text Hotkey,DEGRADED,typer,5,no-view,,updateCommandMetadata: loads; no-op (command metadata updates not wired),,
+typefully,Typefully,SUPPORTED,typefully,5,view,,,,
+typer,Typer - Custom Text Hotkey,SUPPORTED,typer,5,no-view,,,,
 typescript-documentation-search,TypeScript Documentation Search,SUPPORTED,typescript-documentation-search,1,view,,,,
 typescript-mock-generator,Typescript Mock Generator,SUPPORTED,typescript-mock-generator,1,view,,,,
 typewhisper,TypeWhisper,DEGRADED,typewhisper,5,view|no-view,,uses Node built-ins (ok in trusted mode): fs,,fs path
@@ -2671,9 +2671,9 @@ typst-universe,Typst Universe,SUPPORTED,typst-universe,1,view,,,,
 u301-url-shortener,U301 URL Shortener,DEGRADED,u301-url-shortener,3,view|no-view,,declares command `arguments[]` — not passed by runtime yet,,
 udemy-coupons,Udemy Coupons,SUPPORTED,udemy-coupons,1,view,,,,
 ugly-face,Ugly Face,UNSUPPORTED,ugly-face,1,view,,uses Node built-ins (ok in trusted mode): fs,@raycast/api:render (not in Invoke surface — needs review),fs os path
-uk-bank-holidays,UK Bank Holidays,DEGRADED,uk-bank-holidays,2,view|no-view,,updateCommandMetadata: loads; no-op (command metadata updates not wired),,
+uk-bank-holidays,UK Bank Holidays,SUPPORTED,uk-bank-holidays,2,view|no-view,,,,
 ulid,ULID,SUPPORTED,ulid,2,no-view,,,,
-ultrahuman,Ultrahuman,DEGRADED,ultrahuman,3,view,,updateCommandMetadata: loads; no-op (command metadata updates not wired),,
+ultrahuman,Ultrahuman,SUPPORTED,ultrahuman,3,view,,,,
 ulysses,Ulysses,SUPPORTED,ulysses,5,no-view|view,,,,
 umami,Umami,SUPPORTED,umami,4,view|menu-bar,,,,
 unblocked-answers,Unblocked Answers,DEGRADED,unblocked-answers,2,view,,declares command `arguments[]` — not passed by runtime yet,,
@@ -2767,7 +2767,7 @@ vivaldi,Vivaldi,DEGRADED,vivaldi,5,view|no-view,,"uses Node built-ins (ok in tru
 vivapb,VivaPB,DEGRADED,vivapb,1,no-view,,uses Node built-ins (ok in trusted mode): child_process,,child_process
 vixai,Vixai,DEGRADED,vixai,5,view,,declares command `arguments[]` — not passed by runtime yet,,
 vlc,VLC,DEGRADED,vlc,22,no-view|view,,declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): child_process,,child_process
-vmware-vcenter,VMware VCenter,UNSUPPORTED,vmware-vcenter,4,view,,runPowerShellScript: Windows-only; throws on macOS (import loads),@raycast/api:Tool (not in Invoke surface — needs review),
+vmware-vcenter,VMware VCenter,DEGRADED,vmware-vcenter,4,view,,runPowerShellScript: Windows-only; throws on macOS (import loads),,
 vn-textify,VN Textify,SUPPORTED,vn-textify,1,no-view,,,,assert
 vocab,Vocabulary.com,SUPPORTED,vocab-search,1,view,,,,
 vocabuilder,VocaBuilder,DEGRADED,vocabuilder,3,view,,"uses Node built-ins (ok in trusted mode): fs, child_process",,child_process crypto fs os path
@@ -2807,7 +2807,7 @@ webflow-sites,Webflow,SUPPORTED,webflow-sites,1,view,,,,
 webhook-sender,Webhook Sender,SUPPORTED,webhook-sender,1,view,,,,
 webkit-developer-docs,WebKit Developer Documentation,SUPPORTED,webkit-developer-docs,1,view,,,,
 webpage-to-markdown,Webpage to Markdown,DEGRADED,webpage-to-markdown,1,view,,declares command `arguments[]` — not passed by runtime yet,,
-website-blocker,Website Blocker,DEGRADED,website-blocker,2,view|no-view,,updateCommandMetadata: loads; no-op (command metadata updates not wired) | uses Node built-ins (ok in trusted mode): fs,,fs util
+website-blocker,Website Blocker,DEGRADED,website-blocker,2,view|no-view,,uses Node built-ins (ok in trusted mode): fs,,fs util
 websocket-debugging,Websocket Debugging,SUPPORTED,websocket-debugging,1,view,,,,
 wechat,WeChat,DEGRADED,wechat,2,view,,"launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs os path url
 wechat-devtool,WeChat DevTool,DEGRADED,wechat-devtool,3,view,,"uses Node built-ins (ok in trusted mode): fs, child_process",,child_process crypto fs os path util
@@ -2815,7 +2815,7 @@ week-number,Week Number,DEGRADED,week-number,2,menu-bar|view,,launchCommand: loa
 weread-sync,WeRead Sync,DEGRADED,weread-sync,1,view,,uses Node built-ins (ok in trusted mode): https,,https url zlib
 wezterm-navigator,WezTerm Navigator,DEGRADED,wezterm-navigator,4,view,,"useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox | uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs os
 what-happened-today,What Happened Today,SUPPORTED,what-happened-today,1,view,,,,
-whatsapp,WhatsApp,UNSUPPORTED,whatsapp,4,view,,"uses Node built-ins (ok in trusted mode): child_process, fs",@raycast/api:Tool (not in Invoke surface — needs review),child_process fs os path util
+whatsapp,WhatsApp,DEGRADED,whatsapp,4,view,,"uses Node built-ins (ok in trusted mode): child_process, fs",,child_process fs os path util
 whentomeet,WhenToMeet,SUPPORTED,whentomeet,1,view,,,,
 where-is-my-cursor,Where Is My Cursor?,SUPPORTED,where-is-my-cursor,5,no-view|view,,,,
 whimsical,Whimsical,SUPPORTED,whimsical,1,view,,,,
@@ -2825,7 +2825,7 @@ whitebit,WhiteBIT Exchange,DEGRADED,whitebit,7,view|no-view,,launchCommand: load
 whmcs-client-search,WHMCS Client Search,DEGRADED,whmcs-client-search,2,view|no-view,,uses Node built-ins (ok in trusted mode): fs,,fs path
 who-is-off-today,Who Is off Today?,SUPPORTED,who-is-off-today,1,view,,,,
 whois,Whois,DEGRADED,whois,1,view,,declares command `arguments[]` — not passed by runtime yet,,path
-whoop,WHOOP,DEGRADED,whoop,3,no-view|view,,updateCommandMetadata: loads; no-op (command metadata updates not wired),,
+whoop,WHOOP,SUPPORTED,whoop,3,no-view|view,,,,
 whosampled,WhoSampled,DEGRADED,whosampled,3,no-view,,declares command `arguments[]` — not passed by runtime yet,,
 wi-fi,Wi-Fi,DEGRADED,wi-fi,2,no-view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): child_process,,child_process os
 wifi-password-reveal,WiFi Password Reveal,DEGRADED,wifi-password-reveal,1,view,,uses Node built-ins (ok in trusted mode): child_process,,child_process
@@ -2845,7 +2845,7 @@ windsurf,Windsurf Extension,DEGRADED,windsurf,2,no-view|view,,"uses Node built-i
 winget,WinGet,DEGRADED,winget,3,view,,uses Node built-ins (ok in trusted mode): child_process,,child_process util
 winscp,WinSCP,DEGRADED,winscp,1,view,,"uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs os path util
 winutils,Winutils,DEGRADED,winutils,1,no-view,,uses Node built-ins (ok in trusted mode): child_process,,child_process
-wip,WIP,DEGRADED,wip,4,view|no-view,,updateCommandMetadata: loads; no-op (command metadata updates not wired) | uses Node built-ins (ok in trusted mode): fs,,crypto fs path
+wip,WIP,DEGRADED,wip,4,view|no-view,,uses Node built-ins (ok in trusted mode): fs,,crypto fs path
 wireguard,Wireguard,DEGRADED,wireguard,2,view|no-view,,uses Node built-ins (ok in trusted mode): child_process,,child_process util
 wise-accounts,Wise Accounts,DEGRADED,wise-accounts,4,view|menu-bar,,launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet,,
 wise-quotes,Wise Quotes,DEGRADED,wise-quotes,2,view|menu-bar,,declares command `arguments[]` — not passed by runtime yet,,
@@ -2867,8 +2867,8 @@ wordpress-docs,WordPress Docs,SUPPORTED,wordpress-docs,1,view,,,,
 wordpress-icon-finder,WordPress Icon Finder,SUPPORTED,wordpress-icon-finder,1,view,,,,
 wordpress-manager,WordPress Manager,SUPPORTED,wordpress-manager,9,view,,,,
 wordpress-plugins,WordPress Plugins,SUPPORTED,wordpress-plugins,1,view,,,,
-wordreference,WordReference Dictionary Translation,DEGRADED,wordreference,1,view,,updateCommandMetadata: loads; no-op (command metadata updates not wired) | declares command `arguments[]` — not passed by runtime yet,,
-work-time-countdown,Work Time Countdown,DEGRADED,work-time-countdown,1,menu-bar,,updateCommandMetadata: loads; no-op (command metadata updates not wired),,
+wordreference,WordReference Dictionary Translation,DEGRADED,wordreference,1,view,,declares command `arguments[]` — not passed by runtime yet,,
+work-time-countdown,Work Time Countdown,SUPPORTED,work-time-countdown,1,menu-bar,,,,
 workflowy-inbox,Workflowy Inbox,SUPPORTED,workflowy-inbox,2,view,,,,timers
 workouts,Workouts,DEGRADED,workouts,6,view|menu-bar,,uses Node built-ins (ok in trusted mode): fs,,fs os path
 worktrees,Git Worktrees,DEGRADED,worktrees,2,view,,uses Node built-ins (ok in trusted mode): child_process,,child_process os path util
@@ -2885,7 +2885,7 @@ writersbrew,Writersbrew,DEGRADED,writersbrew,21,no-view|view,,uses Node built-in
 wsl-manager,WSL Manager,DEGRADED,wsl-manager,2,view,,uses Node built-ins (ok in trusted mode): child_process,,child_process util
 wu-bi-bian-ma,Wubi Code,DEGRADED,wu-bi-bian-ma,2,view,,declares command `arguments[]` — not passed by runtime yet,,
 xbox-friends,Xbox Friends,SUPPORTED,xbox-friends,1,view,,,,
-xcode,Xcode,UNSUPPORTED,xcode,21,menu-bar|view|no-view,,"launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs, child_process",@raycast/api:Navigation (not in Invoke surface — needs review) | @raycast/api:Tool (not in Invoke surface — needs review),child_process fs os path url util
+xcode,Xcode,DEGRADED,xcode,21,menu-bar|view|no-view,,"launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs os path url util
 xcode-cloud,Xcode Cloud,DEGRADED,xcode-cloud,2,view,,uses Node built-ins (ok in trusted mode): fs,,fs
 xcodes,Xcodes,DEGRADED,xcodes,1,view,,"uses Node built-ins (ok in trusted mode): fs, child_process",,child_process fs path util
 xecutor,Xecutor,DEGRADED,xecutor,2,view|no-view,,declares command `arguments[]` — not passed by runtime yet,,url
@@ -2904,7 +2904,7 @@ yandex-smart-home,Yandex Smart Home,SUPPORTED,yandex-smart-home,2,view,,,,crypto
 yap,Yap,SUPPORTED,yap,1,view,,,,
 yasb,YASB,DEGRADED,yasb,12,no-view|view,,useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox | declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): child_process,,child_process
 yazio-tracker,Yazio Tracker,SUPPORTED,yazio-tracker,3,view,,,,
-year-in-progress,Year in Progress,DEGRADED,year-in-progress,3,no-view|menu-bar|view,,launchCommand: loads; throws if called (inter-command launch not wired) | updateCommandMetadata: loads; no-op (command metadata updates not wired),,
+year-in-progress,Year in Progress,DEGRADED,year-in-progress,3,no-view|menu-bar|view,,launchCommand: loads; throws if called (inter-command launch not wired),,
 yield-calculator,Yield Calculator,SUPPORTED,yield-calculator,1,view,,,,
 yoink,Yoink,DEGRADED,yoink,1,no-view,,uses Node built-ins (ok in trusted mode): fs,,fs
 yomicast,Yomicast – Offline Japanese-English Dictionary,DEGRADED,yomicast,2,view|no-view,,launchCommand: loads; throws if called (inter-command launch not wired) | uses Node built-ins (ok in trusted mode): fs,,fs path stream
@@ -2914,7 +2914,7 @@ youdao-translate,Youdao Translate,SUPPORTED,youdao-translate,1,view,,,,crypto
 youform,Youform,SUPPORTED,youform,1,view,,,,
 your-name-in-landsat,Your Name in Landsat,DEGRADED,your-name-in-landsat,2,view,,launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs,,fs os path url
 yourls,YOURLS Link Shortener,SUPPORTED,yourls,2,view,,,,url
-youtrack,YouTrack,UNSUPPORTED,youtrack,2,view,,,@raycast/api:Tool (not in Invoke surface — needs review),
+youtrack,YouTrack,SUPPORTED,youtrack,2,view,,,,
 youtube,YouTube,DEGRADED,youtube,4,view,,declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs,,fs
 youtube-companion,YouTube Companion,SUPPORTED,youtube-companion,3,no-view,,,,url
 youtube-highlights,YouTube Highlights,DEGRADED,youtube-highlights,5,view,,"uses Node built-ins (ok in trusted mode): child_process, fs",,child_process crypto fs os path
@@ -2939,15 +2939,15 @@ zen-mode,Zen Mode,DEGRADED,zen-mode,3,no-view|view,,uses Node built-ins (ok in t
 zenblog,Zenblog,SUPPORTED,zenblog,1,view,,,,
 zendesk,Zendesk — Search Support Center,SUPPORTED,zendesk,1,view,,,,
 zendesk-admin,Zendesk — Admin,SUPPORTED,zendesk-admin,2,view,,,,
-zenmux-manager,ZenMux Manager,UNSUPPORTED,zenmux-manager,2,no-view|view,,"updateCommandMetadata: loads; no-op (command metadata updates not wired) | uses Node built-ins (ok in trusted mode): fs, child_process","@raycast/api:name: ""Search tool imports the routing table"" (not in Invoke surface — needs review) | @raycast/api:passed:
+zenmux-manager,ZenMux Manager,UNSUPPORTED,zenmux-manager,2,no-view|view,,"uses Node built-ins (ok in trusted mode): fs, child_process","@raycast/api:name: ""Search tool imports the routing table"" (not in Invoke surface — needs review) | @raycast/api:passed:
       searchTool.includes('from ""../zenmux-doc-routing""') &&
       searchTool.includes(""routingMatches"") (not in Invoke surface — needs review)",child_process fs os path
 zeplin-project-raycast-extension,Zeplin Project Search,SUPPORTED,zeplin-project-search,1,view,,,,
 zerion,Zerion,DEGRADED,zerion,9,view|menu-bar|no-view,,launchCommand: loads; throws if called (inter-command launch not wired) | declares command `arguments[]` — not passed by runtime yet,,
-zero,Zero,UNSUPPORTED,zero,1,no-view,,,@raycast/api:Tool (not in Invoke surface — needs review),
+zero,Zero,SUPPORTED,zero,1,no-view,,,,
 zerodha-portfolio-kite-coin,Zerodha Portfolio (Kite+Coin),SUPPORTED,zerodha-portfolio-kite-coin,1,view,,,,
 zerossl,ZeroSSL,SUPPORTED,zerossl,2,view,,,,
-zipcodebase,Zipcodebase,DEGRADED,zipcodebase,8,view|no-view,,updateCommandMetadata: loads; no-op (command metadata updates not wired) | declares command `arguments[]` — not passed by runtime yet,,
+zipcodebase,Zipcodebase,DEGRADED,zipcodebase,8,view|no-view,,declares command `arguments[]` — not passed by runtime yet,,
 zipic,Zipic,DEGRADED,zipic,3,no-view|view,,"uses Node built-ins (ok in trusted mode): fs, https, http, child_process",,child_process fs http https os path util
 zipline,Zipline,DEGRADED,zipline,4,view|no-view,,declares command `arguments[]` — not passed by runtime yet | uses Node built-ins (ok in trusted mode): fs,,fs os path
 zipper-run,Run Zipper Applet,DEGRADED,zipper-run,1,view,,declares command `arguments[]` — not passed by runtime yet,,
@@ -2961,6 +2961,6 @@ zoom-meeting-control,Zoom Meeting Control,SUPPORTED,zoom-control,11,no-view,,,,
 zotero,Search Zotero,DEGRADED,zotero,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs path
 zoxide-git-projects,Zoxide Git Projects,DEGRADED,zoxide-git-projects,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs os path
 zread-ai,Zread.ai,DEGRADED,zread-ai,2,no-view,,BrowserExtension: loads; throws if called (browser bridge not wired) | declares command `arguments[]` — not passed by runtime yet,,url
-zsh-aliases,Zsh Aliases,UNSUPPORTED,zsh-aliases,1,view,,uses Node built-ins (ok in trusted mode): fs,@raycast/api:Tool (not in Invoke surface — needs review),fs os path
+zsh-aliases,Zsh Aliases,DEGRADED,zsh-aliases,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs os path
 zshrc-manager,Zshrc Manager,DEGRADED,zshrc-manager,1,view,,uses Node built-ins (ok in trusted mode): fs,,fs os path
 zyntra,Zyntra,SUPPORTED,zyntra,1,view,,,,

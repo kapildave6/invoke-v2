@@ -8,9 +8,9 @@
 
 | Status | Count | % |
 |---|---:|---:|
-| SUPPORTED | 1416 | 47.8% |
-| DEGRADED | 1399 | 47.2% |
-| UNSUPPORTED | 146 | 4.9% |
+| SUPPORTED | 1473 | 49.7% |
+| DEGRADED | 1423 | 48.1% |
+| UNSUPPORTED | 65 | 2.2% |
 
 ## Top gaps (extensions blocked/degraded per missing capability)
 
@@ -19,117 +19,38 @@
 | uses Node built-ins | 1023 |
 | declares command `arguments[]` — not passed by runtime yet | 481 |
 | launchCommand | 250 |
-| @raycast/api | 112 |
-| updateCommandMetadata | 88 |
 | BrowserExtension | 47 |
 | useExec | 41 |
 | @raycast/utils | 37 |
+| @raycast/api | 30 |
 | runPowerShellScript | 18 |
 | namespace import of @raycast/api | 7 |
 
-## UNSUPPORTED (146)
+## UNSUPPORTED (65)
 
 ### `1loc` — 1 LOC - JavaScript Utilities in Single Line of Code
 - dir: `1loc` · commands: 1 · modes: view
 - Needs review: @raycast/utils:getPreferenceValues (not implemented in Invoke); @raycast/utils:List (not implemented in Invoke)
-
-### `anytype` — Anytype
-- dir: `anytype` · commands: 5 · modes: view
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
-### `app` — App Creator
-- dir: `app-creator` · commands: 1 · modes: view
-- Degraded: uses Node built-ins (ok in trusted mode): fs
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
-### `apple-notes` — Apple Notes
-- dir: `apple-notes` · commands: 7 · modes: view|no-view|menu-bar
-- Degraded: declares command `arguments[]` — not passed by runtime yet
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
 
 ### `apple-passwords` — Apple Password
 - dir: `apple-passwords` · commands: 2 · modes: view|no-view
 - Degraded: uses Node built-ins (ok in trusted mode): child_process, module, fs
 - Needs review: namespace import of @raycast/api (member usage unverified)
 
-### `apple-reminders` — Apple Reminders
-- dir: `apple-reminders` · commands: 7 · modes: view|menu-bar|no-view
-- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): child_process
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
-### `are-na` — Are.na
-- dir: `are-na` · commands: 7 · modes: view
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
-### `atomic` — Atomic Data
-- dir: `atomic` · commands: 1 · modes: view
-- Needs review: @raycast/api:Preferences (not in Invoke surface — needs review)
-
 ### `bartender` — Bartender
 - dir: `bartender` · commands: 4 · modes: no-view|view
 - Degraded: uses Node built-ins (ok in trusted mode): fs
 - Needs review: @raycast/utils:DeeplinkType (not implemented in Invoke)
-
-### `bear` — Bear Notes
-- dir: `bear` · commands: 4 · modes: view|menu-bar
-- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); uses Node built-ins (ok in trusted mode): fs
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
-### `beeper` — Beeper Desktop
-- dir: `beeper` · commands: 6 · modes: view|no-view
-- Degraded: uses Node built-ins (ok in trusted mode): fs
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
-### `betterdisplay` — BetterDisplay
-- dir: `betterdisplay` · commands: 1 · modes: view
-- Degraded: uses Node built-ins (ok in trusted mode): child_process
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
-### `bugmenot` — BugMeNot
-- dir: `bugmenot` · commands: 1 · modes: view
-- Needs review: @raycast/api:ListItem (not in Invoke surface — needs review)
-
-### `cal-com-share-meeting-links` — Cal.com
-- dir: `cal-com-share-meeting-links` · commands: 5 · modes: view
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
-### `cerebras` — Cerebras
-- dir: `cerebras` · commands: 8 · modes: view
-- Degraded: BrowserExtension: loads; throws if called (browser bridge not wired); uses Node built-ins (ok in trusted mode): http, fs
-- Needs review: @raycast/api:Navigation (not in Invoke surface — needs review)
-
-### `chatgpt` — ChatGPT
-- dir: `chatgpt` · commands: 10 · modes: view
-- Degraded: BrowserExtension: loads; throws if called (browser bridge not wired); declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): http, fs, child_process
-- Needs review: @raycast/api:Navigation (not in Invoke surface — needs review)
-
-### `circle-ci` — CircleCI Workflows
-- dir: `circle-ci` · commands: 1 · modes: view
-- Needs review: @raycast/api:ImageLike (not in Invoke surface — needs review)
 
 ### `claude-sessions` — Claude Sessions
 - dir: `claude-sessions` · commands: 2 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): fs, child_process
 - Needs review: @raycast/api:useState (not in Invoke surface — needs review); @raycast/api:useEffect (not in Invoke surface — needs review); @raycast/api:readdir (not in Invoke surface — needs review); @raycast/api:stat (not in Invoke surface — needs review); @raycast/utils:useState (not implemented in Invoke); @raycast/utils:useEffect (not implemented in Invoke)
 
-### `code` — Code Execution
-- dir: `code-execution` · commands: 1 · modes: no-view
-- Degraded: declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): child_process
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
 ### `comet` — Comet
 - dir: `comet` · commands: 7 · modes: view|no-view
 - Degraded: uses Node built-ins (ok in trusted mode): fs, child_process
 - Needs review: namespace import of @raycast/api (member usage unverified)
-
-### `contexts` — Contexts
-- dir: `contexts` · commands: 2 · modes: no-view|view
-- Degraded: declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): fs
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
-### `conventional-comments` — Conventional Comments
-- dir: `conventional-comments` · commands: 2 · modes: view
-- Needs review: @raycast/api:FormValue (not in Invoke surface — needs review)
 
 ### `coze` — Coze
 - dir: `coze` · commands: 3 · modes: view
@@ -141,29 +62,10 @@
 - Degraded: uses Node built-ins (ok in trusted mode): fs
 - Needs review: namespace import of @raycast/api (member usage unverified)
 
-### `curl` — cURL
-- dir: `curl` · commands: 2 · modes: view
-- Degraded: uses Node built-ins (ok in trusted mode): child_process
-- Needs review: @raycast/api:Navigation (not in Invoke surface — needs review)
-
-### `dagster` — Dagster
-- dir: `dagster` · commands: 4 · modes: view|no-view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); uses Node built-ins (ok in trusted mode): fs
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
-### `debank` — debank
-- dir: `debank` · commands: 1 · modes: view
-- Needs review: @raycast/api:ActionPanelItem (not in Invoke surface — needs review); @raycast/api:AlertActionStyle (not in Invoke surface — needs review); @raycast/api:ListSection (not in Invoke surface — needs review)
-
 ### `deepwiki` — DeepWiki
 - dir: `deepwiki` · commands: 3 · modes: no-view|view
 - Degraded: BrowserExtension: loads; throws if called (browser bridge not wired); launchCommand: loads; throws if called (inter-command launch not wired); declares command `arguments[]` — not passed by runtime yet
 - Needs review: @raycast/utils:LaunchProps (not implemented in Invoke); @raycast/utils:open (not implemented in Invoke); @raycast/utils:Action (not implemented in Invoke); @raycast/utils:ActionPanel (not implemented in Invoke); @raycast/utils:Icon (not implemented in Invoke); @raycast/utils:launchCommand (not implemented in Invoke); @raycast/utils:LaunchType (not implemented in Invoke); @raycast/utils:List (not implemented in Invoke); @raycast/utils:showToast (not implemented in Invoke); @raycast/utils:Toast (not implemented in Invoke)
-
-### `deno-deploy` — Deno Deploy
-- dir: `deno-deploy` · commands: 4 · modes: view|no-view
-- Degraded: uses Node built-ins (ok in trusted mode): fs
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
 
 ### `deta-space` — Deta Space
 - dir: `deta-space` · commands: 5 · modes: view
@@ -175,25 +77,15 @@
 
 ### `dlmoji` — DLmoji
 - dir: `dlmoji` · commands: 1 · modes: view
-- Needs review: @raycast/api:Component (not in Invoke surface — needs review); @raycast/api:Fragment (not in Invoke surface — needs review); @raycast/api:checkEmojiOnly (not in Invoke surface — needs review)
+- Needs review: @raycast/api:checkEmojiOnly (not in Invoke surface — needs review)
 
 ### `dota-2` — Dota 2
 - dir: `dota-2` · commands: 2 · modes: view
 - Needs review: @raycast/api:useState (not in Invoke surface — needs review); @raycast/api:useEffect (not in Invoke surface — needs review); @raycast/api:useMemo (not in Invoke surface — needs review)
 
-### `downloads-manager` — Downloads Manager
-- dir: `downloads-manager` · commands: 7 · modes: view|no-view
-- Degraded: uses Node built-ins (ok in trusted mode): fs, child_process
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
-### `drafts` — Drafts
-- dir: `drafts` · commands: 18 · modes: view|no-view
-- Degraded: declares command `arguments[]` — not passed by runtime yet
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
 ### `feedbin` — Feedbin
 - dir: `feedbin` · commands: 6 · modes: view|menu-bar|no-view
-- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); updateCommandMetadata: loads; no-op (command metadata updates not wired); declares command `arguments[]` — not passed by runtime yet
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares command `arguments[]` — not passed by runtime yet
 - Needs review: @raycast/utils:CachedPromiseOptions (not implemented in Invoke)
 
 ### `flight-miles-calculator` — Flight Miles Calculator
@@ -210,71 +102,23 @@
 - Degraded: uses Node built-ins (ok in trusted mode): fs
 - Needs review: @raycast/api:useCallback (not in Invoke surface — needs review); @raycast/api:useEffect (not in Invoke surface — needs review); @raycast/api:useMemo (not in Invoke surface — needs review); @raycast/api:useRef (not in Invoke surface — needs review); @raycast/api:useState (not in Invoke surface — needs review); @raycast/utils:useCallback (not implemented in Invoke); @raycast/utils:useEffect (not implemented in Invoke); @raycast/utils:useMemo (not implemented in Invoke); @raycast/utils:useRef (not implemented in Invoke); @raycast/utils:useState (not implemented in Invoke); @raycast/utils:Toast (not implemented in Invoke); @raycast/utils:closeMainWindow (not implemented in Invoke); @raycast/utils:showHUD (not implemented in Invoke); @raycast/utils:showToast (not implemented in Invoke)
 
-### `focus` — Focus
-- dir: `focus` · commands: 9 · modes: no-view|view
-- Degraded: declares command `arguments[]` — not passed by runtime yet
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
 ### `focustask` — FocusTask
 - dir: `focustask` · commands: 3 · modes: menu-bar|view
 - Needs review: @raycast/utils:Action (not implemented in Invoke); @raycast/utils:ActionPanel (not implemented in Invoke); @raycast/utils:Form (not implemented in Invoke); @raycast/utils:Icon (not implemented in Invoke); @raycast/utils:popToRoot (not implemented in Invoke); @raycast/utils:showToast (not implemented in Invoke); @raycast/utils:Toast (not implemented in Invoke); @raycast/utils:open (not implemented in Invoke)
 
-### `freeagent` — FreeAgent
-- dir: `freeagent` · commands: 8 · modes: view
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
-### `get-note` — GetNote
-- dir: `get-note` · commands: 5 · modes: view
-- Degraded: uses Node built-ins (ok in trusted mode): fs
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
-### `git-assistant` — Git Assistant
-- dir: `git-assistant` · commands: 1 · modes: view
-- Degraded: uses Node built-ins (ok in trusted mode): child_process, fs
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
-### `github` — GitHub
-- dir: `github` · commands: 20 · modes: view|menu-bar
-- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); uses Node built-ins (ok in trusted mode): child_process, fs
-- Needs review: @raycast/api:Preferences (not in Invoke surface — needs review)
-
-### `github-for-enterprise` — GitHub Enterprise
-- dir: `github-for-enterprise` · commands: 8 · modes: view|menu-bar
-- Degraded: launchCommand: loads; throws if called (inter-command launch not wired)
-- Needs review: @raycast/api:FormValues (not in Invoke surface — needs review)
-
 ### `github-trending` — GitHub Trending
 - dir: `github-trending` · commands: 1 · modes: view
-- Needs review: @raycast/api:KeyEquivalent (not in Invoke surface — needs review); @raycast/utils:Action (not implemented in Invoke); @raycast/utils:ActionPanel (not implemented in Invoke); @raycast/utils:Detail (not implemented in Invoke); @raycast/utils:Icon (not implemented in Invoke)
-
-### `google-calendar` — Google Calendar
-- dir: `google-calendar` · commands: 5 · modes: view
-- Degraded: launchCommand: loads; throws if called (inter-command launch not wired)
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
-### `google-calendar-quickadd` — Google Calendar Events Quick Add
-- dir: `google-calendar-quickadd` · commands: 2 · modes: no-view|view
-- Degraded: declares command `arguments[]` — not passed by runtime yet
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
+- Needs review: @raycast/utils:Action (not implemented in Invoke); @raycast/utils:ActionPanel (not implemented in Invoke); @raycast/utils:Detail (not implemented in Invoke); @raycast/utils:Icon (not implemented in Invoke)
 
 ### `google-chrome` — Google Chrome
 - dir: `google-chrome` · commands: 10 · modes: view|no-view
 - Degraded: uses Node built-ins (ok in trusted mode): fs, child_process
 - Needs review: namespace import of @raycast/api (member usage unverified)
 
-### `granola` — Granola
-- dir: `granola` · commands: 7 · modes: view|no-view
-- Degraded: uses Node built-ins (ok in trusted mode): fs
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
 ### `groq-tools` — GROQ Tools
 - dir: `groq-tools` · commands: 3 · modes: view|no-view
 - Degraded: declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): fs
-- Needs review: @raycast/api:ComponentType (not in Invoke surface — needs review); @raycast/api:SetStateAction (not in Invoke surface — needs review); @raycast/api:Dispatch (not in Invoke surface — needs review); @raycast/api:useState (not in Invoke surface — needs review); @raycast/api:useEffect (not in Invoke surface — needs review); @raycast/api:readFile (not in Invoke surface — needs review)
-
-### `hackmd` — HackMD
-- dir: `hackmd` · commands: 4 · modes: view
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
+- Needs review: @raycast/api:useState (not in Invoke surface — needs review); @raycast/api:useEffect (not in Invoke surface — needs review); @raycast/api:readFile (not in Invoke surface — needs review)
 
 ### `hammerspoon` — Hammerspoon
 - dir: `hammerspoon` · commands: 10 · modes: no-view|view
@@ -304,47 +148,10 @@
 - dir: `invisible-text-detector` · commands: 3 · modes: view|no-view
 - Needs review: namespace import of @raycast/api (member usage unverified)
 
-### `iterm` — iTerm
-- dir: `iterm` · commands: 11 · modes: view
-- Degraded: uses Node built-ins (ok in trusted mode): child_process, fs
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
-### `ivpn` — IVPN
-- dir: `ivpn` · commands: 12 · modes: no-view|view
-- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): child_process
-- Needs review: @raycast/api:Environment (not in Invoke surface — needs review)
-
 ### `jira-search` — Jira Search
 - dir: `jira-search` · commands: 5 · modes: view|no-view
 - Degraded: uses Node built-ins (ok in trusted mode): fs
 - Needs review: @raycast/api:ResultItem (not in Invoke surface — needs review); @raycast/api:SearchCommand (not in Invoke surface — needs review); @raycast/api:jiraFetchObject (not in Invoke surface — needs review); @raycast/api:jiraUrl (not in Invoke surface — needs review)
-
-### `kef-control` — Control Kef
-- dir: `kef-control` · commands: 3 · modes: view|menu-bar
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
-### `kill-process` — Kill Process
-- dir: `kill-process` · commands: 1 · modes: view
-- Degraded: uses Node built-ins (ok in trusted mode): child_process, fs
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
-### `kinopio-inbox` — Kinopio Inbox
-- dir: `kinopio-inbox` · commands: 2 · modes: view|no-view
-- Needs review: @raycast/api:Preferences (not in Invoke surface — needs review)
-
-### `laravel-cloud` — Laravel Cloud
-- dir: `laravel-cloud` · commands: 10 · modes: view
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
-### `lokalise` — Lokalise
-- dir: `lokalise` · commands: 3 · modes: view|no-view
-- Degraded: uses Node built-ins (ok in trusted mode): fs
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
-### `mail` — Apple Mail
-- dir: `mail` · commands: 11 · modes: no-view|view
-- Degraded: uses Node built-ins (ok in trusted mode): fs
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
 
 ### `masked-link-generator` — Masked Link Generator
 - dir: `masked-link-generator` · commands: 1 · modes: no-view
@@ -355,33 +162,9 @@
 - dir: `mastodon-search` · commands: 1 · modes: view
 - Needs review: @raycast/api:useMemo (not in Invoke surface — needs review); @raycast/api:useState (not in Invoke surface — needs review); @raycast/utils:useMemo (not implemented in Invoke)
 
-### `media-converter` — Media Converter
-- dir: `media-converter` · commands: 4 · modes: view
-- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); uses Node built-ins (ok in trusted mode): fs, child_process, module
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
 ### `memo` — Memo
 - dir: `memo` · commands: 2 · modes: view
 - Needs review: @raycast/api:Page (not in Invoke surface — needs review); @raycast/api:Api (not in Invoke surface — needs review); @raycast/api:RaycastAdapter (not in Invoke surface — needs review); @raycast/api:useEffect (not in Invoke surface — needs review); @raycast/api:useState (not in Invoke surface — needs review); @raycast/api:Saver (not in Invoke surface — needs review)
-
-### `messages` — Messages
-- dir: `messages` · commands: 5 · modes: view|menu-bar|no-view
-- Degraded: launchCommand: loads; throws if called (inter-command launch not wired)
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
-### `meta-music` — Meta Music
-- dir: `meta-music` · commands: 1 · modes: view
-- Degraded: uses Node built-ins (ok in trusted mode): fs
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
-### `metabase` — Metabase
-- dir: `metabase` · commands: 1 · modes: view
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
-### `metronome` — Metronome
-- dir: `metronome` · commands: 1 · modes: view
-- Degraded: declares command `arguments[]` — not passed by runtime yet
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
 
 ### `mozilla-vpn` — Mozilla VPN Connect
 - dir: `mozilla-vpn` · commands: 1 · modes: view
@@ -390,7 +173,7 @@
 
 ### `music` — Music
 - dir: `music` · commands: 26 · modes: no-view|view|menu-bar
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): child_process
+- Degraded: declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): child_process
 - Needs review: @raycast/api:ArgumentsLaunchProps (not in Invoke surface — needs review)
 
 ### `node-release-notes` — Node Release Notes
@@ -400,16 +183,6 @@
 ### `nusmods` — NUSMods
 - dir: `nusmods` · commands: 1 · modes: view
 - Needs review: @raycast/utils:useStreamJSON (not implemented in Invoke)
-
-### `obsidian` — Obsidian
-- dir: `obsidian` · commands: 12 · modes: view|menu-bar
-- Degraded: declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): fs, child_process
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
-### `obsidian-bookmarks` — Obsidian Bookmarks
-- dir: `obsidian-bookmarks` · commands: 3 · modes: view|no-view
-- Degraded: BrowserExtension: loads; throws if called (browser bridge not wired); uses Node built-ins (ok in trusted mode): fs
-- Needs review: @raycast/api:FileIcon (not in Invoke surface — needs review)
 
 ### `obsidian-link-opener` — Obsidian Link Opener
 - dir: `obsidian-link-opener` · commands: 3 · modes: view
@@ -421,24 +194,10 @@
 - Degraded: declares command `arguments[]` — not passed by runtime yet
 - Needs review: @raycast/utils:getPreferenceValues (not implemented in Invoke)
 
-### `openstatus` — OpenStatus
-- dir: `openstatus` · commands: 5 · modes: view
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
 ### `openverse` — Openverse
 - dir: `openverse` · commands: 1 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): fs
-- Needs review: @raycast/api:RequestInit (not in Invoke surface — needs review); @raycast/api:existsSync (not in Invoke surface — needs review); @raycast/api:runAppleScript (not in Invoke surface — needs review); @raycast/api:useEffect (not in Invoke surface — needs review); @raycast/api:useRef (not in Invoke surface — needs review); @raycast/api:useState (not in Invoke surface — needs review)
-
-### `orbstack` — OrbStack
-- dir: `orbstack` · commands: 2 · modes: view
-- Degraded: useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox; uses Node built-ins (ok in trusted mode): child_process
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
-### `origami` — Origami
-- dir: `origami` · commands: 2 · modes: view
-- Degraded: launchCommand: loads; throws if called (inter-command launch not wired)
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
+- Needs review: @raycast/api:existsSync (not in Invoke surface — needs review); @raycast/api:runAppleScript (not in Invoke surface — needs review); @raycast/api:useEffect (not in Invoke surface — needs review); @raycast/api:useRef (not in Invoke surface — needs review); @raycast/api:useState (not in Invoke surface — needs review)
 
 ### `otter` — Otter Bookmarks
 - dir: `otter` · commands: 4 · modes: view|menu-bar
@@ -465,16 +224,6 @@
 - dir: `pera-explorer` · commands: 1 · modes: view
 - Needs review: @raycast/utils:Response (not implemented in Invoke)
 
-### `pick-your-wallpaper` — Pick Your Wallpaper
-- dir: `pick-your-wallpaper` · commands: 2 · modes: view|no-view
-- Degraded: uses Node built-ins (ok in trusted mode): child_process, fs
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
-### `pieces-raycast` — Pieces for Raycast
-- dir: `pieces-raycast` · commands: 9 · modes: no-view|view
-- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); BrowserExtension: loads; throws if called (browser bridge not wired); uses Node built-ins (ok in trusted mode): fs, child_process
-- Needs review: @raycast/api:Preferences (not in Invoke surface — needs review)
-
 ### `pitchcast` — Pitchcast - Pitchfork Reviews Search
 - dir: `pitchcast` · commands: 1 · modes: view
 - Needs review: @raycast/utils:Response (not implemented in Invoke)
@@ -482,15 +231,6 @@
 ### `plane` — Plane
 - dir: `plane` · commands: 3 · modes: view
 - Needs review: @raycast/utils:PaginationOptions (not implemented in Invoke)
-
-### `podcasts-now` — Podcasts Now
-- dir: `podcasts-now` · commands: 2 · modes: view|menu-bar
-- Degraded: uses Node built-ins (ok in trusted mode): fs
-- Needs review: @raycast/api:Navigation (not in Invoke surface — needs review)
-
-### `postey` — Postey
-- dir: `postey` · commands: 5 · modes: view
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
 
 ### `project-code-to-text` — Project Code to Text
 - dir: `project-code-to-text` · commands: 1 · modes: view
@@ -501,11 +241,6 @@
 ### `quick-quit` — Quick Quit
 - dir: `quick-quit` · commands: 4 · modes: view|no-view
 - Needs review: @raycast/api:// Import the Application type (not in Invoke surface — needs review)
-
-### `raindrop-io` — Raindrop.io
-- dir: `raindrop-io` · commands: 5 · modes: view|no-view
-- Degraded: BrowserExtension: loads; throws if called (browser bridge not wired); declares command `arguments[]` — not passed by runtime yet
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
 
 ### `random-color` — Random Color
 - dir: `random-color` · commands: 2 · modes: no-view|view
@@ -521,11 +256,6 @@
 - Degraded: BrowserExtension: loads; throws if called (browser bridge not wired); uses Node built-ins (ok in trusted mode): child_process
 - Needs review: @raycast/api:WindowManagement (not in Invoke surface — needs review)
 
-### `raynab` — Raynab — Manage Your Budgets
-- dir: `raynab` · commands: 7 · modes: view|menu-bar
-- Degraded: launchCommand: loads; throws if called (inter-command launch not wired)
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
 ### `readeck` — Readeck
 - dir: `readeck` · commands: 2 · modes: view
 - Needs review: @raycast/utils:Action (not implemented in Invoke); @raycast/utils:ActionPanel (not implemented in Invoke); @raycast/utils:Icon (not implemented in Invoke); @raycast/utils:Form (not implemented in Invoke); @raycast/utils:showToast (not implemented in Invoke); @raycast/utils:Toast (not implemented in Invoke); @raycast/utils:getPreferenceValues (not implemented in Invoke); @raycast/utils:List (not implemented in Invoke)
@@ -534,71 +264,29 @@
 - dir: `readwise-to-tana` · commands: 1 · modes: view
 - Needs review: @raycast/utils:getPreferenceValues (not implemented in Invoke)
 
-### `remember-this` — Remember This
-- dir: `remember-this` · commands: 3 · modes: view|menu-bar
-- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): fs
-- Needs review: @raycast/api:ListItem (not in Invoke surface — needs review)
-
 ### `repository-manager` — Repository Manager
 - dir: `repository-manager` · commands: 1 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): child_process, fs
 - Needs review: @raycast/api:useMemo (not in Invoke surface — needs review); @raycast/api:useCallback (not in Invoke surface — needs review); @raycast/api:useEffect (not in Invoke surface — needs review); @raycast/api:useRef (not in Invoke surface — needs review); @raycast/api:useState (not in Invoke surface — needs review); @raycast/api:existsSync (not in Invoke surface — needs review); @raycast/api:readFileSync (not in Invoke surface — needs review); @raycast/utils:Action (not implemented in Invoke); @raycast/utils:ActionPanel (not implemented in Invoke); @raycast/utils:AI (not implemented in Invoke); @raycast/utils:Detail (not implemented in Invoke); @raycast/utils:Icon (not implemented in Invoke); @raycast/utils:environment (not implemented in Invoke); @raycast/utils:useNavigation (not implemented in Invoke); @raycast/utils:Color (not implemented in Invoke); @raycast/utils:Image (not implemented in Invoke); @raycast/utils:List (not implemented in Invoke); @raycast/utils:Clipboard (not implemented in Invoke); @raycast/utils:Toast (not implemented in Invoke); @raycast/utils:showToast (not implemented in Invoke); @raycast/utils:confirmAlert (not implemented in Invoke); @raycast/utils:useEffect (not implemented in Invoke); @raycast/utils:useMemo (not implemented in Invoke); @raycast/utils:useRef (not implemented in Invoke); @raycast/utils:useState (not implemented in Invoke)
 
-### `resend` — Resend
-- dir: `resend` · commands: 4 · modes: view
-- Degraded: uses Node built-ins (ok in trusted mode): fs
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
-### `rss-reader` — RSS Reader
-- dir: `rss-reader` · commands: 3 · modes: view
-- Degraded: BrowserExtension: loads; throws if called (browser bridge not wired)
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
 ### `rsync-commands` — Rsync Commands
 - dir: `rsync-commands` · commands: 1 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): child_process
-- Needs review: @raycast/api:FC (not in Invoke surface — needs review); @raycast/api:useCallback (not in Invoke surface — needs review); @raycast/api:memo (not in Invoke surface — needs review); @raycast/api:useState (not in Invoke surface — needs review); @raycast/api:useEffect (not in Invoke surface — needs review)
+- Needs review: @raycast/api:useCallback (not in Invoke surface — needs review); @raycast/api:memo (not in Invoke surface — needs review); @raycast/api:useState (not in Invoke surface — needs review); @raycast/api:useEffect (not in Invoke surface — needs review)
 
 ### `scrapbox-search` — Scrapbox Search
 - dir: `scrapbox-search` · commands: 1 · modes: view
-- Needs review: @raycast/api:Response (not in Invoke surface — needs review); @raycast/api:useEffect (not in Invoke surface — needs review); @raycast/api:useState (not in Invoke surface — needs review); @raycast/utils:useEffect (not implemented in Invoke); @raycast/utils:useState (not implemented in Invoke)
+- Needs review: @raycast/api:useEffect (not in Invoke surface — needs review); @raycast/api:useState (not in Invoke surface — needs review); @raycast/utils:useEffect (not implemented in Invoke); @raycast/utils:useState (not implemented in Invoke)
 
 ### `script-commands` — Script Commands Store – Find and manage your Raycast Script Commands
 - dir: `script-commands` · commands: 1 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): fs
-- Needs review: @raycast/api:OpenWithAction (not in Invoke surface — needs review); @raycast/api:ImageLike (not in Invoke surface — needs review); @raycast/api:KeyboardShortcut (not in Invoke surface — needs review)
-
-### `send-ai` — SendAI
-- dir: `send-ai` · commands: 13 · modes: view
-- Degraded: declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): fs
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
-### `send-to-flomo` — Send to flomo
-- dir: `send-to-flomo` · commands: 1 · modes: view
-- Needs review: @raycast/api:FormValue (not in Invoke surface — needs review)
-
-### `shape-calendar` — Shape Calendar
-- dir: `shape-calendar` · commands: 3 · modes: view|no-view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired)
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
-### `siri` — Siri
-- dir: `siri` · commands: 1 · modes: no-view
-- Degraded: declares command `arguments[]` — not passed by runtime yet
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
-### `sketch` — Sketch
-- dir: `sketch` · commands: 2 · modes: view
-- Needs review: @raycast/api:KeyEquivalent (not in Invoke surface — needs review)
+- Needs review: @raycast/api:OpenWithAction (not in Invoke surface — needs review)
 
 ### `smartthings-connector` — SmartThings Connector
 - dir: `smartthings-connector` · commands: 5 · modes: view
 - Needs review: @raycast/api:// useNavigation (not in Invoke surface — needs review); @raycast/api:// Entfernen Sie diesen Import
   Action (not in Invoke surface — needs review)
-
-### `snake` — Snake
-- dir: `snake` · commands: 1 · modes: view
-- Needs review: @raycast/api:Environment (not in Invoke surface — needs review)
 
 ### `spiceblow-database` — Spiceblow - Sql Database Management
 - dir: `spiceblow-database` · commands: 1 · modes: view
@@ -613,103 +301,33 @@
 - dir: `superpassgen` · commands: 1 · modes: view
 - Needs review: @raycast/api:useState (not in Invoke surface — needs review)
 
-### `superhuman` — Superhuman
-- dir: `superhuman` · commands: 1 · modes: no-view
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
 ### `supernova` — Supernova
 - dir: `supernova` · commands: 6 · modes: view|no-view
 - Degraded: uses Node built-ins (ok in trusted mode): fs, child_process
-- Needs review: @raycast/api:Asset (not in Invoke surface — needs review); @raycast/api:AssetGroup (not in Invoke surface — needs review); @raycast/api:Component (not in Invoke surface — needs review); @raycast/api:DesignComponent (not in Invoke surface — needs review); @raycast/api:DesignSystemVersion (not in Invoke surface — needs review); @raycast/api:DocSearchResultData (not in Invoke surface — needs review); @raycast/api:DocumentationGroup (not in Invoke surface — needs review); @raycast/api:DocumentationPage (not in Invoke surface — needs review); @raycast/api:Token (not in Invoke surface — needs review); @raycast/api:TokenGroup (not in Invoke surface — needs review); @raycast/api:DesignSystem (not in Invoke surface — needs review); @raycast/api:Supernova (not in Invoke surface — needs review); @raycast/api:Workspace (not in Invoke surface — needs review); @raycast/api:AssetFormat (not in Invoke surface — needs review); @raycast/api:AssetScale (not in Invoke surface — needs review); @raycast/api:ComponentPropertyLinkElementType (not in Invoke surface — needs review); @raycast/api:ComponentPropertyType (not in Invoke surface — needs review); @raycast/api:RenderedAsset (not in Invoke surface — needs review)
-
-### `system-information` — System Information
-- dir: `system-information` · commands: 1 · modes: view
-- Degraded: uses Node built-ins (ok in trusted mode): child_process
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
-### `tablepro` — TablePro
-- dir: `tablepro` · commands: 9 · modes: view|no-view|menu-bar
-- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): fs
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
-### `teak-raycast` — Teak
-- dir: `teak-raycast` · commands: 8 · modes: view|no-view
-- Degraded: BrowserExtension: loads; throws if called (browser bridge not wired); declares command `arguments[]` — not passed by runtime yet
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
-### `telegram` — Telegram
-- dir: `telegram` · commands: 5 · modes: view
-- Degraded: uses Node built-ins (ok in trusted mode): fs
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
-### `things` — Things
-- dir: `things` · commands: 10 · modes: view|menu-bar|no-view
-- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): child_process, fs
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
+- Needs review: @raycast/api:Asset (not in Invoke surface — needs review); @raycast/api:AssetGroup (not in Invoke surface — needs review); @raycast/api:DesignComponent (not in Invoke surface — needs review); @raycast/api:DesignSystemVersion (not in Invoke surface — needs review); @raycast/api:DocSearchResultData (not in Invoke surface — needs review); @raycast/api:DocumentationGroup (not in Invoke surface — needs review); @raycast/api:DocumentationPage (not in Invoke surface — needs review); @raycast/api:Token (not in Invoke surface — needs review); @raycast/api:TokenGroup (not in Invoke surface — needs review); @raycast/api:DesignSystem (not in Invoke surface — needs review); @raycast/api:Supernova (not in Invoke surface — needs review); @raycast/api:Workspace (not in Invoke surface — needs review); @raycast/api:AssetFormat (not in Invoke surface — needs review); @raycast/api:AssetScale (not in Invoke surface — needs review); @raycast/api:ComponentPropertyLinkElementType (not in Invoke surface — needs review); @raycast/api:ComponentPropertyType (not in Invoke surface — needs review); @raycast/api:RenderedAsset (not in Invoke surface — needs review)
 
 ### `toggl-track` — Toggl Track
 - dir: `toggl-track` · commands: 7 · modes: view|menu-bar
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired); uses Node built-ins (ok in trusted mode): child_process
 - Needs review: @raycast/utils:CachedPromiseOptions (not implemented in Invoke)
 
-### `toneclone` — ToneClone
-- dir: `toneclone` · commands: 7 · modes: view
-- Degraded: BrowserExtension: loads; throws if called (browser bridge not wired); uses Node built-ins (ok in trusted mode): fs
-- Needs review: @raycast/api:KeyEquivalent (not in Invoke surface — needs review)
-
-### `twenty` — Twenty
-- dir: `twenty` · commands: 1 · modes: view
-- Needs review: @raycast/api:ItemProps (not in Invoke surface — needs review); @raycast/api:FormItemRef (not in Invoke surface — needs review)
-
-### `typefully` — Typefully
-- dir: `typefully` · commands: 5 · modes: view
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
 ### `ugly-face` — Ugly Face
 - dir: `ugly-face` · commands: 1 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): fs
 - Needs review: @raycast/api:render (not in Invoke surface — needs review)
 
-### `vmware-vcenter` — VMware VCenter
-- dir: `vmware-vcenter` · commands: 4 · modes: view
-- Degraded: runPowerShellScript: Windows-only; throws on macOS (import loads)
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
-### `whatsapp` — WhatsApp
-- dir: `whatsapp` · commands: 4 · modes: view
-- Degraded: uses Node built-ins (ok in trusted mode): child_process, fs
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
 ### `window-layouts` — Window Layouts
 - dir: `window-layouts` · commands: 27 · modes: no-view|view
 - Needs review: @raycast/api:WindowManagement (not in Invoke surface — needs review)
 
-### `xcode` — Xcode
-- dir: `xcode` · commands: 21 · modes: menu-bar|view|no-view
-- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): fs, child_process
-- Needs review: @raycast/api:Navigation (not in Invoke surface — needs review); @raycast/api:Tool (not in Invoke surface — needs review)
-
-### `youtrack` — YouTrack
-- dir: `youtrack` · commands: 2 · modes: view
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
 ### `zenmux-manager` — ZenMux Manager
 - dir: `zenmux-manager` · commands: 2 · modes: no-view|view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); uses Node built-ins (ok in trusted mode): fs, child_process
+- Degraded: uses Node built-ins (ok in trusted mode): fs, child_process
 - Needs review: @raycast/api:name: "Search tool imports the routing table" (not in Invoke surface — needs review); @raycast/api:passed:
       searchTool.includes('from "../zenmux-doc-routing"') &&
       searchTool.includes("routingMatches") (not in Invoke surface — needs review)
 
-### `zero` — Zero
-- dir: `zero` · commands: 1 · modes: no-view
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
-### `zsh-aliases` — Zsh Aliases
-- dir: `zsh-aliases` · commands: 1 · modes: view
-- Degraded: uses Node built-ins (ok in trusted mode): fs
-- Needs review: @raycast/api:Tool (not in Invoke surface — needs review)
-
-## DEGRADED (1399)
+## DEGRADED (1423)
 
 ### `0x0` — 0x0
 - dir: `0x0` · commands: 1 · modes: view
@@ -746,10 +364,6 @@
 ### `accordance` — Accordance
 - dir: `accordance` · commands: 6 · modes: view|no-view
 - Degraded: declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): fs
-
-### `acqua` — Acqua
-- dir: `acqua` · commands: 2 · modes: view|menu-bar
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired)
 
 ### `adb` — Android Debug Bridge (Adb) Commands
 - dir: `adb` · commands: 20 · modes: no-view
@@ -802,10 +416,6 @@
 ### `air-quality` — Air Quality
 - dir: `air-quality` · commands: 2 · modes: view|menu-bar
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired)
-
-### `airpods-noise-control` — AirPods Noise Control
-- dir: `airpods-noise-control` · commands: 2 · modes: no-view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired)
 
 ### `akkoma` — Akkoma
 - dir: `akkoma` · commands: 4 · modes: view
@@ -883,6 +493,10 @@
 - dir: `apfel` · commands: 13 · modes: view|no-view
 - Degraded: uses Node built-ins (ok in trusted mode): child_process, fs
 
+### `app` — App Creator
+- dir: `app-creator` · commands: 1 · modes: view
+- Degraded: uses Node built-ins (ok in trusted mode): fs
+
 ### `app-icon-generator` — App Icon Generator
 - dir: `app-icon-generator` · commands: 1 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): fs
@@ -905,7 +519,7 @@
 
 ### `appcleaner` — App Cleaner
 - dir: `appcleaner` · commands: 1 · modes: view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); uses Node built-ins (ok in trusted mode): child_process, fs
+- Degraded: uses Node built-ins (ok in trusted mode): child_process, fs
 
 ### `append-clipboard` — Append Clipboard
 - dir: `append-clipboard` · commands: 3 · modes: no-view
@@ -919,9 +533,17 @@
 - dir: `apple-maps-search` · commands: 3 · modes: no-view|view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
 
+### `apple-notes` — Apple Notes
+- dir: `apple-notes` · commands: 7 · modes: view|no-view|menu-bar
+- Degraded: declares command `arguments[]` — not passed by runtime yet
+
 ### `apple-photos` — Apple Photos
 - dir: `apple-photos` · commands: 2 · modes: view|no-view
 - Degraded: uses Node built-ins (ok in trusted mode): child_process, fs
+
+### `apple-reminders` — Apple Reminders
+- dir: `apple-reminders` · commands: 7 · modes: view|menu-bar|no-view
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): child_process
 
 ### `arc` — Arc
 - dir: `arc` · commands: 16 · modes: view|no-view|menu-bar
@@ -937,7 +559,7 @@
 
 ### `ascii-art-wallpaper` — ASCII Art Wallpaper
 - dir: `ascii-art-wallpaper` · commands: 3 · modes: view|no-view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); uses Node built-ins (ok in trusted mode): fs, child_process
+- Degraded: uses Node built-ins (ok in trusted mode): fs, child_process
 
 ### `aspect-raytio` — Aspect Raytio
 - dir: `aspect-raytio` · commands: 1 · modes: view
@@ -961,7 +583,7 @@
 
 ### `audio-device` — Set Audio Device
 - dir: `audio-device` · commands: 12 · modes: view|no-view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); launchCommand: loads; throws if called (inter-command launch not wired); uses Node built-ins (ok in trusted mode): fs, https
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); uses Node built-ins (ok in trusted mode): fs, https
 
 ### `auto-quit-app` — Auto Quit App
 - dir: `auto-quit-app` · commands: 2 · modes: view|menu-bar
@@ -1007,10 +629,6 @@
 - dir: `bamboo-search-self-hosted` · commands: 3 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): https
 
-### `bamboohr` — BambooHR
-- dir: `bamboohr` · commands: 4 · modes: view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired)
-
 ### `bambu-lab` — Bambu Lab Controller
 - dir: `bambu-lab` · commands: 2 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): fs
@@ -1039,6 +657,10 @@
 - dir: `battery-optimizer` · commands: 5 · modes: view|no-view|menu-bar
 - Degraded: uses Node built-ins (ok in trusted mode): child_process, fs
 
+### `bear` — Bear Notes
+- dir: `bear` · commands: 4 · modes: view|menu-bar
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); uses Node built-ins (ok in trusted mode): fs
+
 ### `bech32-converter` — Bech32 Converter
 - dir: `bech32-converter` · commands: 1 · modes: no-view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
@@ -1046,6 +668,10 @@
 ### `bed-time-calculator` — Bed Time Calculator
 - dir: `bed-time-calculator` · commands: 3 · modes: view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
+
+### `beeper` — Beeper Desktop
+- dir: `beeper` · commands: 6 · modes: view|no-view
+- Degraded: uses Node built-ins (ok in trusted mode): fs
 
 ### `bento-me` — Bento
 - dir: `bento-me` · commands: 1 · modes: view
@@ -1062,6 +688,10 @@
 ### `betteraudio` — BetterAudio
 - dir: `betteraudio` · commands: 17 · modes: view|no-view|menu-bar
 - Degraded: declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): child_process, fs
+
+### `betterdisplay` — BetterDisplay
+- dir: `betterdisplay` · commands: 1 · modes: view
+- Degraded: uses Node built-ins (ok in trusted mode): child_process
 
 ### `bettertouchtool` — BetterTouchTool
 - dir: `bettertouchtool` · commands: 2 · modes: view
@@ -1082,10 +712,6 @@
 ### `bike` — Bike
 - dir: `bike` · commands: 13 · modes: view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
-
-### `bikeshare-station-status` — Bikeshare Station Status
-- dir: `bikeshare-station-status` · commands: 2 · modes: view|menu-bar
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired)
 
 ### `bilibili` — Bilibili
 - dir: `Bilibili` · commands: 5 · modes: view|no-view
@@ -1237,7 +863,7 @@
 
 ### `ccusage` — Claude Code Usage (ccusage)
 - dir: `ccusage` · commands: 3 · modes: view|menu-bar|no-view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox; uses Node built-ins (ok in trusted mode): child_process, fs, http
+- Degraded: useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox; uses Node built-ins (ok in trusted mode): child_process, fs, http
 
 ### `cdnjs` — cdnjs
 - dir: `cdnjs` · commands: 1 · modes: view
@@ -1246,6 +872,10 @@
 ### `center` — Center
 - dir: `center` · commands: 4 · modes: view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
+
+### `cerebras` — Cerebras
+- dir: `cerebras` · commands: 8 · modes: view
+- Degraded: BrowserExtension: loads; throws if called (browser bridge not wired); uses Node built-ins (ok in trusted mode): http, fs
 
 ### `certificate-viewer` — Certificate Viewer
 - dir: `certificate-viewer` · commands: 2 · modes: view
@@ -1262,6 +892,10 @@
 ### `chatgo` — ChatGo
 - dir: `chatgo` · commands: 6 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): fs
+
+### `chatgpt` — ChatGPT
+- dir: `chatgpt` · commands: 10 · modes: view
+- Degraded: BrowserExtension: loads; throws if called (browser bridge not wired); declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): http, fs, child_process
 
 ### `chatgpt-atlas` — ChatGPT Atlas
 - dir: `chatgpt-atlas` · commands: 2 · modes: view
@@ -1303,10 +937,6 @@
 - dir: `chinese-converter` · commands: 1 · modes: view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
 
-### `chronometer` — Chronometer
-- dir: `chronometer` · commands: 4 · modes: view|no-view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired)
-
 ### `cider` — Cider
 - dir: `cider` · commands: 12 · modes: view|no-view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
@@ -1338,10 +968,6 @@
 ### `cling` — Cling File Search
 - dir: `cling` · commands: 2 · modes: view
 - Degraded: useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox; declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): child_process, fs
-
-### `clipmenu` — ClipMenu
-- dir: `clipmenu` · commands: 1 · modes: menu-bar
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired)
 
 ### `clippyx` — CLIPPyX
 - dir: `clippyx` · commands: 3 · modes: view
@@ -1395,6 +1021,10 @@
 - dir: `cocktail-db` · commands: 2 · modes: view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
 
+### `code` — Code Execution
+- dir: `code-execution` · commands: 1 · modes: no-view
+- Degraded: declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): child_process
+
 ### `code-quarkus` — Code Quarkus
 - dir: `code-quarkus` · commands: 2 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): fs, child_process
@@ -1429,7 +1059,7 @@
 
 ### `coffee` — Coffee
 - dir: `coffee` · commands: 9 · modes: no-view|view|menu-bar
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); launchCommand: loads; throws if called (inter-command launch not wired); useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox; declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): child_process
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox; declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): child_process
 
 ### `coinmarketcap-crypto-price-crawler` — Coinmarketcap Crypto Search
 - dir: `coinmarketcap-crypto-crawler` · commands: 3 · modes: view|no-view
@@ -1495,6 +1125,10 @@
 - dir: `context7` · commands: 2 · modes: view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
 
+### `contexts` — Contexts
+- dir: `contexts` · commands: 2 · modes: no-view|view
+- Degraded: declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): fs
+
 ### `convert-3d-models` — Convert 3D Models
 - dir: `convert-3d-models` · commands: 4 · modes: view|no-view
 - Degraded: uses Node built-ins (ok in trusted mode): child_process, fs
@@ -1519,10 +1153,6 @@
 - dir: `copy-gcp-icons` · commands: 1 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): fs
 
-### `copy-path` — Copy Path
-- dir: `copy-path` · commands: 1 · modes: no-view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired)
-
 ### `copy-text-files` — Copy Text Files
 - dir: `copy-text-files` · commands: 1 · modes: no-view
 - Degraded: uses Node built-ins (ok in trusted mode): child_process, fs
@@ -1541,7 +1171,7 @@
 
 ### `counter` — Counter
 - dir: `counter` · commands: 3 · modes: no-view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); launchCommand: loads; throws if called (inter-command launch not wired)
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired)
 
 ### `covert-color` — Convert Color
 - dir: `covert-color` · commands: 1 · modes: view
@@ -1575,10 +1205,6 @@
 - dir: `croc-transfer` · commands: 4 · modes: view|no-view
 - Degraded: declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): child_process, fs
 
-### `cron` — Cron
-- dir: `cron` · commands: 2 · modes: view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired)
-
 ### `cron-manager` — Cron Manager
 - dir: `cron-manager` · commands: 1 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): child_process
@@ -1606,6 +1232,10 @@
 ### `cuid2-generator` — Cuid2 Generator
 - dir: `cuid2-generator` · commands: 1 · modes: no-view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
+
+### `curl` — cURL
+- dir: `curl` · commands: 2 · modes: view
+- Degraded: uses Node built-ins (ok in trusted mode): child_process
 
 ### `cursor-agents` — Cursor Agents
 - dir: `cursor-agents` · commands: 3 · modes: view|menu-bar
@@ -1643,6 +1273,10 @@
 - dir: `cyberpanel` · commands: 9 · modes: no-view|view
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares command `arguments[]` — not passed by runtime yet
 
+### `dagster` — Dagster
+- dir: `dagster` · commands: 4 · modes: view|no-view
+- Degraded: uses Node built-ins (ok in trusted mode): fs
+
 ### `daily-sites` — Daily Sites - Site Launcher
 - dir: `daily-sites` · commands: 4 · modes: view
 - Degraded: BrowserExtension: loads; throws if called (browser bridge not wired); uses Node built-ins (ok in trusted mode): fs
@@ -1661,7 +1295,7 @@
 
 ### `datafast` — Datafast
 - dir: `datafast` · commands: 7 · modes: view|menu-bar
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); launchCommand: loads; throws if called (inter-command launch not wired)
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired)
 
 ### `datahub` — Datahub Utility
 - dir: `datahub` · commands: 2 · modes: no-view|view
@@ -1679,13 +1313,9 @@
 - dir: `day-one` · commands: 1 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): child_process
 
-### `days-until-christmas` — Days Until Christmas
-- dir: `days-until-christmas` · commands: 2 · modes: no-view|menu-bar
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired)
-
 ### `days2` — Days 2 - Google Calendar Countdown
 - dir: `days2` · commands: 3 · modes: view|no-view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); launchCommand: loads; throws if called (inter-command launch not wired)
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired)
 
 ### `db-schema-explorer` — DB Schema Explorer
 - dir: `db-schema-explorer` · commands: 3 · modes: view
@@ -1731,6 +1361,10 @@
 - dir: `dawa` · commands: 1 · modes: view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
 
+### `deno-deploy` — Deno Deploy
+- dir: `deno-deploy` · commands: 4 · modes: view|no-view
+- Degraded: uses Node built-ins (ok in trusted mode): fs
+
 ### `descript-to-youtube-chapters` — Descript to YouTube Chapters
 - dir: `descript-to-youtube-chapters` · commands: 1 · modes: no-view
 - Degraded: uses Node built-ins (ok in trusted mode): fs
@@ -1741,7 +1375,7 @@
 
 ### `desktoprenamer` — DesktopRenamer
 - dir: `desktoprenamer` · commands: 10 · modes: no-view|view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); declares command `arguments[]` — not passed by runtime yet
+- Degraded: declares command `arguments[]` — not passed by runtime yet
 
 ### `dev-cache-cleaner` — Dev Cache Cleaner
 - dir: `dev-cache-cleaner` · commands: 3 · modes: view|no-view|menu-bar
@@ -1766,10 +1400,6 @@
 ### `dia-skills` — Dia Skills
 - dir: `dia-skills` · commands: 1 · modes: no-view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
-
-### `dice-and-coin` — Dice & Coin
-- dir: `dice-and-coin` · commands: 3 · modes: no-view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired)
 
 ### `dict-cc` — dict.cc
 - dir: `dict-cc` · commands: 3 · modes: view
@@ -1863,13 +1493,9 @@
 - dir: `docsearch` · commands: 45 · modes: view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
 
-### `doge-tracker` — Department of Government Efficiency Tracker
-- dir: `doge-tracker` · commands: 4 · modes: view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired)
-
 ### `doorstopper` — Doorstopper
 - dir: `doorstopper` · commands: 5 · modes: no-view|menu-bar
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); launchCommand: loads; throws if called (inter-command launch not wired); uses Node built-ins (ok in trusted mode): child_process
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); uses Node built-ins (ok in trusted mode): child_process
 
 ### `dot-new` — dot-new
 - dir: `dot-new` · commands: 1 · modes: view
@@ -1890,6 +1516,14 @@
 ### `doutu` — DouTu
 - dir: `doutu` · commands: 1 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): fs
+
+### `downloads-manager` — Downloads Manager
+- dir: `downloads-manager` · commands: 7 · modes: view|no-view
+- Degraded: uses Node built-ins (ok in trusted mode): fs, child_process
+
+### `drafts` — Drafts
+- dir: `drafts` · commands: 18 · modes: view|no-view
+- Degraded: declares command `arguments[]` — not passed by runtime yet
 
 ### `dropover` — Dropover
 - dir: `dropover` · commands: 2 · modes: no-view
@@ -1933,7 +1567,7 @@
 
 ### `dust-tt` — Ask Dust
 - dir: `dust-tt` · commands: 6 · modes: view
-- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); updateCommandMetadata: loads; no-op (command metadata updates not wired); declares command `arguments[]` — not passed by runtime yet
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares command `arguments[]` — not passed by runtime yet
 
 ### `e2b` — E2B Code Interpreter
 - dir: `e2b` · commands: 1 · modes: no-view
@@ -2033,7 +1667,7 @@
 
 ### `everhour` — Everhour Time Tracking
 - dir: `everhour` · commands: 3 · modes: view|no-view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); declares command `arguments[]` — not passed by runtime yet
+- Degraded: declares command `arguments[]` — not passed by runtime yet
 
 ### `evernote` — Evernote Instant Search
 - dir: `evernote` · commands: 2 · modes: view
@@ -2078,10 +1712,6 @@
 ### `fathom` — Fathom
 - dir: `fathom` · commands: 2 · modes: view
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired); uses Node built-ins (ok in trusted mode): fs
-
-### `fathom-analytics-stats` — Fathom Analytics Stats
-- dir: `fathom-analytics-stats` · commands: 9 · modes: view|menu-bar|no-view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired)
 
 ### `fetch-youtube-transcript` — Fetch YouTube Transcript
 - dir: `fetch-youtube-transcript` · commands: 1 · modes: no-view
@@ -2210,6 +1840,10 @@
 ### `flutter-utils` — Flutter Utils
 - dir: `flutter-utils` · commands: 1 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): child_process, fs
+
+### `focus` — Focus
+- dir: `focus` · commands: 9 · modes: no-view|view
+- Degraded: declares command `arguments[]` — not passed by runtime yet
 
 ### `focus-anchor` — Focus Anchor
 - dir: `focus-anchor` · commands: 1 · modes: no-view
@@ -2343,6 +1977,10 @@
 - dir: `get-favicon` · commands: 3 · modes: no-view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
 
+### `get-note` — GetNote
+- dir: `get-note` · commands: 5 · modes: view
+- Degraded: uses Node built-ins (ok in trusted mode): fs
+
 ### `get-ssh-key` — Get SSH Key
 - dir: `get-ssh-key` · commands: 2 · modes: no-view|view
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired); uses Node built-ins (ok in trusted mode): fs
@@ -2379,6 +2017,10 @@
 - dir: `git` · commands: 6 · modes: view
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): fs, child_process
 
+### `git-assistant` — Git Assistant
+- dir: `git-assistant` · commands: 1 · modes: view
+- Degraded: uses Node built-ins (ok in trusted mode): child_process, fs
+
 ### `git-batch-tools` — Git Batch Tools
 - dir: `git-batch-tools` · commands: 2 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): child_process, fs
@@ -2411,13 +2053,17 @@
 - dir: `gitfox` · commands: 3 · modes: view|menu-bar|no-view
 - Degraded: uses Node built-ins (ok in trusted mode): child_process, fs
 
+### `github` — GitHub
+- dir: `github` · commands: 20 · modes: view|menu-bar
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); uses Node built-ins (ok in trusted mode): child_process, fs
+
 ### `github-copilot` — GitHub Copilot
 - dir: `github-copilot` · commands: 5 · modes: view|menu-bar
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired)
 
-### `github-menu-bar` — GitHub Commits Menu
-- dir: `github-menu-bar` · commands: 1 · modes: menu-bar
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired)
+### `github-for-enterprise` — GitHub Enterprise
+- dir: `github-for-enterprise` · commands: 8 · modes: view|menu-bar
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired)
 
 ### `github-search` — GitHub Search
 - dir: `github-search` · commands: 2 · modes: view
@@ -2475,6 +2121,14 @@
 - dir: `google-books` · commands: 1 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): fs
 
+### `google-calendar` — Google Calendar
+- dir: `google-calendar` · commands: 5 · modes: view
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired)
+
+### `google-calendar-quickadd` — Google Calendar Events Quick Add
+- dir: `google-calendar-quickadd` · commands: 2 · modes: no-view|view
+- Degraded: declares command `arguments[]` — not passed by runtime yet
+
 ### `google-chrome-profiles` — Google Chrome Profiles
 - dir: `google-chrome-profiles` · commands: 2 · modes: view|no-view
 - Degraded: uses Node built-ins (ok in trusted mode): fs, child_process
@@ -2526,6 +2180,10 @@
 ### `grammari-x` — Grammarix
 - dir: `grammari-x` · commands: 4 · modes: view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
+
+### `granola` — Granola
+- dir: `granola` · commands: 7 · modes: view|no-view
+- Degraded: uses Node built-ins (ok in trusted mode): fs
 
 ### `graphcalc` — GraphCalc
 - dir: `graphcalc` · commands: 1 · modes: view
@@ -2709,7 +2367,7 @@
 
 ### `hue` — Hue
 - dir: `hue` · commands: 4 · modes: view|no-view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); uses Node built-ins (ok in trusted mode): tls, https, net, fs, http2, dns
+- Degraded: uses Node built-ins (ok in trusted mode): tls, https, net, fs, http2, dns
 
 ### `hue-palette` — Hue Palette
 - dir: `hue-palette` · commands: 4 · modes: view
@@ -2853,11 +2511,11 @@
 
 ### `intermittent-fasting` — Intermittent Fasting
 - dir: `intermittent-fasting` · commands: 2 · modes: view|menu-bar
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); launchCommand: loads; throws if called (inter-command launch not wired); uses Node built-ins (ok in trusted mode): fs
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); uses Node built-ins (ok in trusted mode): fs
 
 ### `internet-radio` — Internet Radio
 - dir: `internet-radio` · commands: 11 · modes: view|no-view|menu-bar
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); launchCommand: loads; throws if called (inter-command launch not wired); uses Node built-ins (ok in trusted mode): fs
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); uses Node built-ins (ok in trusted mode): fs
 
 ### `invoice-generator` — Invoice Generator
 - dir: `invoice-generator` · commands: 1 · modes: view
@@ -2869,7 +2527,7 @@
 
 ### `ip-geolocation` — IP Geolocation
 - dir: `ip-geolocation` · commands: 3 · modes: view|no-view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): net
+- Degraded: declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): net
 
 ### `ip-tools` — IP Tools
 - dir: `ip-tools` · commands: 9 · modes: view
@@ -2895,9 +2553,17 @@
 - dir: `ishader` · commands: 1 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): fs
 
+### `iterm` — iTerm
+- dir: `iterm` · commands: 11 · modes: view
+- Degraded: uses Node built-ins (ok in trusted mode): child_process, fs
+
 ### `itranslate` — iTranslate
 - dir: `itranslate` · commands: 4 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): child_process, fs
+
+### `ivpn` — IVPN
+- dir: `ivpn` · commands: 12 · modes: no-view|view
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): child_process
 
 ### `iwork` — iWork
 - dir: `iwork` · commands: 19 · modes: no-view|view
@@ -2914,10 +2580,6 @@
 ### `jetbrains` — JetBrains Toolbox Recent Projects
 - dir: `jetbrains` · commands: 2 · modes: view|menu-bar
 - Degraded: uses Node built-ins (ok in trusted mode): fs, child_process
-
-### `jetpack-commands` — Jetpack Commands
-- dir: `jetpack-commands` · commands: 46 · modes: no-view|view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired)
 
 ### `jira` — Jira
 - dir: `jira` · commands: 9 · modes: view
@@ -2993,7 +2655,7 @@
 
 ### `karabiner-profile-switcher` — Karabiner Profile Switcher
 - dir: `karabiner-profile-switcher` · commands: 2 · modes: view|no-view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); uses Node built-ins (ok in trusted mode): child_process
+- Degraded: uses Node built-ins (ok in trusted mode): child_process
 
 ### `karakeep` — Karakeep
 - dir: `karakeep` · commands: 11 · modes: view|no-view
@@ -3031,10 +2693,6 @@
 - dir: `keyboard-win-mac-switch` · commands: 2 · modes: no-view
 - Degraded: uses Node built-ins (ok in trusted mode): child_process
 
-### `keygen` — Keygen
-- dir: `keygen` · commands: 7 · modes: view|no-view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired)
-
 ### `keyraycast` — KeyRaycast
 - dir: `keyraycast` · commands: 1 · modes: no-view
 - Degraded: uses Node built-ins (ok in trusted mode): child_process, fs
@@ -3046,6 +2704,10 @@
 ### `kill-node-modules` — Kill Node Modules
 - dir: `kill-node-modules` · commands: 1 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): fs
+
+### `kill-process` — Kill Process
+- dir: `kill-process` · commands: 1 · modes: view
+- Degraded: uses Node built-ins (ok in trusted mode): child_process, fs
 
 ### `kimai` — Kimai
 - dir: `kimai` · commands: 4 · modes: view|menu-bar|no-view
@@ -3105,11 +2767,11 @@
 
 ### `laravel-forge` — Laravel Forge
 - dir: `laravel-forge` · commands: 2 · modes: view|menu-bar
-- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); updateCommandMetadata: loads; no-op (command metadata updates not wired); declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): fs
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): fs
 
 ### `laravel-herd` — Laravel Herd
 - dir: `laravel-herd` · commands: 17 · modes: no-view|view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); uses Node built-ins (ok in trusted mode): fs
+- Degraded: uses Node built-ins (ok in trusted mode): fs
 
 ### `laravel-tips` — Laravel Tips
 - dir: `laravel-tips` · commands: 3 · modes: view|no-view
@@ -3161,7 +2823,7 @@
 
 ### `leave-time-calculator` — Leave Time Calculator
 - dir: `leave-time-calculator` · commands: 2 · modes: no-view|view
-- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); updateCommandMetadata: loads; no-op (command metadata updates not wired)
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired)
 
 ### `lemniscate-system-monitor` — Lemniscate | System Monitor
 - dir: `lemniscate-system-monitor` · commands: 1 · modes: view
@@ -3182,10 +2844,6 @@
 ### `library-genesis` — Library Genesis
 - dir: `library-genesis` · commands: 2 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): https
-
-### `life-progress` — Life Progress
-- dir: `life-progress` · commands: 2 · modes: view|menu-bar
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired)
 
 ### `lift-calculator` — Lift Calculator
 - dir: `lift-calculator` · commands: 3 · modes: view
@@ -3271,6 +2929,10 @@
 - dir: `logseq` · commands: 3 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): fs
 
+### `lokalise` — Lokalise
+- dir: `lokalise` · commands: 3 · modes: view|no-view
+- Degraded: uses Node built-ins (ok in trusted mode): fs
+
 ### `looksee` — LookSee - A MAC, OUI, IAB Lookup
 - dir: `looksee` · commands: 2 · modes: view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
@@ -3337,7 +2999,11 @@
 
 ### `magic-ingest` — Magic Ingest
 - dir: `magic-ingest` · commands: 2 · modes: view
-- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); updateCommandMetadata: loads; no-op (command metadata updates not wired); uses Node built-ins (ok in trusted mode): fs, child_process
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); uses Node built-ins (ok in trusted mode): fs, child_process
+
+### `mail` — Apple Mail
+- dir: `mail` · commands: 11 · modes: no-view|view
+- Degraded: uses Node built-ins (ok in trusted mode): fs
 
 ### `mail-finder` — Mail Finder
 - dir: `email-finder` · commands: 3 · modes: view
@@ -3346,10 +3012,6 @@
 ### `mailboxlayer` — mailboxlayer
 - dir: `mailboxlayer` · commands: 1 · modes: view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
-
-### `mailersend` — MailerSend
-- dir: `mailersend` · commands: 5 · modes: no-view|view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired)
 
 ### `mailsy` — Mailsy
 - dir: `mailsy` · commands: 1 · modes: view
@@ -3431,6 +3093,10 @@
 - dir: `mcp` · commands: 1 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): fs, child_process
 
+### `media-converter` — Media Converter
+- dir: `media-converter` · commands: 4 · modes: view
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); uses Node built-ins (ok in trusted mode): fs, child_process, module
+
 ### `memorable-generate-password` — Memorable Password Generator
 - dir: `memorable-generate-password` · commands: 1 · modes: view
 - Degraded: declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): fs
@@ -3447,16 +3113,24 @@
 - dir: `menubar-calendar` · commands: 2 · modes: menu-bar|view
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired)
 
-### `menubar-weather` — Menubar Weather
-- dir: `menubar-weather` · commands: 1 · modes: menu-bar
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired)
-
 ### `mermaid-to-image` — Mermaid to Image
 - dir: `mermaid-to-image` · commands: 1 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): fs, child_process
 
+### `messages` — Messages
+- dir: `messages` · commands: 5 · modes: view|menu-bar|no-view
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired)
+
+### `meta-music` — Meta Music
+- dir: `meta-music` · commands: 1 · modes: view
+- Degraded: uses Node built-ins (ok in trusted mode): fs
+
 ### `metaphorpsum` — Metaphorpsum
 - dir: `metaphorpsum` · commands: 1 · modes: no-view
+- Degraded: declares command `arguments[]` — not passed by runtime yet
+
+### `metronome` — Metronome
+- dir: `metronome` · commands: 1 · modes: view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
 
 ### `micro-snitch-logs` — Micro Snitch Logs
@@ -3510,10 +3184,6 @@
 ### `mirror-displays` — Mirror Displays
 - dir: `mirror-displays` · commands: 1 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): child_process
-
-### `mite` — Mite
-- dir: `mite` · commands: 4 · modes: view|no-view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired)
 
 ### `mlb-scores` — MLB Scores
 - dir: `mlb-scores` · commands: 3 · modes: view
@@ -3627,10 +3297,6 @@
 - dir: `mute-microphone` · commands: 3 · modes: menu-bar|no-view
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): child_process
 
-### `mutedeck` — MuteDeck
-- dir: `mutedeck` · commands: 4 · modes: view|no-view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired)
-
 ### `my-daily-log` — My Daily Log
 - dir: `my-daily-log` · commands: 6 · modes: view
 - Degraded: declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): fs
@@ -3643,13 +3309,9 @@
 - dir: `n8n` · commands: 4 · modes: view|no-view
 - Degraded: uses Node built-ins (ok in trusted mode): fs, child_process
 
-### `name-com` — Name.com
-- dir: `name-com` · commands: 2 · modes: no-view|view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired)
-
 ### `namesilo` — NameSilo
 - dir: `namesilo` · commands: 7 · modes: view|no-view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); declares command `arguments[]` — not passed by runtime yet
+- Degraded: declares command `arguments[]` — not passed by runtime yet
 
 ### `namespaces` — NameSpaces
 - dir: `namespaces` · commands: 1 · modes: view
@@ -3666,10 +3328,6 @@
 ### `nato-phonetic-alphabet` — NATO Phonetic Alphabet
 - dir: `nato-phonetic-alphabet` · commands: 2 · modes: view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
-
-### `nepali-date-converter` — Nepali Date Converter
-- dir: `nepali-date-converter` · commands: 1 · modes: no-view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired)
 
 ### `nerd-font-picker` — Nerd Font Picker
 - dir: `nerd-font-picker` · commands: 1 · modes: view
@@ -3707,17 +3365,13 @@
 - dir: `next-up` · commands: 5 · modes: view|menu-bar
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired); uses Node built-ins (ok in trusted mode): fs
 
-### `nextdns` — NextDNS
-- dir: `nextdns` · commands: 4 · modes: view|no-view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired)
-
 ### `nextjs-docs` — Next.js Documentation
 - dir: `nextjs-docs` · commands: 1 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): fs
 
 ### `nhk-program-search` — NHK Program Search
 - dir: `nhk-program-search` · commands: 4 · modes: view|no-view
-- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); updateCommandMetadata: loads; no-op (command metadata updates not wired)
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired)
 
 ### `nhl` — NHL
 - dir: `nhl` · commands: 3 · modes: view
@@ -3733,7 +3387,7 @@
 
 ### `nightscout` — Nightscout
 - dir: `nightscout` · commands: 6 · modes: view|no-view|menu-bar
-- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); updateCommandMetadata: loads; no-op (command metadata updates not wired)
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired)
 
 ### `nippon-colors` — Nippon Colors
 - dir: `nippon-colors` · commands: 1 · modes: view
@@ -3831,6 +3485,14 @@
 - dir: `obs-clippings` · commands: 1 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): fs
 
+### `obsidian` — Obsidian
+- dir: `obsidian` · commands: 12 · modes: view|menu-bar
+- Degraded: declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): fs, child_process
+
+### `obsidian-bookmarks` — Obsidian Bookmarks
+- dir: `obsidian-bookmarks` · commands: 3 · modes: view|no-view
+- Degraded: BrowserExtension: loads; throws if called (browser bridge not wired); uses Node built-ins (ok in trusted mode): fs
+
 ### `obsidian-smart-capture` — Obsidian Smart Capture
 - dir: `obsidian-smart-capture` · commands: 1 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): fs
@@ -3869,7 +3531,7 @@
 
 ### `one-thing` — One Thing
 - dir: `one-thing` · commands: 3 · modes: menu-bar|view|no-view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); launchCommand: loads; throws if called (inter-command launch not wired); declares command `arguments[]` — not passed by runtime yet
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares command `arguments[]` — not passed by runtime yet
 
 ### `one-time-password` — One Time Password
 - dir: `one-time-password` · commands: 1 · modes: view
@@ -3929,7 +3591,7 @@
 
 ### `open-path` — Open Path
 - dir: `open-path` · commands: 1 · modes: no-view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): child_process
+- Degraded: declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): child_process
 
 ### `openai-gpt` — OpenAI GPT
 - dir: `openai-gpt` · commands: 1 · modes: view
@@ -3941,7 +3603,7 @@
 
 ### `openai-translator` — OpenAI Translator
 - dir: `openai-translator` · commands: 8 · modes: view|no-view
-- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); updateCommandMetadata: loads; no-op (command metadata updates not wired); uses Node built-ins (ok in trusted mode): fs, child_process
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); uses Node built-ins (ok in trusted mode): fs, child_process
 
 ### `openclaw` — OpenClaw
 - dir: `openclaw` · commands: 6 · modes: view|no-view
@@ -3983,6 +3645,14 @@
 - dir: `orbit` · commands: 3 · modes: no-view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
 
+### `orbstack` — OrbStack
+- dir: `orbstack` · commands: 2 · modes: view
+- Degraded: useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox; uses Node built-ins (ok in trusted mode): child_process
+
+### `origami` — Origami
+- dir: `origami` · commands: 2 · modes: view
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired)
+
 ### `orshot` — Orshot
 - dir: `orshot` · commands: 2 · modes: no-view
 - Degraded: declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): fs
@@ -4009,7 +3679,7 @@
 
 ### `oura` — Oura
 - dir: `oura` · commands: 9 · modes: view|no-view|menu-bar
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); launchCommand: loads; throws if called (inter-command launch not wired); declares command `arguments[]` — not passed by runtime yet
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares command `arguments[]` — not passed by runtime yet
 
 ### `outline-document-search` — Outline Document Search
 - dir: `outline-document-search` · commands: 2 · modes: view
@@ -4109,7 +3779,7 @@
 
 ### `paste-as-plain-text` — Paste as Plain Text
 - dir: `paste-as-plain-text` · commands: 1 · modes: no-view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); declares command `arguments[]` — not passed by runtime yet
+- Degraded: declares command `arguments[]` — not passed by runtime yet
 
 ### `paste-safely` — Paste Safely
 - dir: `paste-safely` · commands: 2 · modes: view|no-view
@@ -4195,9 +3865,17 @@
 - dir: `pick-random` · commands: 3 · modes: no-view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
 
+### `pick-your-wallpaper` — Pick Your Wallpaper
+- dir: `pick-your-wallpaper` · commands: 2 · modes: view|no-view
+- Degraded: uses Node built-ins (ok in trusted mode): child_process, fs
+
 ### `pie-for-pi-hole` — Pie for Pi-Hole
 - dir: `pie-for-pihole` · commands: 16 · modes: view|no-view
 - Degraded: uses Node built-ins (ok in trusted mode): http, https, fs
+
+### `pieces-raycast` — Pieces for Raycast
+- dir: `pieces-raycast` · commands: 9 · modes: no-view|view
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); BrowserExtension: loads; throws if called (browser bridge not wired); uses Node built-ins (ok in trusted mode): fs, child_process
 
 ### `pika` — Pika
 - dir: `pika` · commands: 2 · modes: view
@@ -4271,6 +3949,10 @@
 - dir: `pocket` · commands: 6 · modes: view|no-view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
 
+### `podcasts-now` — Podcasts Now
+- dir: `podcasts-now` · commands: 2 · modes: view|menu-bar
+- Degraded: uses Node built-ins (ok in trusted mode): fs
+
 ### `pokedex` — Pokédex
 - dir: `pokedex` · commands: 8 · modes: view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
@@ -4301,7 +3983,7 @@
 
 ### `portfolio-tracker` — Portfolio Tracker
 - dir: `portfolio-tracker` · commands: 3 · modes: view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); uses Node built-ins (ok in trusted mode): fs
+- Degraded: uses Node built-ins (ok in trusted mode): fs
 
 ### `portless` — Portless Active Routes
 - dir: `portless` · commands: 1 · modes: view
@@ -4391,13 +4073,9 @@
 - dir: `prusa` · commands: 4 · modes: view|menu-bar|no-view
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired)
 
-### `psn` — PSN
-- dir: `psn` · commands: 3 · modes: no-view|view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired)
-
 ### `purelymail` — Purelymail
 - dir: `purelymail` · commands: 11 · modes: view|no-view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); launchCommand: loads; throws if called (inter-command launch not wired); declares command `arguments[]` — not passed by runtime yet
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares command `arguments[]` — not passed by runtime yet
 
 ### `pushover` — Pushover
 - dir: `pushover` · commands: 1 · modes: no-view
@@ -4523,6 +4201,10 @@
 - dir: `radix` · commands: 3 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): fs, child_process
 
+### `raindrop-io` — Raindrop.io
+- dir: `raindrop-io` · commands: 5 · modes: view|no-view
+- Degraded: BrowserExtension: loads; throws if called (browser bridge not wired); declares command `arguments[]` — not passed by runtime yet
+
 ### `random-fart` — Random Fart
 - dir: `random-fart` · commands: 1 · modes: no-view
 - Degraded: uses Node built-ins (ok in trusted mode): child_process, fs
@@ -4635,10 +4317,6 @@
 - dir: `system-monitor` · commands: 2 · modes: view|menu-bar
 - Degraded: uses Node built-ins (ok in trusted mode): child_process
 
-### `raycast-urbandictionary-word-of-the-day` — Urban Dictionary Word of the Day
-- dir: `raycast-urbandictionary-word-of-the-day` · commands: 3 · modes: no-view|view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired)
-
 ### `raycast-wallpaper` — Raycast Wallpaper
 - dir: `raycast-wallpaper` · commands: 2 · modes: view|no-view
 - Degraded: runPowerShellScript: Windows-only; throws on macOS (import loads)
@@ -4662,6 +4340,10 @@
 ### `raylog-markdown-tasks` — Raylog - Markdown Tasks
 - dir: `raylog-markdown-tasks` · commands: 3 · modes: view|menu-bar
 - Degraded: launchCommand: loads; throws if called (inter-command launch not wired); uses Node built-ins (ok in trusted mode): fs
+
+### `raynab` — Raynab — Manage Your Budgets
+- dir: `raynab` · commands: 7 · modes: view|menu-bar
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired)
 
 ### `raytaskwarrior` — Taskwarrior
 - dir: `raytaskwarrior` · commands: 3 · modes: view|no-view
@@ -4741,7 +4423,11 @@
 
 ### `remember-the-date` — Remember the Date
 - dir: `remember-the-date` · commands: 4 · modes: view|menu-bar|no-view
-- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); updateCommandMetadata: loads; no-op (command metadata updates not wired)
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired)
+
+### `remember-this` — Remember This
+- dir: `remember-this` · commands: 3 · modes: view|menu-bar
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): fs
 
 ### `remix-icon` — Remix Icon
 - dir: `remix-icon` · commands: 1 · modes: view
@@ -4783,12 +4469,12 @@
 - dir: `repo-launcher` · commands: 2 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): fs, child_process
 
-### `rescuetime-focus-session-trigger` — RescueTime
-- dir: `rescuetime-focus-session-trigger` · commands: 8 · modes: view|no-view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired)
-
 ### `research` — Deep Research
 - dir: `deep-research` · commands: 1 · modes: view
+- Degraded: uses Node built-ins (ok in trusted mode): fs
+
+### `resend` — Resend
+- dir: `resend` · commands: 4 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): fs
 
 ### `respace` — Respace
@@ -4831,13 +4517,13 @@
 - dir: `rounding-number` · commands: 1 · modes: view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
 
+### `rss-reader` — RSS Reader
+- dir: `rss-reader` · commands: 3 · modes: view
+- Degraded: BrowserExtension: loads; throws if called (browser bridge not wired)
+
 ### `ruby-evaluate` — Ruby Evaluate
 - dir: `ruby-evaluate` · commands: 1 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): child_process
-
-### `runcloud` — RunCloud
-- dir: `runcloud` · commands: 3 · modes: view|no-view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired)
 
 ### `running-page` — Running Page
 - dir: `running-page` · commands: 3 · modes: view|menu-bar
@@ -4967,6 +4653,10 @@
 - dir: `selfh-st-icons` · commands: 1 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): fs
 
+### `send-ai` — SendAI
+- dir: `send-ai` · commands: 13 · modes: view
+- Degraded: declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): fs
+
 ### `send-to-e-reader` — Send to E-Reader
 - dir: `send-to-e-reader` · commands: 1 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): fs
@@ -5073,7 +4763,7 @@
 
 ### `shutdown-timer` — Shutdown Timer
 - dir: `shutdown-timer` · commands: 3 · modes: no-view|view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); uses Node built-ins (ok in trusted mode): child_process
+- Degraded: uses Node built-ins (ok in trusted mode): child_process
 
 ### `sidecar` — Sidecar
 - dir: `sidecar` · commands: 1 · modes: no-view
@@ -5101,7 +4791,7 @@
 
 ### `simple-http` — Simple Http
 - dir: `simple-http` · commands: 2 · modes: view|no-view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); launchCommand: loads; throws if called (inter-command launch not wired); uses Node built-ins (ok in trusted mode): child_process
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); uses Node built-ins (ok in trusted mode): child_process
 
 ### `simple-icons` — Brand Icons - simpleicons.org
 - dir: `simple-icons` · commands: 1 · modes: view
@@ -5113,7 +4803,7 @@
 
 ### `simple-reminder` — Simple Reminder
 - dir: `simple-reminder` · commands: 3 · modes: view|no-view|menu-bar
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); launchCommand: loads; throws if called (inter-command launch not wired); uses Node built-ins (ok in trusted mode): child_process
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); uses Node built-ins (ok in trusted mode): child_process
 
 ### `simple-youdao` — Simple Youdao Translate
 - dir: `simple-youdao` · commands: 1 · modes: view
@@ -5142,6 +4832,10 @@
 ### `sips` — Image Modification
 - dir: `sips` · commands: 12 · modes: no-view|view
 - Degraded: declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): fs, child_process, https
+
+### `siri` — Siri
+- dir: `siri` · commands: 1 · modes: no-view
+- Degraded: declares command `arguments[]` — not passed by runtime yet
 
 ### `sitespeakai` — SiteSpeakAI
 - dir: `sitespeakai` · commands: 1 · modes: view
@@ -5225,7 +4919,7 @@
 
 ### `sonos` — Sonos
 - dir: `sonos` · commands: 7 · modes: no-view|view|menu-bar
-- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); updateCommandMetadata: loads; no-op (command metadata updates not wired)
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired)
 
 ### `sort-mentions` — Sort Mentions
 - dir: `sort-mentions` · commands: 2 · modes: no-view
@@ -5233,11 +4927,11 @@
 
 ### `soundboard` — Soundboard
 - dir: `soundboard` · commands: 11 · modes: view|no-view
-- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); updateCommandMetadata: loads; no-op (command metadata updates not wired); uses Node built-ins (ok in trusted mode): child_process
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); uses Node built-ins (ok in trusted mode): child_process
 
 ### `sourcegraph` — Sourcegraph
 - dir: `sourcegraph` · commands: 7 · modes: view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); launchCommand: loads; throws if called (inter-command launch not wired); uses Node built-ins (ok in trusted mode): http
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); uses Node built-ins (ok in trusted mode): http
 
 ### `sourcegraph-amp-dash-x` — Amp Dash X
 - dir: `sourcegraph-amp-dash-x` · commands: 2 · modes: view
@@ -5293,7 +4987,7 @@
 
 ### `spotify-player` — Spotify Player
 - dir: `spotify-player` · commands: 35 · modes: view|menu-bar|no-view
-- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); updateCommandMetadata: loads; no-op (command metadata updates not wired); runPowerShellScript: Windows-only; throws on macOS (import loads); declares command `arguments[]` — not passed by runtime yet
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); runPowerShellScript: Windows-only; throws on macOS (import loads); declares command `arguments[]` — not passed by runtime yet
 
 ### `spring-initializr` — Spring Initializr
 - dir: `spring-initializr` · commands: 1 · modes: view
@@ -5345,7 +5039,7 @@
 
 ### `stickies` — Stickies
 - dir: `stickies` · commands: 7 · modes: view|menu-bar|no-view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); launchCommand: loads; throws if called (inter-command launch not wired); uses Node built-ins (ok in trusted mode): child_process
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); uses Node built-ins (ok in trusted mode): child_process
 
 ### `storybook-sandboxes` — Storybook Sandboxes
 - dir: `storybook-sandboxes` · commands: 2 · modes: view
@@ -5427,6 +5121,10 @@
 - dir: `synonyms` · commands: 1 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): fs
 
+### `system-information` — System Information
+- dir: `system-information` · commands: 1 · modes: view
+- Degraded: uses Node built-ins (ok in trusted mode): child_process
+
 ### `t3-chat` — T3 Chat
 - dir: `t3-chat` · commands: 1 · modes: no-view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
@@ -5438,6 +5136,10 @@
 ### `tableplus` — TablePlus
 - dir: `tableplus` · commands: 2 · modes: view|menu-bar
 - Degraded: uses Node built-ins (ok in trusted mode): fs
+
+### `tablepro` — TablePro
+- dir: `tablepro` · commands: 9 · modes: view|no-view|menu-bar
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): fs
 
 ### `tabler` — Tabler
 - dir: `tabler` · commands: 1 · modes: view
@@ -5453,15 +5155,23 @@
 
 ### `tailscale` — Tailscale
 - dir: `tailscale` · commands: 11 · modes: view|no-view|menu-bar
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); uses Node built-ins (ok in trusted mode): child_process
+- Degraded: uses Node built-ins (ok in trusted mode): child_process
 
 ### `tailwindcss` — Tailwind CSS
 - dir: `tailwindcss` · commands: 4 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): fs
 
+### `teak-raycast` — Teak
+- dir: `teak-raycast` · commands: 8 · modes: view|no-view
+- Degraded: BrowserExtension: loads; throws if called (browser bridge not wired); declares command `arguments[]` — not passed by runtime yet
+
 ### `team-time` — Team Time
 - dir: `team-time` · commands: 4 · modes: view|no-view|menu-bar
-- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); updateCommandMetadata: loads; no-op (command metadata updates not wired)
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired)
+
+### `telegram` — Telegram
+- dir: `telegram` · commands: 5 · modes: view
+- Degraded: uses Node built-ins (ok in trusted mode): fs
 
 ### `teleport` — Teleport
 - dir: `teleport` · commands: 6 · modes: no-view|view
@@ -5485,7 +5195,7 @@
 
 ### `text-decorator` — Text Decorator
 - dir: `text-decorator` · commands: 3 · modes: no-view|view
-- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); updateCommandMetadata: loads; no-op (command metadata updates not wired); declares command `arguments[]` — not passed by runtime yet
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares command `arguments[]` — not passed by runtime yet
 
 ### `text-differ` — Text Differ
 - dir: `text-differ` · commands: 1 · modes: no-view
@@ -5519,6 +5229,10 @@
 - dir: `thesvg` · commands: 2 · modes: view|no-view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
 
+### `things` — Things
+- dir: `things` · commands: 10 · modes: view|menu-bar|no-view
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): child_process, fs
+
 ### `thock` — Thock
 - dir: `thock` · commands: 2 · modes: no-view|view
 - Degraded: uses Node built-ins (ok in trusted mode): child_process, fs
@@ -5537,7 +5251,7 @@
 
 ### `tidyread---streamline-your-daily-reading` — TidyRead - Streamline Your Daily Reading
 - dir: `tidyread---streamline-your-daily-reading` · commands: 5 · modes: view|no-view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); launchCommand: loads; throws if called (inter-command launch not wired); uses Node built-ins (ok in trusted mode): fs, http, child_process
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); uses Node built-ins (ok in trusted mode): fs, http, child_process
 
 ### `tikz` — TikZ
 - dir: `tikz` · commands: 1 · modes: view
@@ -5613,7 +5327,7 @@
 
 ### `toggle-menu-bar` — Toggle Menu Bar
 - dir: `toggle-menu-bar` · commands: 1 · modes: no-view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); uses Node built-ins (ok in trusted mode): child_process
+- Degraded: uses Node built-ins (ok in trusted mode): child_process
 
 ### `toggle-proxy` — Toggle Proxy
 - dir: `toggle-proxy` · commands: 6 · modes: menu-bar|view
@@ -5623,9 +5337,13 @@
 - dir: `toggle-scroll-bars-visibility` · commands: 5 · modes: no-view
 - Degraded: uses Node built-ins (ok in trusted mode): child_process
 
+### `toneclone` — ToneClone
+- dir: `toneclone` · commands: 7 · modes: view
+- Degraded: BrowserExtension: loads; throws if called (browser bridge not wired); uses Node built-ins (ok in trusted mode): fs
+
 ### `toothpick` — Toothpick
 - dir: `toothpick` · commands: 19 · modes: view|no-view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): fs, child_process
+- Degraded: declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): fs, child_process
 
 ### `torbox` — TorBox
 - dir: `torbox` · commands: 3 · modes: view
@@ -5707,10 +5425,6 @@
 - dir: `two-factor-authentication-code-generator` · commands: 3 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): fs
 
-### `typer` — Typer - Custom Text Hotkey
-- dir: `typer` · commands: 5 · modes: no-view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired)
-
 ### `typewhisper` — TypeWhisper
 - dir: `typewhisper` · commands: 5 · modes: view|no-view
 - Degraded: uses Node built-ins (ok in trusted mode): fs
@@ -5722,14 +5436,6 @@
 ### `u301-url-shortener` — U301 URL Shortener
 - dir: `u301-url-shortener` · commands: 3 · modes: view|no-view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
-
-### `uk-bank-holidays` — UK Bank Holidays
-- dir: `uk-bank-holidays` · commands: 2 · modes: view|no-view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired)
-
-### `ultrahuman` — Ultrahuman
-- dir: `ultrahuman` · commands: 3 · modes: view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired)
 
 ### `unblocked-answers` — Unblocked Answers
 - dir: `unblocked-answers` · commands: 2 · modes: view
@@ -5903,6 +5609,10 @@
 - dir: `vlc` · commands: 22 · modes: no-view|view
 - Degraded: declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): child_process
 
+### `vmware-vcenter` — VMware VCenter
+- dir: `vmware-vcenter` · commands: 4 · modes: view
+- Degraded: runPowerShellScript: Windows-only; throws on macOS (import loads)
+
 ### `vocabuilder` — VocaBuilder
 - dir: `vocabuilder` · commands: 3 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): fs, child_process
@@ -5977,7 +5687,7 @@
 
 ### `website-blocker` — Website Blocker
 - dir: `website-blocker` · commands: 2 · modes: view|no-view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); uses Node built-ins (ok in trusted mode): fs
+- Degraded: uses Node built-ins (ok in trusted mode): fs
 
 ### `wechat` — WeChat
 - dir: `wechat` · commands: 2 · modes: view
@@ -5999,6 +5709,10 @@
 - dir: `wezterm-navigator` · commands: 4 · modes: view
 - Degraded: useExec: only runs in trusted (unsandboxed) extensions; throws in sandbox; uses Node built-ins (ok in trusted mode): child_process, fs
 
+### `whatsapp` — WhatsApp
+- dir: `whatsapp` · commands: 4 · modes: view
+- Degraded: uses Node built-ins (ok in trusted mode): child_process, fs
+
 ### `whisper` — Whisper - Share Secrets
 - dir: `whisper` · commands: 2 · modes: no-view|view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
@@ -6018,10 +5732,6 @@
 ### `whois` — Whois
 - dir: `whois` · commands: 1 · modes: view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
-
-### `whoop` — WHOOP
-- dir: `whoop` · commands: 3 · modes: no-view|view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired)
 
 ### `whosampled` — WhoSampled
 - dir: `whosampled` · commands: 3 · modes: no-view
@@ -6089,7 +5799,7 @@
 
 ### `wip` — WIP
 - dir: `wip` · commands: 4 · modes: view|no-view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); uses Node built-ins (ok in trusted mode): fs
+- Degraded: uses Node built-ins (ok in trusted mode): fs
 
 ### `wireguard` — Wireguard
 - dir: `wireguard` · commands: 2 · modes: view|no-view
@@ -6137,11 +5847,7 @@
 
 ### `wordreference` — WordReference Dictionary Translation
 - dir: `wordreference` · commands: 1 · modes: view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); declares command `arguments[]` — not passed by runtime yet
-
-### `work-time-countdown` — Work Time Countdown
-- dir: `work-time-countdown` · commands: 1 · modes: menu-bar
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired)
+- Degraded: declares command `arguments[]` — not passed by runtime yet
 
 ### `workouts` — Workouts
 - dir: `workouts` · commands: 6 · modes: view|menu-bar
@@ -6183,6 +5889,10 @@
 - dir: `wu-bi-bian-ma` · commands: 2 · modes: view
 - Degraded: declares command `arguments[]` — not passed by runtime yet
 
+### `xcode` — Xcode
+- dir: `xcode` · commands: 21 · modes: menu-bar|view|no-view
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); declares command `arguments[]` — not passed by runtime yet; uses Node built-ins (ok in trusted mode): fs, child_process
+
 ### `xcode-cloud` — Xcode Cloud
 - dir: `xcode-cloud` · commands: 2 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): fs
@@ -6217,7 +5927,7 @@
 
 ### `year-in-progress` — Year in Progress
 - dir: `year-in-progress` · commands: 3 · modes: no-view|menu-bar|view
-- Degraded: launchCommand: loads; throws if called (inter-command launch not wired); updateCommandMetadata: loads; no-op (command metadata updates not wired)
+- Degraded: launchCommand: loads; throws if called (inter-command launch not wired)
 
 ### `yoink` — Yoink
 - dir: `yoink` · commands: 1 · modes: no-view
@@ -6273,7 +5983,7 @@
 
 ### `zipcodebase` — Zipcodebase
 - dir: `zipcodebase` · commands: 8 · modes: view|no-view
-- Degraded: updateCommandMetadata: loads; no-op (command metadata updates not wired); declares command `arguments[]` — not passed by runtime yet
+- Degraded: declares command `arguments[]` — not passed by runtime yet
 
 ### `zipic` — Zipic
 - dir: `zipic` · commands: 3 · modes: no-view|view
@@ -6303,10 +6013,14 @@
 - dir: `zread-ai` · commands: 2 · modes: no-view
 - Degraded: BrowserExtension: loads; throws if called (browser bridge not wired); declares command `arguments[]` — not passed by runtime yet
 
+### `zsh-aliases` — Zsh Aliases
+- dir: `zsh-aliases` · commands: 1 · modes: view
+- Degraded: uses Node built-ins (ok in trusted mode): fs
+
 ### `zshrc-manager` — Zshrc Manager
 - dir: `zshrc-manager` · commands: 1 · modes: view
 - Degraded: uses Node built-ins (ok in trusted mode): fs
 
-## SUPPORTED (1416)
+## SUPPORTED (1473)
 
-`2fa-directory`, `5devs`, `8-ball`, `8-divide`, `aave-search`, `active-mississaugua`, `adguard-home`, `adhan-time`, `ado-search`, `adonisjs-documentation`, `advanced-replace`, `advice-slip`, `affine`, `ai-by-vercel`, `ai-code-namer`, `ai-humanizer`, `ai-stats`, `ai-text-to-calendar`, `ai-usage-tracker`, `aimlab`, `airplane`, `airport`, `airsy`, `airsync`, `aiven`, `aleph`, `aliyun-flow`, `alloy`, `alpaca-trading`, `alpinejs`, `alwaysdata`, `amazon-search`, `amphetamine`, `analog-film-library`, `android-versions`, `anilist-airing-schedule`, `anki`, `anna-s-archive`, `antisocials`, `anybox`, `anycoffee`, `apify`, `apis-guru-search`, `appgrid`, `apple-books`, `apple-developer-docs`, `apple-devices`, `apple-stocks-search`, `apply-inline-code`, `appwrite`, `arabic-keyboard`, `aranet-co2-monitor`, `arc-helper`, `arca`, `archisteamfarm`, `array-this`, `ars-technica`, `arxiv`, `asana`, `asciimath-to-latex-converter`, `asoiaf`, `asyncapi`, `atomberg-raycast-extension`, `attio`, `audio-writer`, `auth0-management`, `autumn`, `avatar`, `axios-docs`, `background-sounds`, `backstage`, `bahn-info`, `balatro-compendium`, `banca-d-italia-currency-converter`, `base-stats`, `base-ui-docs`, `base64`, `bash-commands`, `battery-health`, `bazinga-tools`, `bbc-news-headlines`, `beancount-meta`, `beardtown`, `beat-per-minute`, `beehiiv`, `beeminder`, `bento`, `berlin-public-transportation`, `beszel`, `betaseries`, `better-uptime`, `betterdiscord-store`, `bhagavad-gita-quotes`, `biaodian`, `bibigpt-summarize-audiovideo-with-ai`, `big-o`, `bilibili-search`, `bing-search`, `bing-wallpaper`, `binge-clock`, `bintools`, `bitaxe-status`, `bitbucket`, `bitbucket-search-self-hosted`, `bitcoin-price`, `bitfinex`, `bitly-url-shortener`, `bitrise`, `bklit-analytics`, `blockchain-explorer-search`, `blockchain-gas-tracker`, `bmrks`, `board-game-geek`, `bonk-price`, `bookstack`, `bored`, `botpress`, `braintick`, `brasileirao-serie-a`, `brave-search`, `brave-search-with-results`, `bring`, `browser-tabs`, `bsr-entsorgung`, `bttv-emote`, `buddy`, `buildkite`, `bundesliga`, `bundlephobia-search`, `bunq`, `caaals`, `cacher`, `calendar`, `calendly`, `camper-calc`, `can-i-php`, `can-i-use`, `cangjie`, `canva`, `canvascast`, `capacities`, `capture`, `carbon-code-screenshot-for-raycast`, `catenary-raycast`, `catppuccin`, `cc0-lib`, `ccf-what`, `ccfddl`, `chainscout`, `change-case`, `change-scroll-direction`, `changedetection-io`, `charming-chatgpt`, `chartmogul`, `chatbase`, `chatgpt3-prompt`, `chatwork-search`, `cheatsheets`, `check-citi-bike-availability`, `checklist`, `cheetah`, `chess-com`, `chhoto`, `china-ip-address`, `chinese-character-converter`, `chinese-lottery`, `chinese-numbers`, `choose-a-license`, `chords-and-tabs`, `chuck-norris-facts`, `cilium-docs`, `cinemas-nos`, `circleback`, `citation-generator`, `cl-indicators`, `clarify`, `clash`, `claude`, `claude-code-cheatsheet`, `clean-agent-text`, `clean-text`, `clear-clipboard`, `climbing-grade-converter`, `clip-swap`, `clipboard-editor`, `clipboard-formatter`, `clipboard-sequential-paste`, `clipboard-type`, `clipboard-utilities`, `clipmate`, `clockify`, `close-finder`, `cloudflare`, `cloudflare-ai`, `cloudflare-email-routing`, `cocart-docs`, `cocoa-core-data-timestamp-converter`, `coda-bookmarks-search`, `code-review-emojis`, `code-smells`, `codeblocks`, `codegeex`, `codemagic`, `codesnap`, `cognimemo`, `coin-caster`, `coinbase-pro`, `coingecko`, `coinpaprika`, `collected-notes`, `cometapi`, `comma-separator`, `commercequest`, `commit-issue-parser`, `commit-message-generator`, `commitlint`, `common-directory`, `composerize`, `confluence`, `consoledev`, `control-d`, `control-viscosity`, `conventional-commits`, `convert-typescript-to-javascript`, `converter`, `convex`, `coolify`, `copy-notion-markdown-link`, `copy-skeet-link`, `cosmic-bookmarks`, `count-numbers`, `country-lookup`, `cpf-cnpj-generator`, `cran-e-search`, `cratecast`, `creem`, `cricketcast`, `crisp`, `cron-description`, `crunchbase`, `crypto-price`, `crypto-search`, `csfd`, `css-calculations`, `css-gg`, `css-tricks`, `cuid-generator`, `curator-bio`, `currency-exchange`, `cursor`, `cursor-costs`, `cursors`, `curto-io-url-shortener`, `customer-io`, `cyberchef`, `cypress-docs`, `dad-jokes`, `daisyui`, `daminik`, `danbooru`, `dashlane`, `dashlane-vault`, `databuddy`, `date-converter`, `dbt-documentation`, `dbtcloud`, `decentraland`, `deduplicator`, `deepl-api-usage`, `defichain-dobby`, `definitelytyped`, `defiscan`, `dekudeals`, `delivery-tracker`, `deployhq`, `design-skills`, `designer-excuses`, `designer-news`, `deutscherwetterdienst`, `dev-to`, `devcontainer-features`, `developer-excuse`, `devenv-docs`, `devin`, `devonthink`, `devutils`, `dex-screener`, `dexcom-reader`, `dice-tiles`, `diff-checker`, `digitalocean`, `directus`, `discogs`, `discord-timestamps`, `discordjs-documentation`, `disney`, `distraction-tracker`, `django-docs`, `djangopackages`, `dns-lookup`, `docker`, `dockerhub`, `dodo-payments`, `dog-images`, `dokploy`, `dolar-cripto-ar`, `dolar-hoy`, `dollar-blue`, `domainr`, `done-bear`, `donut`, `doppler-share-secrets`, `dotnet-api-browser`, `dotnet-docs-search`, `dotween-eases`, `douban`, `dovetail`, `dpm-lol`, `dr-news`, `dreamhost`, `dribbble`, `drug-search`, `drupal-org`, `duck-duck-go-search`, `duck-facts`, `duckduckgo-email`, `duden`, `dutch-article`, `dynamic-font-size`, `e18e-module-replacements`, `early-tools-news`, `easings`, `easyvariable`, `ebird`, `ecosia-search`, `effect-docs`, `ekstraklasa`, `element`, `elgato-key-light`, `elixir`, `elm-search`, `elron`, `ember-api-documentation`, `emissions-calculator`, `end-of-life`, `endel`, `ens-name-lookup`, `envoyer`, `epoch-to-timestamp`, `escape-regexp-characters`, `espn`, `esports-pass`, `essay`, `esv-bible`, `ethereum-gas-tracker`, `ethereum-price`, `ethereum-utils`, `eurovision-song-contest`, `evaluate-math-expression`, `evil-insult`, `evm-codes`, `excalidraw`, `excel-formula-beautifier`, `exivo`, `explain-command`, `expo`, `f1-standings`, `fabric`, `facetime`, `fake-financial-data`, `fake-swedish-personal-number`, `fakecrime-upload`, `fancy-text`, `fantasy-premier-league-rankings`, `farcaster`, `fastly`, `fastmail-masked-email`, `fathom-analytics`, `favoro`, `fbi`, `featurebase`, `feedly`, `feishu-document-creator`, `fhir`, `fibonacci-sequence`, `figma-files-raycast-extension`, `figma-learn-companion`, `figma-shortcuts`, `figma-variables`, `filament`, `file-tree-generator`, `fillerama`, `finary`, `findnearby`, `fingertip`, `finnish-dictionary`, `firecrawl`, `firefly-iii`, `fix-language`, `fluctuation`, `fluent-outdoors`, `flux`, `flycheck-raycast`, `flypy`, `font-awesome`, `forgejo`, `format-graphql`, `formizee`, `framer-motion`, `frankerfacez`, `freedns`, `freshrss`, `frill`, `fronius-inverter`, `ftrack`, `fuelx`, `fumadocs`, `game-scout`, `gandi`, `gcp-search`, `geist-ui-components`, `geoconverter`, `geoguesser`, `geohash-encode-decode`, `get-cat-images`, `get-direct-link`, `gg-deals`, `ghost-docs`, `gift-stardew-valley`, `git-branch-name-generator`, `git-commands`, `gitee`, `github-cli-manual`, `github-codespaces`, `github-gist`, `github-profile`, `github-repository-search`, `github-review-requests`, `github-spark`, `github-status`, `github-users`, `gitlab-docs`, `gitmoji`, `gleam-packages`, `glide`, `glyph-search`, `go-links`, `go-package-search`, `golden-ratio`, `gomander`, `goodlinks`, `google-advanced-search`, `google-finance`, `google-fonts`, `google-meet`, `google-scholar`, `google-search`, `google-tasks`, `google-trends`, `gotify`, `govee`, `gradle-plugins`, `grafana`, `grafbase`, `grammaring`, `graphcdn`, `greip`, `grist`, `grokipedia`, `groundhog-day`, `growthbook`, `gumroad`, `habr-media`, `hacker-news`, `hardcover`, `hashnode`, `hatena-bookmark`, `hazeover`, `headlines`, `hebrew-date-zmanim`, `helldivers2`, `hellonext-changelogs`, `helm-docs`, `hemolog`, `hephaestus`, `heroicons`, `hestiacp-admin`, `hetrixtools`, `hevy`, `hexlify`, `hide-all-apps`, `hide-mail`, `hidemyemail`, `holodex`, `holopin`, `homebox`, `homepage`, `homey`, `hoogle`, `host-switch`, `hostloc`, `howlongtobeat`, `hsdecks`, `html-colors`, `http-dot-cat`, `http-mime`, `hubspot`, `hugging-face`, `humaans`, `hupu`, `hyper-focus`, `iata-code-decoder`, `icd10-lookup`, `iching-divination`, `icloud-global-pricing-comparison`, `ifanr`, `image-diff-checker`, `image-host`, `imessage-2fa`, `in-the-time-zone`, `inbound`, `incident-io`, `incognito-clone`, `inertiajs-documentation`, `infomaniak`, `initium`, `inkdrop`, `inpost-parcel-lockers`, `input-source-switcher`, `inspire-search`, `instant-domain-search`, `instapaper`, `intention-clarifier`, `ionos-sync`, `ios-resolution`, `ipa-translator`, `ipcheck-ing`, `iptv`, `is-it-toxic-to`, `isdown`, `itch-io`, `jalali-date-convertor`, `james-webb-space-telescope`, `jellyfin`, `jira-time-tracking`, `jisho`, `jitsi`, `jotform`, `json-editor`, `json-format`, `json-to-go`, `json-to-toon-converter`, `json2ts`, `jsr`, `jsrepo`, `jue-jin`, `jup-agg`, `jurassic-ninja-site-generator`, `just-delete-me`, `justcolorpicker-raycast`, `kaalam`, `kafka-ui`, `kagi-news`, `kagi-search`, `kalshi`, `kaneo-for-raycast`, `kaomoji-search`, `keeper-security`, `keeply`, `keychain-password-gen`, `kimi`, `kimi-for-coding`, `kind-words`, `kindle-paste`, `kinopoisk`, `klu-ai`, `knowwa`, `korean-date-converter`, `korean-spell-checker`, `koyeb`, `kubernetes`, `kubernetes-docs`, `kutt`, `laby-net`, `lacinka`, `laliga`, `laracasts`, `larajobs-search`, `laravel-artisan`, `laravel-livewire`, `laravel-nova`, `laravel-shift`, `laravel-vapor`, `large-type`, `lark`, `lark-applink`, `latest-news`, `latex-math-symbols`, `launchdarkly`, `lavinprognoser`, `lazygit-keybindings`, `leap-new`, `learning-snacks`, `leetcode`, `lego-bricks`, `leitnerbox`, `lemmy`, `lemon-squeezy`, `lenscast`, `letta`, `lgtmeow`, `liba-ro_shortener`, `lichess-org`, `lifx`, `lifx-advanced-controller`, `lightdash-navigator`, `lightning-time`, `lightshot-gallery`, `ligue-1`, `lingo-rep-raycast`, `linguee`, `link-cleaner`, `linkding`, `linux-command`, `liquipedia-matches`, `literal`, `liveblocks`, `llm-stats`, `llms-txt`, `loan-calculator`, `lobehub-icons`, `lobsters`, `logsnag`, `logtail`, `lol-esports`, `lookaway`, `lotr`, `lucide-animated`, `lucide-icons`, `luma`, `lume`, `lunatask`, `lunchmoney`, `luxafor-controller`, `lyne`, `lyrics`, `mac-app-store-search`, `macrumors`, `macstories`, `macupdater`, `magic-home`, `mail-to-self`, `mailerlite-stats`, `mailtrap`, `make-dot-com`, `make-with-notion-2024`, `manage-clickup-tasks`, `mandarin-chinese-dictionary`, `manga-calendar`, `manotori`, `manus`, `manus-manager`, `marble`, `marginnote`, `markdown-codeblock`, `markdown-converter`, `markdown-preview`, `markdown-reference`, `markdown-this`, `markdown-to-jira`, `markdown-to-plain-text`, `markdown-to-rich-text`, `markprompt`, `masscode`, `math-functions`, `matter`, `mattermost`, `mayar`, `maybe`, `mbta-tracker`, `md-to-excel`, `medialister-marketplace-helper`, `meduza`, `mem`, `mem0`, `memberstack`, `meme-generator`, `mempool`, `mercado-libre`, `mercury`, `metacritic`, `metaphor`, `meteoblue-lookup`, `metube`, `microblog`, `microsoft-teams`, `microsoft-teams-calling`, `midas`, `migadu`, `mikrus`, `minecast`, `minecraft-color-codes`, `minecraft-crafting-recipes`, `miniflux`, `minimax-ai`, `minisim`, `minttr`, `miraie-ac-control`, `mistral`, `mittwald`, `mixpanel`, `mobius-materials`, `mochi`, `modrinth`, `modrinth-search`, `moji`, `mollie-for-raycast`, `monday-com`, `moneybird`, `moneylover`, `monkeytype`, `monobank`, `monocle`, `monse`, `monzo`, `moon-phrase`, `mousehunt-helper`, `mui-documentation`, `multi-links`, `multilinks`, `multipass`, `multiviewer`, `music-news`, `music-timer`, `musicbrainz`, `musicthread`, `must`, `mxroute`, `myanimelist-search`, `myip`, `mymind`, `mynaui-icons`, `namecheap`, `namuwiki`, `nano-games`, `nasa`, `nativebase-docs`, `nature-remo`, `naver-search`, `navidrome`, `nba-game-viewer`, `near-rewards`, `neodb`, `neon`, `nepali-calendar`, `netease-music`, `netnewswire`, `neurooo-translate`, `new-relic`, `new-york-times`, `next-lens`, `next-run`, `nextcloud`, `nfl-information`, `nft-search`, `ngrok`, `nif`, `nif-fresquinho`, `nixpkgs-search`, `nl-news-headlines`, `no-as-a-service`, `nocal`, `node-js-evaluate`, `nordic-energy-prices`, `nos-nieuws`, `nostr`, `not-diamond`, `notaday`, `note-in-google-doc`, `notilight-controller`, `notion_researcher`, `notra`, `nouns`, `novu`, `nowplaying-cli`, `ns-nl-search`, `nsis-reference`, `nts`, `nu-nieuws`, `nuget`, `number-facts`, `numpad`, `nyc-train-tracker`, `nzbget`, `obs-control`, `octopus-energy`, `odin`, `odoo-companion`, `office-quotes`, `oh-my-zsh-git-alias`, `ohdear`, `ohmyzsh-plugins`, `ok-json`, `oklch-color-converter`, `oktasearch`, `olacv`, `ollama-mind-map-generator`, `olympic-games`, `omg-lol`, `omni-news`, `one-tab-group`, `one-time-secret`, `onelook-thesaurus`, `ones`, `open-camera-menu-bar`, `open-docker`, `open-gem-documentation`, `open-in-shopify-admin`, `open-latest-url-from-clipboard`, `open-props`, `open-with-app`, `openrouter-model-search`, `openrouter-models-finder`, `openrouter-quick-actions`, `openweathermap`, `opsgenie`, `orbita`, `orion`, `osrs-wiki`, `ossinsight`, `otp-inbox`, `ottomatic`, `outline-page`, `ovhcloud`, `owledge-raycast`, `owncloud`, `ozbargain-deals`, `pagerduty`, `palette-colors`, `pandas-documentation-search`, `pangu-for-raycast`, `paperform`, `papersize`, `paperspace`, `parabol`, `parcel-tracker`, `parse`, `password-generator`, `paste-from-apple-books`, `pastebin`, `pastefy`, `pastery`, `paymenter`, `paypal-invoices`, `pbr-assistant`, `penflow-ai`, `penpot`, `perry`, `personio`, `pestphp-documentation`, `pexels`, `phare-io-uptime`, `phind-search`, `phonetic-typing`, `phosphor-icons`, `php-docs`, `php-toolbox`, `pinboard`, `pinia-docs`, `pinwork`, `pip`, `pitchfork`, `pivot`, `pkg-swap`, `planetscale`, `planning-center`, `plausible-analytics`, `playtester`, `playwright-docs`, `plex`, `ploi`, `pm2`, `pocketbase`, `podcasts`, `pokemon-tcg-pocket-binder`, `polar`, `polars-documentation-search`, `polished`, `pollen-count`, `polymarket`, `pomo`, `popcorn`, `port`, `portal-wholesale`, `portuguese-primeira-liga`, `position-size-calculator`, `postiz`, `postman`, `potter-db`, `premier-league`, `prettier`, `primer`, `printer-status`, `prisma-cli-commands`, `prisma-postgres`, `productboard`, `productlane`, `project-companion`, `project-hub`, `promptnote`, `prompts-chat`, `protobuf2typescript`, `proton-version`, `protondb`, `prowlarr`, `proxmox`, `proxyman`, `pub-dev`, `public-bug-bounty-and-vulnerability-disclosure-programs`, `publico`, `publora`, `pubme`, `pulsemcp`, `pumble`, `punto`, `purpleair`, `px-to-rem-converter`, `qonto`, `qotp`, `qovery`, `qq-music-controls`, `query-domains`, `quick-access-for-zeroheight`, `quick-access-infomaniak`, `quick-event`, `quick-search`, `quickfile`, `quicksnip`, `quicktime`, `quicktype`, `quikwallet`, `quoterism-raycast`, `r-pkg-search`, `radicle`, `rae-dictionary-raycast`, `rails-routes`, `railway`, `rain-radars`, `rainaissance`, `ram-prices`, `ramda-documentation`, `random`, `random-date-generator`, `random-email`, `random-password-generator`, `random-us-phone-number`, `ratio-calculator`, `ray-boop`, `ray-so`, `raycafe`, `raycast-airtable-extension`, `raycast-bard-ai`, `raycast-clip`, `raycast-datadog`, `raycast-diki`, `raycast-explorer`, `raycast-fly`, `raycast-icons`, `raycast-ios-hig`, `raycast-kozip-extension`, `raycast-language-tool`, `raycast-link-lock`, `raycast-manual`, `raycast-monkeytype-theme`, `raycast-norwegian-public-transport`, `raycast-nrm`, `raycast-ordbokene`, `raycast-tapo-smart-devices`, `raycast-textlint-rule-aws-service-name`, `raycast-timeular`, `raycast-timezone-converter`, `raycast-transistorfm`, `raycast-translate-ge`, `raycast-weekly-newsletter`, `raycast-wemo`, `raydocs`, `raytyping`, `rdir`, `rdw-kentekencheck`, `re-mind`, `react-native-directory`, `reading-time`, `readwise`, `readymetrics`, `rebrandly`, `recap`, `recents`, `recurly`, `reddit-search`, `redirect-trace`, `redis`, `redmine`, `refresh-browsers`, `refresh-wifi`, `regex-repl`, `regex-tester`, `rehooks`, `reka-ui`, `remo-notes`, `remove-window-from-set`, `render`, `repology-search`, `resend-wallpaper`, `resmo`, `retool-documentation`, `retrac`, `rewardful`, `rewiser`, `rg-adguard-links`, `ricescore`, `rick-and-morty`, `ring-intercom`, `risk-reward-calculator`, `rize-io-sessions`, `roblox-creator-docs`, `rocket-chat`, `roll-d20`, `rollcast`, `rollup-wtf`, `rtl-reader`, `rule-of-three`, `ruler`, `rusbase`, `rust-docs`, `sadaqah-box`, `safe-secret`, `sage-hr`, `sanity`, `sat-scorer`, `sav`, `save-to-cubox`, `saved-items`, `savvycal`, `say-no-to-notch`, `scaleway`, `schoology`, `scira`, `scratchpad`, `screen-studio`, `screenocr`, `screenpipe`, `seafile`, `search-ansible-documentation`, `search-astro-docs`, `search-clojuredocs`, `search-composer-packagist`, `search-github-stars`, `search-hex`, `search-joplin-notes`, `search-justwatch`, `search-mdn`, `search-notion`, `search-npm`, `search-oeis`, `search-private-npm-packages`, `search-regexp`, `search-rubygems`, `search-shopify-liquid-documentation`, `search-with-algolia`, `searchcaster`, `sec-filings-search`, `security-search`, `semantic-scholar`, `sendportal`, `sendy`, `sentry`, `serialcast`, `serie-a`, `serverless-framework-docs`, `session`, `setlist-fm`, `sevalla`, `shadcn-svelte`, `shadcn-ui`, `shadcn-vue`, `shakespearify`, `sharding-tools`, `shelve`, `shiori`, `ship24-client`, `shlink`, `shopify-dev-docs-search`, `shopify-developer-changelog`, `shopify-theme-resources`, `shopinfo-app`, `short-io`, `shortcut`, `shroud-email`, `sidecar-connect`, `signal`, `simple-login`, `simplebackups`, `simplelogin`, `single-focus`, `singularityapp`, `sip`, `skyscanner-flights`, `sm-ms`, `smallpdf`, `smart-reply`, `smultron`, `sncftraintimes`, `sniffer`, `social-network-trends`, `solana-explorer`, `solana-wallets-generation`, `solidtime`, `solusvm-1-client`, `solusvm-2`, `sonarr`, `sonu-stream`, `sound-search`, `spatie-documentation`, `speedcubing`, `spell`, `spike`, `spinupwp`, `splatoon`, `splitwise`, `splix`, `spoiler-converter`, `spoqify`, `sportssync`, `spotify-beta`, `spryker-docs`, `sql-format`, `sql-reference-search`, `squeeze`, `st-andrews-main-library-occupancy`, `stagehand`, `standing-desk-tracker`, `starling`, `stashpad-docs`, `statamic-docs`, `steam-player-counts`, `stock-lookup`, `stock-tracker`, `stockholm-public-transport`, `stoicquotes`, `storyblok`, `storybook-launcher`, `storybook-search`, `storytime`, `strapi-raycast-extension`, `strftime-cheatsheet`, `string-formatter`, `subflow`, `substack`, `subwatch`, `summation`, `supabase`, `supabase-docs`, `supermemory`, `surf-check`, `surfs-up`, `surge-outbound-switcher`, `svelte-docs`, `svga-player`, `swap-commas-dots`, `swift-evolution`, `swift-package-index`, `swiss-ov`, `swiss-train-times`, `switch-game-play-history`, `switchhosts`, `synology-download-station`, `syntax-fm`, `table-converter`, `tableau-navigator`, `tabletop-dice-roller`, `tabnews`, `tailwind-size-conversion`, `tallinn-transport`, `tally`, `tana`, `tana-paste`, `tarot`, `tasklink`, `taskplane`, `tategaki`, `tautulli`, `tc-no-generator`, `teamgantt`, `teamup-rooms`, `techcrunch`, `tella`, `tembo`, `tempo`, `temporary-email`, `tennis-standings`, `terminal`, `terminaldotshop`, `terraform-doc`, `tesla`, `teslamate`, `tex2typst`, `text-enhance`, `text-format-improver`, `text-rewrap`, `text-shortcuts`, `tfl`, `thaw`, `the-matrix-of-destiny`, `the-noble-quran`, `the-verge`, `thermoconvert`, `thesaurus`, `thingiverse`, `thrasher-magazine`, `threads-video-downloader`, `tibia-helper`, `tidal-controller`, `tiktoken`, `time`, `time-calculator`, `time-converter`, `time-logger`, `time-teller`, `time-until-i-do`, `timecamp`, `timecrowd-tracker`, `timely`, `timezone-buddy`, `tints-and-shades`, `tiny-tycho`, `tinyfaces-nft`, `tldr`, `tmdb`, `tny`, `toggle-fn`, `toggle-grayscale`, `tokenizer`, `tomito-controls`, `ton-address`, `toncoin-price`, `toolbox`, `transform`, `translit`, `transmit`, `trello`, `trenit`, `trimmy`, `trustmrr`, `truth-or-dare`, `tscheck-in`, `tududi`, `tuneblade`, `tunnelblick`, `tuple`, `tuya-smart`, `tv-remote`, `tv2---denmark`, `tw-colorpicker`, `twingate`, `twitch-chat`, `twitter`, `twitter-trendscast`, `twos`, `tyme-3-time-tracker`, `tynyfy`, `type-snob`, `type-the-alphabet`, `typeform`, `typescript-documentation-search`, `typescript-mock-generator`, `typographer`, `typst-symbols`, `typst-universe`, `udemy-coupons`, `ulid`, `ulysses`, `umami`, `unify-path-separator`, `unirate-currency`, `united-nations`, `unitex`, `universal-inbox`, `universities`, `unix-timestamp`, `unix-timestamp-converter`, `unkey`, `unleash-feature-toggle`, `unogs`, `unsure-calc`, `untis`, `upcoming-holidays`, `uplabs`, `upstash`, `uptime-kuma`, `uptime-robot`, `url-parse`, `url-tools`, `url-unshortener`, `useless-facts`, `usememos`, `user-agent`, `utc-workbench`, `v2ex`, `v2ex-viewer`, `v2raya-control`, `vade-mecum`, `val-town`, `valheim-wiki`, `valkey-commands-search`, `valorant-esports`, `vanguard-backup`, `vanishlink`, `vant-documentation`, `vartiq`, `vc-ru-news`, `veganify-application`, `vietnamese-calendar`, `vietqr-transfer`, `vim-bro`, `virtfusion`, `virtual-pet`, `virtualizor-enduser`, `viscosity`, `vision-directory`, `visitor-queue`, `vn-textify`, `vocab`, `vocabula-lat`, `voicenotes`, `volumio-control`, `vue-router-docs`, `vuejobs`, `vuejs-documentation`, `vuetify-docs`, `vueuse-functions`, `vultr`, `wakatime`, `wave`, `wcag`, `web-converter`, `web-page-design-mode`, `web3-profile`, `web3bio`, `webflow-sites`, `webhook-sender`, `webkit-developer-docs`, `websocket-debugging`, `what-happened-today`, `whentomeet`, `where-is-my-cursor`, `whimsical`, `who-is-off-today`, `wiggle-text`, `window-sizer`, `wistia`, `wled-controller`, `wolfram-alpha`, `woo-marketplace-search`, `word-count`, `word-search`, `wordpress-docs`, `wordpress-icon-finder`, `wordpress-manager`, `wordpress-plugins`, `workflowy-inbox`, `world-clock`, `world-cup`, `wp-cli-command-explorer`, `wrike`, `xbox-friends`, `xid`, `xkcd`, `xkcd-password-generator`, `xqc`, `y-combinator`, `yamli`, `yandex-music`, `yandex-smart-home`, `yap`, `yazio-tracker`, `yield-calculator`, `yopass`, `you-com-search`, `youdao-translate`, `youform`, `yourls`, `youtube-companion`, `youtube-music`, `youtube-search`, `youtube-shorts-to-normal-video-page`, `youtube-subscriber-count`, `youversion-suggest`, `yr-weather-forecast`, `yu-gi-oh-card-lookup`, `za-fake-id-number-generator`, `zalgo-text`, `zefix`, `zeitraum`, `zenblog`, `zendesk`, `zendesk-admin`, `zeplin-project-raycast-extension`, `zerodha-portfolio-kite-coin`, `zerossl`, `znotch`, `zo-raycast`, `zod-documentation`, `zodme`, `zoo`, `zoom-meeting-control`, `zyntra`
+`2fa-directory`, `5devs`, `8-ball`, `8-divide`, `aave-search`, `acqua`, `active-mississaugua`, `adguard-home`, `adhan-time`, `ado-search`, `adonisjs-documentation`, `advanced-replace`, `advice-slip`, `affine`, `ai-by-vercel`, `ai-code-namer`, `ai-humanizer`, `ai-stats`, `ai-text-to-calendar`, `ai-usage-tracker`, `aimlab`, `airplane`, `airpods-noise-control`, `airport`, `airsy`, `airsync`, `aiven`, `aleph`, `aliyun-flow`, `alloy`, `alpaca-trading`, `alpinejs`, `alwaysdata`, `amazon-search`, `amphetamine`, `analog-film-library`, `android-versions`, `anilist-airing-schedule`, `anki`, `anna-s-archive`, `antisocials`, `anybox`, `anycoffee`, `anytype`, `apify`, `apis-guru-search`, `appgrid`, `apple-books`, `apple-developer-docs`, `apple-devices`, `apple-stocks-search`, `apply-inline-code`, `appwrite`, `arabic-keyboard`, `aranet-co2-monitor`, `arc-helper`, `arca`, `archisteamfarm`, `are-na`, `array-this`, `ars-technica`, `arxiv`, `asana`, `asciimath-to-latex-converter`, `asoiaf`, `asyncapi`, `atomberg-raycast-extension`, `atomic`, `attio`, `audio-writer`, `auth0-management`, `autumn`, `avatar`, `axios-docs`, `background-sounds`, `backstage`, `bahn-info`, `balatro-compendium`, `bamboohr`, `banca-d-italia-currency-converter`, `base-stats`, `base-ui-docs`, `base64`, `bash-commands`, `battery-health`, `bazinga-tools`, `bbc-news-headlines`, `beancount-meta`, `beardtown`, `beat-per-minute`, `beehiiv`, `beeminder`, `bento`, `berlin-public-transportation`, `beszel`, `betaseries`, `better-uptime`, `betterdiscord-store`, `bhagavad-gita-quotes`, `biaodian`, `bibigpt-summarize-audiovideo-with-ai`, `big-o`, `bikeshare-station-status`, `bilibili-search`, `bing-search`, `bing-wallpaper`, `binge-clock`, `bintools`, `bitaxe-status`, `bitbucket`, `bitbucket-search-self-hosted`, `bitcoin-price`, `bitfinex`, `bitly-url-shortener`, `bitrise`, `bklit-analytics`, `blockchain-explorer-search`, `blockchain-gas-tracker`, `bmrks`, `board-game-geek`, `bonk-price`, `bookstack`, `bored`, `botpress`, `braintick`, `brasileirao-serie-a`, `brave-search`, `brave-search-with-results`, `bring`, `browser-tabs`, `bsr-entsorgung`, `bttv-emote`, `buddy`, `bugmenot`, `buildkite`, `bundesliga`, `bundlephobia-search`, `bunq`, `caaals`, `cacher`, `cal-com-share-meeting-links`, `calendar`, `calendly`, `camper-calc`, `can-i-php`, `can-i-use`, `cangjie`, `canva`, `canvascast`, `capacities`, `capture`, `carbon-code-screenshot-for-raycast`, `catenary-raycast`, `catppuccin`, `cc0-lib`, `ccf-what`, `ccfddl`, `chainscout`, `change-case`, `change-scroll-direction`, `changedetection-io`, `charming-chatgpt`, `chartmogul`, `chatbase`, `chatgpt3-prompt`, `chatwork-search`, `cheatsheets`, `check-citi-bike-availability`, `checklist`, `cheetah`, `chess-com`, `chhoto`, `china-ip-address`, `chinese-character-converter`, `chinese-lottery`, `chinese-numbers`, `choose-a-license`, `chords-and-tabs`, `chronometer`, `chuck-norris-facts`, `cilium-docs`, `cinemas-nos`, `circle-ci`, `circleback`, `citation-generator`, `cl-indicators`, `clarify`, `clash`, `claude`, `claude-code-cheatsheet`, `clean-agent-text`, `clean-text`, `clear-clipboard`, `climbing-grade-converter`, `clip-swap`, `clipboard-editor`, `clipboard-formatter`, `clipboard-sequential-paste`, `clipboard-type`, `clipboard-utilities`, `clipmate`, `clipmenu`, `clockify`, `close-finder`, `cloudflare`, `cloudflare-ai`, `cloudflare-email-routing`, `cocart-docs`, `cocoa-core-data-timestamp-converter`, `coda-bookmarks-search`, `code-review-emojis`, `code-smells`, `codeblocks`, `codegeex`, `codemagic`, `codesnap`, `cognimemo`, `coin-caster`, `coinbase-pro`, `coingecko`, `coinpaprika`, `collected-notes`, `cometapi`, `comma-separator`, `commercequest`, `commit-issue-parser`, `commit-message-generator`, `commitlint`, `common-directory`, `composerize`, `confluence`, `consoledev`, `control-d`, `control-viscosity`, `conventional-comments`, `conventional-commits`, `convert-typescript-to-javascript`, `converter`, `convex`, `coolify`, `copy-notion-markdown-link`, `copy-path`, `copy-skeet-link`, `cosmic-bookmarks`, `count-numbers`, `country-lookup`, `cpf-cnpj-generator`, `cran-e-search`, `cratecast`, `creem`, `cricketcast`, `crisp`, `cron`, `cron-description`, `crunchbase`, `crypto-price`, `crypto-search`, `csfd`, `css-calculations`, `css-gg`, `css-tricks`, `cuid-generator`, `curator-bio`, `currency-exchange`, `cursor`, `cursor-costs`, `cursors`, `curto-io-url-shortener`, `customer-io`, `cyberchef`, `cypress-docs`, `dad-jokes`, `daisyui`, `daminik`, `danbooru`, `dashlane`, `dashlane-vault`, `databuddy`, `date-converter`, `days-until-christmas`, `dbt-documentation`, `dbtcloud`, `debank`, `decentraland`, `deduplicator`, `deepl-api-usage`, `defichain-dobby`, `definitelytyped`, `defiscan`, `dekudeals`, `delivery-tracker`, `deployhq`, `design-skills`, `designer-excuses`, `designer-news`, `deutscherwetterdienst`, `dev-to`, `devcontainer-features`, `developer-excuse`, `devenv-docs`, `devin`, `devonthink`, `devutils`, `dex-screener`, `dexcom-reader`, `dice-and-coin`, `dice-tiles`, `diff-checker`, `digitalocean`, `directus`, `discogs`, `discord-timestamps`, `discordjs-documentation`, `disney`, `distraction-tracker`, `django-docs`, `djangopackages`, `dns-lookup`, `docker`, `dockerhub`, `dodo-payments`, `dog-images`, `doge-tracker`, `dokploy`, `dolar-cripto-ar`, `dolar-hoy`, `dollar-blue`, `domainr`, `done-bear`, `donut`, `doppler-share-secrets`, `dotnet-api-browser`, `dotnet-docs-search`, `dotween-eases`, `douban`, `dovetail`, `dpm-lol`, `dr-news`, `dreamhost`, `dribbble`, `drug-search`, `drupal-org`, `duck-duck-go-search`, `duck-facts`, `duckduckgo-email`, `duden`, `dutch-article`, `dynamic-font-size`, `e18e-module-replacements`, `early-tools-news`, `easings`, `easyvariable`, `ebird`, `ecosia-search`, `effect-docs`, `ekstraklasa`, `element`, `elgato-key-light`, `elixir`, `elm-search`, `elron`, `ember-api-documentation`, `emissions-calculator`, `end-of-life`, `endel`, `ens-name-lookup`, `envoyer`, `epoch-to-timestamp`, `escape-regexp-characters`, `espn`, `esports-pass`, `essay`, `esv-bible`, `ethereum-gas-tracker`, `ethereum-price`, `ethereum-utils`, `eurovision-song-contest`, `evaluate-math-expression`, `evil-insult`, `evm-codes`, `excalidraw`, `excel-formula-beautifier`, `exivo`, `explain-command`, `expo`, `f1-standings`, `fabric`, `facetime`, `fake-financial-data`, `fake-swedish-personal-number`, `fakecrime-upload`, `fancy-text`, `fantasy-premier-league-rankings`, `farcaster`, `fastly`, `fastmail-masked-email`, `fathom-analytics`, `fathom-analytics-stats`, `favoro`, `fbi`, `featurebase`, `feedly`, `feishu-document-creator`, `fhir`, `fibonacci-sequence`, `figma-files-raycast-extension`, `figma-learn-companion`, `figma-shortcuts`, `figma-variables`, `filament`, `file-tree-generator`, `fillerama`, `finary`, `findnearby`, `fingertip`, `finnish-dictionary`, `firecrawl`, `firefly-iii`, `fix-language`, `fluctuation`, `fluent-outdoors`, `flux`, `flycheck-raycast`, `flypy`, `font-awesome`, `forgejo`, `format-graphql`, `formizee`, `framer-motion`, `frankerfacez`, `freeagent`, `freedns`, `freshrss`, `frill`, `fronius-inverter`, `ftrack`, `fuelx`, `fumadocs`, `game-scout`, `gandi`, `gcp-search`, `geist-ui-components`, `geoconverter`, `geoguesser`, `geohash-encode-decode`, `get-cat-images`, `get-direct-link`, `gg-deals`, `ghost-docs`, `gift-stardew-valley`, `git-branch-name-generator`, `git-commands`, `gitee`, `github-cli-manual`, `github-codespaces`, `github-gist`, `github-menu-bar`, `github-profile`, `github-repository-search`, `github-review-requests`, `github-spark`, `github-status`, `github-users`, `gitlab-docs`, `gitmoji`, `gleam-packages`, `glide`, `glyph-search`, `go-links`, `go-package-search`, `golden-ratio`, `gomander`, `goodlinks`, `google-advanced-search`, `google-finance`, `google-fonts`, `google-meet`, `google-scholar`, `google-search`, `google-tasks`, `google-trends`, `gotify`, `govee`, `gradle-plugins`, `grafana`, `grafbase`, `grammaring`, `graphcdn`, `greip`, `grist`, `grokipedia`, `groundhog-day`, `growthbook`, `gumroad`, `habr-media`, `hacker-news`, `hackmd`, `hardcover`, `hashnode`, `hatena-bookmark`, `hazeover`, `headlines`, `hebrew-date-zmanim`, `helldivers2`, `hellonext-changelogs`, `helm-docs`, `hemolog`, `hephaestus`, `heroicons`, `hestiacp-admin`, `hetrixtools`, `hevy`, `hexlify`, `hide-all-apps`, `hide-mail`, `hidemyemail`, `holodex`, `holopin`, `homebox`, `homepage`, `homey`, `hoogle`, `host-switch`, `hostloc`, `howlongtobeat`, `hsdecks`, `html-colors`, `http-dot-cat`, `http-mime`, `hubspot`, `hugging-face`, `humaans`, `hupu`, `hyper-focus`, `iata-code-decoder`, `icd10-lookup`, `iching-divination`, `icloud-global-pricing-comparison`, `ifanr`, `image-diff-checker`, `image-host`, `imessage-2fa`, `in-the-time-zone`, `inbound`, `incident-io`, `incognito-clone`, `inertiajs-documentation`, `infomaniak`, `initium`, `inkdrop`, `inpost-parcel-lockers`, `input-source-switcher`, `inspire-search`, `instant-domain-search`, `instapaper`, `intention-clarifier`, `ionos-sync`, `ios-resolution`, `ipa-translator`, `ipcheck-ing`, `iptv`, `is-it-toxic-to`, `isdown`, `itch-io`, `jalali-date-convertor`, `james-webb-space-telescope`, `jellyfin`, `jetpack-commands`, `jira-time-tracking`, `jisho`, `jitsi`, `jotform`, `json-editor`, `json-format`, `json-to-go`, `json-to-toon-converter`, `json2ts`, `jsr`, `jsrepo`, `jue-jin`, `jup-agg`, `jurassic-ninja-site-generator`, `just-delete-me`, `justcolorpicker-raycast`, `kaalam`, `kafka-ui`, `kagi-news`, `kagi-search`, `kalshi`, `kaneo-for-raycast`, `kaomoji-search`, `keeper-security`, `keeply`, `kef-control`, `keychain-password-gen`, `keygen`, `kimi`, `kimi-for-coding`, `kind-words`, `kindle-paste`, `kinopio-inbox`, `kinopoisk`, `klu-ai`, `knowwa`, `korean-date-converter`, `korean-spell-checker`, `koyeb`, `kubernetes`, `kubernetes-docs`, `kutt`, `laby-net`, `lacinka`, `laliga`, `laracasts`, `larajobs-search`, `laravel-artisan`, `laravel-cloud`, `laravel-livewire`, `laravel-nova`, `laravel-shift`, `laravel-vapor`, `large-type`, `lark`, `lark-applink`, `latest-news`, `latex-math-symbols`, `launchdarkly`, `lavinprognoser`, `lazygit-keybindings`, `leap-new`, `learning-snacks`, `leetcode`, `lego-bricks`, `leitnerbox`, `lemmy`, `lemon-squeezy`, `lenscast`, `letta`, `lgtmeow`, `liba-ro_shortener`, `lichess-org`, `life-progress`, `lifx`, `lifx-advanced-controller`, `lightdash-navigator`, `lightning-time`, `lightshot-gallery`, `ligue-1`, `lingo-rep-raycast`, `linguee`, `link-cleaner`, `linkding`, `linux-command`, `liquipedia-matches`, `literal`, `liveblocks`, `llm-stats`, `llms-txt`, `loan-calculator`, `lobehub-icons`, `lobsters`, `logsnag`, `logtail`, `lol-esports`, `lookaway`, `lotr`, `lucide-animated`, `lucide-icons`, `luma`, `lume`, `lunatask`, `lunchmoney`, `luxafor-controller`, `lyne`, `lyrics`, `mac-app-store-search`, `macrumors`, `macstories`, `macupdater`, `magic-home`, `mail-to-self`, `mailerlite-stats`, `mailersend`, `mailtrap`, `make-dot-com`, `make-with-notion-2024`, `manage-clickup-tasks`, `mandarin-chinese-dictionary`, `manga-calendar`, `manotori`, `manus`, `manus-manager`, `marble`, `marginnote`, `markdown-codeblock`, `markdown-converter`, `markdown-preview`, `markdown-reference`, `markdown-this`, `markdown-to-jira`, `markdown-to-plain-text`, `markdown-to-rich-text`, `markprompt`, `masscode`, `math-functions`, `matter`, `mattermost`, `mayar`, `maybe`, `mbta-tracker`, `md-to-excel`, `medialister-marketplace-helper`, `meduza`, `mem`, `mem0`, `memberstack`, `meme-generator`, `mempool`, `menubar-weather`, `mercado-libre`, `mercury`, `metabase`, `metacritic`, `metaphor`, `meteoblue-lookup`, `metube`, `microblog`, `microsoft-teams`, `microsoft-teams-calling`, `midas`, `migadu`, `mikrus`, `minecast`, `minecraft-color-codes`, `minecraft-crafting-recipes`, `miniflux`, `minimax-ai`, `minisim`, `minttr`, `miraie-ac-control`, `mistral`, `mite`, `mittwald`, `mixpanel`, `mobius-materials`, `mochi`, `modrinth`, `modrinth-search`, `moji`, `mollie-for-raycast`, `monday-com`, `moneybird`, `moneylover`, `monkeytype`, `monobank`, `monocle`, `monse`, `monzo`, `moon-phrase`, `mousehunt-helper`, `mui-documentation`, `multi-links`, `multilinks`, `multipass`, `multiviewer`, `music-news`, `music-timer`, `musicbrainz`, `musicthread`, `must`, `mutedeck`, `mxroute`, `myanimelist-search`, `myip`, `mymind`, `mynaui-icons`, `name-com`, `namecheap`, `namuwiki`, `nano-games`, `nasa`, `nativebase-docs`, `nature-remo`, `naver-search`, `navidrome`, `nba-game-viewer`, `near-rewards`, `neodb`, `neon`, `nepali-calendar`, `nepali-date-converter`, `netease-music`, `netnewswire`, `neurooo-translate`, `new-relic`, `new-york-times`, `next-lens`, `next-run`, `nextcloud`, `nextdns`, `nfl-information`, `nft-search`, `ngrok`, `nif`, `nif-fresquinho`, `nixpkgs-search`, `nl-news-headlines`, `no-as-a-service`, `nocal`, `node-js-evaluate`, `nordic-energy-prices`, `nos-nieuws`, `nostr`, `not-diamond`, `notaday`, `note-in-google-doc`, `notilight-controller`, `notion_researcher`, `notra`, `nouns`, `novu`, `nowplaying-cli`, `ns-nl-search`, `nsis-reference`, `nts`, `nu-nieuws`, `nuget`, `number-facts`, `numpad`, `nyc-train-tracker`, `nzbget`, `obs-control`, `octopus-energy`, `odin`, `odoo-companion`, `office-quotes`, `oh-my-zsh-git-alias`, `ohdear`, `ohmyzsh-plugins`, `ok-json`, `oklch-color-converter`, `oktasearch`, `olacv`, `ollama-mind-map-generator`, `olympic-games`, `omg-lol`, `omni-news`, `one-tab-group`, `one-time-secret`, `onelook-thesaurus`, `ones`, `open-camera-menu-bar`, `open-docker`, `open-gem-documentation`, `open-in-shopify-admin`, `open-latest-url-from-clipboard`, `open-props`, `open-with-app`, `openrouter-model-search`, `openrouter-models-finder`, `openrouter-quick-actions`, `openstatus`, `openweathermap`, `opsgenie`, `orbita`, `orion`, `osrs-wiki`, `ossinsight`, `otp-inbox`, `ottomatic`, `outline-page`, `ovhcloud`, `owledge-raycast`, `owncloud`, `ozbargain-deals`, `pagerduty`, `palette-colors`, `pandas-documentation-search`, `pangu-for-raycast`, `paperform`, `papersize`, `paperspace`, `parabol`, `parcel-tracker`, `parse`, `password-generator`, `paste-from-apple-books`, `pastebin`, `pastefy`, `pastery`, `paymenter`, `paypal-invoices`, `pbr-assistant`, `penflow-ai`, `penpot`, `perry`, `personio`, `pestphp-documentation`, `pexels`, `phare-io-uptime`, `phind-search`, `phonetic-typing`, `phosphor-icons`, `php-docs`, `php-toolbox`, `pinboard`, `pinia-docs`, `pinwork`, `pip`, `pitchfork`, `pivot`, `pkg-swap`, `planetscale`, `planning-center`, `plausible-analytics`, `playtester`, `playwright-docs`, `plex`, `ploi`, `pm2`, `pocketbase`, `podcasts`, `pokemon-tcg-pocket-binder`, `polar`, `polars-documentation-search`, `polished`, `pollen-count`, `polymarket`, `pomo`, `popcorn`, `port`, `portal-wholesale`, `portuguese-primeira-liga`, `position-size-calculator`, `postey`, `postiz`, `postman`, `potter-db`, `premier-league`, `prettier`, `primer`, `printer-status`, `prisma-cli-commands`, `prisma-postgres`, `productboard`, `productlane`, `project-companion`, `project-hub`, `promptnote`, `prompts-chat`, `protobuf2typescript`, `proton-version`, `protondb`, `prowlarr`, `proxmox`, `proxyman`, `psn`, `pub-dev`, `public-bug-bounty-and-vulnerability-disclosure-programs`, `publico`, `publora`, `pubme`, `pulsemcp`, `pumble`, `punto`, `purpleair`, `px-to-rem-converter`, `qonto`, `qotp`, `qovery`, `qq-music-controls`, `query-domains`, `quick-access-for-zeroheight`, `quick-access-infomaniak`, `quick-event`, `quick-search`, `quickfile`, `quicksnip`, `quicktime`, `quicktype`, `quikwallet`, `quoterism-raycast`, `r-pkg-search`, `radicle`, `rae-dictionary-raycast`, `rails-routes`, `railway`, `rain-radars`, `rainaissance`, `ram-prices`, `ramda-documentation`, `random`, `random-date-generator`, `random-email`, `random-password-generator`, `random-us-phone-number`, `ratio-calculator`, `ray-boop`, `ray-so`, `raycafe`, `raycast-airtable-extension`, `raycast-bard-ai`, `raycast-clip`, `raycast-datadog`, `raycast-diki`, `raycast-explorer`, `raycast-fly`, `raycast-icons`, `raycast-ios-hig`, `raycast-kozip-extension`, `raycast-language-tool`, `raycast-link-lock`, `raycast-manual`, `raycast-monkeytype-theme`, `raycast-norwegian-public-transport`, `raycast-nrm`, `raycast-ordbokene`, `raycast-tapo-smart-devices`, `raycast-textlint-rule-aws-service-name`, `raycast-timeular`, `raycast-timezone-converter`, `raycast-transistorfm`, `raycast-translate-ge`, `raycast-urbandictionary-word-of-the-day`, `raycast-weekly-newsletter`, `raycast-wemo`, `raydocs`, `raytyping`, `rdir`, `rdw-kentekencheck`, `re-mind`, `react-native-directory`, `reading-time`, `readwise`, `readymetrics`, `rebrandly`, `recap`, `recents`, `recurly`, `reddit-search`, `redirect-trace`, `redis`, `redmine`, `refresh-browsers`, `refresh-wifi`, `regex-repl`, `regex-tester`, `rehooks`, `reka-ui`, `remo-notes`, `remove-window-from-set`, `render`, `repology-search`, `rescuetime-focus-session-trigger`, `resend-wallpaper`, `resmo`, `retool-documentation`, `retrac`, `rewardful`, `rewiser`, `rg-adguard-links`, `ricescore`, `rick-and-morty`, `ring-intercom`, `risk-reward-calculator`, `rize-io-sessions`, `roblox-creator-docs`, `rocket-chat`, `roll-d20`, `rollcast`, `rollup-wtf`, `rtl-reader`, `rule-of-three`, `ruler`, `runcloud`, `rusbase`, `rust-docs`, `sadaqah-box`, `safe-secret`, `sage-hr`, `sanity`, `sat-scorer`, `sav`, `save-to-cubox`, `saved-items`, `savvycal`, `say-no-to-notch`, `scaleway`, `schoology`, `scira`, `scratchpad`, `screen-studio`, `screenocr`, `screenpipe`, `seafile`, `search-ansible-documentation`, `search-astro-docs`, `search-clojuredocs`, `search-composer-packagist`, `search-github-stars`, `search-hex`, `search-joplin-notes`, `search-justwatch`, `search-mdn`, `search-notion`, `search-npm`, `search-oeis`, `search-private-npm-packages`, `search-regexp`, `search-rubygems`, `search-shopify-liquid-documentation`, `search-with-algolia`, `searchcaster`, `sec-filings-search`, `security-search`, `semantic-scholar`, `send-to-flomo`, `sendportal`, `sendy`, `sentry`, `serialcast`, `serie-a`, `serverless-framework-docs`, `session`, `setlist-fm`, `sevalla`, `shadcn-svelte`, `shadcn-ui`, `shadcn-vue`, `shakespearify`, `shape-calendar`, `sharding-tools`, `shelve`, `shiori`, `ship24-client`, `shlink`, `shopify-dev-docs-search`, `shopify-developer-changelog`, `shopify-theme-resources`, `shopinfo-app`, `short-io`, `shortcut`, `shroud-email`, `sidecar-connect`, `signal`, `simple-login`, `simplebackups`, `simplelogin`, `single-focus`, `singularityapp`, `sip`, `sketch`, `skyscanner-flights`, `sm-ms`, `smallpdf`, `smart-reply`, `smultron`, `snake`, `sncftraintimes`, `sniffer`, `social-network-trends`, `solana-explorer`, `solana-wallets-generation`, `solidtime`, `solusvm-1-client`, `solusvm-2`, `sonarr`, `sonu-stream`, `sound-search`, `spatie-documentation`, `speedcubing`, `spell`, `spike`, `spinupwp`, `splatoon`, `splitwise`, `splix`, `spoiler-converter`, `spoqify`, `sportssync`, `spotify-beta`, `spryker-docs`, `sql-format`, `sql-reference-search`, `squeeze`, `st-andrews-main-library-occupancy`, `stagehand`, `standing-desk-tracker`, `starling`, `stashpad-docs`, `statamic-docs`, `steam-player-counts`, `stock-lookup`, `stock-tracker`, `stockholm-public-transport`, `stoicquotes`, `storyblok`, `storybook-launcher`, `storybook-search`, `storytime`, `strapi-raycast-extension`, `strftime-cheatsheet`, `string-formatter`, `subflow`, `substack`, `subwatch`, `summation`, `supabase`, `supabase-docs`, `superhuman`, `supermemory`, `surf-check`, `surfs-up`, `surge-outbound-switcher`, `svelte-docs`, `svga-player`, `swap-commas-dots`, `swift-evolution`, `swift-package-index`, `swiss-ov`, `swiss-train-times`, `switch-game-play-history`, `switchhosts`, `synology-download-station`, `syntax-fm`, `table-converter`, `tableau-navigator`, `tabletop-dice-roller`, `tabnews`, `tailwind-size-conversion`, `tallinn-transport`, `tally`, `tana`, `tana-paste`, `tarot`, `tasklink`, `taskplane`, `tategaki`, `tautulli`, `tc-no-generator`, `teamgantt`, `teamup-rooms`, `techcrunch`, `tella`, `tembo`, `tempo`, `temporary-email`, `tennis-standings`, `terminal`, `terminaldotshop`, `terraform-doc`, `tesla`, `teslamate`, `tex2typst`, `text-enhance`, `text-format-improver`, `text-rewrap`, `text-shortcuts`, `tfl`, `thaw`, `the-matrix-of-destiny`, `the-noble-quran`, `the-verge`, `thermoconvert`, `thesaurus`, `thingiverse`, `thrasher-magazine`, `threads-video-downloader`, `tibia-helper`, `tidal-controller`, `tiktoken`, `time`, `time-calculator`, `time-converter`, `time-logger`, `time-teller`, `time-until-i-do`, `timecamp`, `timecrowd-tracker`, `timely`, `timezone-buddy`, `tints-and-shades`, `tiny-tycho`, `tinyfaces-nft`, `tldr`, `tmdb`, `tny`, `toggle-fn`, `toggle-grayscale`, `tokenizer`, `tomito-controls`, `ton-address`, `toncoin-price`, `toolbox`, `transform`, `translit`, `transmit`, `trello`, `trenit`, `trimmy`, `trustmrr`, `truth-or-dare`, `tscheck-in`, `tududi`, `tuneblade`, `tunnelblick`, `tuple`, `tuya-smart`, `tv-remote`, `tv2---denmark`, `tw-colorpicker`, `twenty`, `twingate`, `twitch-chat`, `twitter`, `twitter-trendscast`, `twos`, `tyme-3-time-tracker`, `tynyfy`, `type-snob`, `type-the-alphabet`, `typeform`, `typefully`, `typer`, `typescript-documentation-search`, `typescript-mock-generator`, `typographer`, `typst-symbols`, `typst-universe`, `udemy-coupons`, `uk-bank-holidays`, `ulid`, `ultrahuman`, `ulysses`, `umami`, `unify-path-separator`, `unirate-currency`, `united-nations`, `unitex`, `universal-inbox`, `universities`, `unix-timestamp`, `unix-timestamp-converter`, `unkey`, `unleash-feature-toggle`, `unogs`, `unsure-calc`, `untis`, `upcoming-holidays`, `uplabs`, `upstash`, `uptime-kuma`, `uptime-robot`, `url-parse`, `url-tools`, `url-unshortener`, `useless-facts`, `usememos`, `user-agent`, `utc-workbench`, `v2ex`, `v2ex-viewer`, `v2raya-control`, `vade-mecum`, `val-town`, `valheim-wiki`, `valkey-commands-search`, `valorant-esports`, `vanguard-backup`, `vanishlink`, `vant-documentation`, `vartiq`, `vc-ru-news`, `veganify-application`, `vietnamese-calendar`, `vietqr-transfer`, `vim-bro`, `virtfusion`, `virtual-pet`, `virtualizor-enduser`, `viscosity`, `vision-directory`, `visitor-queue`, `vn-textify`, `vocab`, `vocabula-lat`, `voicenotes`, `volumio-control`, `vue-router-docs`, `vuejobs`, `vuejs-documentation`, `vuetify-docs`, `vueuse-functions`, `vultr`, `wakatime`, `wave`, `wcag`, `web-converter`, `web-page-design-mode`, `web3-profile`, `web3bio`, `webflow-sites`, `webhook-sender`, `webkit-developer-docs`, `websocket-debugging`, `what-happened-today`, `whentomeet`, `where-is-my-cursor`, `whimsical`, `who-is-off-today`, `whoop`, `wiggle-text`, `window-sizer`, `wistia`, `wled-controller`, `wolfram-alpha`, `woo-marketplace-search`, `word-count`, `word-search`, `wordpress-docs`, `wordpress-icon-finder`, `wordpress-manager`, `wordpress-plugins`, `work-time-countdown`, `workflowy-inbox`, `world-clock`, `world-cup`, `wp-cli-command-explorer`, `wrike`, `xbox-friends`, `xid`, `xkcd`, `xkcd-password-generator`, `xqc`, `y-combinator`, `yamli`, `yandex-music`, `yandex-smart-home`, `yap`, `yazio-tracker`, `yield-calculator`, `yopass`, `you-com-search`, `youdao-translate`, `youform`, `yourls`, `youtrack`, `youtube-companion`, `youtube-music`, `youtube-search`, `youtube-shorts-to-normal-video-page`, `youtube-subscriber-count`, `youversion-suggest`, `yr-weather-forecast`, `yu-gi-oh-card-lookup`, `za-fake-id-number-generator`, `zalgo-text`, `zefix`, `zeitraum`, `zenblog`, `zendesk`, `zendesk-admin`, `zeplin-project-raycast-extension`, `zero`, `zerodha-portfolio-kite-coin`, `zerossl`, `znotch`, `zo-raycast`, `zod-documentation`, `zodme`, `zoo`, `zoom-meeting-control`, `zyntra`
