@@ -26,7 +26,8 @@
 
 **Files:**
 - Modify: `packages/api/src/index.ts` (replace the stub at ~802–804; add `htmlToMarkdown` + `Tab` type)
-- Test: `packages/api/src/browser-extension.test.ts` (create)
+- Modify: `package.json` (add `test:browser` script)
+- Test: `packages/api/src/browser-extension.test.ts` (create) — standalone tsx harness, repo convention (no vitest)
 
 **Interfaces:**
 - Produces: `BrowserExtension.getTabs(): Promise<Tab[]>`, `BrowserExtension.getContent(options?: { tabId?: string; format?: "html"|"text"|"markdown"; cssSelector?: string }): Promise<string>`, `BrowserExtension.Tab` type, and `export function htmlToMarkdown(html: string): string`.
@@ -34,57 +35,66 @@
 
 - [ ] **Step 1: Write the failing test**
 
+This repo has **no vitest/jest** — tests are standalone `tsx` scripts with manual pass/fail counters that exit non-zero on failure (see `examples/calculator/src/engine.test.ts`, wired as `npm run test:calc`). Match that convention exactly.
+
 ```ts
 // packages/api/src/browser-extension.test.ts
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { BrowserExtension, htmlToMarkdown } from "./index";
+/**
+ * BrowserExtension tests. Pure logic + a mocked host bridge; no runtime needed:
+ *   npx tsx packages/api/src/browser-extension.test.ts   (wired as `npm run test:browser`)
+ * Exits non-zero on any failure.
+ */
+import { BrowserExtension, htmlToMarkdown } from "./index.ts";
 
+let pass = 0;
+let fail = 0;
+function check(name: string, cond: boolean): void {
+  if (cond) pass++;
+  else { fail++; console.error(`FAIL ${name}`); }
+}
+
+// htmlToMarkdown — pure
+const md = htmlToMarkdown("<h1>Title</h1><p>Hello <b>world</b> <a href='https://x.com'>link</a></p>");
+check("md heading", md.includes("# Title"));
+check("md bold", md.includes("**world**"));
+check("md link", md.includes("[link](https://x.com)"));
+check("md strips unknown tags", htmlToMarkdown("<span>plain</span>").includes("plain"));
+
+// Mock the host RPC bridge (globalThis.__invokeHostRpc__), recording calls.
 const BRIDGE_KEY = "__invokeHostRpc__";
-describe("htmlToMarkdown", () => {
-  it("converts headings, links, bold, and paragraphs", () => {
-    const md = htmlToMarkdown("<h1>Title</h1><p>Hello <b>world</b> <a href='https://x.com'>link</a></p>");
-    expect(md).toContain("# Title");
-    expect(md).toContain("**world**");
-    expect(md).toContain("[link](https://x.com)");
-  });
-  it("strips unknown tags to their text", () => {
-    expect(htmlToMarkdown("<span>plain</span>")).toContain("plain");
-  });
-});
+const calls: Array<{ method: string; params: Record<string, unknown> }> = [];
+(globalThis as Record<string, unknown>)[BRIDGE_KEY] = async (method: string, params: Record<string, unknown>) => {
+  calls.push({ method, params });
+  if (method === "browser.getTabs") return [{ id: "1:1", url: "https://x.com", title: "X", active: true }];
+  if (method === "browser.getContent") return "<h1>Hi</h1>";
+  return null;
+};
 
-describe("BrowserExtension", () => {
-  beforeEach(() => {
-    (globalThis as Record<string, unknown>)[BRIDGE_KEY] = vi.fn(async (method: string) => {
-      if (method === "browser.getTabs") return [{ id: "1:1", url: "https://x.com", title: "X", active: true }];
-      if (method === "browser.getContent") return "<h1>Hi</h1>";
-      return null;
-    });
-  });
-  afterEach(() => { delete (globalThis as Record<string, unknown>)[BRIDGE_KEY]; });
+async function main(): Promise<void> {
+  const tabs = await BrowserExtension.getTabs();
+  check("getTabs url", tabs[0]?.url === "https://x.com");
+  check("getTabs derives favicon", (tabs[0]?.favicon ?? "").includes("x.com"));
 
-  it("getTabs returns the host tabs with derived favicons", async () => {
-    const tabs = await BrowserExtension.getTabs();
-    expect(tabs[0].url).toBe("https://x.com");
-    expect(tabs[0].favicon).toContain("x.com");
-  });
-  it("getContent markdown requests html and converts it", async () => {
-    const send = (globalThis as Record<string, unknown>)[BRIDGE_KEY] as ReturnType<typeof vi.fn>;
-    const out = await BrowserExtension.getContent({ format: "markdown" });
-    expect(send).toHaveBeenCalledWith("browser.getContent", expect.objectContaining({ format: "html" }));
-    expect(out).toContain("# Hi");
-  });
-  it("getContent text passes format through unchanged", async () => {
-    const send = (globalThis as Record<string, unknown>)[BRIDGE_KEY] as ReturnType<typeof vi.fn>;
-    await BrowserExtension.getContent({ format: "text" });
-    expect(send).toHaveBeenCalledWith("browser.getContent", expect.objectContaining({ format: "text" }));
-  });
-});
+  const out = await BrowserExtension.getContent({ format: "markdown" });
+  const last = calls[calls.length - 1];
+  check("getContent markdown requests html", last.method === "browser.getContent" && last.params.format === "html");
+  check("getContent markdown converts", out.includes("# Hi"));
+
+  await BrowserExtension.getContent({ format: "text" });
+  check("getContent text passthrough", calls[calls.length - 1].params.format === "text");
+
+  console.log(`${pass} passed, ${fail} failed`);
+  if (fail > 0) process.exit(1);
+}
+void main();
 ```
+
+Also add to `package.json` `scripts` (next to `test:calc`): `"test:browser": "tsx packages/api/src/browser-extension.test.ts"`.
 
 - [ ] **Step 2: Run the test, verify it fails**
 
-Run: `npx vitest run packages/api/src/browser-extension.test.ts`
-Expected: FAIL (`htmlToMarkdown` is not exported; `getTabs` throws `unsupported`).
+Run: `npx tsx packages/api/src/browser-extension.test.ts`
+Expected: FAIL — a thrown error / non-zero exit (`htmlToMarkdown` is not exported; `getTabs` throws `unsupported`).
 
 - [ ] **Step 3: Replace the stub with the implementation**
 
@@ -134,14 +144,14 @@ export const BrowserExtension = {
 
 - [ ] **Step 4: Run the test, verify it passes**
 
-Run: `npx vitest run packages/api/src/browser-extension.test.ts`
-Expected: PASS (all 5).
+Run: `npm run test:browser`
+Expected: `9 passed, 0 failed` (exit 0).
 
 - [ ] **Step 5: Typecheck + commit + push**
 
 ```bash
 npm run typecheck
-git add packages/api/src/index.ts packages/api/src/browser-extension.test.ts
+git add packages/api/src/index.ts packages/api/src/browser-extension.test.ts package.json
 git commit -m "@raycast/api: implement BrowserExtension.getTabs/getContent (markdown via JS converter)" \
   -m "Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 git push origin main
