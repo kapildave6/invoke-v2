@@ -37,6 +37,7 @@ let package = Package(
         ),
         .executableTarget(name: "InvokeApp", dependencies: ["InvokeShell"]),
         .testTarget(name: "InvokeIPCTests", dependencies: ["InvokeIPC", "InvokeRenderer"]),
+        .testTarget(name: "InvokeShellTests", dependencies: ["InvokeShell"]),
     ],
     swiftLanguageModes: [.v5]
 )
