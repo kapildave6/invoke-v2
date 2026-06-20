@@ -44,7 +44,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private var cmdSubtitleOverride: [String: String] = [:]
     private lazy var commands: [RootCommand] = makeCommands()
 
-    private enum Mode { case root, clipboard, emoji, screenshots, snippets, quicklinks, extensionView, aiAnswer, nativeForm, aiChat }
+    private enum Mode { case root, clipboard, emoji, screenshots, snippets, quicklinks, store, extensionView, aiAnswer, nativeForm, aiChat }
     private var mode: Mode = .root
     private var lastAIAnswer = "" // for the AI-answer surface's Copy/Paste actions
     private var aiAskSeq = 0      // request token so a stale answer can't render over a newer one
@@ -300,6 +300,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         if mode == .emoji { renderEmoji(query: text); return }
         if mode == .screenshots { renderScreenshots(query: text); return }
         if mode == .snippets { renderSnippets(query: text); return }
+        if mode == .store { renderStore(query: text); return }
         if mode == .quicklinks {
             if pendingQuicklink != nil { renderQuicklinkPrompt() } else { renderQuicklinks(query: text) }
             return
@@ -494,6 +495,124 @@ public final class AppController: NSObject, NSApplicationDelegate {
         }
         tree.root.children = [list]
         return tree
+    }
+
+    // MARK: - Store (browse + 1-click install of Raycast extensions)
+
+    private struct StoreExt: Decodable {
+        struct Cmd: Decodable { let name, title, mode: String }
+        let name, title, description, author, icon: String
+        let categories: [String]
+        let commands: [Cmd]
+    }
+    private struct StoreIndexFile: Decodable { let extensions: [StoreExt] }
+    /// The browse/search index (tools/store-index/extensions-index.json), parsed once.
+    private lazy var storeIndex: [StoreExt] = {
+        let p = repoRoot + "/tools/store-index/extensions-index.json"
+        guard let data = FileManager.default.contents(atPath: p),
+              let idx = try? JSONDecoder().decode(StoreIndexFile.self, from: data) else {
+            print("[invoke:store] index unavailable at \(p)")
+            return []
+        }
+        return idx.extensions
+    }()
+
+    private static func storeIconURL(_ e: StoreExt) -> String? {
+        guard !e.icon.isEmpty else { return nil }
+        return "https://raw.githubusercontent.com/raycast/extensions/main/extensions/\(e.name)/assets/\(e.icon)"
+    }
+
+    private func storeMatches(_ query: String) -> [StoreExt] {
+        let q = query.trimmingCharacters(in: .whitespaces).lowercased()
+        let pool = storeIndex
+        let hits = q.isEmpty ? pool : pool.filter {
+            $0.title.lowercased().contains(q) || $0.name.lowercased().contains(q) ||
+            $0.author.lowercased().contains(q) || $0.description.lowercased().contains(q)
+        }
+        return Array(hits.prefix(200)) // cap the rendered tree; the search field narrows it
+    }
+
+    private func enterStore() {
+        mode = .store
+        lastQuery = ""
+        palette.clearSearch()
+        palette.setPlaceholder("Search extensions to install…")
+        selectedIndex = 0
+        renderStore(query: "")
+    }
+
+    private func renderStore(query: String) {
+        let count = storeMatches(query).count
+        if selectedIndex >= count { selectedIndex = max(0, count - 1) }
+        rootTree = buildStore(query: query, selectedIndex: selectedIndex)
+        palette.render(activeTree, selectedIndex: selectedIndex)
+        updateActionBar()
+    }
+
+    private func buildStore(query: String, selectedIndex: Int) -> ViewTree {
+        let tree = ViewTree()
+        let list = ViewNode(id: 1, type: "list")
+        let matches = storeMatches(query)
+        if matches.isEmpty {
+            let msg = storeIndex.isEmpty ? "Store index unavailable" : (query.isEmpty ? "No extensions" : "No matching extensions")
+            list.children = [ViewNode(id: 2, type: "list-section", props: ["title": .string(msg)])]
+        } else {
+            list.props["showDetail"] = .bool(true) // master–detail (reuses the virtualized split)
+            let section = ViewNode(id: 2, type: "list-section", props: ["title": .string("\(matches.count) Extension\(matches.count == 1 ? "" : "s")")])
+            var nid = 10
+            for (i, ext) in matches.enumerated() {
+                nid += 1
+                var props: [String: JSONValue] = [
+                    "title": .string(ext.title),
+                    "subtitle": .string(ext.author),
+                    "extName": .string(ext.name), // the Install action keys on this
+                ]
+                if let iconURL = Self.storeIconURL(ext) { props["icon"] = .string(iconURL) } // lazy remote load
+                let item = ViewNode(id: nid, type: "list-item", props: props)
+                if i == selectedIndex { // rich detail only for the selected row (like clipboard's thumb)
+                    item.children = [ViewNode(id: nid * 1000, type: "list-item-detail",
+                                              props: ["markdown": .string(Self.storeMarkdown(ext))])]
+                }
+                section.children.append(item)
+            }
+            list.children = [section]
+        }
+        tree.root.children = [list]
+        return tree
+    }
+
+    private static func storeMarkdown(_ e: StoreExt) -> String {
+        var md = "## \(e.title)\n\n\(e.description)\n\n**Author:** \(e.author)"
+        if !e.categories.isEmpty { md += "  ·  \(e.categories.joined(separator: ", "))" }
+        md += "\n"
+        if !e.commands.isEmpty {
+            md += "\n**Commands**\n"
+            for c in e.commands { md += "\n- \(c.title)  _(\(c.mode))_" }
+        }
+        md += "\n\n_Installs trusted — runs with full access, like Raycast._"
+        return md
+    }
+
+    /// Fetch + install a Store extension (always trusted, per product decision), then relaunch so the
+    /// freshly-imported commands appear (the command list is built at launch).
+    private func installStoreExtension(name: String, title: String) {
+        hud.show("Installing \(title)…")
+        let root = repoRoot
+        Task { [weak self] in
+            let result = await ExtensionImporter(repoRoot: root).install(name: name, trusted: true)
+            await MainActor.run {
+                guard let self else { return }
+                switch result {
+                case .success(let report):
+                    // Always-trusted: mark the imported extension trusted → it launches unsandboxed.
+                    AppSettings.shared.setTrusted("ext.imported-\(Self.sanitizeKeySegment(report.id))", true)
+                    self.hud.show("Installed \(report.title) — relaunching…")
+                    relaunchInvoke()
+                case .failure(let err):
+                    self.hud.show("Install failed: \(err.message)")
+                }
+            }
+        }
     }
 
     /// Emojis that accept a skin-tone modifier (the hand/gesture set we ship).
@@ -1053,6 +1172,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         switch mode {
         case .clipboard: renderClipboard(query: lastQuery)      // rebuild so detail thumbnail follows
         case .snippets: renderSnippets(query: lastQuery)        // rebuild so the detail pane follows
+        case .store: renderStore(query: lastQuery)              // rebuild so the detail pane follows
         default:
             // Screenshots (grid) and the rest just re-highlight the existing tree — no rebuild, no
             // thumbnail re-scan — so arrow nav stays snappy.
@@ -1070,6 +1190,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         switch mode {
         case .clipboard: renderClipboard(query: lastQuery)
         case .snippets: renderSnippets(query: lastQuery)
+        case .store: renderStore(query: lastQuery)
         default:
             palette.render(activeTree, selectedIndex: selectedIndex)
             updateActionBar()
@@ -1104,6 +1225,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         case .screenshots: label = "Screenshots"
         case .snippets: label = "Snippets"
         case .quicklinks: label = pendingQuicklink?.name ?? "Quicklinks"
+        case .store: label = "Store"
         case .extensionView:
             // Show the pushed view's title with a back chevron when navigated in.
             if navDepth > 0 {
@@ -1158,6 +1280,11 @@ public final class AppController: NSObject, NSApplicationDelegate {
         guard selectedIndex < rows.count else { return [] }
         let node = rows[selectedIndex]
 
+        if let extName = node.props["extName"]?.stringValue {
+            return [PaletteAction(title: "Install Extension", shortcut: "↵", icon: "square.and.arrow.down") { [weak self] in
+                self?.installStoreExtension(name: extName, title: node.props["title"]?.stringValue ?? extName)
+            }]
+        }
         if let q = node.props["aiAsk"]?.stringValue {
             return [PaletteAction(title: "Ask AI", shortcut: "↵") { [weak self] in self?.enterAIChat(initial: q) }]
         }
@@ -3480,6 +3607,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         }
         return [
             RootCommand(id: "clipboard.history", title: "Clipboard History", subtitle: "Clipboard History", runTitle: "Open", icon: "doc.on.clipboard", keywords: ["clipboard", "history", "paste", "copy"], closesPalette: false) { [weak self] in self?.enterClipboard() },
+            RootCommand(id: "store.browse", title: "Browse Extensions", subtitle: "Store", runTitle: "Open", icon: "puzzlepiece.extension", keywords: ["store", "browse", "install", "extension", "extensions", "marketplace", "discover"], closesPalette: false) { [weak self] in self?.enterStore() },
             RootCommand(id: "emoji.picker", title: "Search Emoji & Symbols", subtitle: "Emoji & Symbols", runTitle: "Open", icon: "face.smiling", keywords: ["emoji", "symbol", "face", "smiley"], closesPalette: false) { [weak self] in self?.enterEmoji() },
             RootCommand(id: "screenshots.search", title: "Search Screenshots", subtitle: "Screenshots", runTitle: "Open", icon: "camera.viewfinder", keywords: ["screenshot", "screen", "capture", "recording", "image"], closesPalette: false) { [weak self] in self?.enterScreenshots() },
             RootCommand(id: "system.sleep", title: "Sleep", subtitle: "System", runTitle: "Sleep", icon: "moon.fill", keywords: ["sleep", "suspend"], closesPalette: true, run: shell("/usr/bin/pmset", ["sleepnow"])),

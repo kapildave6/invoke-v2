@@ -37,11 +37,30 @@ public final class ExtensionImporter {
         }
     }
 
+    /// Fetch + install a Store extension by name: sparse-clone `extensions/<name>` from
+    /// github.com/raycast/extensions, then run it through the same importer. Returns the import report.
+    public func install(name: String, trusted: Bool = true) async -> Result<ImportReport, ImportError> {
+        await withCheckedContinuation { cont in
+            DispatchQueue.global(qos: .userInitiated).async {
+                cont.resume(returning: self.installSync(name: name, trusted: trusted))
+            }
+        }
+    }
+
+    private func shq(_ s: String) -> String { "'" + s.replacingOccurrences(of: "'", with: "'\\''") + "'" }
+
+    private func installSync(name: String, trusted: Bool) -> Result<ImportReport, ImportError> {
+        let script = "cd \(shq(repoRoot)) && exec node tools/store-index/install-extension.mjs \(shq(name))\(trusted ? " --trusted" : "")"
+        return runScript(script)
+    }
+
     private func runSync(path: String, install: Bool, trusted: Bool) -> Result<ImportReport, ImportError> {
-        func shq(_ s: String) -> String { "'" + s.replacingOccurrences(of: "'", with: "'\\''") + "'" }
         let flags = (install ? "--json" : "--check --json") + (trusted ? " --trusted" : "")
         let script = "cd \(shq(repoRoot)) && exec node --import tsx runtime/node-host/src/import.ts \(shq(path)) \(flags)"
+        return runScript(script)
+    }
 
+    private func runScript(_ script: String) -> Result<ImportReport, ImportError> {
         let proc = Process()
         proc.executableURL = URL(fileURLWithPath: "/bin/sh")
         proc.arguments = ["-c", script]
