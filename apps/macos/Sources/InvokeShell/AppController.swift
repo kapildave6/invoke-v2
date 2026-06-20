@@ -2822,8 +2822,16 @@ public final class AppController: NSObject, NSApplicationDelegate {
     }
 
     private func openTarget(_ target: String) {
-        if let url = URL(string: target), url.scheme != nil { NSWorkspace.shared.open(url) }
-        else { NSWorkspace.shared.open(URL(fileURLWithPath: (target as NSString).expandingTildeInPath)) }
+        if let url = URL(string: target), let scheme = url.scheme {
+            // Extensions reopen the launcher after an external auth prompt via open("raycast://") —
+            // e.g. 1Password's AuthProvider closes the window for the biometric prompt, then reopens.
+            // We're not Raycast, so handing raycast:// to the OS is a no-op (the palette stays hidden);
+            // re-summon our own palette instead (the extension is still alive, so its current view shows).
+            if scheme == "raycast" { palette.show(); return }
+            NSWorkspace.shared.open(url)
+        } else {
+            NSWorkspace.shared.open(URL(fileURLWithPath: (target as NSString).expandingTildeInPath))
+        }
     }
 
     private static func jsonScalarString(_ v: JSONValue) -> String {
