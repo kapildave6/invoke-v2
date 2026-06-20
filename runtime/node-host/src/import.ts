@@ -37,7 +37,7 @@ const TYPE_ONLY_API = new Set<string>([
 
 // Node builtins the sandbox denies by default but for which Invoke provides a curated, read-only shim
 // (see runtime/node-host/src/os-safe.mjs + deny-loader.mjs), so they should NOT count as "denied".
-const CURATED_BUILTINS = new Set<string>(["os"]);
+const CURATED_BUILTINS = new Set<string>(["os", "fs", "fs/promises"]);
 
 interface Manifest {
   name?: string;

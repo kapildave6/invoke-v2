@@ -19,6 +19,7 @@
 import Module, { register, isBuiltin } from "node:module";
 import SAFE_LIST from "./safe-builtins.json" with { type: "json" };
 import osSafe from "./os-safe.mjs";
+import fsSafe from "./fs-safe.mjs";
 
 /** Pure-compute / data builtins that grant no ambient OS authority (no fs/net/exec). */
 const SAFE_BUILTINS = new Set<string>(SAFE_LIST);
@@ -27,6 +28,16 @@ const SAFE_BUILTINS = new Set<string>(SAFE_LIST);
  *  `default` for esModuleInterop's transpiled `import os from "os"` -> require("os").default. Captured
  *  at module load (before lockdown), so reaching the real node:os here is allowed. */
 const CURATED_OS_CJS: Record<string, unknown> = { ...(osSafe as Record<string, unknown>), default: osSafe };
+
+/** CJS forms of the virtual `fs` / `fs/promises` shims (mirror of the ESM redirect in deny-loader.mjs),
+ *  for extensions transpiled to CJS whose `require("fs")` lands in the `_load` patch below. The shim
+ *  forwards every op to the host's consent-gated fs channel; it holds no real filesystem authority. */
+const fsSafeRecord = fsSafe as unknown as Record<string, unknown>;
+const CURATED_FS_CJS: Record<string, unknown> = { ...fsSafeRecord, default: fsSafe };
+const CURATED_FS_PROMISES_CJS: Record<string, unknown> = {
+  ...(fsSafeRecord.promises as Record<string, unknown>),
+  default: fsSafeRecord.promises,
+};
 
 /** CJS form of the `run-applescript` compat shim (see run-applescript-shim.mjs): route the script
  *  through the host's runAppleScript capability instead of child_process. */
@@ -115,6 +126,8 @@ export function lockdown(): void {
     // `import os from "os"` becomes require("os") and arrives HERE (not the ESM deny-loader). Return the
     // same read-only shim instead of denying, so the redirect covers CJS-output extensions too.
     if (request === "os" || request === "node:os") return CURATED_OS_CJS;
+    if (request === "fs" || request === "node:fs") return CURATED_FS_CJS;
+    if (request === "fs/promises" || request === "node:fs/promises") return CURATED_FS_PROMISES_CJS;
     if (request === "run-applescript") return RUN_APPLESCRIPT_CJS;
     if (isDeniedBuiltin(request)) {
       throw new Error(`[invoke:sandbox] require("${request}") is denied (PLAN.md §4.4)`);

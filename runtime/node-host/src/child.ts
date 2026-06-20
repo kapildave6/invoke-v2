@@ -24,6 +24,7 @@ import {
   FrameDecoder,
 } from "@invoke/schema";
 import { lockdown } from "./sandbox.ts";
+import { installFsSyncBridge } from "./fs-bridge.ts";
 
 const [entry, command] = process.argv.slice(2);
 
@@ -74,6 +75,11 @@ async function main(): Promise<void> {
   // WITHOUT the sandbox — full Node (child_process/fs/net), like Raycast. This is opt-in per extension;
   // everything else stays sandboxed. The host sets INVOKE_TRUSTED=1 only for trusted extensions.
   if (process.env.INVOKE_TRUSTED !== "1") {
+    // Wire the virtual filesystem channel (fd 4) BEFORE lockdown, so the fs shim the extension imports
+    // has a live, host-mediated, consent-gated `fs` instead of a denied builtin (remediation 01). Captures
+    // the real fs.readSync/writeSync now, while they're still reachable.
+    const fsReady = installFsSyncBridge();
+    if (!fsReady) send({ kind: "log", level: "warn", args: ["[invoke] virtual fs channel unavailable (fd 4)"] });
     lockdown();
   } else {
     send({ kind: "log", level: "warn", args: ["[invoke] running UNSANDBOXED (user-trusted extension)"] });

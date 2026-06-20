@@ -27,6 +27,8 @@ final class MenuBarController {
     var capability: ((_ extKey: String, _ method: String, _ params: JSONValue?) -> JSONValue)?
     /// Async capability bridge (confirmAlert / ai.ask / oauth.authorize).
     var capabilityAsync: ((_ extKey: String, _ method: String, _ params: JSONValue?, _ reply: @escaping (JSONValue) -> Void) -> Bool)?
+    /// Virtual-fs bridge (fd 4) into AppController, scoped to the menu-bar extension's key + private dirs.
+    var fs: ((_ extKey: String, _ op: String, _ params: JSONValue?, _ supportPath: String, _ assetsPath: String) -> JSONValue)?
 
     init(repoRoot: String) { self.repoRoot = repoRoot }
 
@@ -45,6 +47,10 @@ final class MenuBarController {
         host.onCommit = { [weak self] _ in self?.rebuild(cmdId) }
         host.onCapability = { [weak self] m, p in self?.capability?(extKey, m, p) ?? .null }
         host.onCapabilityAsync = { [weak self] m, p, reply in self?.capabilityAsync?(extKey, m, p, reply) ?? false }
+        host.onFS = { [weak self] op, params in
+            self?.fs?(extKey, op, params, supportPath, assetsPath)
+                ?? .object(["error": .string("[invoke:fs] host unavailable"), "code": .string("EIO")])
+        }
         // A menu-bar command renders once and its process EXITS (Raycast model — the menu is then static
         // until refreshed/clicked). Do NOT remove the status item when the child ends; keep showing the
         // rendered menu. The status item is removed only by an explicit toggle-off / "Remove from Menu Bar".

@@ -103,11 +103,13 @@ const TYPE_ONLY_HINTS = new Set([
   "ArgumentsLaunchProps",
 ]);
 
-// Node built-ins allowed inside the sandbox (safe-builtins.json + os shim).
+// Node built-ins allowed inside the sandbox (safe-builtins.json + curated host-mediated shims).
+// `os` and `fs`/`fs/promises` are NOT on the raw safe list — they resolve to consent-gated host
+// shims (os-safe.mjs, fs-safe.mjs over fd 4), so for the sandbox verdict they count as supported.
 const SAFE_BUILTINS = new Set([
   "assert", "buffer", "console", "crypto", "events", "path", "punycode",
   "querystring", "stream", "string_decoder", "timers", "url", "util", "zlib",
-  "process", "os",
+  "process", "os", "fs",
 ]);
 
 const SUPPORTED_MODES = new Set(["view", "no-view", "menu-bar"]);

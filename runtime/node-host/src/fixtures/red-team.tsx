@@ -14,7 +14,7 @@
  */
 import { List } from "@invoke/api";
 
-type Expect = "deny" | "allow" | "open";
+type Expect = "deny" | "allow" | "open" | "mediated";
 
 interface Probe {
   name: string;
@@ -34,11 +34,19 @@ async function run(name: string, expect: Expect, fn: () => Promise<unknown> | un
   }
 }
 
-// ── Escapes that MUST be denied ──────────────────────────────────────────────
-await run("fs read /etc/passwd", "deny", async () => {
+// ── Filesystem: HOST-MEDIATED, consent-gated (remediation 01, Option A1) ─────
+// `fs` is no longer a sandbox-layer denial. The extension's `import "fs"` resolves to the virtual fs
+// shim, which forwards every op to the host over fd 4; the host canonicalizes the path and, in
+// production, prompts for per-(extension, directory) consent before performing it (this dev harness
+// auto-allows, so the read returns). The REAL node:fs stays UNREACHABLE — the "module createRequire(fs)"
+// and "process.binding" probes below still BLOCK every route to raw filesystem authority, which is the
+// security property that matters: the child can only ask a mediating host, never touch the OS directly.
+await run("fs read (host-mediated; consent-gated §4.4)", "mediated", async () => {
   const fs = await import("node:fs/promises");
-  return fs.readFile("/etc/passwd", "utf8");
+  return fs.readFile("/etc/hosts", "utf8");
 });
+
+// ── Escapes that MUST be denied ──────────────────────────────────────────────
 await run("child_process exec", "deny", async () => {
   const cp = await import("node:child_process");
   return cp.execSync("id").toString();

@@ -19,7 +19,7 @@ const FIXTURE = path.join(HERE, "fixtures/red-team.tsx");
 
 const delay = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
-type Expect = "deny" | "allow" | "open";
+type Expect = "deny" | "allow" | "open" | "mediated";
 
 interface ProbeRow {
   name: string;
@@ -33,7 +33,8 @@ function readProbes(tree: ViewTree): ProbeRow[] {
   for (const node of tree.index.values()) {
     if (node.type !== "list-item") continue;
     const p = node.props;
-    const expect: Expect = p.expect === "allow" ? "allow" : p.expect === "open" ? "open" : "deny";
+    const expect: Expect =
+      p.expect === "allow" ? "allow" : p.expect === "open" ? "open" : p.expect === "mediated" ? "mediated" : "deny";
     rows.push({
       name: String(p.title ?? "?"),
       expect,
@@ -67,11 +68,19 @@ async function main(): Promise<void> {
   console.log("\nCapability probes (run inside the locked-down extension process):");
   const failures: string[] = [];
   let openCount = 0;
+  let mediatedCount = 0;
   for (const p of probes) {
     if (p.expect === "open") {
       // Informational: a documented, intended-open capability — never fails the gate.
       openCount++;
       console.log(`  ⚠ [open ] ${p.name.padEnd(42)} ${p.blocked ? "unreachable" : "OPEN"}`);
+      continue;
+    }
+    if (p.expect === "mediated") {
+      // Host-mediated capability (fs over fd 4): not denied at the sandbox layer; the host gates it
+      // with per-(extension, directory) consent in production. Informational — never fails the gate.
+      mediatedCount++;
+      console.log(`  ⚠ [media] ${p.name.padEnd(42)} ${p.blocked ? "unreachable" : "MEDIATED"}`);
       continue;
     }
     const ok = p.expect === "deny" ? p.blocked : !p.blocked;
@@ -91,6 +100,12 @@ async function main(): Promise<void> {
     console.log("\n  ⚠ Network egress (fetch/WebSocket) is intentionally OPEN to extensions in v1 (the");
     console.log("    useFetch SDK surface). Fine-grained network permission is gated in v2 (PLAN §5.7) —");
     console.log("    a documented, accepted gap. This gate proves Node-built-in denial, NOT net containment.");
+  }
+  if (mediatedCount > 0) {
+    console.log("\n  ⚠ Filesystem (fs/fs-promises) is HOST-MEDIATED, not sandbox-denied: `import \"fs\"`");
+    console.log("    resolves to the virtual shim that forwards to the host over fd 4. The host canonicalizes");
+    console.log("    the path and gates it with per-(extension, directory) consent (remediation 01). Raw");
+    console.log("    node:fs stays unreachable — the module/process.binding denials above prove that route.");
   }
 
   // ── Part 2: host RPC allowlist (the other half of §4.4) ──
@@ -115,10 +130,11 @@ async function main(): Promise<void> {
     for (const f of failures) console.error(`  - ${f}`);
     process.exit(1);
   }
-  const enforced = probes.length - openCount;
+  const enforced = probes.length - openCount - mediatedCount;
   console.log(
     `✓ red-team gate passed: ${enforced} enforced capability probes + ${mustReject.length + mustAllow.length} allowlist checks` +
-      `${openCount ? `; ${openCount} egress probes documented OPEN (v2-gated §5.7)` : ""} (PLAN.md §8.2 exit #1)`,
+      `${openCount ? `; ${openCount} egress probes documented OPEN (v2-gated §5.7)` : ""}` +
+      `${mediatedCount ? `; ${mediatedCount} fs probe host-mediated (consent-gated)` : ""} (PLAN.md §8.2 exit #1)`,
   );
   process.exit(0);
 }

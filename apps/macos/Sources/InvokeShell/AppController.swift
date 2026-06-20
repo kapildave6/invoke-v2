@@ -3,6 +3,7 @@ import ApplicationServices
 import Carbon.HIToolbox
 import CoreGraphics
 import CryptoKit
+import Darwin
 import ImageIO
 import InvokeIPC
 import InvokeRenderer
@@ -221,6 +222,10 @@ public final class AppController: NSObject, NSApplicationDelegate {
         }
         menuBar?.capabilityAsync = { [weak self] extKey, method, params, reply in
             self?.menuBarCapabilityAsync(extKey: extKey, method: method, params: params, reply: reply) ?? false
+        }
+        menuBar?.fs = { [weak self] extKey, op, params, supportPath, assetsPath in
+            self?.handleFS(op, params, extKey: extKey, title: extKey, supportPath: supportPath, assetsPath: assetsPath)
+                ?? .object(["error": .string("[invoke:fs] host unavailable"), "code": .string("EIO")])
         }
 
         let entry = ProcessInfo.processInfo.environment["INVOKE_EXT_ENTRY"] ?? "examples/calculator/src/calculate.tsx"
@@ -2129,6 +2134,260 @@ public final class AppController: NSObject, NSApplicationDelegate {
         return allow
     }
 
+    // MARK: - Virtual filesystem (fd-4) mediation — remediation 01
+
+    /// Mediate ONE virtual-`fs` op for a SANDBOXED extension. Called on the host's fd-4 responder thread
+    /// (NOT main) — the child is blocked awaiting this reply. We default-deny: every real path is gated by
+    /// a per-(extension, folder) consent prompt (shown on main), EXCEPT the extension's own support/assets
+    /// dirs and the system temp dir, which are platform-assigned scratch and auto-allowed. On allow we run
+    /// the real op and return the wire shape fs-host.ts documents (`{...result}` or `{error, code?}`).
+    func handleFS(_ op: String, _ params: JSONValue?, extKey: String, title: String,
+                  supportPath: String, assetsPath: String) -> JSONValue {
+        func arg(_ k: String) -> JSONValue? { if case .object(let o)? = params { return o[k] }; return nil }
+        func str(_ k: String) -> String { arg(k)?.stringValue ?? "" }
+        func flag(_ k: String) -> Bool { if case .bool(let b)? = arg(k) { return b }; return false }
+
+        // Which path(s) does this op touch, and is it a mutation? Drives the consent gate below.
+        let isWrite: Bool
+        let targets: [String]
+        switch op {
+        case "read", "exists", "stat", "realpath", "readdir": isWrite = false; targets = [str("path")]
+        case "write", "mkdir", "rm": isWrite = true; targets = [str("path")]
+        case "rename", "copyFile": isWrite = true; targets = [str("from"), str("to")]
+        case "mkdtemp": isWrite = true; targets = [str("prefix")]
+        default:
+            return .object(["error": .string("[invoke:fs] unknown op \"\(op)\""), "code": .string("EINVAL")])
+        }
+
+        // Consent, one prompt per distinct folder. `readdir` consents on the folder itself; every other op
+        // consents on the PARENT folder of its target (you're acting on an item inside that folder).
+        var prompted = Set<String>()
+        for t in targets where !t.isEmpty {
+            let dir = (op == "readdir") ? Self.canonicalDir(t)
+                                        : Self.canonicalDir((t as NSString).deletingLastPathComponent)
+            if dir.isEmpty || prompted.contains(dir) { continue }
+            prompted.insert(dir)
+            if isAutoAllowedFSDir(dir, supportPath: supportPath, assetsPath: assetsPath) { continue }
+            if !ensureFSGrant(extKey: extKey, title: title, dir: dir, write: isWrite) {
+                return .object(["error": .string("EACCES: “\(title)” was not allowed to access \(dir)"),
+                                "code": .string("EACCES")])
+            }
+        }
+        return Self.performFS(op, str: str, flag: flag)
+    }
+
+    /// Perform one fs op against the real filesystem AFTER consent. Mirrors `fulfillFsOp` in fs-host.ts.
+    /// POSIX syscalls are used where the errno matters, so the child's shim re-throws real ENOENT/EACCES/
+    /// EISDIR codes (extensions branch on `err.code`).
+    private static func performFS(_ op: String, str: (String) -> String, flag: (String) -> Bool) -> JSONValue {
+        let fm = FileManager.default
+        let p = str("path")
+        switch op {
+        case "read":
+            let fd = open(p, O_RDONLY)
+            if fd < 0 { return errnoReply(errno, path: p, syscall: "open") }
+            defer { close(fd) }
+            var data = Data()
+            var buf = [UInt8](repeating: 0, count: 1 << 16)
+            while true {
+                let n = read(fd, &buf, buf.count)
+                if n < 0 { return errnoReply(errno, path: p, syscall: "read") }
+                if n == 0 { break }
+                data.append(contentsOf: buf[0..<n])
+            }
+            return .object(["base64": .string(data.base64EncodedString())])
+        case "write":
+            let bytes = Data(base64Encoded: str("base64")) ?? Data()
+            let oflags = O_WRONLY | O_CREAT | (str("flag") == "a" ? O_APPEND : O_TRUNC)
+            let fd = open(p, oflags, 0o644)
+            if fd < 0 { return errnoReply(errno, path: p, syscall: "open") }
+            defer { close(fd) }
+            let werr = bytes.withUnsafeBytes { (raw: UnsafeRawBufferPointer) -> Int32 in
+                guard let base = raw.baseAddress else { return 0 }
+                var off = 0
+                while off < raw.count {
+                    let w = write(fd, base.advanced(by: off), raw.count - off)
+                    if w <= 0 { return errno }
+                    off += w
+                }
+                return 0
+            }
+            if werr != 0 { return errnoReply(werr, path: p, syscall: "write") }
+            return .object(["ok": .bool(true)])
+        case "exists":
+            return .object(["exists": .bool(fm.fileExists(atPath: p))])
+        case "readdir":
+            guard let names = try? fm.contentsOfDirectory(atPath: p) else {
+                var st = Darwin.stat()
+                let code = (stat(p, &st) != 0) ? errnoName(errno) : "ENOTDIR"
+                return .object(["error": .string("\(code): readdir '\(p)'"), "code": .string(code)])
+            }
+            let entries: [JSONValue] = names.map { name in
+                let full = (p as NSString).appendingPathComponent(name)
+                // attributesOfItem does NOT follow symlinks (like Dirent/lstat), matching Node's withFileTypes.
+                let t = (try? fm.attributesOfItem(atPath: full))?[.type] as? FileAttributeType
+                return .object([
+                    "name": .string(name),
+                    "file": .bool(t == .typeRegular),
+                    "dir": .bool(t == .typeDirectory),
+                    "symlink": .bool(t == .typeSymbolicLink),
+                ])
+            }
+            return .object(["entries": .array(entries)])
+        case "stat":
+            var st = Darwin.stat()
+            let rc = flag("lstat") ? lstat(p, &st) : stat(p, &st)
+            if rc != 0 { return errnoReply(errno, path: p, syscall: "stat") }
+            let fmt = st.st_mode & S_IFMT
+            return .object([
+                "size": .number(Double(st.st_size)),
+                "mode": .number(Double(st.st_mode)),
+                "uid": .number(Double(st.st_uid)),
+                "gid": .number(Double(st.st_gid)),
+                "blksize": .number(Double(st.st_blksize)),
+                "blocks": .number(Double(st.st_blocks)),
+                "atimeMs": .number(timespecMs(st.st_atimespec)),
+                "mtimeMs": .number(timespecMs(st.st_mtimespec)),
+                "ctimeMs": .number(timespecMs(st.st_ctimespec)),
+                "birthtimeMs": .number(timespecMs(st.st_birthtimespec)),
+                "isFile": .bool(fmt == S_IFREG),
+                "isDirectory": .bool(fmt == S_IFDIR),
+                "isSymbolicLink": .bool(fmt == S_IFLNK),
+            ])
+        case "mkdir":
+            do { try fm.createDirectory(atPath: p, withIntermediateDirectories: flag("recursive")) }
+            catch { return cocoaReply(error, path: p) }
+            return .object(["path": .string(p)])
+        case "rm":
+            if !fm.fileExists(atPath: p) {
+                if flag("force") { return .object(["ok": .bool(true)]) } // rmSync({force}) ignores ENOENT
+                return .object(["error": .string("ENOENT: no such file or directory, '\(p)'"), "code": .string("ENOENT")])
+            }
+            do { try fm.removeItem(atPath: p) } catch { return cocoaReply(error, path: p) }
+            return .object(["ok": .bool(true)])
+        case "realpath":
+            var out = [CChar](repeating: 0, count: Int(PATH_MAX))
+            if realpath(p, &out) == nil { return errnoReply(errno, path: p, syscall: "realpath") }
+            return .object(["path": .string(String(cString: out))])
+        case "rename":
+            if rename(str("from"), str("to")) != 0 { return errnoReply(errno, path: str("from"), syscall: "rename") }
+            return .object(["ok": .bool(true)])
+        case "copyFile":
+            try? fm.removeItem(atPath: str("to")) // copyFileSync overwrites by default; copyItem won't
+            do { try fm.copyItem(atPath: str("from"), toPath: str("to")) } catch { return cocoaReply(error, path: str("from")) }
+            return .object(["ok": .bool(true)])
+        case "mkdtemp":
+            var tmpl = Array((str("prefix") + "XXXXXX").utf8CString)
+            guard let res = mkdtemp(&tmpl) else { return errnoReply(errno, path: str("prefix"), syscall: "mkdtemp") }
+            return .object(["path": .string(String(cString: res))])
+        default:
+            return .object(["error": .string("[invoke:fs] unknown op \"\(op)\""), "code": .string("EINVAL")])
+        }
+    }
+
+    private static func timespecMs(_ ts: timespec) -> Double {
+        Double(ts.tv_sec) * 1000 + Double(ts.tv_nsec) / 1_000_000
+    }
+
+    /// Map a raw errno to the symbolic code Node surfaces as `err.code` (ENOENT is by far the most checked).
+    private static func errnoName(_ e: Int32) -> String {
+        switch e {
+        case ENOENT: return "ENOENT"
+        case EACCES: return "EACCES"
+        case EEXIST: return "EEXIST"
+        case ENOTDIR: return "ENOTDIR"
+        case EISDIR: return "EISDIR"
+        case ENOTEMPTY: return "ENOTEMPTY"
+        case EPERM: return "EPERM"
+        case EINVAL: return "EINVAL"
+        case EROFS: return "EROFS"
+        case ENOSPC: return "ENOSPC"
+        case ELOOP: return "ELOOP"
+        case ENAMETOOLONG: return "ENAMETOOLONG"
+        case EMFILE: return "EMFILE"
+        default: return "EIO"
+        }
+    }
+
+    private static func errnoReply(_ e: Int32, path: String, syscall: String) -> JSONValue {
+        let code = errnoName(e)
+        return .object(["error": .string("\(code): \(String(cString: strerror(e))), \(syscall) '\(path)'"),
+                        "code": .string(code)])
+    }
+
+    /// Best-effort errno for a FileManager/Cocoa error (mkdir/rm/copyFile go through FileManager).
+    private static func cocoaReply(_ error: Error, path: String) -> JSONValue {
+        let ns = error as NSError
+        if let u = ns.userInfo[NSUnderlyingErrorKey] as? NSError, u.domain == NSPOSIXErrorDomain {
+            return errnoReply(Int32(u.code), path: path, syscall: "op")
+        }
+        if ns.domain == NSPOSIXErrorDomain { return errnoReply(Int32(ns.code), path: path, syscall: "op") }
+        let code: String
+        switch ns.code {
+        case NSFileNoSuchFileError, NSFileReadNoSuchFileError: code = "ENOENT"
+        case NSFileReadNoPermissionError, NSFileWriteNoPermissionError: code = "EACCES"
+        case NSFileWriteFileExistsError: code = "EEXIST"
+        default: code = "EIO"
+        }
+        return .object(["error": .string(ns.localizedDescription), "code": .string(code)])
+    }
+
+    /// Canonical absolute directory for consent: `~`-expand + resolve symlinks/`.`/`..` so the folder the
+    /// user consents to is EXACTLY the one we act under (a later call can't smuggle a different folder).
+    private static func canonicalDir(_ p: String) -> String {
+        guard !p.isEmpty else { return "" }
+        return URL(fileURLWithPath: (p as NSString).expandingTildeInPath).resolvingSymlinksInPath().path
+    }
+
+    /// The extension's own support/assets dirs and the system temp dir are platform-assigned private
+    /// scratch — auto-allowed without a prompt (prompting for an extension's own store would be absurd).
+    private func isAutoAllowedFSDir(_ dir: String, supportPath: String, assetsPath: String) -> Bool {
+        for base in [supportPath, assetsPath, NSTemporaryDirectory()] {
+            let b = Self.canonicalDir(base)
+            if !b.isEmpty, dir == b || dir.hasPrefix(b + "/") { return true }
+        }
+        return false
+    }
+
+    /// Default-deny per-(extension, folder) consent for virtual-fs access. A grant covers the folder and
+    /// its descendants; a WRITE grant also satisfies reads. We're on the fd-4 responder thread, so the
+    /// blocking prompt (and the AppSettings read/write) is marshaled to main.
+    private func ensureFSGrant(extKey: String, title: String, dir: String, write: Bool) -> Bool {
+        guard !extKey.isEmpty, !dir.isEmpty else { return false }
+        return DispatchQueue.main.sync {
+            if fsGranted(extKey: extKey, dir: dir, write: write) { return true }
+            let alert = NSAlert()
+            alert.messageText = write
+                ? "Allow “\(title)” to modify files in this folder?"
+                : "Allow “\(title)” to read files in this folder?"
+            alert.informativeText = "\(write ? "Read & write" : "Read") access to:\n\(dir)\n\nThis covers files in that folder and its subfolders. You’ll be asked again for other folders. Only allow extensions you trust."
+            alert.alertStyle = .warning
+            alert.addButton(withTitle: "Allow")
+            alert.addButton(withTitle: "Don’t Allow")
+            let allow = alert.runModal() == .alertFirstButtonReturn
+            if allow {
+                let key = extKey + "\u{0}" + dir // NUL separates the parts; a filesystem path can't contain NUL
+                if write { AppSettings.shared.fsWriteGrants.insert(key) } else { AppSettings.shared.fsReadGrants.insert(key) }
+            }
+            return allow
+        }
+    }
+
+    /// True if `dir` (or an ancestor folder) is already granted for this extension. A read is satisfied by
+    /// a read OR write grant; a write needs a write grant. Call on MAIN (reads AppSettings).
+    private func fsGranted(extKey: String, dir: String, write: Bool) -> Bool {
+        let prefix = extKey + "\u{0}"
+        func covered(by grants: Set<String>) -> Bool {
+            for g in grants where g.hasPrefix(prefix) {
+                let gdir = String(g.dropFirst(prefix.count))
+                if dir == gdir || dir.hasPrefix(gdir + "/") { return true }
+            }
+            return false
+        }
+        if write { return covered(by: AppSettings.shared.fsWriteGrants) }
+        return covered(by: AppSettings.shared.fsReadGrants) || covered(by: AppSettings.shared.fsWriteGrants)
+    }
+
     /// A macOS TCC denial we can't fix in-app (Full Disk Access / Automation) — offer a one-click jump
     /// to the exact System Settings pane instead of a dead-end toast. Throttled so a burst of failures
     /// (e.g. the several useSQL queries one search fires) collapses into a single prompt.
@@ -2561,6 +2820,11 @@ public final class AppController: NSObject, NSApplicationDelegate {
         if !palette.isVisible { palette.show() } // launched from an open palette → don't re-center it
         renderExtensionLoading() // placeholder until the first commit (avoids an empty collapse-flash)
         let paths = extensionPaths(id: id, entryRelPath: entryRelPath)
+        let fsKey = Self.extGrantKey(forId: id)
+        h.onFS = { [weak self] op, params in
+            self?.handleFS(op, params, extKey: fsKey, title: title, supportPath: paths.support, assetsPath: paths.assets)
+                ?? .object(["error": .string("[invoke:fs] host unavailable"), "code": .string("EIO")])
+        }
         palette.setAssetsPath(paths.assets) // resolve the extension's relative image sources (icons, grid thumbs)
         h.launch(repoRoot: repoRoot, entryRelPath: entryRelPath, command: command, preferences: preferences,
                  trusted: AppSettings.shared.isTrusted(Self.extGrantKey(forId: id)),
@@ -2595,6 +2859,11 @@ public final class AppController: NSObject, NSApplicationDelegate {
         h.onSandboxDenial = { [weak self] module in self?.handleSandboxDenial(id: id, title: title, module: module) }
         noViewHosts[key] = h
         let paths = extensionPaths(id: id, entryRelPath: entryRelPath)
+        let fsKey = Self.extGrantKey(forId: id)
+        h.onFS = { [weak self] op, params in
+            self?.handleFS(op, params, extKey: fsKey, title: title, supportPath: paths.support, assetsPath: paths.assets)
+                ?? .object(["error": .string("[invoke:fs] host unavailable"), "code": .string("EIO")])
+        }
         h.launch(repoRoot: repoRoot, entryRelPath: entryRelPath, command: command, preferences: preferences,
                  mode: "no-view", trusted: AppSettings.shared.isTrusted(Self.extGrantKey(forId: id)),
                  assetsPath: paths.assets, supportPath: paths.support, arguments: arguments)

@@ -48,6 +48,13 @@ public final class AppSettings: ObservableObject {
     @Published public var appleScriptGrants: Set<String> { didSet { d.set(Array(appleScriptGrants), forKey: "appleScriptGrants") } }
     @Published public var sqlGrants: Set<String> { didSet { d.set(Array(sqlGrants), forKey: "sqlGrants") } }
     @Published public var trashGrants: Set<String> { didSet { d.set(Array(trashGrants), forKey: "trashGrants") } }
+    /// Directories a sandboxed extension may READ via the virtual `fs` channel (fd 4, remediation 01).
+    /// Key = extKey + NUL + canonical directory; the grant covers that directory and its descendants. The
+    /// extension's own support/assets dirs are auto-allowed and never stored here.
+    @Published public var fsReadGrants: Set<String> { didSet { d.set(Array(fsReadGrants), forKey: "fsReadGrants") } }
+    /// Directories a sandboxed extension may READ & WRITE via the virtual `fs` channel. Same keying as
+    /// `fsReadGrants`; a write grant also satisfies a read of the same subtree.
+    @Published public var fsWriteGrants: Set<String> { didSet { d.set(Array(fsWriteGrants), forKey: "fsWriteGrants") } }
     /// Extensions the user has explicitly TRUSTED to run WITHOUT the sandbox (full Node: child_process,
     /// fs, network). Default-deny: an extension is sandboxed unless its key is here. Keyed by extension
     /// key (e.g. "imported-1password"). This is the user opting into full access for code they trust.
@@ -77,6 +84,8 @@ public final class AppSettings: ObservableObject {
         appleScriptGrants = Set((d.array(forKey: "appleScriptGrants") as? [String]) ?? [])
         sqlGrants = Set((d.array(forKey: "sqlGrants") as? [String]) ?? [])
         trashGrants = Set((d.array(forKey: "trashGrants") as? [String]) ?? [])
+        fsReadGrants = Set((d.array(forKey: "fsReadGrants") as? [String]) ?? [])
+        fsWriteGrants = Set((d.array(forKey: "fsWriteGrants") as? [String]) ?? [])
         trustedExtensions = Set((d.array(forKey: "trustedExtensions") as? [String]) ?? [])
         launchAtLogin = d.bool(forKey: "launchAtLogin")
     }

@@ -19,6 +19,7 @@ import {
   FrameDecoder,
 } from "@invoke/schema";
 import { applyMutations, createViewTree, type ViewTree } from "./viewmodel.ts";
+import { fulfillFsOp } from "./fs-host.ts";
 
 const CHILD = path.join(path.dirname(fileURLToPath(import.meta.url)), "child.ts");
 
@@ -98,6 +99,8 @@ export class ExtensionProcess extends EventEmitter {
   private child: ChildProcess;
   private sock: NodeJS.ReadWriteStream;
   private decoder = new FrameDecoder();
+  private fsSock?: NodeJS.ReadWriteStream;
+  private fsDecoder = new FrameDecoder();
   private capabilities?: HostCapabilities;
 
   constructor(entry: string, command: string, preferences: Record<string, unknown> = {}, capabilities?: HostCapabilities) {
@@ -113,7 +116,7 @@ export class ExtensionProcess extends EventEmitter {
       process.execPath,
       ["--import", "tsx", CHILD, entry, command],
       {
-        stdio: ["inherit", "inherit", "inherit", "pipe"], // fd3 = duplex socketpair
+        stdio: ["inherit", "inherit", "inherit", "pipe", "pipe"], // fd3 = RPC; fd4 = synchronous fs channel
         env: { ...process.env, ...tsconfigEnv, INVOKE_COMMAND: command, INVOKE_PREFERENCES: JSON.stringify(preferences) },
       },
     );
@@ -122,6 +125,17 @@ export class ExtensionProcess extends EventEmitter {
     this.sock.on("data", (chunk: Buffer) => {
       for (const raw of this.decoder.push(chunk)) this.handle(raw as HostBound);
     });
+
+    // fd 4: the child blocks on each virtual-fs op; we perform it and frame back a reply. The dev runner
+    // auto-allows (no GUI to prompt) — the macOS host gates the same protocol per (extension, directory).
+    this.fsSock = this.child.stdio[4] as unknown as NodeJS.ReadWriteStream | undefined;
+    this.fsSock?.on("data", (chunk: Buffer) => {
+      for (const raw of this.fsDecoder.push(chunk)) {
+        const reply = fulfillFsOp(raw as { op: string } & Record<string, unknown>);
+        this.fsSock?.write(encodeFrame(reply));
+      }
+    });
+
     this.child.on("exit", (code) => this.emit("exit", code));
   }
 

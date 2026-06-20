@@ -49,6 +49,10 @@ public final class ExtensionHost {
     public var onSandboxDenial: ((String) -> Void)?
     /// Fired on the MAIN queue when an AI-extension tool (mode "ai-tool") returns its result/error.
     public var onAIToolResult: ((_ result: JSONValue?, _ error: String?) -> Void)?
+    /// Fired on the fd-4 RESPONDER thread (NOT main) for each virtual-filesystem op the sandboxed child
+    /// makes (remediation 01). The child is blocked awaiting the reply, so this may itself block (e.g. on
+    /// a main-queue consent dialog). Returns the op's result/error object, framed straight back to fd 4.
+    public var onFS: ((_ op: String, _ params: JSONValue?) -> JSONValue)?
 
     /// The capability allowlist — mirrors the Node supervisor's ALLOWED_RPC. Denial is enforced HERE
     /// in the host, so even a child crafting a raw RPC frame gets nothing it isn't granted (PLAN §4.4).
@@ -74,9 +78,12 @@ public final class ExtensionHost {
 
     private var pid: pid_t = -1
     private var sockFD: Int32 = -1
+    private var fsSockFD: Int32 = -1 // host end of the fd-4 synchronous filesystem channel
     private var intentionalStop = false // set by terminate() so a clean stop doesn't fire onTerminate
     private let decoder = FrameDecoder()
+    private let fsDecoder = FrameDecoder()
     private let readQueue = DispatchQueue(label: "invoke.exthost.read")
+    private let fsQueue = DispatchQueue(label: "invoke.exthost.fs") // blocking fd-4 responder
     private let writeQueue = DispatchQueue(label: "invoke.exthost.write")
     private let jsonDecoder = JSONDecoder()
     private let jsonEncoder = JSONEncoder()
@@ -96,16 +103,31 @@ public final class ExtensionHost {
         let childFD = fds[1]
         intentionalStop = false
 
-        // Belt-and-suspenders to the global SIGPIPE ignore: a write to this socket after the child dies
+        // Second socketpair = the synchronous filesystem channel (fd 4). socketpair() ends are BLOCKING by
+        // default, and we never wrap the child's end in a non-blocking reader, so the child's fs.readSync
+        // on fd 4 blocks until we reply — exactly the semantics readFileSync needs (remediation 01).
+        var fsFds: [Int32] = [0, 0]
+        guard socketpair(AF_UNIX, SOCK_STREAM, 0, &fsFds) == 0 else {
+            log("fs socketpair failed: \(String(cString: strerror(errno)))")
+            close(parentFD); close(childFD)
+            return
+        }
+        let fsParentFD = fsFds[0]
+        let fsChildFD = fsFds[1]
+
+        // Belt-and-suspenders to the global SIGPIPE ignore: a write to these sockets after the child dies
         // returns EPIPE instead of raising SIGPIPE.
         var noSigpipe: Int32 = 1
         setsockopt(parentFD, SOL_SOCKET, SO_NOSIGPIPE, &noSigpipe, socklen_t(MemoryLayout<Int32>.size))
+        setsockopt(fsParentFD, SOL_SOCKET, SO_NOSIGPIPE, &noSigpipe, socklen_t(MemoryLayout<Int32>.size))
 
-        // Child gets the socket on fd 3 and never sees the parent's end.
+        // Child gets the RPC socket on fd 3 and the fs socket on fd 4; never sees the parent's ends.
         var actions: posix_spawn_file_actions_t?
         posix_spawn_file_actions_init(&actions)
         posix_spawn_file_actions_addclose(&actions, parentFD)
+        posix_spawn_file_actions_addclose(&actions, fsParentFD)
         posix_spawn_file_actions_adddup2(&actions, childFD, 3)
+        posix_spawn_file_actions_adddup2(&actions, fsChildFD, 4)
         defer { posix_spawn_file_actions_destroy(&actions) }
 
         // sh -c sets cwd (so `tsx` + workspace packages resolve from node_modules) then execs node,
@@ -141,17 +163,21 @@ public final class ExtensionHost {
                 posix_spawn(&childPid, "/bin/sh", &actions, nil, cArgv, cEnvp)
             }
         }
-        close(childFD) // parent only keeps its own end
+        close(childFD)   // parent only keeps its own ends of both socketpairs
+        close(fsChildFD)
 
         guard rc == 0 else {
             log("posix_spawn failed: \(String(cString: strerror(rc)))")
             close(parentFD)
+            close(fsParentFD)
             return
         }
         pid = childPid
         sockFD = parentFD
+        fsSockFD = fsParentFD
         log("spawned extension pid \(childPid): \(entryRelPath) [\(command)]")
         startReadLoop(fd: parentFD)
+        startFSResponder(fd: fsParentFD)
     }
 
     private func startReadLoop(fd: Int32) {
@@ -166,6 +192,57 @@ public final class ExtensionHost {
             self.log("extension process ended")
             if !self.intentionalStop {
                 DispatchQueue.main.async { self.onTerminate?() } // crashed / failed to start
+            }
+        }
+    }
+
+    /// The fd-4 blocking responder (remediation 01). A SANDBOXED child sends one framed `{op, ...params}`
+    /// per synchronous fs call and BLOCKS on `readSync` until we frame a reply back — so this loop MUST
+    /// answer every request, even on error, or the child hangs forever on a file op. Mediation + per-folder
+    /// consent live in `onFS` (set by the controller); with no handler installed we deny, so the child gets
+    /// a clean error instead of a hang. (Trusted children use the real Node `fs` and never use this fd.)
+    private func startFSResponder(fd: Int32) {
+        fsQueue.async { [weak self] in
+            guard let self else { return }
+            var buf = [UInt8](repeating: 0, count: 1 << 16)
+            while true {
+                let n = read(fd, &buf, buf.count)
+                if n <= 0 { break }
+                for body in self.fsDecoder.push(Data(buf[0..<n])) {
+                    let reply = self.fulfillFS(body)
+                    if let data = try? self.jsonEncoder.encode(reply) {
+                        self.writeFS(FrameCodec.encode(data), fd: fd)
+                    }
+                }
+            }
+            self.log("fs channel closed")
+        }
+    }
+
+    /// Decode one fd-4 request `{op, ...params}` and hand it to `onFS` for mediation. Always returns a
+    /// reply object: `{...result}` on success, or `{error, code?}` which the child's shim re-throws with
+    /// `err.code` set (so `existsSync`/`readFileSync` surface ENOENT etc. exactly like real Node fs).
+    private func fulfillFS(_ body: Data) -> JSONValue {
+        guard let req = try? jsonDecoder.decode(JSONValue.self, from: body),
+              case .object(let o) = req, case .string(let op)? = o["op"] else {
+            return .object(["error": .string("[invoke:fs] malformed request"), "code": .string("EINVAL")])
+        }
+        guard let onFS else {
+            return .object(["error": .string("[invoke:fs] filesystem is not available"), "code": .string("EACCES")])
+        }
+        return onFS(op, req)
+    }
+
+    /// Blocking framed write straight to fd 4 (NOT the writeQueue, which serializes the fd-3 RPC stream).
+    /// We're already on the dedicated responder thread and the child is awaiting exactly this one reply.
+    private func writeFS(_ frame: Data, fd: Int32) {
+        frame.withUnsafeBytes { (raw: UnsafeRawBufferPointer) in
+            guard let base = raw.baseAddress else { return }
+            var off = 0
+            while off < raw.count {
+                let w = Darwin.write(fd, base.advanced(by: off), raw.count - off)
+                if w <= 0 { break }
+                off += w
             }
         }
     }
@@ -281,6 +358,11 @@ public final class ExtensionHost {
         let fd = sockFD
         sockFD = -1 // new writes see -1 and skip
         if fd >= 0 { writeQueue.async { close(fd) } } // ordered AFTER any pending writes (FIFO)
+        // Close the fd-4 channel directly (NOT via fsQueue — the responder is blocked IN read() there, so a
+        // queued close would never run). Closing the fd unblocks that read(), ending the responder loop.
+        let fsFd = fsSockFD
+        fsSockFD = -1
+        if fsFd >= 0 { close(fsFd) }
     }
 
     /// POSIX single-quote a value for safe interpolation into an `sh -c` string.

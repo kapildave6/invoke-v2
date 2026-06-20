@@ -38,6 +38,9 @@ export function isDeniedBuiltin(specifier) {
 const OS_SAFE_URL = new URL("./os-safe.mjs", import.meta.url).href;
 /** Compat shim for the `run-applescript` npm package (it shells out via child_process). */
 const RUN_APPLESCRIPT_URL = new URL("./run-applescript-shim.mjs", import.meta.url).href;
+/** Virtual filesystem shims — host-mediated, consent-gated `fs` / `fs/promises` (remediation 01). */
+const FS_SAFE_URL = new URL("./fs-safe.mjs", import.meta.url).href;
+const FS_PROMISES_SAFE_URL = new URL("./fs-promises-safe.mjs", import.meta.url).href;
 
 export async function resolve(specifier, context, nextResolve) {
   const name = specifier.startsWith("node:") ? specifier.slice(5) : specifier;
@@ -45,6 +48,12 @@ export async function resolve(specifier, context, nextResolve) {
     // The shim reaching for the real os is allowed; everyone else gets the curated subset.
     if (context.parentURL === OS_SAFE_URL) return nextResolve(specifier, context);
     return { url: OS_SAFE_URL, shortCircuit: true };
+  }
+  if (name === "fs" || name === "fs/promises") {
+    // The promises shim reaching INTO fs-safe is the one allowed import of the family; the extension
+    // gets the virtual shim that forwards every op to the host's consent-gated fs channel.
+    if (context.parentURL === FS_SAFE_URL) return nextResolve(specifier, context);
+    return { url: name === "fs/promises" ? FS_PROMISES_SAFE_URL : FS_SAFE_URL, shortCircuit: true };
   }
   if (specifier === "run-applescript") {
     return { url: RUN_APPLESCRIPT_URL, shortCircuit: true };
