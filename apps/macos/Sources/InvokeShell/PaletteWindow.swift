@@ -61,6 +61,9 @@ public final class PaletteWindow: NSObject {
     public var onActivateRow: ((Int) -> Void)?
     /// A Form field changed (live onChange): (onChange handler id, new value).
     public var onFormFieldChange: ((String, String) -> Void)?
+    /// Fired when the palette auto-hides on losing key focus (a prompt/another app stole focus), as
+    /// opposed to an explicit dismiss — lets the controller remember to RESTORE this view on re-summon.
+    public var onAutoHide: (() -> Void)?
 
     private let filterButton = NSPopUpButton(frame: .zero, pullsDown: false)
     private let searchDropdown = SearchBarDropdown() // world-class engine picker (extension List.Dropdown)
@@ -684,7 +687,7 @@ extension PaletteWindow: NSWindowDelegate {
     /// Auto-hide on blur (PLAN.md §4.3) — like Raycast. Skip while the ⌘K Action Panel is tracking
     /// (that briefly takes key focus).
     public func windowDidResignKey(_ notification: Notification) {
-        if !actionPanel.isShown && !suppressAutoHide { hide() }
+        if !actionPanel.isShown && !suppressAutoHide { hide(); onAutoHide?() }
     }
 }
 

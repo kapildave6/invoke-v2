@@ -63,6 +63,9 @@ public final class AppController: NSObject, NSApplicationDelegate {
     // calculator `host`). Launched on demand from a discovered `ext.*` command; rendered in .extension.
     private var extHost: ExtensionHost?
     private var currentExtId = ""
+    /// When the palette auto-hid (focus stolen by a prompt/another app) while showing an extension view.
+    /// A re-summon within a short window restores that view instead of resetting to root (Raycast parity).
+    private var suspendedExtAt: Date?
     private var currentExtTitle = ""
     private var extReceivedCommit = false // did the current extension render at least once?
     // Bumped on every extension launch; the onTerminate closure captures its launch's generation so a
@@ -175,6 +178,10 @@ public final class AppController: NSObject, NSApplicationDelegate {
         }
         host.onCapability = { [weak self] method, params in self?.handleCapability(method, params) ?? .null }
 
+        palette.onAutoHide = { [weak self] in
+            guard let self else { return }
+            if self.mode == .extensionView, self.extHost != nil { self.suspendedExtAt = Date() }
+        }
         palette.onSearchChange = { [weak self] text in self?.onSearch(text) }
         palette.onMove = { [weak self] delta in self?.moveSelection(delta) }
         palette.onActivate = { [weak self] secondary in self?.activateSelection(secondary: secondary) }
@@ -389,7 +396,17 @@ public final class AppController: NSObject, NSApplicationDelegate {
         // panel to the screen) the user-perceived first-frame cost. Logged every summon so a
         // baseline/regression is visible in the host log without a window-server screen grab.
         let t0 = DispatchTime.now()
-        captureTarget(); exitToRoot(); palette.show()
+        // If the palette auto-hid (a prompt/another app stole focus) while showing an extension view,
+        // re-summoning RESTORES that live view instead of resetting to root (Raycast parity), within a
+        // short window. Keep the original pasteTarget (don't re-capture — the prompt's app may be front).
+        if let suspended = suspendedExtAt, Date().timeIntervalSince(suspended) < 120,
+           mode == .extensionView, extHost != nil {
+            suspendedExtAt = nil
+            palette.show()
+        } else {
+            suspendedExtAt = nil
+            captureTarget(); exitToRoot(); palette.show()
+        }
         let syncMs = Double(DispatchTime.now().uptimeNanoseconds - t0.uptimeNanoseconds) / 1_000_000
         DispatchQueue.main.async {
             let frameMs = Double(DispatchTime.now().uptimeNanoseconds - t0.uptimeNanoseconds) / 1_000_000
@@ -427,6 +444,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
 
     private func exitToRoot() {
         palette.suppressAutoHide = false
+        suspendedExtAt = nil
         teardownExtension()
         mode = .root
         pendingQuicklink = nil
