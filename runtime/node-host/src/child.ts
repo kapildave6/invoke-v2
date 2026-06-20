@@ -16,7 +16,7 @@ import net from "node:net";
 import { pathToFileURL } from "node:url";
 import { createElement, type ReactNode } from "react";
 import { createSurface } from "@invoke/reconciler";
-import { __setHostBridge, __setNavController } from "@invoke/api";
+import { __setHostBridge, __setNavController, showToast, Toast } from "@invoke/api";
 import {
   type ChildBound,
   type HostBound,
@@ -63,6 +63,17 @@ __setHostBridge((method, params) => {
     pendingRpc.set(id, (r) => (r.error ? reject(new Error(r.error)) : resolve(r.result)));
     send({ kind: "rpc", id, method, params });
   });
+});
+
+// An async action handler (onAction) that throws rejects AFTER React's synchronous flush, so it lands
+// here, not at the invoke site. Mirror Raycast: surface a failure toast and keep the extension alive —
+// Node's default is to TERMINATE the process on an unhandled rejection, which would kill the whole
+// extension over one failed action. Host RPCs such as runAppleScript reject on error, so an extension
+// that doesn't catch (most do) ends up here.
+process.on("unhandledRejection", (reason) => {
+  const msg = reason instanceof Error ? reason.message : String(reason);
+  send({ kind: "log", level: "error", args: ["[unhandledRejection]", msg] });
+  void showToast({ style: Toast.Style.Failure, title: "Command failed", message: msg }).catch(() => {});
 });
 
 async function main(): Promise<void> {

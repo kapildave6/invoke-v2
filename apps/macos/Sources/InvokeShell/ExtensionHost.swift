@@ -38,7 +38,10 @@ public final class ExtensionHost {
     public var onCapability: ((_ method: String, _ params: JSONValue?) -> JSONValue)?
     /// Like onCapability but may defer the reply (return true to claim the method and call `reply` later
     /// — used for capabilities that await user input, e.g. confirmAlert's in-palette modal). Tried first.
-    public var onCapabilityAsync: ((_ method: String, _ params: JSONValue?, _ reply: @escaping (JSONValue) -> Void) -> Bool)?
+    /// `reply` RESOLVES the child's RPC promise with a value; `fail` REJECTS it with an error message
+    /// (so the extension's `await rpc(...)` throws — e.g. Raycast's `runAppleScript` rejects on a script
+    /// error, which extensions catch). An async handler calls exactly one of the two.
+    public var onCapabilityAsync: ((_ method: String, _ params: JSONValue?, _ reply: @escaping (JSONValue) -> Void, _ fail: @escaping (String) -> Void) -> Bool)?
     /// Diagnostic log sink (main queue).
     public var onLog: ((String) -> Void)?
     /// Fired on the MAIN queue when the child process ends WITHOUT an intentional terminate() — e.g. it
@@ -298,7 +301,9 @@ public final class ExtensionHost {
             // the synchronous onCapability.
             DispatchQueue.main.async {
                 if let asyncH = self.onCapabilityAsync,
-                   asyncH(method, params, { [weak self] result in self?.replyRPC(id: id, result: result) }) {
+                   asyncH(method, params,
+                          { [weak self] result in self?.replyRPC(id: id, result: result) },
+                          { [weak self] error in self?.replyRPC(id: id, error: error) }) {
                     return // handled async; the reply is deferred until the modal resolves
                 }
                 let result = self.onCapability?(method, params) ?? .null

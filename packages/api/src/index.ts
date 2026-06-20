@@ -554,9 +554,10 @@ export async function open(target: string, application?: string): Promise<void> 
 /** Run an AppleScript via the host (gated capability). Returns the script's string output.
  *  The first call triggers the macOS Automation permission prompt for the target app. */
 export async function runAppleScript(source: string): Promise<string> {
-  // Raycast's runAppleScript ALWAYS resolves to a string (the script's stdout). Coerce null/undefined
-  // — which a denied/empty/errored call can produce — to "" so callers that do e.g. result.split(...)
-  // don't crash on null.
+  // Matches Raycast: resolves to the script's stdout on success, and THROWS on a script error (the host
+  // rejects the RPC, which surfaces here as a rejected `await`). Extensions rely on the throw — e.g.
+  // browser-tabs catches it to fall back from a WebKit to a Chromium activation script. On success we
+  // coerce a null/undefined result (an empty script's output) to "" so callers can safely .split(...).
   const r = await rpc("runAppleScript", { source });
   return r == null ? "" : String(r);
 }

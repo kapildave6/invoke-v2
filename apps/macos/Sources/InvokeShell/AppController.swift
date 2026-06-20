@@ -230,8 +230,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
         menuBar?.capability = { [weak self] extKey, method, params in
             self?.menuBarCapability(extKey: extKey, method: method, params: params) ?? .null
         }
-        menuBar?.capabilityAsync = { [weak self] extKey, method, params, reply in
-            self?.menuBarCapabilityAsync(extKey: extKey, method: method, params: params, reply: reply) ?? false
+        menuBar?.capabilityAsync = { [weak self] extKey, method, params, reply, fail in
+            self?.menuBarCapabilityAsync(extKey: extKey, method: method, params: params, reply: reply, fail: fail) ?? false
         }
         menuBar?.fs = { [weak self] extKey, op, params, supportPath, assetsPath in
             self?.handleFS(op, params, extKey: extKey, title: extKey, supportPath: supportPath, assetsPath: assetsPath)
@@ -1840,13 +1840,13 @@ public final class AppController: NSObject, NSApplicationDelegate {
         defer { currentExtId = saved }
         return handleCapability(method, params)
     }
-    private func menuBarCapabilityAsync(extKey: String, method: String, params: JSONValue?, reply: @escaping (JSONValue) -> Void) -> Bool {
+    private func menuBarCapabilityAsync(extKey: String, method: String, params: JSONValue?, reply: @escaping (JSONValue) -> Void, fail: @escaping (String) -> Void) -> Bool {
         let saved = currentExtId; currentExtId = extKey
         defer { currentExtId = saved }
-        return handleAsyncCapability(method, params, reply: reply)
+        return handleAsyncCapability(method, params, reply: reply, fail: fail)
     }
 
-    private func handleAsyncCapability(_ method: String, _ params: JSONValue?, reply: @escaping (JSONValue) -> Void) -> Bool {
+    private func handleAsyncCapability(_ method: String, _ params: JSONValue?, reply: @escaping (JSONValue) -> Void, fail: @escaping (String) -> Void) -> Bool {
         func arg(_ key: String) -> JSONValue? { if case .object(let o)? = params { return o[key] }; return nil }
         switch method {
         case "confirmAlert":
@@ -1921,13 +1921,20 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 DispatchQueue.main.async {
                     if r.exitCode == 0 {
                         reply(.string(r.output))
+                    } else if r.automationDenied {
+                        // Host-level permission gate: guide the user, then REJECT (don't resolve "") so
+                        // the extension's call throws rather than silently seeing empty output.
+                        self?.presentPermissionHelp(.automation)
+                        fail("Not authorized to send Apple events. Grant Automation access in System Settings → Privacy & Security → Automation.")
                     } else {
-                        if r.automationDenied { self?.presentPermissionHelp(.automation) }
-                        else {
-                            let msg = r.stderr.trimmingCharacters(in: .whitespacesAndNewlines)
-                            self?.palette.showToast("AppleScript: \(msg.isEmpty ? "failed" : msg)")
-                        }
-                        reply(.string(""))
+                        // Script/compile/runtime error → REJECT so the extension's `runAppleScript` throws,
+                        // matching Raycast (the extension decides whether to surface it). Resolving "" here
+                        // masked the error and broke extensions whose own error handling depends on the
+                        // throw — e.g. browser-tabs tries a WebKit script, catches its failure, and falls
+                        // back to the Chromium script; swallowing the throw made it think WebKit succeeded.
+                        // The host must NOT show its own toast: a recovered error would flash spuriously.
+                        let msg = r.stderr.trimmingCharacters(in: .whitespacesAndNewlines)
+                        fail(msg.isEmpty ? "AppleScript failed" : msg)
                     }
                 }
             }
@@ -3179,8 +3186,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
         h.onLog = { msg in print("[invoke:ext] \(msg)") }
         h.onCommit = { [weak self] _ in self?.extReceivedCommit = true; self?.onExtensionCommit() }
         h.onCapability = { [weak self] m, p in self?.handleCapability(m, p) ?? .null }
-        h.onCapabilityAsync = { [weak self] method, params, reply in
-            self?.handleAsyncCapability(method, params, reply: reply) ?? false
+        h.onCapabilityAsync = { [weak self] method, params, reply, fail in
+            self?.handleAsyncCapability(method, params, reply: reply, fail: fail) ?? false
         }
         extLaunchGen += 1
         let gen = extLaunchGen
@@ -3232,8 +3239,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
         let h = ExtensionHost()
         h.onLog = { msg in print("[invoke:ext] \(msg)") }
         h.onCapability = { [weak self] m, p in self?.handleCapability(m, p) ?? .null }
-        h.onCapabilityAsync = { [weak self] method, params, reply in
-            self?.handleAsyncCapability(method, params, reply: reply) ?? false
+        h.onCapabilityAsync = { [weak self] method, params, reply, fail in
+            self?.handleAsyncCapability(method, params, reply: reply, fail: fail) ?? false
         }
         h.onTerminate = { [weak self] in DispatchQueue.main.async { self?.noViewHosts[key] = nil } }
         lastLaunch = LaunchInfo(id: id, title: title, entryRelPath: entryRelPath, command: command, preferences: preferences, noView: true, arguments: arguments)
