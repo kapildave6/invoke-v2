@@ -190,6 +190,7 @@ type FormType = ReturnType<typeof host> & {
   LinkAccessory: ReturnType<typeof host>;
   TagPicker: ReturnType<typeof host> & { Item: ReturnType<typeof host> };
   Dropdown: ReturnType<typeof host> & { Item: ReturnType<typeof host>; Section: ReturnType<typeof host> };
+  DropdownItem: ReturnType<typeof host>;
 };
 export const Form = host(T.Form, ["actions"]) as FormType;
 Form.TextField = host(T.FormTextField);
@@ -208,6 +209,9 @@ const Dropdown = host(T.FormDropdown) as FormType["Dropdown"];
 Dropdown.Item = host(T.FormDropdownItem);
 Dropdown.Section = host(T.FormDropdownSection);
 Form.Dropdown = Dropdown;
+// Some extensions use the flat <Form.DropdownItem> instead of <Form.Dropdown.Item>; alias it so they
+// render an option instead of undefined.
+Form.DropdownItem = host(T.FormDropdownItem);
 // No native file picker yet — degrade to a path text field (the value is a path string). Avoids the
 // render crash for the ~180 extensions that use <Form.FilePicker>.
 Form.FilePicker = host(T.FormTextField);
@@ -320,6 +324,7 @@ Action.PickDate = (props) => {
 type ActionPanelType = ReturnType<typeof host> & {
   Section: ReturnType<typeof host>;
   Submenu: ReturnType<typeof host>;
+  Item: (props: CommonActionProps) => ReactElement;
 };
 export const ActionPanel = host(T.ActionPanel) as ActionPanelType;
 ActionPanel.Section = host(T.ActionPanelSection);
@@ -328,6 +333,10 @@ ActionPanel.Section = host(T.ActionPanelSection);
 // <ActionPanel.Submenu> (undefined) throws while serializing a List.Item's `actions`, which silently
 // drops the whole item.
 ActionPanel.Submenu = host(T.ActionPanelSection);
+// Legacy Raycast API: <ActionPanel.Item> was the base action before <Action> (same props: title/icon/
+// shortcut/onAction). Aliasing to Action fixes ~49 extensions whose actions otherwise render undefined
+// (→ "Element type is invalid" → the whole view crashes).
+ActionPanel.Item = Action;
 
 /* ------------------------------------------------------------------ MenuBarExtra */
 type MenuBarType = ReturnType<typeof host> & {

@@ -292,10 +292,10 @@ const SUPPORTED_JSX = new Set([
   "Grid", "Grid.Section", "Grid.Item", "Grid.Dropdown", "Grid.Dropdown.Item", "Grid.Dropdown.Section", "Grid.EmptyView",
   "Detail", "Detail.Metadata", "Detail.Metadata.Label", "Detail.Metadata.TagList", "Detail.Metadata.TagList.Item", "Detail.Metadata.Separator", "Detail.Metadata.Link",
   "Form", "Form.TextField", "Form.TextArea", "Form.Checkbox", "Form.Description", "Form.Separator", "Form.PasswordField", "Form.DatePicker", "Form.Dropdown", "Form.Dropdown.Item", "Form.Dropdown.Section",
-  "Form.FilePicker", "Form.LinkAccessory", "Form.TagPicker", "Form.TagPicker.Item",
+  "Form.FilePicker", "Form.LinkAccessory", "Form.TagPicker", "Form.TagPicker.Item", "Form.DropdownItem",
   "Action", "Action.CopyToClipboard", "Action.Paste", "Action.OpenInBrowser", "Action.Open", "Action.Push", "Action.SubmitForm",
   "Action.ShowInFinder", "Action.Trash", "Action.OpenWith", "Action.ToggleQuickLook", "Action.CreateQuicklink", "Action.CreateSnippet", "Action.PickDate",
-  "ActionPanel", "ActionPanel.Section", "ActionPanel.Submenu",
+  "ActionPanel", "ActionPanel.Section", "ActionPanel.Submenu", "ActionPanel.Item",
   "MenuBarExtra", "MenuBarExtra.Item", "MenuBarExtra.Section", "MenuBarExtra.Submenu", "MenuBarExtra.Separator",
 ]);
 const JSX_NAMESPACES = ["List", "Grid", "Detail", "Form", "Action", "ActionPanel", "MenuBarExtra"];
