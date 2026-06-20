@@ -174,7 +174,19 @@ export interface UseExecOptions {
   env?: Record<string, string>;
   shell?: boolean | string;
   input?: string;
-  parseOutput?: (args: { stdout: string; stderr: string }) => unknown;
+  // Raycast passes the FULL result to parseOutput (not just stdout/stderr) and lets the extension decide
+  // success/failure — many CLI extensions branch on exitCode/error here (e.g. 1Password's `if (exitCode
+  // != 0) handleErrors(stdout)`). Omitting exitCode made `undefined != 0` always true → valid output was
+  // thrown as an error on every call.
+  parseOutput?: (args: {
+    stdout: string;
+    stderr: string;
+    error?: Error;
+    exitCode: number | null;
+    signal: NodeJS.Signals | null;
+    timedOut: boolean;
+    command: string;
+  }) => unknown;
 }
 export function useExec<T = string>(
   command: string,
@@ -190,10 +202,31 @@ export function useExec<T = string>(
         { cwd: options.cwd, env: options.env ? { ...process.env, ...options.env } : undefined,
           shell: options.shell, maxBuffer: 32 * 1024 * 1024, encoding: "utf8" },
         (err, stdout, stderr) => {
-          if (err) return reject(err);
           const out = typeof stdout === "string" ? stdout : String(stdout);
           const errOut = typeof stderr === "string" ? stderr : String(stderr);
-          resolve((options.parseOutput ? options.parseOutput({ stdout: out, stderr: errOut }) : out) as T);
+          // Match Raycast: hand the full result to parseOutput and let it decide. exitCode is 0 on
+          // success (so `exitCode != 0` is correctly false); a non-zero/spawn error still goes to
+          // parseOutput so the extension's own error handling runs (it often reads stdout on failure).
+          const e = err as (Error & { code?: number | string; signal?: NodeJS.Signals; killed?: boolean }) | null;
+          const exitCode: number | null = e == null ? 0 : typeof e.code === "number" ? e.code : null;
+          if (options.parseOutput) {
+            try {
+              resolve(options.parseOutput({
+                stdout: out,
+                stderr: errOut,
+                error: e ?? undefined,
+                exitCode,
+                signal: e?.signal ?? null,
+                timedOut: e?.killed ?? false,
+                command: [command, ...args].join(" "),
+              }) as T);
+            } catch (perr) {
+              reject(perr); // parseOutput threw (e.g. handleErrors) → surface it as the hook's error
+            }
+            return;
+          }
+          if (e) return reject(e);
+          resolve(out as T);
         },
       );
       if (options.input != null && child.stdin) { child.stdin.write(options.input); child.stdin.end(); }
