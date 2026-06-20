@@ -1915,17 +1915,19 @@ public final class AppController: NSObject, NSApplicationDelegate {
             }
             guard ensureAppleScriptGrant() else { reply(.string("")); return true }
             DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-                var errorDict: NSDictionary?
-                let out = NSAppleScript(source: asSource)?.executeAndReturnError(&errorDict)
+                // osascript subprocess (NOT NSAppleScript) — reliable off-main; NSAppleScript on a
+                // background queue returned empty results + spurious "No error." (no run loop).
+                let r = AppleScriptRunner.run(asSource)
                 DispatchQueue.main.async {
-                    if let errorDict {
-                        let msg = (errorDict[NSAppleScript.errorMessage] as? String) ?? "AppleScript error"
-                        let num = (errorDict[NSAppleScript.errorNumber] as? NSNumber)?.intValue ?? 0
-                        if num == -1743 { self?.presentPermissionHelp(.automation) }
-                        else { self?.palette.showToast("AppleScript: \(msg)") }
-                        reply(.string(""))
+                    if r.exitCode == 0 {
+                        reply(.string(r.output))
                     } else {
-                        reply(.string(out?.stringValue ?? ""))
+                        if r.automationDenied { self?.presentPermissionHelp(.automation) }
+                        else {
+                            let msg = r.stderr.trimmingCharacters(in: .whitespacesAndNewlines)
+                            self?.palette.showToast("AppleScript: \(msg.isEmpty ? "failed" : msg)")
+                        }
+                        reply(.string(""))
                     }
                 }
             }

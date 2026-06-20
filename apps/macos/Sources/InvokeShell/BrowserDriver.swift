@@ -83,19 +83,17 @@ enum BrowserDriver {
   }
 
   private static func run(_ source: String, appName: String, isContent: Bool) throws -> String {
-    var err: NSDictionary?
-    let res = NSAppleScript(source: source)?.executeAndReturnError(&err)
-    if let err {
-      let num = (err[NSAppleScript.errorNumber] as? NSNumber)?.intValue ?? 0
-      let msg = (err[NSAppleScript.errorMessage] as? String) ?? "AppleScript error"
-      if num == -1743 { throw BrowserError.automationDenied("Allow Invoke to control \(appName) in System Settings → Privacy & Security → Automation.") }
+    // osascript subprocess (NOT NSAppleScript) — runs reliably off-main; see AppleScriptRunner.
+    let r = AppleScriptRunner.run(source)
+    if r.exitCode != 0 {
+      if r.automationDenied { throw BrowserError.automationDenied("Allow Invoke to control \(appName) in System Settings → Privacy & Security → Automation.") }
       // Safari/Chromium return an error when JS-from-Apple-Events is off.
-      if isContent && (msg.localizedCaseInsensitiveContains("not allowed") || msg.localizedCaseInsensitiveContains("javascript")) {
+      if isContent && r.jsDisabled {
         throw BrowserError.jsDisabled("Enable \(appName) → Develop/Developer → \u{201C}Allow JavaScript from Apple Events\u{201D}.")
       }
-      throw BrowserError.script(msg)
+      throw BrowserError.script(r.stderr.trimmingCharacters(in: .whitespacesAndNewlines))
     }
-    return res?.stringValue ?? ""
+    return r.output
   }
 
   private static func frontBrowser() throws -> (name: String, family: String) {
@@ -122,4 +120,29 @@ enum BrowserDriver {
     let pos = tabId.flatMap(parseTabId)
     return try run(contentScript(appName: b.name, family: b.family, window: pos?.window, tab: pos?.tab, format: format, cssSelector: cssSelector), appName: b.name, isContent: true)
   }
+}
+
+/// Runs AppleScript via the `/usr/bin/osascript` SUBPROCESS rather than NSAppleScript. NSAppleScript on
+/// a background queue is unreliable (no run loop / Apple-Event thread affinity → empty result + spurious
+/// error), and on the main thread it freezes the whole app while a script blocks (e.g. on the Automation
+/// prompt or app launch). A subprocess has its own run loop, runs safely off-main, and is process-isolated.
+enum AppleScriptRunner {
+    struct Result { let output: String; let exitCode: Int32; let stderr: String
+        var automationDenied: Bool { stderr.contains("-1743") || stderr.localizedCaseInsensitiveContains("not authorized to send apple events") }
+        var jsDisabled: Bool { stderr.localizedCaseInsensitiveContains("not allowed") || (stderr.localizedCaseInsensitiveContains("javascript") && exitCode != 0) }
+    }
+    /// MUST be called off the main thread (it blocks on the subprocess).
+    static func run(_ source: String) -> Result {
+        let proc = Process()
+        proc.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+        proc.arguments = ["-e", source]
+        let outPipe = Pipe(); let errPipe = Pipe()
+        proc.standardOutput = outPipe; proc.standardError = errPipe
+        do { try proc.run() } catch { return Result(output: "", exitCode: -1, stderr: String(describing: error)) }
+        let outData = outPipe.fileHandleForReading.readDataToEndOfFile()
+        let errData = errPipe.fileHandleForReading.readDataToEndOfFile()
+        proc.waitUntilExit()
+        let out = (String(data: outData, encoding: .utf8) ?? "").trimmingCharacters(in: .newlines)
+        return Result(output: out, exitCode: proc.terminationStatus, stderr: String(data: errData, encoding: .utf8) ?? "")
+    }
 }
