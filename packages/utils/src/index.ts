@@ -14,7 +14,7 @@ export interface AsyncState<T> {
   revalidate: () => void;
 }
 
-export function usePromise<T>(fn: () => Promise<T>, deps: unknown[] = []): AsyncState<T> {
+export function usePromise<T>(fn: () => Promise<T>, deps: unknown[] = []): AsyncState<T> & { mutate: MutatePromise<T> } {
   const [data, setData] = useState<T | undefined>(undefined);
   const [isLoading, setLoading] = useState(true);
   const [error, setError] = useState<Error | undefined>(undefined);
@@ -45,7 +45,15 @@ export function usePromise<T>(fn: () => Promise<T>, deps: unknown[] = []): Async
   }, [nonce, ...deps]);
 
   const revalidate = useCallback(() => setNonce((n) => n + 1), []);
-  return { data, isLoading, error, revalidate };
+  // mutate (Raycast parity): run the optional async update, then revalidate. Extensions destructure this
+  // from usePromise (e.g. useFrontmostApp's `mutate: frontmostMutate`); without it, calling it threw
+  // "frontmostMutate is not a function" and aborted the action before it could navigate.
+  const mutate: MutatePromise<T> = async (asyncUpdate, _opts) => {
+    const r = asyncUpdate ? await asyncUpdate : undefined;
+    revalidate();
+    return r as never;
+  };
+  return { data, isLoading, error, revalidate, mutate };
 }
 
 /** Options for useFetch — mirrors the parts of Raycast's @raycast/utils useFetch extensions rely on. */
