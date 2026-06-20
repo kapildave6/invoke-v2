@@ -2202,12 +2202,14 @@ public final class AppController: NSObject, NSApplicationDelegate {
             return .object(["error": .string("[invoke:fs] unknown op \"\(op)\""), "code": .string("EINVAL")])
         }
 
-        // Consent, one prompt per distinct folder. `readdir` consents on the folder itself; every other op
-        // consents on the PARENT folder of its target (you're acting on an item inside that folder).
+        // Consent, one prompt per distinct folder. `readdir` (listing a folder) and `mkdir` (creating a
+        // folder) consent on the TARGET folder itself — so creating ~/Documents/AppData grants only that
+        // subtree, NOT all of ~/Documents (least privilege). Every other op consents on the PARENT folder
+        // of its target (you're acting on an item inside that folder).
         var prompted = Set<String>()
         for t in targets where !t.isEmpty {
-            let dir = (op == "readdir") ? Self.canonicalDir(t)
-                                        : Self.canonicalDir((t as NSString).deletingLastPathComponent)
+            let dir = (op == "readdir" || op == "mkdir") ? Self.canonicalDir(t)
+                                                         : Self.canonicalDir((t as NSString).deletingLastPathComponent)
             if dir.isEmpty || prompted.contains(dir) { continue }
             prompted.insert(dir)
             if isAutoAllowedFSDir(dir, supportPath: supportPath, assetsPath: assetsPath) { continue }
