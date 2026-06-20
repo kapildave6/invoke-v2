@@ -161,6 +161,7 @@ public final class PaletteWindow: NSObject {
 
         searchDropdown.isHidden = true
         searchDropdown.hostContentView = blur // present the popover inside the palette content
+        paletteView.dropdownHostView = blur   // form dropdowns present their popover here too
 
         blur.addSubview(searchField)
         blur.addSubview(argBar)

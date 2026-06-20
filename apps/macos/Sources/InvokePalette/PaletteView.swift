@@ -57,6 +57,12 @@ public final class PaletteView: NSView {
     private var splitSelected = 0
     private var lastSurfaceWasSplit = false
     private var splitEdgeConstraints: [NSLayoutConstraint] = []
+    /// Master (left list) width. Clipboard/snippet rows (thumbnail + title) want the roomy 300; an
+    /// extension's List.Item.Detail list (short labels, detail is the star) gets a narrower master so
+    /// the detail pane gets the Raycast-style ~⅔ share instead of an even split.
+    private var splitMasterWidthConstraint: NSLayoutConstraint!
+    private let splitMasterWideWidth: CGFloat = 300
+    private let splitMasterDetailWidth: CGFloat = 230
 
     /// Single-click a row → select that item index. Double-click → activate it.
     public var onSelect: ((Int) -> Void)?
@@ -197,11 +203,12 @@ public final class PaletteView: NSView {
         splitContainer.addSubview(splitDetailHolder)
         // splitContainer is attached to PaletteView ONLY while a split renders (attachSplit/detachSplit).
         // A permanently-pinned hidden container's edge constraints collapsed the root window's height.
+        splitMasterWidthConstraint = splitLeftScroll.widthAnchor.constraint(equalToConstant: splitMasterWideWidth)
         NSLayoutConstraint.activate([
             splitLeftScroll.topAnchor.constraint(equalTo: splitContainer.topAnchor),
             splitLeftScroll.bottomAnchor.constraint(equalTo: splitContainer.bottomAnchor),
             splitLeftScroll.leadingAnchor.constraint(equalTo: splitContainer.leadingAnchor),
-            splitLeftScroll.widthAnchor.constraint(equalToConstant: 300),
+            splitMasterWidthConstraint,
             splitDivider.leadingAnchor.constraint(equalTo: splitLeftScroll.trailingAnchor),
             splitDivider.topAnchor.constraint(equalTo: splitContainer.topAnchor, constant: 8),
             splitDivider.bottomAnchor.constraint(equalTo: splitContainer.bottomAnchor, constant: -8),
@@ -260,6 +267,14 @@ public final class PaletteView: NSView {
             selectSplitItem(selectedIndex)
             return false
         }
+        // Fast path: a form re-rendered with the SAME structure (e.g. a keystroke firing onChange) →
+        // update field values in place instead of tearing down + rebuilding, so the focused field keeps
+        // its caret/scroll and there's no flicker. Falls through to a full rebuild if structure changed.
+        if !selectionOnly, lastSurfaceWasForm, let form = tree.root.children.first(where: { $0.type == "form" }),
+           reconcileFormInPlace(form) {
+            lastRenderedTree = tree
+            return false
+        }
         stack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         gridCells.removeAll()
         itemCounter = 0
@@ -272,6 +287,7 @@ public final class PaletteView: NSView {
         lastSurfaceWasList = false
         listScroll.isHidden = true; listData = []
         lastSurfaceWasSplit = false
+        lastSurfaceWasForm = false
         detachSplit(); splitData = []; splitItems = []
         if !lastSurfaceWasGrid { gridScroll.isHidden = true; scrollView.isHidden = false; gridData = [] }
         // Dispatch on the top-level surface the extension rendered (PLAN.md §5 component set). The whole
@@ -384,6 +400,9 @@ public final class PaletteView: NSView {
         for (i, node) in items.enumerated() { entries.append(.item(node, i)) }
         splitData = entries
         splitSelected = items.isEmpty ? 0 : max(0, min(selectedIndex, items.count - 1))
+        // Extension List.Item.Detail (markdown/metadata detail) → give the detail the larger share.
+        let isExtensionDetail = items.contains { $0.children.contains { $0.type == "list-item-detail" } }
+        splitMasterWidthConstraint.constant = isExtensionDetail ? splitMasterDetailWidth : splitMasterWideWidth
         scrollView.isHidden = true
         gridScroll.isHidden = true
         listScroll.isHidden = true
@@ -414,11 +433,19 @@ public final class PaletteView: NSView {
         let node = (splitSelected >= 0 && splitSelected < splitItems.count) ? splitItems[splitSelected] : nil
         let detail = detailPane(node)
         splitDetailHolder.addSubview(detail)
+        // An extension List.Item.Detail with markdown fills the pane height (see extensionDetailPane), so
+        // pin its bottom to the holder to give it that height. Clipboard/snippet panes (fixed-height
+        // preview + info block) keep hug-to-content so their layout is unchanged.
+        let lid = node?.children.first(where: { $0.type == "list-item-detail" })
+        let md = lid?.props["markdown"]?.stringValue ?? ""
+        let fillsHeight = !md.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         NSLayoutConstraint.activate([
             detail.leadingAnchor.constraint(equalTo: splitDetailHolder.leadingAnchor),
             detail.trailingAnchor.constraint(equalTo: splitDetailHolder.trailingAnchor),
             detail.topAnchor.constraint(equalTo: splitDetailHolder.topAnchor),
-            detail.bottomAnchor.constraint(lessThanOrEqualTo: splitDetailHolder.bottomAnchor),
+            fillsHeight
+                ? detail.bottomAnchor.constraint(equalTo: splitDetailHolder.bottomAnchor)
+                : detail.bottomAnchor.constraint(lessThanOrEqualTo: splitDetailHolder.bottomAnchor),
         ])
     }
 
@@ -510,11 +537,16 @@ public final class PaletteView: NSView {
         stack.spacing = 8
         stack.translatesAutoresizingMaskIntoConstraints = false
 
+        var hasMarkdown = false
         if let md = node.props["markdown"]?.stringValue, !md.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            hasMarkdown = true
             let scroll = markdownScroll(md)
             stack.addArrangedSubview(scroll)
-            scroll.heightAnchor.constraint(equalToConstant: 160).isActive = true
             scroll.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
+            // Fill the available detail height — Raycast renders List.Item.Detail markdown full-height.
+            // The old fixed 160px box jammed a long cheat sheet into a sliver, leaving the pane empty below.
+            scroll.setContentHuggingPriority(.defaultLow, for: .vertical)
+            scroll.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
         }
         if let meta = node.children.first(where: { $0.type == "metadata" }) {
             for child in meta.children {
@@ -538,7 +570,11 @@ public final class PaletteView: NSView {
             stack.topAnchor.constraint(equalTo: pane.topAnchor, constant: 12),
             stack.leadingAnchor.constraint(equalTo: pane.leadingAnchor, constant: 16),
             stack.trailingAnchor.constraint(equalTo: pane.trailingAnchor, constant: -16),
-            stack.bottomAnchor.constraint(lessThanOrEqualTo: pane.bottomAnchor, constant: -12),
+            // When there's markdown, the stack fills the pane so the scroll can expand; otherwise it
+            // hugs its (metadata-only) content at the top.
+            hasMarkdown
+                ? stack.bottomAnchor.constraint(equalTo: pane.bottomAnchor, constant: -12)
+                : stack.bottomAnchor.constraint(lessThanOrEqualTo: pane.bottomAnchor, constant: -12),
         ])
         return pane
     }
@@ -1138,12 +1174,36 @@ public final class PaletteView: NSView {
     /// Fired live as a Form field's value changes (args: onChange handler id, new value). The shell
     /// invokes the handler in the extension so controlled forms (e.g. live-computed results) update.
     public var onFormFieldChange: ((String, String) -> Void)?
+    /// The palette's content/blur view — where a FormDropdown presents its popover so it floats above
+    /// the form's scroll view (set by PaletteWindow, mirroring SearchBarDropdown.hostContentView).
+    public weak var dropdownHostView: NSView?
+
+    /// Form reconciliation: whether the last surface was a form, the ordered field signature (to detect a
+    /// same-structure re-render), and per-field closures to apply a new node's value in place — so typing
+    /// into a controlled field updates siblings WITHOUT tearing down + rebuilding the form each keystroke
+    /// (which made the caret jump to the bottom and the screen flicker).
+    private var lastSurfaceWasForm = false
+    /// Per-field STRUCTURAL signatures (type/id/title/placeholder/label/description/error-presence +
+    /// dropdown items) — everything EXCEPT live values. The reconcile fast path only fires when this is
+    /// unchanged, so a different form (other extension, a pushed form) or a structural change (dropdown
+    /// items appearing, a validation error) falls back to a full rebuild instead of a false in-place update.
+    private var formStructure: [String] = []
+    private var formApply: [String: (ViewNode) -> Void] = [:]
+    /// Auto-grow: each textarea's height constraint keyed by the text view, so multiple textareas each grow
+    /// with their own content (capped, then scroll).
+    private var formTextareaHeights: [ObjectIdentifier: NSLayoutConstraint] = [:]
+    private let formTextareaMinHeight: CGFloat = 150
+    private let formTextareaMaxHeight: CGFloat = 300
 
     /// The field id of the form field that currently has focus (so a re-render can restore it instead of
     /// jumping back to the first field). For an NSTextField, the first responder is its field editor.
     private func focusedFormFieldId() -> String? {
         guard let fr = window?.firstResponder else { return nil }
-        if let tv = fr as? NSTextView { return formFieldInfo[ObjectIdentifier(tv)]?.id }
+        if let tv = fr as? NSTextView {
+            if let info = formFieldInfo[ObjectIdentifier(tv)] { return info.id }   // a form-textarea (its own responder)
+            if let tf = tv.delegate as? NSTextField { return formFieldInfo[ObjectIdentifier(tf)]?.id } // field editor of an NSTextField
+            return nil
+        }
         if let editor = fr as? NSText, let d = editor.delegate as AnyObject? {
             return formFieldInfo[ObjectIdentifier(d)]?.id
         }
@@ -1153,6 +1213,68 @@ public final class PaletteView: NSView {
         var out: [String: String] = [:]
         for c in formControls { out[c.id] = c.value() }
         return out
+    }
+
+    /// In-place form update for a same-structure re-render: update each controlled field's value from the
+    /// new tree WITHOUT rebuilding the controls, and skip the field being edited so the caret/scroll don't
+    /// jump. Returns false if the structure changed (field added/removed/reordered, or an error appeared/
+    /// cleared) so the caller falls back to a full rebuild. This is what makes typing smooth.
+    private func reconcileFormInPlace(_ form: ViewNode) -> Bool {
+        let fieldTypes: Set<String> = ["form-textfield", "form-textarea", "form-checkbox", "form-dropdown", "form-description", "form-separator"]
+        var fields: [ViewNode] = []
+        func collect(_ n: ViewNode) {
+            if fieldTypes.contains(n.type) { fields.append(n); return }
+            n.children.forEach(collect)
+        }
+        collect(form)
+        guard fields.count == formStructure.count else { return false }
+        for (i, f) in fields.enumerated() where formFieldSignature(f) != formStructure[i] { return false }
+        let focusedId = focusedFormFieldId()
+        for f in fields {
+            let id = f.props["id"]?.stringValue ?? ""
+            if id == focusedId { continue } // don't clobber the field the user is typing into
+            formApply[id]?(f)
+        }
+        return true
+    }
+
+    /// Structural fingerprint of a form field — everything that, if changed, means the form must be rebuilt
+    /// rather than value-reconciled: type, id, the visible labels/placeholder, error presence, and (for a
+    /// dropdown) its item set. Deliberately EXCLUDES `value`/`defaultValue` so a keystroke (value-only
+    /// change) reconciles in place.
+    private func formFieldSignature(_ f: ViewNode) -> String {
+        var parts = [
+            f.type,
+            f.props["id"]?.stringValue ?? "",
+            f.props["title"]?.stringValue ?? "",
+            f.props["placeholder"]?.stringValue ?? "",
+            f.props["label"]?.stringValue ?? "",
+            f.props["text"]?.stringValue ?? "",                       // form-description body
+            (f.props["error"]?.stringValue ?? "").isEmpty ? "" : "e", // error appeared/cleared → rebuild
+        ]
+        if f.type == "form-dropdown" {
+            func items(_ n: ViewNode) {
+                for c in n.children {
+                    if c.type == "form-dropdown-item" {
+                        parts.append("i:" + (c.props["value"]?.stringValue ?? "") + "=" + (c.props["title"]?.stringValue ?? ""))
+                    } else if c.type == "form-dropdown-section" {
+                        parts.append("s:" + (c.props["title"]?.stringValue ?? "")); items(c)
+                    }
+                }
+            }
+            items(f)
+        }
+        return parts.joined(separator: "\u{1}")
+    }
+
+    /// Grow a textarea to fit its content (Raycast-style), clamped between min and max; past the max it
+    /// scrolls. Called as the user types so the box expands smoothly without a rebuild.
+    private func growTextarea(_ tv: NSTextView) {
+        guard let height = formTextareaHeights[ObjectIdentifier(tv)], let lm = tv.layoutManager, let tc = tv.textContainer else { return }
+        lm.ensureLayout(for: tc)
+        let used = lm.usedRect(for: tc).height + tv.textContainerInset.height * 2
+        let clamped = max(formTextareaMinHeight, min(used, formTextareaMaxHeight))
+        if abs(height.constant - clamped) > 0.5 { height.constant = clamped }
     }
 
     /// Cycle focus among the current form's fields (Tab / Shift-Tab). Returns false if there's no form,
@@ -1187,6 +1309,9 @@ public final class PaletteView: NSView {
         formFieldViewById.removeAll()
         firstFormResponder = nil
         formResponderViews.removeAll()
+        formStructure.removeAll()
+        formApply.removeAll()
+        formTextareaHeights.removeAll()
         let form = NSStackView()
         form.orientation = .vertical
         form.alignment = .leading
@@ -1206,6 +1331,7 @@ public final class PaletteView: NSView {
             guard let row = formFieldRow(f) else { continue }
             form.addArrangedSubview(row)
             NSLayoutConstraint.activate([row.widthAnchor.constraint(equalTo: form.widthAnchor)])
+            formStructure.append(formFieldSignature(f)) // for the same-structure reconcile fast path
         }
         let doc = FlippedDocView()
         doc.translatesAutoresizingMaskIntoConstraints = false
@@ -1244,6 +1370,7 @@ public final class PaletteView: NSView {
                 self.window?.makeFirstResponder(v)
             }
         }
+        lastSurfaceWasForm = true // enable the same-structure reconcile fast path for the next re-render
     }
 
     private func formFieldRow(_ f: ViewNode) -> NSView? {
@@ -1270,25 +1397,9 @@ public final class PaletteView: NSView {
             return box
         }
         let id = f.props["id"]?.stringValue ?? ""
-        // Raycast-style row: a fixed-width, right-aligned label gutter on the left and the control
-        // filling the rest on the right (vs. the old stacked, left-aligned layout).
-        let row = NSStackView()
-        row.orientation = .horizontal
-        row.spacing = 12
-        row.distribution = .fill // fixed label gutter; control fills the rest
-        row.translatesAutoresizingMaskIntoConstraints = false
-
-        let label = NSTextField(labelWithString: f.props["title"]?.stringValue ?? "")
-        label.alignment = .right
-        label.font = .systemFont(ofSize: 13)
-        label.textColor = .secondaryLabelColor
-        label.lineBreakMode = .byWordWrapping // wrap long preference titles instead of truncating to "…"
-        label.maximumNumberOfLines = 3
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.setContentHuggingPriority(.required, for: .horizontal)
-        label.setContentCompressionResistancePriority(.required, for: .horizontal)
-        row.addArrangedSubview(label)
-        NSLayoutConstraint.activate([label.widthAnchor.constraint(equalToConstant: 150)])
+        let title = f.props["title"]?.stringValue ?? ""
+        // Vertical alignment of the label gutter vs. the control (used only when a gutter is shown).
+        var rowAlignment: NSLayoutConstraint.Attribute = .firstBaseline
 
         let control: NSView
         switch f.type {
@@ -1298,29 +1409,46 @@ public final class PaletteView: NSView {
             let seeded = f.props["value"]?.stringValue ?? f.props["defaultValue"]?.stringValue ?? ""
             let tf = NSTextField(string: seeded.isEmpty ? (preservedFormValues[id] ?? "") : seeded)
             tf.placeholderString = f.props["placeholder"]?.stringValue
-            tf.bezelStyle = .roundedBezel // rounded bordered field (Raycast)
-            tf.isBezeled = true
+            // Borderless field inside a styled container (matching the dropdown/textarea tokens) instead
+            // of the system rounded bezel, so all form controls share one look.
+            tf.isBezeled = false
+            tf.drawsBackground = false
+            tf.focusRingType = .none
             tf.font = .systemFont(ofSize: 13)
+            tf.textColor = .labelColor
+            tf.translatesAutoresizingMaskIntoConstraints = false
             tf.target = self
             tf.action = #selector(formFieldEnter) // Return in a single-line field submits the form
             // Only Return fires the action — NOT Tab/click-away (end-editing), which would otherwise
             // submit the form and dismiss the palette when moving between fields.
             tf.cell?.sendsActionOnEndEditing = false
+            let box = Self.styledFieldBox()
+            box.addSubview(tf)
+            NSLayoutConstraint.activate([
+                box.heightAnchor.constraint(equalToConstant: 28),
+                tf.leadingAnchor.constraint(equalTo: box.leadingAnchor, constant: 9),
+                tf.trailingAnchor.constraint(equalTo: box.trailingAnchor, constant: -9),
+                tf.centerYAnchor.constraint(equalTo: box.centerYAnchor),
+            ])
             formControls.append((id, { [weak tf] in tf?.stringValue ?? "" }))
             tf.delegate = self // controlTextDidChange → live onChange
             formFieldInfo[ObjectIdentifier(tf)] = (id, f.props["onChange"]?.handlerRef)
             formFieldViewById[id] = tf
             if firstFormResponder == nil { firstFormResponder = tf }
             formResponderViews.append(tf)
-            control = tf
-            row.alignment = .firstBaseline
+            formApply[id] = { [weak tf] n in
+                if let v = n.props["value"]?.stringValue, tf?.stringValue != v { tf?.stringValue = v }
+            }
+            control = box
+            rowAlignment = .centerY
         case "form-textarea":
-            let tv = NSTextView()
+            let tv = PlaceholderTextView()
             tv.string = f.props["value"]?.stringValue ?? f.props["defaultValue"]?.stringValue ?? ""
+            tv.placeholderText = f.props["placeholder"]?.stringValue ?? ""
             tv.isEditable = true
             tv.font = .systemFont(ofSize: 13)
             tv.textColor = .labelColor
-            tv.backgroundColor = NSColor.white.withAlphaComponent(0.08) // subtle dark fill, not stark white
+            tv.backgroundColor = NSColor.controlColor.withAlphaComponent(0.45) // shared field fill token
             tv.insertionPointColor = .labelColor
             // Standard document-view-in-scrollview wiring so text wraps + scrolls correctly.
             tv.isVerticallyResizable = true
@@ -1328,80 +1456,100 @@ public final class PaletteView: NSView {
             tv.autoresizingMask = [.width]
             tv.minSize = NSSize(width: 0, height: 0)
             tv.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
-            tv.textContainerInset = NSSize(width: 4, height: 6)
+            tv.textContainerInset = NSSize(width: 5, height: 7)
             tv.textContainer?.widthTracksTextView = true
             let s = NSScrollView()
-            s.borderType = .lineBorder
+            s.borderType = .noBorder // the layer draws the border (matches the dropdown/textfield tokens)
             s.drawsBackground = false
             s.hasVerticalScroller = true
             s.documentView = tv
             s.wantsLayer = true
-            s.layer?.cornerRadius = 6
+            s.layer?.cornerRadius = 7
+            s.layer?.masksToBounds = true
             s.layer?.borderWidth = 1
-            s.layer?.borderColor = NSColor.separatorColor.cgColor
+            s.layer?.borderColor = NSColor.separatorColor.withAlphaComponent(0.6).cgColor
             s.translatesAutoresizingMaskIntoConstraints = false
-            NSLayoutConstraint.activate([s.heightAnchor.constraint(equalToConstant: 96)])
+            // Moderate default height (Raycast shows a compact box when empty); it auto-grows with
+            // content via growTextarea() as the user types, then scrolls past the cap.
+            let taHeight = s.heightAnchor.constraint(equalToConstant: formTextareaMinHeight)
+            taHeight.isActive = true
+            formTextareaHeights[ObjectIdentifier(tv)] = taHeight
             formControls.append((id, { [weak tv] in tv?.string ?? "" }))
             tv.delegate = self // textDidChange → live onChange
             formFieldInfo[ObjectIdentifier(tv)] = (id, f.props["onChange"]?.handlerRef)
             formFieldViewById[id] = tv
             if firstFormResponder == nil { firstFormResponder = tv }
             formResponderViews.append(tv)
+            formApply[id] = { [weak self, weak tv] n in
+                guard let tv, let v = n.props["value"]?.stringValue, tv.string != v else { return }
+                tv.string = v
+                tv.needsDisplay = true
+                self?.growTextarea(tv)
+            }
+            DispatchQueue.main.async { [weak self, weak tv] in if let tv { self?.growTextarea(tv) } } // size to initial content
             control = s
-            row.alignment = .top
+            rowAlignment = .top
         case "form-checkbox":
             // The checkbox carries its own label; the gutter title is usually empty (Raycast parity).
             let cb = NSButton(checkboxWithTitle: f.props["label"]?.stringValue ?? "", target: nil, action: nil)
             if case .bool(true)? = (f.props["value"] ?? f.props["defaultValue"]) { cb.state = .on } // honor defaultValue
             formControls.append((id, { [weak cb] in cb?.state == .on ? "true" : "false" }))
+            formApply[id] = { [weak cb] n in
+                if case .bool(let b)? = n.props["value"] { cb?.state = b ? .on : .off }
+                else if let s = n.props["value"]?.stringValue { cb?.state = (s == "true") ? .on : .off } // string-encoded bool
+            }
             control = cb
-            row.alignment = .firstBaseline
+            rowAlignment = .firstBaseline
         case "form-dropdown":
-            let pop = NSPopUpButton(frame: .zero, pullsDown: false)
-            // Populate from Form.Dropdown.Item children (possibly grouped in Form.Dropdown.Section).
-            // The visible title is the item's `title`; the SUBMITTED value is its `value`
-            // (carried on the menu item's representedObject), not the title.
-            var values: [String] = []
+            // World-class styled dropdown (FormDropdown) instead of the system NSPopUpButton — a pill
+            // trigger + translucent keyboard-navigable popover, matching the search-bar dropdown.
+            let dd = FormDropdown()
+            dd.hostContentView = dropdownHostView
+            // Flatten Form.Dropdown.Item / Form.Dropdown.Section children into items + (non-selectable)
+            // section-header rows. Visible text is `title`; the SUBMITTED value is `value`.
+            var ddItems: [FormDropdown.Item] = []
             func addItems(_ n: ViewNode) {
                 for c in n.children {
                     if c.type == "form-dropdown-item" {
                         let title = c.props["title"]?.stringValue ?? c.props["value"]?.stringValue ?? ""
-                        let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
-                        item.representedObject = c.props["value"]?.stringValue ?? title
-                        if let iconPath = c.props["iconPath"]?.stringValue, !iconPath.isEmpty {
-                            let img = NSWorkspace.shared.icon(forFile: iconPath)
-                            img.size = NSSize(width: 16, height: 16)
-                            item.image = img
-                        }
-                        pop.menu?.addItem(item)
-                        values.append(item.representedObject as? String ?? title)
+                        ddItems.append(FormDropdown.Item(title: title,
+                                                         value: c.props["value"]?.stringValue ?? title,
+                                                         iconPath: c.props["iconPath"]?.stringValue))
                     } else if c.type == "form-dropdown-section" {
                         if let t = c.props["title"]?.stringValue, !t.isEmpty {
-                            pop.menu?.addItem(.sectionHeader(title: t))
+                            ddItems.append(FormDropdown.Item(title: t, value: "", isHeader: true))
                         }
                         addItems(c)
                     }
                 }
             }
             addItems(f)
-            if let current = (f.props["value"] ?? f.props["defaultValue"])?.stringValue,
-               let idx = values.firstIndex(of: current) {
-                // selectItem(at:) indexes menu items, which may include section headers — find the menu row.
-                if let mi = pop.menu?.items.first(where: { ($0.representedObject as? String) == current }) {
-                    pop.select(mi)
-                }
-                _ = idx
+            // Precedence: a controlled `value` wins; else the user's preserved pick (uncontrolled forms
+            // don't echo changes back, so a non-empty defaultValue like "new" would otherwise revert the
+            // selection every re-render); else `defaultValue`.
+            let current = f.props["value"]?.stringValue
+                ?? preservedFormValues[id]
+                ?? f.props["defaultValue"]?.stringValue
+                ?? ""
+            let onChangeRef = f.props["onChange"]?.handlerRef
+            dd.configure(items: ddItems, selected: current) { [weak self] value in
+                if let h = onChangeRef { self?.onFormFieldChange?(h, value) }
             }
-            formControls.append((id, { [weak pop] in (pop?.selectedItem?.representedObject as? String) ?? pop?.titleOfSelectedItem ?? "" }))
-            control = pop
-            row.alignment = .firstBaseline
+            formControls.append((id, { [weak dd] in dd?.selectedValue ?? "" }))
+            formApply[id] = { [weak dd] n in
+                if let v = n.props["value"]?.stringValue { dd?.setSelected(v) }
+            }
+            control = dd
+            rowAlignment = .centerY
         default:
             return nil
         }
         control.translatesAutoresizingMaskIntoConstraints = false
         control.setContentHuggingPriority(.defaultLow, for: .horizontal) // let the control fill the row
+
         // Inline validation error (Raycast shows it in red under the field). useForm sets this on a
         // failed submit; without rendering it, Save "does nothing" with no feedback.
+        let content: NSView
         if let err = f.props["error"]?.stringValue, !err.isEmpty {
             let col = NSStackView(views: [control])
             col.orientation = .vertical; col.alignment = .leading; col.spacing = 4
@@ -1412,11 +1560,46 @@ public final class PaletteView: NSView {
             col.addArrangedSubview(errLabel)
             control.widthAnchor.constraint(equalTo: col.widthAnchor).isActive = true
             errLabel.widthAnchor.constraint(lessThanOrEqualTo: col.widthAnchor).isActive = true
-            row.addArrangedSubview(col)
+            content = col
         } else {
-            row.addArrangedSubview(control)
+            content = control
         }
+
+        // No title → the control spans the full row width (Raycast renders titleless fields full-width);
+        // otherwise a fixed right-aligned label gutter on the left and the control filling the rest.
+        if title.isEmpty { return content }
+        let row = NSStackView()
+        row.orientation = .horizontal
+        row.spacing = 12
+        row.distribution = .fill
+        row.alignment = rowAlignment
+        row.translatesAutoresizingMaskIntoConstraints = false
+        let label = NSTextField(labelWithString: title)
+        label.alignment = .right
+        label.font = .systemFont(ofSize: 13)
+        label.textColor = .secondaryLabelColor
+        label.lineBreakMode = .byWordWrapping
+        label.maximumNumberOfLines = 3
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.setContentHuggingPriority(.required, for: .horizontal)
+        label.setContentCompressionResistancePriority(.required, for: .horizontal)
+        row.addArrangedSubview(label)
+        label.widthAnchor.constraint(equalToConstant: 150).isActive = true
+        row.addArrangedSubview(content)
         return row
+    }
+
+    /// A styled container for a single-line form field — the shared rounded fill+border token used by the
+    /// dropdown and textarea, so all form controls read as one family (vs. the system rounded bezel).
+    private static func styledFieldBox() -> NSView {
+        let box = NSView()
+        box.translatesAutoresizingMaskIntoConstraints = false
+        box.wantsLayer = true
+        box.layer?.cornerRadius = 7
+        box.layer?.backgroundColor = NSColor.controlColor.withAlphaComponent(0.45).cgColor
+        box.layer?.borderWidth = 1
+        box.layer?.borderColor = NSColor.separatorColor.withAlphaComponent(0.6).cgColor
+        return box
     }
 
     private func appendRows(for node: ViewNode, selectedIndex: Int) {
@@ -1926,6 +2109,7 @@ extension PaletteView: NSTextViewDelegate {
     public func textDidChange(_ notification: Notification) {
         guard let tv = notification.object as? NSTextView, let info = formFieldInfo[ObjectIdentifier(tv)] else { return }
         lastEditedFieldId = info.id
+        growTextarea(tv) // auto-grow as the user types (no-op for non-textarea views)
         if let h = info.onChange { onFormFieldChange?(h, tv.string) }
     }
 }
