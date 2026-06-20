@@ -169,6 +169,9 @@ function devCapabilities(opts: { preferences: Record<string, unknown>; storePath
       case "command.updateMetadata":
         console.log(`  ✎ command.updateMetadata subtitle=${JSON.stringify(params.subtitle)}`);
         return null;
+      case "command.launch":
+        console.log(`  ⇲ launchCommand (dev no-op) name=${JSON.stringify(params.name)} type=${JSON.stringify(params.type)}`);
+        return null;
       case "ai.ask":
         console.log(`  ✦ ai.ask "${String(params.prompt ?? "").slice(0, 60)}" [dev stub]`);
         return `[dev AI stub] ${params.prompt ?? ""}`;

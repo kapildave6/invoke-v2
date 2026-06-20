@@ -64,6 +64,7 @@ export const ALLOWED_RPC: ReadonlySet<string> = new Set([
   // OAuth (PKCE) — host owns PKCE crypto, browser/redirect, and per-extension Keychain token storage.
   "oauth.authorizeRequest", "oauth.authorize", "oauth.setTokens", "oauth.getTokens", "oauth.removeTokens",
   "command.updateMetadata",
+  "command.launch", // launchCommand(): launch another command (same or named extension)
 ]);
 
 export function isAllowedRpcMethod(method: string): boolean {

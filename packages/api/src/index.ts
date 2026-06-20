@@ -664,11 +664,22 @@ export async function showInFinder(path: string): Promise<void> { await rpc("fin
 export async function getSelectedFinderItems(): Promise<{ path: string }[]> {
   return (await rpc("finder.selection", {})) as { path: string }[];
 }
-/** Launch another command. Host wiring pending — throws only if actually called. */
-export async function launchCommand(_options: {
+/** Launch another command — a sibling in the same extension by `name`, or a command in another
+ *  extension via `extensionName`. The host resolves the target, applies its preferences, and runs it
+ *  (foreground for view commands, headless for no-view / `type: "background"`), passing `arguments`
+ *  and `context` (the target reads them via LaunchProps.arguments / launchContext). */
+export async function launchCommand(options: {
   name: string; type?: string; extensionName?: string; ownerOrAuthorName?: string;
   arguments?: Record<string, unknown>; context?: unknown; fallbackText?: string;
-}): Promise<void> { return unsupported("launchCommand"); }
+}): Promise<void> {
+  await rpc("command.launch", {
+    name: options.name,
+    type: options.type ?? LaunchType.UserInitiated,
+    extensionName: options.extensionName ?? null,
+    arguments: options.arguments ?? {},
+    context: options.context ?? {},
+  });
+}
 /** Update the current command's root-list subtitle. Host wiring pending — no-op so callers don't break. */
 export async function updateCommandMetadata(metadata: { subtitle?: string | null }): Promise<void> {
   await rpc("command.updateMetadata", { subtitle: metadata?.subtitle ?? null });

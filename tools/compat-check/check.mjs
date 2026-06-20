@@ -53,6 +53,7 @@ const API_SUPPORTED = new Set([
   "OAuth", "OAuthClient", // OAuth PKCE (M4)
   "Tool", // AI-extension tools (M4) — Tool.Confirmation
   "updateCommandMetadata", // command subtitle updates (now implemented)
+  "launchCommand", // inter-command launch (same/named extension; arguments + launchContext) — implemented
   "MenuBarExtra", // menu-bar command mode (M4)
   "render", "fetch", "WindowManagement", "OpenWithAction", // long-tail (~100%)
 ]);
@@ -60,7 +61,6 @@ const API_SUPPORTED = new Set([
 // `@raycast/api` exports that exist but are stubbed/no-op (run, but degraded).
 const API_DEGRADED = new Map([
   // M1 load-stubs — import succeeds; throw (or no-op) only if actually called
-  ["launchCommand", "loads; throws if called (inter-command launch not wired)"],
   ["BrowserExtension", "loads; throws if called (browser bridge not wired)"],
 ]);
 

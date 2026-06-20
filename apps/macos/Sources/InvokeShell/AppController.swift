@@ -33,6 +33,9 @@ public final class AppController: NSObject, NSApplicationDelegate {
     // Background `interval` commands (Raycast): run headlessly on a timer with launchType "background".
     private struct IntervalSpec { let cmdId, extKey, rel, cname: String; let seconds: TimeInterval; let prefsSpec: [[String: Any]] }
     private var intervalSpecs: [IntervalSpec] = []
+    /// Every discovered extension command by id — everything launchCommand() needs to (re)launch a target.
+    private struct ExtLaunchable { let extKey, extTitle, title, rel, command, mode: String; let prefsSpec: [[String: Any]] }
+    private var extLaunchables: [String: ExtLaunchable] = [:]
     private var intervalTimers: [Timer] = []
     // AI-extension tools (manifest tools[]): per-extension list, used by the @-mode agent loop.
     private struct AIToolSpec { let name, description, rel: String }
@@ -1924,6 +1927,46 @@ public final class AppController: NSObject, NSApplicationDelegate {
             else { cmdSubtitleOverride[currentExtId] = nil }
             if mode == .root { renderRoot(calcCard: nil) }
             return .null
+        case "command.launch":
+            // launchCommand({name, type, extensionName?, arguments?, context?}): resolve a target command
+            // (a sibling by `name`, or one in `extensionName`) and launch it — foreground for a view command,
+            // headless for no-view / type:"background" — passing arguments + launchContext.
+            let launchName = arg("name")?.stringValue ?? ""
+            guard !launchName.isEmpty else { return .null }
+            let launchKind = arg("type")?.stringValue ?? "userInitiated"
+            guard let targetId = resolveLaunchTarget(name: launchName, extensionName: arg("extensionName")?.stringValue),
+                  let target = extLaunchables[targetId] else {
+                palette.showToast("Couldn’t find command “\(launchName)” to launch")
+                return .null
+            }
+            let argsJSON = Self.jsonString(arg("arguments")) ?? "{}"
+            let ctxJSON = Self.jsonString(arg("context")) ?? "{}"
+            // Defer so this RPC's reply is sent before we (possibly) tear the caller's view down.
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                self.launchExtensionCommand(extKey: target.extKey, extTitle: target.extTitle, spec: target.prefsSpec,
+                                            commandTitle: target.title, providedArgs: argsJSON) { prefs, args in
+                    if launchKind == "background" {
+                        self.runBackgroundCommand(id: targetId, title: target.title, entryRelPath: target.rel,
+                                                  command: target.command, preferences: prefs, arguments: args, launchContext: ctxJSON)
+                    } else if target.mode == "no-view" {
+                        self.runNoViewExtension(id: targetId, title: target.title, entryRelPath: target.rel,
+                                                command: target.command, preferences: prefs, arguments: args, launchContext: ctxJSON)
+                    } else if target.mode == "menu-bar" {
+                        let paths = self.extensionPaths(id: targetId, entryRelPath: target.rel)
+                        if self.menuBar?.isShowing(targetId) != true {
+                            self.menuBar?.toggle(cmdId: targetId, extKey: Self.extGrantKey(forId: targetId),
+                                                 entryRelPath: target.rel, command: target.command, preferences: prefs,
+                                                 trusted: AppSettings.shared.isTrusted(Self.extGrantKey(forId: targetId)),
+                                                 assetsPath: paths.assets, supportPath: paths.support)
+                        }
+                    } else {
+                        self.launchExtension(id: targetId, title: target.title, entryRelPath: target.rel,
+                                             command: target.command, preferences: prefs, arguments: args, launchContext: ctxJSON)
+                    }
+                }
+            }
+            return .null
         case "cache.set":
             cacheStorageSet(arg("key")?.stringValue ?? "", value: arg("value")?.stringValue ?? "")
             return .null
@@ -2388,6 +2431,57 @@ public final class AppController: NSObject, NSApplicationDelegate {
         return covered(by: AppSettings.shared.fsReadGrants) || covered(by: AppSettings.shared.fsWriteGrants)
     }
 
+    // MARK: - launchCommand (inter-command launch)
+
+    /// Resolve a launchCommand target to a command id. With `extensionName`, look in that extension
+    /// (imported- or bundled key); otherwise a sibling in the CALLER's extension (currentExtGrantKey).
+    private func resolveLaunchTarget(name: String, extensionName: String?) -> String? {
+        if let ext = extensionName, !ext.isEmpty {
+            for key in ["imported-\(Self.sanitizeKeySegment(ext))", Self.sanitizeKeySegment(ext)] {
+                let id = "ext.\(key).\(name)"
+                if extLaunchables[id] != nil { return id }
+            }
+            return nil
+        }
+        let id = "\(currentExtGrantKey).\(name)" // currentExtGrantKey == "ext.<key>"
+        return extLaunchables[id] != nil ? id : nil
+    }
+
+    /// Serialize a JSONValue arg to a compact JSON string (for INVOKE_ARGUMENTS / INVOKE_LAUNCH_CONTEXT).
+    private static func jsonString(_ value: JSONValue?) -> String? {
+        guard let value, let data = try? JSONEncoder().encode(value) else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
+
+    /// Headless background launch of a command (launchCommand type:"background") — NO palette teardown,
+    /// launchType "background", with fs + capabilities wired. Mirrors runBackgroundInterval but carries
+    /// the caller-supplied arguments + launchContext.
+    private func runBackgroundCommand(id: String, title: String, entryRelPath: String, command: String,
+                                      preferences: String, arguments: String, launchContext: String) {
+        let key = UUID()
+        let h = ExtensionHost()
+        h.onLog = { msg in print("[invoke:bg:\(command)] \(msg)") }
+        let savedId = id
+        h.onCapability = { [weak self] m, p in
+            let prev = self?.currentExtId; self?.currentExtId = savedId
+            defer { self?.currentExtId = prev ?? "" }
+            return self?.handleCapability(m, p) ?? .null
+        }
+        h.onTerminate = { [weak self] in DispatchQueue.main.async { self?.noViewHosts[key] = nil } }
+        h.onSandboxDenial = { [weak self] module in self?.handleSandboxDenial(id: id, title: title, module: module) }
+        noViewHosts[key] = h
+        let paths = extensionPaths(id: id, entryRelPath: entryRelPath)
+        let fsKey = Self.extGrantKey(forId: id)
+        h.onFS = { [weak self] op, params in
+            self?.handleFS(op, params, extKey: fsKey, title: title, supportPath: paths.support, assetsPath: paths.assets)
+                ?? .object(["error": .string("[invoke:fs] host unavailable"), "code": .string("EIO")])
+        }
+        h.launch(repoRoot: repoRoot, entryRelPath: entryRelPath, command: command, preferences: preferences,
+                 mode: "no-view", trusted: AppSettings.shared.isTrusted(fsKey),
+                 assetsPath: paths.assets, supportPath: paths.support, arguments: arguments,
+                 launchType: "background", launchContext: launchContext)
+    }
+
     /// A macOS TCC denial we can't fix in-app (Full Disk Access / Automation) — offer a one-click jump
     /// to the exact System Settings pane instead of a dead-end toast. Throttled so a burst of failures
     /// (e.g. the several useSQL queries one search fires) collapses into a single prompt.
@@ -2557,6 +2651,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private func discoverExtensionCommands() -> [RootCommand] {
         let fm = FileManager.default
         var out: [RootCommand] = []
+        extLaunchables.removeAll() // rebuilt below so launchCommand() resolves only currently-present commands
         for root in ["examples", "imported"] {
             let rootDir = repoRoot + "/" + root
             guard let names = try? fm.contentsOfDirectory(atPath: rootDir) else { continue }
@@ -2621,6 +2716,9 @@ public final class AppController: NSObject, NSApplicationDelegate {
                     let iconPath = resolveIcon(c["icon"]) ?? extIconPath
                     // Raycast command arguments (collected before the command runs; distinct from prefs).
                     let argSpec = (c["arguments"] as? [[String: Any]]) ?? []
+                    // Record every command so launchCommand() can resolve + (re)launch it later.
+                    extLaunchables[cmdId] = ExtLaunchable(extKey: extKey, extTitle: title, title: ctitle,
+                                                          rel: rel, command: cname, mode: cmode, prefsSpec: prefsSpec)
                     // Background `interval` (e.g. "10m"): schedule a headless run on a timer — ONLY for
                     // no-view commands. A menu-bar/view command run as no-view would call its React
                     // component as a plain function → "useState of null". (Menu-bar refresh, when toggled
@@ -2790,7 +2888,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         return (assets, support)
     }
 
-    private func launchExtension(id: String, title: String, entryRelPath: String, command: String, preferences: String, arguments: String = "{}") {
+    private func launchExtension(id: String, title: String, entryRelPath: String, command: String, preferences: String, arguments: String = "{}", launchContext: String = "{}") {
         teardownExtension()
         palette.clearArguments() // leaving the root list for the extension view — drop argument chips
         extDropdownMountSig = ""; extDropdownValue = nil // re-fire engine dropdown onChange-on-mount; forget last pick
@@ -2828,7 +2926,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         palette.setAssetsPath(paths.assets) // resolve the extension's relative image sources (icons, grid thumbs)
         h.launch(repoRoot: repoRoot, entryRelPath: entryRelPath, command: command, preferences: preferences,
                  trusted: AppSettings.shared.isTrusted(Self.extGrantKey(forId: id)),
-                 assetsPath: paths.assets, supportPath: paths.support, arguments: arguments)
+                 assetsPath: paths.assets, supportPath: paths.support, arguments: arguments, launchContext: launchContext)
     }
 
     /// Running no-view extension processes, keyed so each can remove itself on exit (no retain cycle:
@@ -2839,7 +2937,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     /// export as a function; its host capabilities (runAppleScript, showHUD, clipboard, …) are fulfilled
     /// over RPC, and the process exits when the action finishes. captureTarget() first so AppleScript /
     /// paste hit the app that was frontmost before Invoke was summoned.
-    private func runNoViewExtension(id: String, title: String, entryRelPath: String, command: String, preferences: String, arguments: String = "{}") {
+    private func runNoViewExtension(id: String, title: String, entryRelPath: String, command: String, preferences: String, arguments: String = "{}", launchContext: String = "{}") {
         frecency.bump("cmd:\(id)")
         captureTarget()
         afterLaunch() // an action command: tear the palette down first; the action runs in the background.
@@ -2866,7 +2964,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         }
         h.launch(repoRoot: repoRoot, entryRelPath: entryRelPath, command: command, preferences: preferences,
                  mode: "no-view", trusted: AppSettings.shared.isTrusted(Self.extGrantKey(forId: id)),
-                 assetsPath: paths.assets, supportPath: paths.support, arguments: arguments)
+                 assetsPath: paths.assets, supportPath: paths.support, arguments: arguments, launchContext: launchContext)
     }
 
     // MARK: - Background interval commands
