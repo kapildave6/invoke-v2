@@ -1857,6 +1857,32 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 }
             }
             return true
+        case "browser.getTabs":
+            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+                let result: JSONValue
+                do {
+                    let tabs = try BrowserDriver.getTabs()
+                    result = .array(tabs.map { t in .object([
+                        "id": .string(t.id), "url": .string(t.url), "title": .string(t.title), "active": .bool(t.active),
+                    ]) })
+                } catch {
+                    DispatchQueue.main.async { self?.showBrowserError(error) }
+                    result = .array([])
+                }
+                DispatchQueue.main.async { reply(result) }
+            }
+            return true
+        case "browser.getContent":
+            let tabId = arg("tabId")?.stringValue
+            let format = arg("format")?.stringValue ?? "text"
+            let css = arg("cssSelector")?.stringValue
+            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+                let result: JSONValue
+                do { result = .string(try BrowserDriver.getContent(tabId: tabId, format: format, cssSelector: css)) }
+                catch { DispatchQueue.main.async { self?.showBrowserError(error) }; result = .string("") }
+                DispatchQueue.main.async { reply(result) }
+            }
+            return true
         case "oauth.authorize":
             // Open the provider's authorize URL in the browser; resolve when the invoke://oauth-callback
             // redirect arrives with a matching state (captured by openDeeplink → resolveOAuthCallback).
@@ -1875,6 +1901,20 @@ public final class AppController: NSObject, NSApplicationDelegate {
         default:
             return false
         }
+    }
+
+    /// Surface a BrowserDriver failure with the specific actionable message (automation TCC, JS toggle,
+    /// no browser, or a raw script error).
+    private func showBrowserError(_ error: Error) {
+        let msg: String
+        switch error {
+        case BrowserError.noBrowser: msg = "No supported browser is running. Open Chrome, Brave, Arc, Edge, or Safari."
+        case BrowserError.automationDenied(let m): msg = m
+        case BrowserError.jsDisabled(let m): msg = m
+        case BrowserError.script(let m): msg = "Browser: \(m)"
+        default: msg = "Browser: \(error.localizedDescription)"
+        }
+        palette.showToast(msg)
     }
 
     /// Pending OAuth authorize calls, keyed by `state`; resolved by the invoke://oauth-callback redirect.
