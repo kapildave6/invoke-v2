@@ -1883,6 +1883,35 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 DispatchQueue.main.async { reply(result) }
             }
             return true
+        case "runAppleScript":
+            // Raycast's runAppleScript. Runs OFF the main thread — NSAppleScript can block a long time
+            // (resolving/launching the target app, or waiting on the macOS Automation prompt), which on the
+            // main thread froze the whole UI. Gated: `do shell script` refused; default-deny per-extension
+            // consent; macOS TCC still prompts on first automation of another app. (Script text not logged.)
+            let asSource = arg("source")?.stringValue ?? ""
+            guard !asSource.isEmpty else { reply(.string("")); return true }
+            if asSource.range(of: "do[ \\t]+shell[ \\t]+script", options: .regularExpression) != nil {
+                palette.showToast("Blocked: “\(currentExtTitle)” tried to run a shell command via AppleScript")
+                print("[invoke:ext] runAppleScript blocked (do shell script) from \(currentExtId)")
+                reply(.string("")); return true
+            }
+            guard ensureAppleScriptGrant() else { reply(.string("")); return true }
+            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+                var errorDict: NSDictionary?
+                let out = NSAppleScript(source: asSource)?.executeAndReturnError(&errorDict)
+                DispatchQueue.main.async {
+                    if let errorDict {
+                        let msg = (errorDict[NSAppleScript.errorMessage] as? String) ?? "AppleScript error"
+                        let num = (errorDict[NSAppleScript.errorNumber] as? NSNumber)?.intValue ?? 0
+                        if num == -1743 { self?.presentPermissionHelp(.automation) }
+                        else { self?.palette.showToast("AppleScript: \(msg)") }
+                        reply(.string(""))
+                    } else {
+                        reply(.string(out?.stringValue ?? ""))
+                    }
+                }
+            }
+            return true
         case "oauth.authorize":
             // Open the provider's authorize URL in the browser; resolve when the invoke://oauth-callback
             // redirect arrives with a matching state (captured by openDeeplink → resolveOAuthCallback).
@@ -2008,36 +2037,9 @@ public final class AppController: NSObject, NSApplicationDelegate {
             return .null
         case "localStorage.allItems":
             return .object(extStorageAll().mapValues { JSONValue.string($0) })
-        case "runAppleScript":
-            // Powerful OS-automation capability (Raycast's runAppleScript). Gated several ways because
-            // the host runs UNREVIEWED imported extensions and is not itself OS-sandboxed:
-            //   • `do shell script` is an arbitrary-command escape (runs /bin/sh in our process) — refuse it.
-            //   • default-deny per-extension consent (a blocking dialog naming the extension) before running.
-            //   • macOS TCC still prompts for automating another app (e.g. Notes) on first use.
-            // The script text isn't logged (may contain user content).
-            let source = arg("source")?.stringValue ?? ""
-            guard !source.isEmpty else { return .string("") }
-            if source.range(of: "do[ \\t]+shell[ \\t]+script", options: .regularExpression) != nil {
-                palette.showToast("Blocked: “\(currentExtTitle)” tried to run a shell command via AppleScript")
-                print("[invoke:ext] runAppleScript blocked (do shell script) from \(currentExtId)")
-                return .string("")
-            }
-            guard ensureAppleScriptGrant() else { return .string("") }
-            var errorDict: NSDictionary?
-            let result = NSAppleScript(source: source)?.executeAndReturnError(&errorDict)
-            if let errorDict {
-                let msg = (errorDict[NSAppleScript.errorMessage] as? String) ?? "AppleScript error"
-                let num = (errorDict[NSAppleScript.errorNumber] as? NSNumber)?.intValue ?? 0
-                // -1743 errAEEventNotPermitted: macOS TCC Automation isn't granted for the target app.
-                // Offer to open the right settings pane rather than leaving a dead-end toast.
-                if num == -1743 {
-                    presentPermissionHelp(.automation)
-                } else {
-                    palette.showToast("AppleScript: \(msg)")
-                }
-                return .string("")
-            }
-            return .string(result?.stringValue ?? "")
+        // NOTE: runAppleScript moved to handleAsyncCapability — NSAppleScript on the MAIN thread froze the
+        // whole app whenever a script blocked (e.g. a browser-scripting extension stalling on the macOS
+        // Automation prompt / app launch). It now runs off-main and replies async.
         case "executeSQL":
             // Read-only SQLite capability (Raycast's useSQL/executeSQL). The sandboxed child has no fs;
             // the host opens the file and is NOT itself OS-sandboxed, so reading an arbitrary SQLite path
