@@ -1,4 +1,3 @@
-#if canImport(XCTest)
 import XCTest
 @testable import InvokeIPC
 @testable import InvokeRenderer
@@ -37,4 +36,3 @@ final class FrameCodecTests: XCTestCase {
         XCTAssertEqual(tree.root.children.first?.children.first?.title, "Apple")
     }
 }
-#endif

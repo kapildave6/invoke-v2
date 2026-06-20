@@ -1,27 +1,34 @@
-import Testing
+import XCTest
 @testable import InvokeShell
 
-@Suite struct BrowserDriverTests {
-  @Test func supportedBrowserPrefersFrontmost() {
-    let b = BrowserDriver.supportedBrowser(frontmost: "com.brave.Browser", running: ["com.apple.Safari", "com.brave.Browser"])
-    #expect(b?.name == "Brave Browser")
-    #expect(b?.family == "chromium")
-  }
-  @Test func supportedBrowserFallsBackByPreference() {
-    let b = BrowserDriver.supportedBrowser(frontmost: "com.apple.Finder", running: ["com.apple.Safari", "com.google.Chrome"])
-    #expect(b?.name == "Google Chrome") // Chrome outranks Safari
-  }
-  @Test func noSupportedBrowser() {
-    #expect(BrowserDriver.supportedBrowser(frontmost: "com.apple.Finder", running: ["com.apple.Finder"]) == nil)
-  }
-  @Test func parseTabId() {
-    #expect(BrowserDriver.parseTabId("2:5")?.window == 2)
-    #expect(BrowserDriver.parseTabId("2:5")?.tab == 5)
-    #expect(BrowserDriver.parseTabId("garbage") == nil)
-  }
-  @Test func contentScriptEscapesAndTargets() {
-    let s = BrowserDriver.contentScript(appName: "Google Chrome", family: "chromium", window: 1, tab: 3, format: "text", cssSelector: nil)
-    #expect(s.contains("tab 3 of window 1"))
-    #expect(s.contains("execute javascript"))
-  }
+// Pure-helper unit tests for BrowserDriver. XCTest (matching InvokeIPCTests) — these run under
+// `swift test` on a full Xcode/CI toolchain. The AppleScript exec (getTabs/getContent) needs a live
+// browser + Automation permission and is verified live, not here.
+final class BrowserDriverTests: XCTestCase {
+    func testSupportedBrowserPrefersFrontmost() {
+        let b = BrowserDriver.supportedBrowser(frontmost: "com.brave.Browser", running: ["com.apple.Safari", "com.brave.Browser"])
+        XCTAssertEqual(b?.name, "Brave Browser")
+        XCTAssertEqual(b?.family, "chromium")
+    }
+    func testSupportedBrowserFallsBackByPreference() {
+        let b = BrowserDriver.supportedBrowser(frontmost: "com.apple.Finder", running: ["com.apple.Safari", "com.google.Chrome"])
+        XCTAssertEqual(b?.name, "Google Chrome") // Chrome outranks Safari in preference order
+    }
+    func testNoSupportedBrowser() {
+        XCTAssertNil(BrowserDriver.supportedBrowser(frontmost: "com.apple.Finder", running: ["com.apple.Finder"]))
+    }
+    func testParseTabId() {
+        XCTAssertEqual(BrowserDriver.parseTabId("2:5")?.window, 2)
+        XCTAssertEqual(BrowserDriver.parseTabId("2:5")?.tab, 5)
+        XCTAssertNil(BrowserDriver.parseTabId("garbage"))
+    }
+    func testContentScriptTargetsTabAndUsesExecuteJavascript() {
+        let s = BrowserDriver.contentScript(appName: "Google Chrome", family: "chromium", window: 1, tab: 3, format: "text", cssSelector: nil)
+        XCTAssertTrue(s.contains("tab 3 of window 1"))
+        XCTAssertTrue(s.contains("execute javascript"))
+    }
+    func testContentScriptSafariUsesDoJavaScript() {
+        let s = BrowserDriver.contentScript(appName: "Safari", family: "safari", window: 1, tab: 1, format: "html", cssSelector: nil)
+        XCTAssertTrue(s.contains("do JavaScript"))
+    }
 }
