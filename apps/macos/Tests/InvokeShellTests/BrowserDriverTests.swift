@@ -31,4 +31,14 @@ final class BrowserDriverTests: XCTestCase {
         let s = BrowserDriver.contentScript(appName: "Safari", family: "safari", window: 1, tab: 1, format: "html", cssSelector: nil)
         XCTAssertTrue(s.contains("do JavaScript"))
     }
+    func testContentScriptDefaultChromiumUsesActiveTab() {
+        let s = BrowserDriver.contentScript(appName: "Google Chrome", family: "chromium", window: nil, tab: nil, format: "text", cssSelector: nil)
+        XCTAssertTrue(s.contains("active tab of window 1"), "Expected 'active tab of window 1', got: \(s)")
+        XCTAssertFalse(s.contains("tab 1 of window 1"), "Should not fall back to explicit tab 1")
+    }
+    func testContentScriptDefaultSafariUsesCurrentTab() {
+        let s = BrowserDriver.contentScript(appName: "Safari", family: "safari", window: nil, tab: nil, format: "text", cssSelector: nil)
+        XCTAssertTrue(s.contains("current tab of window 1"), "Expected 'current tab of window 1', got: \(s)")
+        XCTAssertFalse(s.contains("tab 1 of window 1"), "Should not fall back to explicit tab 1")
+    }
 }

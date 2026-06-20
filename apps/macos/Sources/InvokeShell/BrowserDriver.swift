@@ -72,12 +72,14 @@ enum BrowserDriver {
     end tell
     """
   }
-  static func contentScript(appName: String, family: String, window: Int, tab: Int, format: String, cssSelector: String?) -> String {
+  static func contentScript(appName: String, family: String, window: Int?, tab: Int?, format: String, cssSelector: String?) -> String {
     let js = contentJS(format: format, cssSelector: cssSelector)
     if family == "safari" {
-      return "tell application \"\(appName)\" to do JavaScript \"\(escapeJS(js))\" in tab \(tab) of window \(window)"
+      let target = (window != nil && tab != nil) ? "tab \(tab!) of window \(window!)" : "current tab of window 1"
+      return "tell application \"\(appName)\" to do JavaScript \"\(escapeJS(js))\" in \(target)"
     }
-    return "tell application \"\(appName)\" to execute javascript \"\(escapeJS(js))\" in tab \(tab) of window \(window)"
+    let target = (window != nil && tab != nil) ? "tab \(tab!) of window \(window!)" : "active tab of window 1"
+    return "tell application \"\(appName)\" to execute javascript \"\(escapeJS(js))\" in \(target)"
   }
 
   private static func run(_ source: String, appName: String, isContent: Bool) throws -> String {
@@ -117,7 +119,7 @@ enum BrowserDriver {
   }
   static func getContent(tabId: String?, format: String, cssSelector: String?) throws -> String {
     let b = try frontBrowser()
-    let pos = tabId.flatMap(parseTabId) ?? (1, 1) // default: front window, first/active tab
-    return try run(contentScript(appName: b.name, family: b.family, window: pos.window, tab: pos.tab, format: format, cssSelector: cssSelector), appName: b.name, isContent: true)
+    let pos = tabId.flatMap(parseTabId)
+    return try run(contentScript(appName: b.name, family: b.family, window: pos?.window, tab: pos?.tab, format: format, cssSelector: cssSelector), appName: b.name, isContent: true)
   }
 }
