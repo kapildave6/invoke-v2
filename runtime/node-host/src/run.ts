@@ -172,6 +172,22 @@ function devCapabilities(opts: { preferences: Record<string, unknown>; storePath
       case "command.launch":
         console.log(`  ⇲ launchCommand (dev no-op) name=${JSON.stringify(params.name)} type=${JSON.stringify(params.type)}`);
         return null;
+      case "quicklink.create":
+        console.log(`  + quicklink (dev) ${JSON.stringify(params.name ?? params.link)}`);
+        return null;
+      case "snippet.create":
+        console.log(`  + snippet (dev) ${JSON.stringify(params.name)}`);
+        return null;
+      case "clipboard.read":
+        return { text: "", file: undefined, html: undefined };
+      case "quicklook.preview":
+        console.log(`  👁 quicklook (dev) ${JSON.stringify(params.path)}`);
+        return null;
+      case "open.with":
+        console.log(`  ⇱ open-with (dev) ${JSON.stringify(params.path)}`);
+        return null;
+      case "date.pick":
+        return new Date().toISOString();
       case "ai.ask":
         console.log(`  ✦ ai.ask "${String(params.prompt ?? "").slice(0, 60)}" [dev stub]`);
         return `[dev AI stub] ${params.prompt ?? ""}`;

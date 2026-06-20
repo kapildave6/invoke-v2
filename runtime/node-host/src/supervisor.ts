@@ -65,6 +65,13 @@ export const ALLOWED_RPC: ReadonlySet<string> = new Set([
   "oauth.authorizeRequest", "oauth.authorize", "oauth.setTokens", "oauth.getTokens", "oauth.removeTokens",
   "command.updateMetadata",
   "command.launch", // launchCommand(): launch another command (same or named extension)
+  // Real implementations of previously-degraded Action/Clipboard members:
+  "quicklink.create",   // Action.CreateQuicklink → Invoke quicklink store
+  "snippet.create",     // Action.CreateSnippet → Invoke snippet store
+  "clipboard.read",     // Clipboard.read() → { text, file, html }
+  "quicklook.preview",  // Action.ToggleQuickLook → macOS Quick Look (qlmanage)
+  "open.with",          // Action.OpenWith → choose an app and open
+  "date.pick",          // Action.PickDate → native NSDatePicker, returns the chosen date
 ]);
 
 export function isAllowedRpcMethod(method: string): boolean {

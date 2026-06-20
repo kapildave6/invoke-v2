@@ -2142,6 +2142,62 @@ public final class AppController: NSObject, NSApplicationDelegate {
             guard !path.isEmpty, FileManager.default.fileExists(atPath: path) else { return .null }
             NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
             return .null
+        case "quicklink.create":
+            // Action.CreateQuicklink → add to Invoke's quicklink store (real, persisted).
+            let qlLink = arg("link")?.stringValue ?? ""
+            let qlName = arg("name")?.stringValue ?? ""
+            guard !qlLink.isEmpty else { palette.showToast("Quicklink needs a link"); return .null }
+            _ = quicklinkStore.add(Quicklink(name: qlName.isEmpty ? qlLink : qlName, link: qlLink))
+            hud.show("Added quicklink “\(qlName.isEmpty ? qlLink : qlName)”")
+            return .null
+        case "snippet.create":
+            // Action.CreateSnippet → add to Invoke's snippet store (real, persisted).
+            let snipText = arg("text")?.stringValue ?? ""
+            let snipName = arg("name")?.stringValue ?? ""
+            guard !snipText.isEmpty else { palette.showToast("Snippet needs text"); return .null }
+            _ = snippetStore.add(Snippet(name: snipName.isEmpty ? String(snipText.prefix(40)) : snipName,
+                                         keyword: arg("keyword")?.stringValue ?? "", content: snipText))
+            hud.show("Added snippet “\(snipName.isEmpty ? String(snipText.prefix(24)) : snipName)”")
+            return .null
+        case "clipboard.read":
+            // Clipboard.read() → { text, file, html } from the general pasteboard.
+            let pb = NSPasteboard.general
+            var cb: [String: JSONValue] = [:]
+            if let t = pb.string(forType: .string) { cb["text"] = .string(t) }
+            if let urls = pb.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL],
+               let f = urls.first { cb["file"] = .string(f.path) }
+            if let html = pb.string(forType: .html) { cb["html"] = .string(html) }
+            return .object(cb)
+        case "quicklook.preview":
+            // Action.ToggleQuickLook → real macOS Quick Look via qlmanage -p.
+            let qlPath = ((arg("path")?.stringValue ?? "") as NSString).expandingTildeInPath
+            guard !qlPath.isEmpty, FileManager.default.fileExists(atPath: qlPath) else { return .null }
+            let ql = Process()
+            ql.executableURL = URL(fileURLWithPath: "/usr/bin/qlmanage")
+            ql.arguments = ["-p", qlPath]
+            ql.standardOutput = FileHandle.nullDevice
+            ql.standardError = FileHandle.nullDevice
+            try? ql.run()
+            return .null
+        case "open.with":
+            // Action.OpenWith → choose an application that can open the file, then open with it.
+            let owPath = ((arg("path")?.stringValue ?? arg("target")?.stringValue ?? "") as NSString).expandingTildeInPath
+            guard !owPath.isEmpty, FileManager.default.fileExists(atPath: owPath) else { return .null }
+            openWithChooser(path: owPath)
+            return .null
+        case "date.pick":
+            // Action.PickDate → native date picker; returns the chosen date as an ISO-8601 string (or null).
+            let dp = NSDatePicker(frame: NSRect(x: 0, y: 0, width: 220, height: 148))
+            dp.datePickerStyle = .clockAndCalendar
+            dp.datePickerElements = [.yearMonthDay]
+            dp.dateValue = Date()
+            let dpAlert = NSAlert()
+            dpAlert.messageText = arg("title")?.stringValue ?? "Pick a date"
+            dpAlert.accessoryView = dp
+            dpAlert.addButton(withTitle: "Select")
+            dpAlert.addButton(withTitle: "Cancel")
+            guard dpAlert.runModal() == .alertFirstButtonReturn else { return .null }
+            return .string(ISO8601DateFormatter().string(from: dp.dateValue))
         case "finder.selection":
             // Reuse the gated AppleScript path: get Finder's selection as POSIX paths (newline-joined).
             guard ensureAppleScriptGrant() else { return .array([]) }
@@ -2735,6 +2791,34 @@ public final class AppController: NSObject, NSApplicationDelegate {
         let pb = NSPasteboard.general
         pb.clearContents()
         pb.setString(s, forType: .string)
+    }
+
+    /// Action.OpenWith: list the apps that can open `path`, let the user pick one (icons in a popup), and
+    /// open the file with it. Falls back to the default app if none are found.
+    private func openWithChooser(path: String) {
+        let fileURL = URL(fileURLWithPath: path)
+        var apps: [URL] = []
+        if #available(macOS 12.0, *) { apps = NSWorkspace.shared.urlsForApplications(toOpen: fileURL) }
+        guard !apps.isEmpty else { NSWorkspace.shared.open(fileURL); return }
+        let alert = NSAlert()
+        alert.messageText = "Open “\((path as NSString).lastPathComponent)” with:"
+        let popup = NSPopUpButton(frame: NSRect(x: 0, y: 0, width: 300, height: 26))
+        for app in apps {
+            let item = NSMenuItem(title: app.deletingPathExtension().lastPathComponent, action: nil, keyEquivalent: "")
+            let icon = NSWorkspace.shared.icon(forFile: app.path); icon.size = NSSize(width: 16, height: 16)
+            item.image = icon
+            item.representedObject = app
+            popup.menu?.addItem(item)
+        }
+        alert.accessoryView = popup
+        alert.addButton(withTitle: "Open")
+        alert.addButton(withTitle: "Cancel")
+        guard alert.runModal() == .alertFirstButtonReturn, let app = popup.selectedItem?.representedObject as? URL else { return }
+        if #available(macOS 11.0, *) {
+            NSWorkspace.shared.open([fileURL], withApplicationAt: app, configuration: NSWorkspace.OpenConfiguration())
+        } else {
+            NSWorkspace.shared.open(fileURL)
+        }
     }
 
     private func openTarget(_ target: String) {

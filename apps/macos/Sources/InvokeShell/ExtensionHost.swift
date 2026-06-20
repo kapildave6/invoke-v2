@@ -75,6 +75,7 @@ public final class ExtensionHost {
         "oauth.authorizeRequest", "oauth.authorize", "oauth.setTokens", "oauth.getTokens", "oauth.removeTokens",
         "command.updateMetadata",
         "command.launch", // launchCommand(): launch another command (same or named extension)
+        "quicklink.create", "snippet.create", "clipboard.read", "quicklook.preview", "open.with", "date.pick",
     ]
 
     private var pid: pid_t = -1

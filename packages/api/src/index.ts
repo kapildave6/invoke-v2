@@ -284,31 +284,37 @@ Action.Trash = (props) => {
     onAction: () => { void trash((paths ?? []) as string | string[]); onTrashed?.(); } });
 };
 Action.OpenWith = (props) => {
-  // No app-picker panel yet — degrade to opening the path with the default application.
+  // Host shows an app chooser (apps that can open the file) and opens with the pick.
   const { path, onOpen, ...rest } = props as { path?: string; onOpen?: () => void } & Record<string, unknown>;
-  return createElement(T.Action, { variant: "open", title: "Open With", target: path, onAction: onOpen, ...rest });
+  return createElement(T.Action, { variant: "default", title: "Open With", ...rest,
+    onAction: () => { void rpc("open.with", { path: String(path ?? "") }); onOpen?.(); } });
 };
 Action.ToggleQuickLook = (props) => {
-  // No Quick Look panel yet — degrade to revealing the item in Finder (so it never crashes the panel).
+  // Real macOS Quick Look preview (host runs qlmanage -p).
   const { path, ...rest } = props as { path?: string } & Record<string, unknown>;
   return createElement(T.Action, { variant: "default", title: "Quick Look", icon: "eye", ...rest,
-    onAction: () => { if (path) void showInFinder(String(path)); } });
+    onAction: () => { void rpc("quicklook.preview", { path: String(path ?? "") }); } });
 };
 Action.CreateQuicklink = (props) => {
-  // Programmatic quicklink creation isn't wired to the host store yet — acknowledge instead of crashing.
-  const { onCreate, ...rest } = props as { onCreate?: () => void } & Record<string, unknown>;
-  return createElement(T.Action, { variant: "default", title: "Create Quicklink", ...rest,
-    onAction: () => { void showToast({ title: "Creating quicklinks isn't supported yet" }); onCreate?.(); } });
+  // Adds to Invoke's quicklink store (persisted).
+  const { quicklink, onCreate, ...rest } = props as { quicklink?: { name?: string; link?: string }; onCreate?: () => void } & Record<string, unknown>;
+  return createElement(T.Action, { variant: "default", title: "Create Quicklink", icon: "link", ...rest,
+    onAction: () => { void rpc("quicklink.create", { name: quicklink?.name ?? "", link: quicklink?.link ?? "" }); onCreate?.(); } });
 };
 Action.CreateSnippet = (props) => {
-  const { onCreate, ...rest } = props as { onCreate?: () => void } & Record<string, unknown>;
+  // Adds to Invoke's snippet store (persisted).
+  const { snippet, onCreate, ...rest } = props as { snippet?: { name?: string; text?: string; keyword?: string }; onCreate?: () => void } & Record<string, unknown>;
   return createElement(T.Action, { variant: "default", title: "Create Snippet", ...rest,
-    onAction: () => { void showToast({ title: "Creating snippets isn't supported yet" }); onCreate?.(); } });
+    onAction: () => { void rpc("snippet.create", { name: snippet?.name ?? "", text: snippet?.text ?? "", keyword: snippet?.keyword ?? "" }); onCreate?.(); } });
 };
 Action.PickDate = (props) => {
-  // No inline date popover yet — render a benign action so the panel doesn't crash on <Action.PickDate>.
-  const { ...rest } = props as Record<string, unknown>;
-  return createElement(T.Action, { variant: "default", title: "Pick Date", icon: "calendar", ...rest });
+  // Opens a native date picker (host) and calls onChange with the chosen Date (or null if cancelled).
+  const { onChange, title, ...rest } = props as { onChange?: (d: Date | null) => void; title?: string } & Record<string, unknown>;
+  return createElement(T.Action, { variant: "default", title: title ?? "Pick Date", icon: "calendar", ...rest,
+    onAction: async () => {
+      const iso = (await rpc("date.pick", { title: title ?? "Pick a date" })) as string | null;
+      onChange?.(iso ? new Date(iso) : null);
+    } });
 };
 
 type ActionPanelType = ReturnType<typeof host> & {
