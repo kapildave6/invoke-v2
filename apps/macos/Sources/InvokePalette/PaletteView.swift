@@ -36,6 +36,14 @@ public final class PaletteView: NSView {
     private var gridThumbHeight: CGFloat = 72
     private var itemCounter = 0
     private var selectedRowView: NSView?
+    // Virtualized list (Raycast parity): an NSTableView builds/recycles only VISIBLE rows, so a huge list
+    // is instant and arrow-nav doesn't rebuild every row (the stack path rebuilt all rows on each render).
+    private let listScroll = NSScrollView()
+    private let listTable = NSTableView()
+    private enum ListEntry { case header(String); case item(ViewNode, Int); case card([String: JSONValue], Int) }
+    private var listData: [ListEntry] = []
+    private var listSelected = 0
+    private var lastSurfaceWasList = false
 
     /// Single-click a row → select that item index. Double-click → activate it.
     public var onSelect: ((Int) -> Void)?
@@ -118,6 +126,35 @@ public final class PaletteView: NSView {
             gridScroll.trailingAnchor.constraint(equalTo: trailingAnchor),
             gridScroll.bottomAnchor.constraint(equalTo: bottomAnchor),
         ])
+
+        // Virtualized list surface — view-based NSTableView, its own scroll view, shown only for plain
+        // list surfaces. We draw the Raycast-style row highlight ourselves (selectionHighlightStyle .none)
+        // and manage selection from the host's index, so clicks route through each row's ClickableRow.
+        let listCol = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("row"))
+        listCol.resizingMask = .autoresizingMask
+        listTable.addTableColumn(listCol)
+        listTable.headerView = nil
+        listTable.backgroundColor = .clear
+        listTable.selectionHighlightStyle = .none
+        listTable.intercellSpacing = NSSize(width: 0, height: 3)
+        listTable.gridStyleMask = []
+        listTable.allowsEmptySelection = true
+        listTable.refusesFirstResponder = true // arrow keys stay with the search field / host selection model
+        listTable.dataSource = self
+        listTable.delegate = self
+        listScroll.translatesAutoresizingMaskIntoConstraints = false
+        listScroll.drawsBackground = false
+        listScroll.hasVerticalScroller = true
+        listScroll.scrollerStyle = .overlay
+        listScroll.documentView = listTable
+        listScroll.isHidden = true
+        addSubview(listScroll)
+        NSLayoutConstraint.activate([
+            listScroll.topAnchor.constraint(equalTo: topAnchor),
+            listScroll.leadingAnchor.constraint(equalTo: leadingAnchor),
+            listScroll.trailingAnchor.constraint(equalTo: trailingAnchor),
+            listScroll.bottomAnchor.constraint(equalTo: bottomAnchor),
+        ])
     }
 
     @available(*, unavailable)
@@ -151,6 +188,12 @@ public final class PaletteView: NSView {
             selectGridItem(selectedIndex, scroll: true)
             return false
         }
+        // Fast path: same list tree, only the selection changed → reload just the old + new selected rows
+        // (highlight follows) and scroll, instead of rebuilding the whole list on every arrow key.
+        if lastSurfaceWasList, tree === lastRenderedTree, !listData.isEmpty {
+            selectListItem(selectedIndex, scroll: true)
+            return false
+        }
         stack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         gridCells.removeAll()
         itemCounter = 0
@@ -158,7 +201,10 @@ public final class PaletteView: NSView {
         let surfaces = tree.root.children
         lastRenderedTree = tree
         lastSurfaceWasGrid = surfaces.contains { $0.type == "grid" }
-        // The virtualized grid lives in its own scroll view; show it only for grid surfaces.
+        // The virtualized grid/list live in their own scroll views; default to the stack surface and let
+        // renderGrid / renderListVirtualized claim their own. (List visibility is set in renderListVirtualized.)
+        lastSurfaceWasList = false
+        listScroll.isHidden = true; listData = []
         if !lastSurfaceWasGrid { gridScroll.isHidden = true; scrollView.isHidden = false; gridData = [] }
         // Dispatch on the top-level surface the extension rendered (PLAN.md §5 component set). The whole
         // dispatch runs inside an Obj-C exception guard: a malformed view tree or an AppKit exception
@@ -178,9 +224,14 @@ public final class PaletteView: NSView {
                       Self.isTrue(list.props["showDetail"]) || Self.isTrue(list.props["isShowingDetail"]) {
                 self.fixedHeightSurface = true
                 self.renderSplit(list: list, selectedIndex: selectedIndex) // master–detail (Clipboard, List.Item.Detail)
+            } else if surfaces.contains(where: { $0.type == "list" }) || tree.root.children.contains(where: { $0.type == "list" }) {
+                // Root list + plain extension Lists → the virtualized table (constant height; don't shrink
+                // for "No Results"). Master-detail lists take the renderSplit branch above.
+                self.fixedHeightSurface = true
+                self.renderListVirtualized(tree.root, selectedIndex: selectedIndex)
             } else {
-                // Root list + extension Lists: a constant height (don't shrink for "No Results").
-                self.fixedHeightSurface = surfaces.contains { $0.type == "list" } || tree.root.children.contains { $0.type == "list" }
+                // Non-list fallback (compact root states with a few suggestion rows) — keep the stack.
+                self.fixedHeightSurface = false
                 self.appendRows(for: tree.root, selectedIndex: selectedIndex)
                 self.scrollSelectedIntoView()
             }
@@ -1390,16 +1441,9 @@ public final class PaletteView: NSView {
 
     // MARK: - Item row
 
-    private func addItemRow(_ node: ViewNode, selected: Bool, index: Int) {
-        let row = ClickableRow()
-        wireClick(row, index: index)
-        row.translatesAutoresizingMaskIntoConstraints = false
-        row.wantsLayer = true
-        row.layer?.cornerRadius = 7
-        // Subtle translucent highlight (not saturated accent), text colors unchanged — matches the
-        // Raycast row selection.
-        row.layer?.backgroundColor = selected ? NSColor.white.withAlphaComponent(0.13).cgColor : NSColor.clear.cgColor
-
+    /// The horizontal content of an item row (icon/glyph · title · subtitle · spacer · accessories),
+    /// shared by the stack-based fallback (addItemRow) and the virtualized table cell (makeItemCell).
+    private func itemRowContent(_ node: ViewNode, selected: Bool) -> NSStackView {
         let h = NSStackView()
         h.orientation = .horizontal
         h.alignment = .centerY
@@ -1455,7 +1499,19 @@ public final class PaletteView: NSView {
                 h.addArrangedSubview(chip(t))
             }
         }
+        return h
+    }
 
+    private func addItemRow(_ node: ViewNode, selected: Bool, index: Int) {
+        let row = ClickableRow()
+        wireClick(row, index: index)
+        row.translatesAutoresizingMaskIntoConstraints = false
+        row.wantsLayer = true
+        row.layer?.cornerRadius = 7
+        // Subtle translucent highlight (not saturated accent), text colors unchanged — matches the
+        // Raycast row selection.
+        row.layer?.backgroundColor = selected ? NSColor.white.withAlphaComponent(0.13).cgColor : NSColor.clear.cgColor
+        let h = itemRowContent(node, selected: selected)
         row.addSubview(h)
         stack.addArrangedSubview(row)
         if selected { selectedRowView = row }
@@ -1466,6 +1522,140 @@ public final class PaletteView: NSView {
             h.trailingAnchor.constraint(equalTo: row.trailingAnchor, constant: -10),
             h.centerYAnchor.constraint(equalTo: row.centerYAnchor),
         ])
+    }
+
+    // MARK: - Virtualized list (NSTableView)
+
+    /// Build the flattened row model from the tree and reload the table. Only VISIBLE rows are built
+    /// (tableView(_:viewFor:row:)), so a huge list is instant and arrow-nav uses the selection fast path.
+    private func renderListVirtualized(_ root: ViewNode, selectedIndex: Int) {
+        var entries: [ListEntry] = []
+        var itemIdx = 0
+        func walk(_ node: ViewNode) {
+            switch node.type {
+            case "list-section":
+                if let t = node.title, !t.isEmpty { entries.append(.header(t)) }
+                node.children.forEach(walk)
+            case "list-item":
+                if let cardVal = node.props["card"], case .object(let card) = cardVal,
+                   node.props["display"]?.stringValue == "card" {
+                    entries.append(.card(card, itemIdx))
+                } else {
+                    entries.append(.item(node, itemIdx))
+                }
+                itemIdx += 1
+            default:
+                node.children.forEach(walk)
+            }
+        }
+        walk(root)
+        listData = entries
+        itemCounter = itemIdx
+        listSelected = itemIdx == 0 ? 0 : max(0, min(selectedIndex, itemIdx - 1))
+        scrollView.isHidden = true
+        gridScroll.isHidden = true
+        listScroll.isHidden = false
+        lastSurfaceWasList = true
+        listTable.reloadData()
+        selectListItem(listSelected, scroll: true)
+    }
+
+    /// Selection-only fast path: reload just the previously- and newly-selected rows (their highlight is
+    /// rebuilt with the right `selected` flag) and scroll the new one into view. No full rebuild.
+    private func selectListItem(_ index: Int, scroll: Bool) {
+        let oldRow = tableRow(forItemIndex: listSelected)
+        listSelected = index
+        let newRow = tableRow(forItemIndex: index)
+        var reload = IndexSet()
+        if let oldRow { reload.insert(oldRow) }
+        if let newRow { reload.insert(newRow) }
+        if !reload.isEmpty { listTable.reloadData(forRowIndexes: reload, columnIndexes: IndexSet(integer: 0)) }
+        if scroll, let newRow { listTable.scrollRowToVisible(newRow) }
+    }
+
+    /// The table row holding a given selectable item index (skips section headers).
+    private func tableRow(forItemIndex idx: Int) -> Int? {
+        for (row, e) in listData.enumerated() {
+            switch e {
+            case .item(_, let i), .card(_, let i): if i == idx { return row }
+            case .header: break
+            }
+        }
+        return nil
+    }
+
+    /// Table-cell version of an item row: a full-width ClickableRow (height from heightOfRow) with an
+    /// inset rounded highlight, reusing the shared content. Returned from tableView(_:viewFor:row:).
+    private func makeItemCell(_ node: ViewNode, selected: Bool, index: Int) -> NSView {
+        let cell = ClickableRow()
+        cell.translatesAutoresizingMaskIntoConstraints = true
+        cell.autoresizingMask = [.width, .height]
+        wireClick(cell, index: index)
+        let bg = NSView()
+        bg.translatesAutoresizingMaskIntoConstraints = false
+        bg.wantsLayer = true
+        bg.layer?.cornerRadius = 7
+        bg.layer?.backgroundColor = selected ? NSColor.white.withAlphaComponent(0.13).cgColor : NSColor.clear.cgColor
+        let h = itemRowContent(node, selected: selected)
+        bg.addSubview(h)
+        cell.addSubview(bg)
+        NSLayoutConstraint.activate([
+            bg.leadingAnchor.constraint(equalTo: cell.leadingAnchor, constant: 8),
+            bg.trailingAnchor.constraint(equalTo: cell.trailingAnchor, constant: -8),
+            bg.topAnchor.constraint(equalTo: cell.topAnchor, constant: 1),
+            bg.bottomAnchor.constraint(equalTo: cell.bottomAnchor, constant: -1),
+            h.leadingAnchor.constraint(equalTo: bg.leadingAnchor, constant: 10),
+            h.trailingAnchor.constraint(equalTo: bg.trailingAnchor, constant: -10),
+            h.centerYAnchor.constraint(equalTo: bg.centerYAnchor),
+        ])
+        return cell
+    }
+
+    private func makeHeaderCell(_ title: String) -> NSView {
+        let cell = NSView()
+        cell.translatesAutoresizingMaskIntoConstraints = true
+        cell.autoresizingMask = [.width, .height]
+        let label = NSTextField(labelWithString: title)
+        label.font = .systemFont(ofSize: 12, weight: .semibold)
+        label.textColor = .secondaryLabelColor
+        label.translatesAutoresizingMaskIntoConstraints = false
+        cell.addSubview(label)
+        NSLayoutConstraint.activate([
+            label.leadingAnchor.constraint(equalTo: cell.leadingAnchor, constant: 18), // aligns with row content
+            label.bottomAnchor.constraint(equalTo: cell.bottomAnchor, constant: -6),
+        ])
+        return cell
+    }
+
+    private func makeCardCell(_ card: [String: JSONValue], selected: Bool, index: Int) -> NSView {
+        let cell = ClickableRow()
+        cell.translatesAutoresizingMaskIntoConstraints = true
+        cell.autoresizingMask = [.width, .height]
+        wireClick(cell, index: index)
+        let bg = NSView()
+        bg.translatesAutoresizingMaskIntoConstraints = false
+        bg.wantsLayer = true
+        bg.layer?.cornerRadius = 12
+        bg.layer?.backgroundColor = (selected ? NSColor.white.withAlphaComponent(0.10) : NSColor.white.withAlphaComponent(0.06)).cgColor
+        let leftCol = valueColumn(value: card["left"]?.stringValue ?? "", label: card["leftLabel"]?.stringValue ?? "")
+        let rightCol = valueColumn(value: card["right"]?.stringValue ?? "", label: card["rightLabel"]?.stringValue ?? "")
+        let centerCol = centerColumn(note: card["note"]?.stringValue ?? "")
+        let h = NSStackView(views: [leftCol, centerCol, rightCol])
+        h.orientation = .horizontal; h.alignment = .centerY; h.distribution = .fill; h.spacing = 12
+        h.translatesAutoresizingMaskIntoConstraints = false
+        bg.addSubview(h)
+        cell.addSubview(bg)
+        NSLayoutConstraint.activate([
+            bg.leadingAnchor.constraint(equalTo: cell.leadingAnchor, constant: 8),
+            bg.trailingAnchor.constraint(equalTo: cell.trailingAnchor, constant: -8),
+            bg.topAnchor.constraint(equalTo: cell.topAnchor, constant: 2),
+            bg.bottomAnchor.constraint(equalTo: cell.bottomAnchor, constant: -2),
+            h.leadingAnchor.constraint(equalTo: bg.leadingAnchor, constant: 16),
+            h.trailingAnchor.constraint(equalTo: bg.trailingAnchor, constant: -16),
+            h.centerYAnchor.constraint(equalTo: bg.centerYAnchor),
+            leftCol.widthAnchor.constraint(equalTo: rightCol.widthAnchor),
+        ])
+        return cell
     }
 
     // MARK: - Helpers
@@ -1690,6 +1880,31 @@ final class GridItemView: NSCollectionViewItem {
         thumb.image = nil; thumb.identifier = nil; thumb.contentTintColor = nil; label.stringValue = ""
         applySelected(false)
     }
+}
+
+extension PaletteView: NSTableViewDataSource, NSTableViewDelegate {
+    public func numberOfRows(in tableView: NSTableView) -> Int { listData.count }
+
+    public func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
+        guard row < listData.count else { return nil }
+        switch listData[row] {
+        case .header(let title): return makeHeaderCell(title)
+        case .item(let node, let idx): return makeItemCell(node, selected: idx == listSelected, index: idx)
+        case .card(let card, let idx): return makeCardCell(card, selected: idx == listSelected, index: idx)
+        }
+    }
+
+    public func tableView(_ tableView: NSTableView, heightOfRow row: Int) -> CGFloat {
+        guard row < listData.count else { return 38 }
+        switch listData[row] {
+        case .header: return 30
+        case .item: return 40
+        case .card: return 96
+        }
+    }
+
+    // We manage selection from the host's index model (custom highlight) — the table itself never selects.
+    public func tableView(_ tableView: NSTableView, shouldSelectRow row: Int) -> Bool { false }
 }
 
 extension PaletteView: NSCollectionViewDataSource {
