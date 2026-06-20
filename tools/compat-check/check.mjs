@@ -56,12 +56,12 @@ const API_SUPPORTED = new Set([
   "launchCommand", // inter-command launch (same/named extension; arguments + launchContext) — implemented
   "MenuBarExtra", // menu-bar command mode (M4)
   "render", "fetch", "WindowManagement", "OpenWithAction", // long-tail (~100%)
+  "BrowserExtension", // browser tabs/content via AppleScript (Task 5)
 ]);
 
 // `@raycast/api` exports that exist but are stubbed/no-op (run, but degraded).
 const API_DEGRADED = new Map([
   // M1 load-stubs — import succeeds; throw (or no-op) only if actually called
-  ["BrowserExtension", "loads; throws if called (browser bridge not wired)"],
 ]);
 
 // `@raycast/api` exports that are stubbed to THROW — hard blockers.

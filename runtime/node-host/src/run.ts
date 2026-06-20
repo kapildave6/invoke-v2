@@ -129,6 +129,21 @@ function devCapabilities(opts: { preferences: Record<string, unknown>; storePath
       case "captureException":
         console.error(`  ✗ captureException: ${params.message ?? ""}`);
         return null;
+      case "browser.getTabs":
+      case "browser.getContent": {
+        const { execFileSync } = await import("node:child_process");
+        const osa = (src: string) => execFileSync("osascript", ["-e", src], { encoding: "utf8" }).trim();
+        // Reuse the same scripts shape as BrowserDriver: front Chrome by default in dev.
+        const app = "Google Chrome", FS = "", RS = "";
+        if (method === "browser.getTabs") {
+          const raw = osa(`tell application "${app}"\nset out to ""\nset wi to 0\nrepeat with w in windows\nset wi to wi+1\nset ai to active tab index of w\nset ti to 0\nrepeat with t in tabs of w\nset ti to ti+1\nset out to out & wi & "${FS}" & ti & "${FS}" & ((ti = ai) as text) & "${FS}" & (URL of t) & "${FS}" & (title of t) & "${RS}"\nend repeat\nend repeat\nreturn out\nend tell`);
+          return raw.split(RS).filter(Boolean).map((row: string) => { const f = row.split(FS); return { id: `${f[0]}:${f[1]}`, url: f[3], title: f[4], active: f[2] === "true" }; });
+        }
+        const fmt = (params as { format?: string })?.format ?? "text";
+        const prop = fmt === "html" ? "outerHTML" : "innerText";
+        const js = `(function(){var e=${fmt === "html" ? "document.documentElement" : "document.body"};return e?e.${prop}:"";})()`;
+        return osa(`tell application "${app}" to execute javascript "${js.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}" in active tab of front window`);
+      }
       case "cache.set":
         cache[String(params.key)] = String(params.value ?? "");
         return null;
