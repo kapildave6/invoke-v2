@@ -798,10 +798,44 @@ export async function launchCommand(options: {
 export async function updateCommandMetadata(metadata: { subtitle?: string | null }): Promise<void> {
   await rpc("command.updateMetadata", { subtitle: metadata?.subtitle ?? null });
 }
-/** Read the active browser tab via a companion browser extension. Not wired yet; throws only if called. */
+export interface BrowserExtensionTab {
+  id: string;
+  url: string;
+  title: string;
+  active: boolean;
+  favicon?: string;
+}
+/** Best-effort HTML→Markdown (no DOM in the extension host). Handles the common block/inline tags;
+ *  unknown tags collapse to their text. text/html formats stay exact — this only backs `markdown`. */
+export function htmlToMarkdown(html: string): string {
+  let s = html;
+  s = s.replace(/<script[\s\S]*?<\/script>/gi, "").replace(/<style[\s\S]*?<\/style>/gi, "");
+  s = s.replace(/<h([1-6])[^>]*>([\s\S]*?)<\/h\1>/gi, (_m, n, t) => `\n${"#".repeat(Number(n))} ${t.trim()}\n`);
+  s = s.replace(/<(strong|b)[^>]*>([\s\S]*?)<\/\1>/gi, (_m, _t, t) => `**${t}**`);
+  s = s.replace(/<(em|i)[^>]*>([\s\S]*?)<\/\1>/gi, (_m, _t, t) => `*${t}*`);
+  s = s.replace(/<code[^>]*>([\s\S]*?)<\/code>/gi, (_m, t) => `\`${t}\``);
+  s = s.replace(/<a[^>]*href=["']([^"']*)["'][^>]*>([\s\S]*?)<\/a>/gi, (_m, href, t) => `[${t.trim()}](${href})`);
+  s = s.replace(/<li[^>]*>([\s\S]*?)<\/li>/gi, (_m, t) => `\n- ${t.trim()}`);
+  s = s.replace(/<(p|div|section|article|br|tr|h[1-6])[^>]*>/gi, "\n");
+  s = s.replace(/<[^>]+>/g, ""); // strip remaining tags
+  s = s.replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+  return s.replace(/\n{3,}/g, "\n\n").replace(/[ \t]+\n/g, "\n").trim();
+}
+function tabFaviconURL(url: string): string | undefined {
+  try { return `https://www.google.com/s2/favicons?sz=64&domain=${new URL(url).hostname}`; } catch { return undefined; }
+}
 export const BrowserExtension = {
-  getContent: (_options?: unknown): Promise<string> => unsupported("BrowserExtension.getContent"),
-  getTabs: (): Promise<unknown[]> => unsupported("BrowserExtension.getTabs"),
+  Tab: undefined as unknown, // present so `BrowserExtension.Tab` (a type reference) never throws at runtime
+  async getTabs(): Promise<BrowserExtensionTab[]> {
+    const tabs = (await rpc("browser.getTabs", {})) as BrowserExtensionTab[];
+    return (tabs ?? []).map((t) => ({ ...t, favicon: t.favicon ?? tabFaviconURL(t.url) }));
+  },
+  async getContent(options?: { tabId?: string; format?: "html" | "text" | "markdown"; cssSelector?: string }): Promise<string> {
+    const format = options?.format ?? "markdown";
+    const hostFormat = format === "markdown" ? "html" : format; // host only does html/text
+    const raw = (await rpc("browser.getContent", { tabId: options?.tabId, format: hostFormat, cssSelector: options?.cssSelector })) as string;
+    return format === "markdown" ? htmlToMarkdown(raw ?? "") : (raw ?? "");
+  },
 };
 export async function popToRoot(_opts?: unknown): Promise<void> { await closeMainWindow(); }
 export async function openExtensionPreferences(): Promise<void> { await rpc("preferences.open", { scope: "extension" }); }

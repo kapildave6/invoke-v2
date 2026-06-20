@@ -26,6 +26,7 @@
     "redteam": "tsx runtime/node-host/src/redteam.ts",
     "bench": "tsx runtime/node-host/src/bench.ts",
     "test:calc": "tsx examples/calculator/src/engine.test.ts",
+    "test:browser": "tsx packages/api/src/browser-extension.test.ts",
     "typecheck": "tsc -p tsconfig.json",
     "clean": "rm -rf node_modules **/node_modules **/dist **/*.tsbuildinfo"
   },
