@@ -44,6 +44,19 @@ public final class PaletteView: NSView {
     private var listData: [ListEntry] = []
     private var listSelected = 0
     private var lastSurfaceWasList = false
+    // Virtualized master-detail SPLIT (clipboard history, List.Item.Detail): the left list is a second
+    // view-based NSTableView; the right detail pane is swapped on selection. Persistent so arrow-nav uses
+    // a fast path (reload old+new left rows + rebuild only the detail pane) instead of rebuilding the split.
+    private let splitContainer = NSView()
+    private let splitLeftScroll = NSScrollView()
+    private let splitTable = NSTableView()
+    private let splitDetailHolder = NSView()
+    private enum SplitEntry { case header(String); case item(ViewNode, Int) }
+    private var splitData: [SplitEntry] = []
+    private var splitItems: [ViewNode] = []
+    private var splitSelected = 0
+    private var lastSurfaceWasSplit = false
+    private var splitEdgeConstraints: [NSLayoutConstraint] = []
 
     /// Single-click a row → select that item index. Double-click → activate it.
     public var onSelect: ((Int) -> Void)?
@@ -155,6 +168,49 @@ public final class PaletteView: NSView {
             listScroll.trailingAnchor.constraint(equalTo: trailingAnchor),
             listScroll.bottomAnchor.constraint(equalTo: bottomAnchor),
         ])
+
+        // Master-detail split surface: a fixed-width virtualized left table + a divider + the detail holder.
+        let splitCol = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("split"))
+        splitCol.resizingMask = .autoresizingMask
+        splitTable.addTableColumn(splitCol)
+        splitTable.headerView = nil
+        splitTable.backgroundColor = .clear
+        splitTable.selectionHighlightStyle = .none
+        splitTable.intercellSpacing = NSSize(width: 0, height: 2)
+        splitTable.gridStyleMask = []
+        splitTable.allowsEmptySelection = true
+        splitTable.refusesFirstResponder = true
+        splitTable.dataSource = self
+        splitTable.delegate = self
+        splitLeftScroll.translatesAutoresizingMaskIntoConstraints = false
+        splitLeftScroll.drawsBackground = false
+        splitLeftScroll.hasVerticalScroller = true
+        splitLeftScroll.scrollerStyle = .overlay
+        splitLeftScroll.documentView = splitTable
+        let splitDivider = NSBox()
+        splitDivider.boxType = .separator
+        splitDivider.translatesAutoresizingMaskIntoConstraints = false
+        splitDetailHolder.translatesAutoresizingMaskIntoConstraints = false
+        splitContainer.translatesAutoresizingMaskIntoConstraints = false
+        splitContainer.addSubview(splitLeftScroll)
+        splitContainer.addSubview(splitDivider)
+        splitContainer.addSubview(splitDetailHolder)
+        // splitContainer is attached to PaletteView ONLY while a split renders (attachSplit/detachSplit).
+        // A permanently-pinned hidden container's edge constraints collapsed the root window's height.
+        NSLayoutConstraint.activate([
+            splitLeftScroll.topAnchor.constraint(equalTo: splitContainer.topAnchor),
+            splitLeftScroll.bottomAnchor.constraint(equalTo: splitContainer.bottomAnchor),
+            splitLeftScroll.leadingAnchor.constraint(equalTo: splitContainer.leadingAnchor),
+            splitLeftScroll.widthAnchor.constraint(equalToConstant: 300),
+            splitDivider.leadingAnchor.constraint(equalTo: splitLeftScroll.trailingAnchor),
+            splitDivider.topAnchor.constraint(equalTo: splitContainer.topAnchor, constant: 8),
+            splitDivider.bottomAnchor.constraint(equalTo: splitContainer.bottomAnchor, constant: -8),
+            splitDivider.widthAnchor.constraint(equalToConstant: 1),
+            splitDetailHolder.leadingAnchor.constraint(equalTo: splitDivider.trailingAnchor, constant: 12),
+            splitDetailHolder.trailingAnchor.constraint(equalTo: splitContainer.trailingAnchor, constant: -12),
+            splitDetailHolder.topAnchor.constraint(equalTo: splitContainer.topAnchor, constant: 8),
+            splitDetailHolder.bottomAnchor.constraint(equalTo: splitContainer.bottomAnchor, constant: -8),
+        ])
     }
 
     @available(*, unavailable)
@@ -194,6 +250,12 @@ public final class PaletteView: NSView {
             selectListItem(selectedIndex, scroll: true)
             return false
         }
+        // Fast path: same master-detail tree, selection changed → reload the old+new left rows and rebuild
+        // only the detail pane, instead of rebuilding the whole split.
+        if lastSurfaceWasSplit, tree === lastRenderedTree, !splitData.isEmpty {
+            selectSplitItem(selectedIndex)
+            return false
+        }
         stack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         gridCells.removeAll()
         itemCounter = 0
@@ -205,6 +267,8 @@ public final class PaletteView: NSView {
         // renderGrid / renderListVirtualized claim their own. (List visibility is set in renderListVirtualized.)
         lastSurfaceWasList = false
         listScroll.isHidden = true; listData = []
+        lastSurfaceWasSplit = false
+        detachSplit(); splitData = []; splitItems = []
         if !lastSurfaceWasGrid { gridScroll.isHidden = true; scrollView.isHidden = false; gridData = [] }
         // Dispatch on the top-level surface the extension rendered (PLAN.md §5 component set). The whole
         // dispatch runs inside an Obj-C exception guard: a malformed view tree or an AppKit exception
@@ -223,7 +287,7 @@ public final class PaletteView: NSView {
             } else if let list = surfaces.first(where: { $0.type == "list" }),
                       Self.isTrue(list.props["showDetail"]) || Self.isTrue(list.props["isShowingDetail"]) {
                 self.fixedHeightSurface = true
-                self.renderSplit(list: list, selectedIndex: selectedIndex) // master–detail (Clipboard, List.Item.Detail)
+                self.renderSplitVirtualized(list: list, selectedIndex: selectedIndex) // master–detail (Clipboard, List.Item.Detail)
             } else if surfaces.contains(where: { $0.type == "list" }) || tree.root.children.contains(where: { $0.type == "list" }) {
                 // Root list + plain extension Lists → the virtualized table (constant height; don't shrink
                 // for "No Results"). Master-detail lists take the renderSplit branch above.
@@ -281,75 +345,135 @@ public final class PaletteView: NSView {
 
     // MARK: - Master–detail (list + detail pane)
 
-    private func renderSplit(list: ViewNode, selectedIndex: Int) {
-        var rows: [ViewNode] = []
-        func collect(_ n: ViewNode) { if n.type == "list-item" { rows.append(n) }; n.children.forEach(collect) }
+    /// Attach the split container to PaletteView (pinned to its edges) only while a split is showing —
+    /// keeping it permanently attached collapsed the root window's height even when hidden.
+    private func attachSplit() {
+        guard splitContainer.superview == nil else { return }
+        addSubview(splitContainer)
+        splitEdgeConstraints = [
+            splitContainer.topAnchor.constraint(equalTo: topAnchor),
+            splitContainer.leadingAnchor.constraint(equalTo: leadingAnchor),
+            splitContainer.trailingAnchor.constraint(equalTo: trailingAnchor),
+            splitContainer.bottomAnchor.constraint(equalTo: bottomAnchor),
+        ]
+        NSLayoutConstraint.activate(splitEdgeConstraints)
+    }
+
+    private func detachSplit() {
+        guard splitContainer.superview != nil else { return }
+        NSLayoutConstraint.deactivate(splitEdgeConstraints)
+        splitEdgeConstraints = []
+        splitContainer.removeFromSuperview()
+    }
+
+    /// Virtualized master-detail: flatten the list into an optional header + selectable items, show them
+    /// in the persistent left table (only visible rows built), and render the selected item's detail pane.
+    private func renderSplitVirtualized(list: ViewNode, selectedIndex: Int) {
+        var items: [ViewNode] = []
+        func collect(_ n: ViewNode) { if n.type == "list-item" { items.append(n) }; n.children.forEach(collect) }
         collect(list)
-        let sel = rows.isEmpty ? -1 : max(0, min(selectedIndex, rows.count - 1))
-
-        // Left: scrollable compact list.
-        let leftStack = NSStackView()
-        leftStack.orientation = .vertical
-        leftStack.alignment = .leading
-        leftStack.spacing = 2
-        leftStack.translatesAutoresizingMaskIntoConstraints = false
+        splitItems = items
+        var entries: [SplitEntry] = []
         if let section = list.children.first(where: { $0.type == "list-section" }), let t = section.title, !t.isEmpty {
-            leftStack.addArrangedSubview(sectionLabel(t, width: 300))
+            entries.append(.header(t))
         }
-        var selectedRow: NSView?
-        for (i, node) in rows.enumerated() {
-            let r = compactRow(node, selected: i == sel, width: 300, index: i)
-            if i == sel { selectedRow = r }
-            leftStack.addArrangedSubview(r)
+        for (i, node) in items.enumerated() { entries.append(.item(node, i)) }
+        splitData = entries
+        splitSelected = items.isEmpty ? 0 : max(0, min(selectedIndex, items.count - 1))
+        scrollView.isHidden = true
+        gridScroll.isHidden = true
+        listScroll.isHidden = true
+        attachSplit()
+        lastSurfaceWasSplit = true
+        splitTable.reloadData()
+        updateSplitDetail()
+        if let r = splitTableRow(forItemIndex: splitSelected) { splitTable.scrollRowToVisible(r) }
+    }
+
+    /// Selection-only fast path for the split: reload just the old+new left rows (highlight follows) and
+    /// rebuild only the detail pane.
+    private func selectSplitItem(_ index: Int) {
+        let oldRow = splitTableRow(forItemIndex: splitSelected)
+        splitSelected = splitItems.isEmpty ? 0 : max(0, min(index, splitItems.count - 1))
+        let newRow = splitTableRow(forItemIndex: splitSelected)
+        var reload = IndexSet()
+        if let oldRow { reload.insert(oldRow) }
+        if let newRow { reload.insert(newRow) }
+        if !reload.isEmpty { splitTable.reloadData(forRowIndexes: reload, columnIndexes: IndexSet(integer: 0)) }
+        updateSplitDetail()
+        if let newRow { splitTable.scrollRowToVisible(newRow) }
+    }
+
+    /// Rebuild the right detail pane for the current split selection and swap it into the holder.
+    private func updateSplitDetail() {
+        splitDetailHolder.subviews.forEach { $0.removeFromSuperview() }
+        let node = (splitSelected >= 0 && splitSelected < splitItems.count) ? splitItems[splitSelected] : nil
+        let detail = detailPane(node)
+        splitDetailHolder.addSubview(detail)
+        NSLayoutConstraint.activate([
+            detail.leadingAnchor.constraint(equalTo: splitDetailHolder.leadingAnchor),
+            detail.trailingAnchor.constraint(equalTo: splitDetailHolder.trailingAnchor),
+            detail.topAnchor.constraint(equalTo: splitDetailHolder.topAnchor),
+            detail.bottomAnchor.constraint(lessThanOrEqualTo: splitDetailHolder.bottomAnchor),
+        ])
+    }
+
+    private func splitTableRow(forItemIndex idx: Int) -> Int? {
+        for (row, e) in splitData.enumerated() {
+            if case .item(_, let i) = e, i == idx { return row }
         }
-        let doc = FlippedDocView()
-        doc.translatesAutoresizingMaskIntoConstraints = false
-        doc.addSubview(leftStack)
-        let leftScroll = NSScrollView()
-        leftScroll.translatesAutoresizingMaskIntoConstraints = false
-        leftScroll.drawsBackground = false
-        leftScroll.hasVerticalScroller = true
-        leftScroll.scrollerStyle = .overlay
-        leftScroll.documentView = doc
+        return nil
+    }
 
-        let divider = NSBox()
-        divider.boxType = .separator
-        divider.translatesAutoresizingMaskIntoConstraints = false
-
-        let detail = detailPane(sel >= 0 ? rows[sel] : nil)
-        detail.setContentHuggingPriority(.init(1), for: .horizontal) // fill the remaining width
-
+    private func makeSplitItemCell(_ node: ViewNode, selected: Bool, index: Int) -> NSView {
+        let cell = ClickableRow()
+        cell.translatesAutoresizingMaskIntoConstraints = true
+        cell.autoresizingMask = [.width, .height]
+        wireClick(cell, index: index)
+        let bg = NSView()
+        bg.translatesAutoresizingMaskIntoConstraints = false
+        bg.wantsLayer = true
+        bg.layer?.cornerRadius = 6
+        bg.layer?.backgroundColor = selected ? NSColor.controlAccentColor.withAlphaComponent(0.20).cgColor : NSColor.clear.cgColor
         let h = NSStackView()
         h.orientation = .horizontal
-        h.alignment = .top
-        h.distribution = .fill
-        h.spacing = 0
+        h.alignment = .centerY
+        h.spacing = 8
         h.translatesAutoresizingMaskIntoConstraints = false
-        h.addArrangedSubview(leftScroll)
-        h.addArrangedSubview(divider)
-        h.addArrangedSubview(detail)
-
-        stack.addArrangedSubview(h)
+        if let icon = iconView(for: node, selected: selected) { h.addArrangedSubview(icon) }
+        let title = NSTextField(labelWithString: node.title ?? "")
+        title.font = .systemFont(ofSize: 13)
+        title.textColor = .labelColor
+        title.lineBreakMode = .byTruncatingTail
+        h.addArrangedSubview(title)
+        bg.addSubview(h)
+        cell.addSubview(bg)
         NSLayoutConstraint.activate([
-            h.widthAnchor.constraint(equalTo: stack.widthAnchor),
-            h.heightAnchor.constraint(equalToConstant: 360),
-            divider.widthAnchor.constraint(equalToConstant: 1),
-            leftScroll.widthAnchor.constraint(equalToConstant: 300),
-            detail.widthAnchor.constraint(greaterThanOrEqualToConstant: 280), // don't let it collapse
-            leftStack.topAnchor.constraint(equalTo: doc.topAnchor, constant: 2),
-            leftStack.leadingAnchor.constraint(equalTo: doc.leadingAnchor),
-            leftStack.trailingAnchor.constraint(equalTo: doc.trailingAnchor),
-            leftStack.bottomAnchor.constraint(equalTo: doc.bottomAnchor),
-            doc.widthAnchor.constraint(equalToConstant: 300),
+            bg.leadingAnchor.constraint(equalTo: cell.leadingAnchor, constant: 6),
+            bg.trailingAnchor.constraint(equalTo: cell.trailingAnchor, constant: -4),
+            bg.topAnchor.constraint(equalTo: cell.topAnchor, constant: 1),
+            bg.bottomAnchor.constraint(equalTo: cell.bottomAnchor, constant: -1),
+            h.leadingAnchor.constraint(equalTo: bg.leadingAnchor, constant: 8),
+            h.trailingAnchor.constraint(lessThanOrEqualTo: bg.trailingAnchor, constant: -8),
+            h.centerYAnchor.constraint(equalTo: bg.centerYAnchor),
         ])
+        return cell
+    }
 
-        // Keep the selected clip visible as you arrow through a long list.
-        if let selectedRow {
-            DispatchQueue.main.async { [weak self, weak selectedRow] in
-                self?.layoutSubtreeIfNeeded()
-                if let selectedRow { selectedRow.scrollToVisible(selectedRow.bounds) }
-            }
-        }
+    private func makeSplitHeaderCell(_ title: String) -> NSView {
+        let cell = NSView()
+        cell.translatesAutoresizingMaskIntoConstraints = true
+        cell.autoresizingMask = [.width, .height]
+        let label = NSTextField(labelWithString: title)
+        label.font = .systemFont(ofSize: 12, weight: .semibold)
+        label.textColor = .secondaryLabelColor
+        label.translatesAutoresizingMaskIntoConstraints = false
+        cell.addSubview(label)
+        NSLayoutConstraint.activate([
+            label.leadingAnchor.constraint(equalTo: cell.leadingAnchor, constant: 14),
+            label.bottomAnchor.constraint(equalTo: cell.bottomAnchor, constant: -5),
+        ])
+        return cell
     }
 
     private func sectionLabel(_ text: String, width: CGFloat) -> NSView {
@@ -369,35 +493,6 @@ public final class PaletteView: NSView {
         return v
     }
 
-    private func compactRow(_ node: ViewNode, selected: Bool, width: CGFloat, index: Int) -> NSView {
-        let row = ClickableRow()
-        wireClick(row, index: index)
-        row.translatesAutoresizingMaskIntoConstraints = false
-        row.wantsLayer = true
-        row.layer?.cornerRadius = 6
-        // Accent tint reads in both Light and Dark (the old white-alpha was invisible in Light mode).
-        row.layer?.backgroundColor = selected ? NSColor.controlAccentColor.withAlphaComponent(0.20).cgColor : NSColor.clear.cgColor
-        let h = NSStackView()
-        h.orientation = .horizontal
-        h.alignment = .centerY
-        h.spacing = 8
-        h.translatesAutoresizingMaskIntoConstraints = false
-        if let icon = iconView(for: node, selected: selected) { h.addArrangedSubview(icon) }
-        let title = NSTextField(labelWithString: node.title ?? "")
-        title.font = .systemFont(ofSize: 13)
-        title.textColor = .labelColor
-        title.lineBreakMode = .byTruncatingTail
-        h.addArrangedSubview(title)
-        row.addSubview(h)
-        NSLayoutConstraint.activate([
-            row.widthAnchor.constraint(equalToConstant: width),
-            row.heightAnchor.constraint(greaterThanOrEqualToConstant: 32),
-            h.leadingAnchor.constraint(equalTo: row.leadingAnchor, constant: 8),
-            h.trailingAnchor.constraint(lessThanOrEqualTo: row.trailingAnchor, constant: -8),
-            h.centerYAnchor.constraint(equalTo: row.centerYAnchor),
-        ])
-        return row
-    }
 
     static func isTrue(_ v: JSONValue?) -> Bool { if case .bool(true)? = v { return true }; return false }
 
@@ -1883,9 +1978,18 @@ final class GridItemView: NSCollectionViewItem {
 }
 
 extension PaletteView: NSTableViewDataSource, NSTableViewDelegate {
-    public func numberOfRows(in tableView: NSTableView) -> Int { listData.count }
+    public func numberOfRows(in tableView: NSTableView) -> Int {
+        tableView === splitTable ? splitData.count : listData.count
+    }
 
     public func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
+        if tableView === splitTable {
+            guard row < splitData.count else { return nil }
+            switch splitData[row] {
+            case .header(let title): return makeSplitHeaderCell(title)
+            case .item(let node, let idx): return makeSplitItemCell(node, selected: idx == splitSelected, index: idx)
+            }
+        }
         guard row < listData.count else { return nil }
         switch listData[row] {
         case .header(let title): return makeHeaderCell(title)
@@ -1895,6 +1999,11 @@ extension PaletteView: NSTableViewDataSource, NSTableViewDelegate {
     }
 
     public func tableView(_ tableView: NSTableView, heightOfRow row: Int) -> CGFloat {
+        if tableView === splitTable {
+            guard row < splitData.count else { return 32 }
+            if case .header = splitData[row] { return 28 }
+            return 32
+        }
         guard row < listData.count else { return 38 }
         switch listData[row] {
         case .header: return 30
