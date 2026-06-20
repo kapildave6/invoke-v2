@@ -282,6 +282,29 @@ const BUILTIN_MODULES = new Set([
 // Classification
 // ---------------------------------------------------------------------------
 
+// JSX subcomponents our @raycast/api shim actually defines. A USED-but-missing one renders as
+// <undefined> → React "Element type is invalid" → the whole command view crashes. The import-only
+// check can't see this (the parent — List/Form/Action/… — IS exported), so we check member usage too.
+// Keep in sync with packages/api/src/index.ts.
+const SUPPORTED_JSX = new Set([
+  "List", "List.Section", "List.Item", "List.Item.Detail", "List.Dropdown", "List.Dropdown.Item", "List.Dropdown.Section", "List.EmptyView",
+  "List.Item.Detail.Metadata", "List.Item.Detail.Metadata.Label", "List.Item.Detail.Metadata.TagList", "List.Item.Detail.Metadata.TagList.Item", "List.Item.Detail.Metadata.Separator", "List.Item.Detail.Metadata.Link",
+  "Grid", "Grid.Section", "Grid.Item", "Grid.Dropdown", "Grid.Dropdown.Item", "Grid.Dropdown.Section", "Grid.EmptyView",
+  "Detail", "Detail.Metadata", "Detail.Metadata.Label", "Detail.Metadata.TagList", "Detail.Metadata.TagList.Item", "Detail.Metadata.Separator", "Detail.Metadata.Link",
+  "Form", "Form.TextField", "Form.TextArea", "Form.Checkbox", "Form.Description", "Form.Separator", "Form.PasswordField", "Form.DatePicker", "Form.Dropdown", "Form.Dropdown.Item", "Form.Dropdown.Section",
+  "Form.FilePicker", "Form.LinkAccessory", "Form.TagPicker", "Form.TagPicker.Item",
+  "Action", "Action.CopyToClipboard", "Action.Paste", "Action.OpenInBrowser", "Action.Open", "Action.Push", "Action.SubmitForm",
+  "Action.ShowInFinder", "Action.Trash", "Action.OpenWith", "Action.ToggleQuickLook", "Action.CreateQuicklink", "Action.CreateSnippet", "Action.PickDate",
+  "ActionPanel", "ActionPanel.Section", "ActionPanel.Submenu",
+  "MenuBarExtra", "MenuBarExtra.Item", "MenuBarExtra.Section", "MenuBarExtra.Submenu", "MenuBarExtra.Separator",
+]);
+const JSX_NAMESPACES = ["List", "Grid", "Detail", "Form", "Action", "ActionPanel", "MenuBarExtra"];
+// Methods our shim defines on namespace OBJECTS — a call to a missing one is a runtime TypeError.
+const SUPPORTED_METHODS = {
+  Clipboard: new Set(["copy", "paste", "readText", "read", "clear"]),
+  LocalStorage: new Set(["getItem", "setItem", "removeItem", "clear", "allItems"]),
+};
+
 function classifyExtension({ dir, pkg }) {
   const files = listSourceFiles(dir);
   const apiNames = new Set();
@@ -289,6 +312,8 @@ function classifyExtension({ dir, pkg }) {
   const utilsNames = new Set();
   let utilsNamespace = false;
   const builtinsUsed = new Set();
+  const jsxUsages = new Set();    // <Ns.Member …> dotted paths
+  const methodUsages = new Set(); // Ns.method( calls for namespace objects
 
   for (const f of files) {
     let src;
@@ -304,6 +329,11 @@ function classifyExtension({ dir, pkg }) {
     utils.names.forEach((n) => utilsNames.add(n));
     utilsNamespace = utilsNamespace || utils.namespace;
     nodeBuiltins(src).forEach((b) => builtinsUsed.add(b));
+    // Member usage for the runtime-member check below.
+    for (const m of src.matchAll(/<([A-Z][A-Za-z0-9]*(?:\.[A-Z][A-Za-z0-9]*)+)[\s/>]/g)) jsxUsages.add(m[1]);
+    for (const ns of Object.keys(SUPPORTED_METHODS)) {
+      for (const m of src.matchAll(new RegExp(`\\b${ns}\\.([a-z][A-Za-z0-9]*)\\s*\\(`, "g"))) methodUsages.add(`${ns}.${m[1]}`);
+    }
   }
 
   const blockers = [];
@@ -326,6 +356,23 @@ function classifyExtension({ dir, pkg }) {
     if (TYPE_ONLY_HINTS.has(n)) continue; // type-only (erased at runtime)
     if (UTILS_DEGRADED.has(n)) degraded.push(`${n}: ${UTILS_DEGRADED.get(n)}`);
     else unknown.push(`@raycast/utils:${n} (not implemented in Invoke)`);
+  }
+
+  // Runtime MEMBER usage (the Toast-class of bug): the parent is exported so the import passes, but a
+  // missing subcomponent/method crashes at runtime. Only count members of namespaces actually imported.
+  for (const usage of jsxUsages) {
+    const segs = usage.split(".");
+    const ns = segs[0];
+    if (!JSX_NAMESPACES.includes(ns) || !apiNames.has(ns) || SUPPORTED_JSX.has(usage)) continue;
+    // `<X.Props>` / `<X.Accessory>` etc. are TYPE generics (e.g. useState<List.Item.Props>), not JSX
+    // element types — erased at runtime. Skip the type-only leaves.
+    if (["Props", "Values", "Accessory", "ItemProps", "ItemReference"].includes(segs[segs.length - 1])) continue;
+    degraded.push(`${usage}: missing @raycast/api member (renders undefined → view crash)`);
+  }
+  for (const usage of methodUsages) {
+    const [ns, method] = usage.split(".");
+    if (!apiNames.has(ns) || SUPPORTED_METHODS[ns].has(method)) continue;
+    degraded.push(`${usage}: missing @raycast/api method (TypeError)`);
   }
 
   // Command modes
