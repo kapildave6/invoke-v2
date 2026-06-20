@@ -346,7 +346,7 @@ public final class PaletteWindow: NSObject {
     /// The active extension's assets/ dir, so relative image sources resolve (forwarded to the view).
     public func setAssetsPath(_ path: String) { paletteView.assetsPath = path }
 
-    public func render(_ tree: ViewTree, selectedIndex: Int) {
+    public func render(_ tree: ViewTree, selectedIndex: Int, selectionOnly: Bool = false) {
         // Any re-render (including async extension-commit / AI-answer callbacks) invalidates the tree the
         // ⌘K panel's captured actions point at — close it so it can't act on a stale node. No-op if hidden.
         actionPanel.dismiss()
@@ -369,7 +369,7 @@ public final class PaletteWindow: NSObject {
             Keycap.chips(for: formNow ? "⌘↵" : "↵").forEach { enterCaps.addArrangedSubview($0) }
         }
         // Skip the resize (a full layout pass over every cell) when it was only a selection move.
-        if paletteView.render(tree, selectedIndex: selectedIndex) { resizeToFit() }
+        if paletteView.render(tree, selectedIndex: selectedIndex, selectionOnly: selectionOnly) { resizeToFit() }
         // Arrow-key selection only works while the SEARCH FIELD holds first responder (its field editor
         // routes moveUp/moveDown to onMove). A pushed Form focuses a form field instead; on pop back to a
         // list/grid nothing restored search focus, so arrows went dead until reopened. Re-focus the search

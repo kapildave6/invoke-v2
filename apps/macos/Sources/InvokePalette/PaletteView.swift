@@ -237,22 +237,26 @@ public final class PaletteView: NSView {
     /// (item indices are assigned in pre-order, matching the host's selection model). Returns true if it
     /// did a full rebuild (so the window should resize); false on the selection-only fast path.
     @discardableResult
-    public func render(_ tree: ViewTree, selectedIndex: Int) -> Bool {
+    /// `selectionOnly` is set by arrow-key navigation (the caller knows only the highlight moved). The
+    /// grid/list/split fast paths require it — a content re-render (extension commit / search) reuses the
+    /// SAME ViewTree instance (the reconciler mutates it in place), so tree identity alone can't tell a
+    /// selection move from new content. Without this, a self-filtering List's search results never rebuild.
+    public func render(_ tree: ViewTree, selectedIndex: Int, selectionOnly: Bool = false) -> Bool {
         // Fast path: same grid tree, only the selection changed → just move the collection-view selection
         // (no reload), keeping arrow navigation snappy on large grids.
-        if lastSurfaceWasGrid, tree === lastRenderedTree, !gridData.isEmpty {
+        if selectionOnly, lastSurfaceWasGrid, tree === lastRenderedTree, !gridData.isEmpty {
             selectGridItem(selectedIndex, scroll: true)
             return false
         }
         // Fast path: same list tree, only the selection changed → reload just the old + new selected rows
         // (highlight follows) and scroll, instead of rebuilding the whole list on every arrow key.
-        if lastSurfaceWasList, tree === lastRenderedTree, !listData.isEmpty {
+        if selectionOnly, lastSurfaceWasList, tree === lastRenderedTree, !listData.isEmpty {
             selectListItem(selectedIndex, scroll: true)
             return false
         }
         // Fast path: same master-detail tree, selection changed → reload the old+new left rows and rebuild
         // only the detail pane, instead of rebuilding the whole split.
-        if lastSurfaceWasSplit, tree === lastRenderedTree, !splitData.isEmpty {
+        if selectionOnly, lastSurfaceWasSplit, tree === lastRenderedTree, !splitData.isEmpty {
             selectSplitItem(selectedIndex)
             return false
         }

@@ -1175,8 +1175,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
         case .store: renderStore(query: lastQuery)              // rebuild so the detail pane follows
         default:
             // Screenshots (grid) and the rest just re-highlight the existing tree — no rebuild, no
-            // thumbnail re-scan — so arrow nav stays snappy.
-            palette.render(activeTree, selectedIndex: selectedIndex)
+            // thumbnail re-scan — so arrow nav stays snappy. selectionOnly enables the virtualized fast path.
+            palette.render(activeTree, selectedIndex: selectedIndex, selectionOnly: true)
             updateActionBar()
             updateRootArguments()
         }
@@ -1192,7 +1192,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         case .snippets: renderSnippets(query: lastQuery)
         case .store: renderStore(query: lastQuery)
         default:
-            palette.render(activeTree, selectedIndex: selectedIndex)
+            palette.render(activeTree, selectedIndex: selectedIndex, selectionOnly: true)
             updateActionBar()
             updateRootArguments()
         }
