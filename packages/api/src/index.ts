@@ -186,6 +186,9 @@ type FormType = ReturnType<typeof host> & {
   Separator: ReturnType<typeof host>;
   PasswordField: ReturnType<typeof host>;
   DatePicker: ReturnType<typeof host>;
+  FilePicker: ReturnType<typeof host>;
+  LinkAccessory: ReturnType<typeof host>;
+  TagPicker: ReturnType<typeof host> & { Item: ReturnType<typeof host> };
   Dropdown: ReturnType<typeof host> & { Item: ReturnType<typeof host>; Section: ReturnType<typeof host> };
 };
 export const Form = host(T.Form, ["actions"]) as FormType;
@@ -205,6 +208,16 @@ const Dropdown = host(T.FormDropdown) as FormType["Dropdown"];
 Dropdown.Item = host(T.FormDropdownItem);
 Dropdown.Section = host(T.FormDropdownSection);
 Form.Dropdown = Dropdown;
+// No native file picker yet — degrade to a path text field (the value is a path string). Avoids the
+// render crash for the ~180 extensions that use <Form.FilePicker>.
+Form.FilePicker = host(T.FormTextField);
+// LinkAccessory is a small inline accessory on a form field — render as inert description text.
+Form.LinkAccessory = host(T.FormDescription);
+// TagPicker is multi-select; degrade to a (single-select) dropdown so its <TagPicker.Item> children
+// still render as options instead of throwing.
+const TagPicker = host(T.FormDropdown) as FormType["TagPicker"];
+TagPicker.Item = host(T.FormDropdownItem);
+Form.TagPicker = TagPicker;
 
 /* ------------------------------------------------------------------ Actions */
 type ActionType = ((props: CommonActionProps) => ReactElement) & {
@@ -214,6 +227,13 @@ type ActionType = ((props: CommonActionProps) => ReactElement) & {
   Open: (props: { target: string; application?: string } & CommonActionProps) => ReactElement;
   Push: (props: { target: ReactNode } & CommonActionProps) => ReactElement;
   SubmitForm: (props: { onSubmit: (values: Record<string, unknown>) => void } & CommonActionProps) => ReactElement;
+  ShowInFinder: (props: { path: string } & CommonActionProps) => ReactElement;
+  Trash: (props: { paths: string | string[] } & CommonActionProps) => ReactElement;
+  OpenWith: (props: { path: string } & CommonActionProps) => ReactElement;
+  ToggleQuickLook: (props: { path?: string } & CommonActionProps) => ReactElement;
+  CreateQuicklink: (props: Record<string, unknown> & CommonActionProps) => ReactElement;
+  CreateSnippet: (props: Record<string, unknown> & CommonActionProps) => ReactElement;
+  PickDate: (props: Record<string, unknown> & CommonActionProps) => ReactElement;
   Style: { Regular: "regular"; Destructive: "destructive" };
 };
 const makeAction = (variant: string) =>
@@ -250,6 +270,45 @@ Action.Style = { Regular: "regular", Destructive: "destructive" } as const;
 Action.SubmitForm = (props) => {
   const { onSubmit, ...rest } = props as { onSubmit?: (v: Record<string, unknown>) => void } & Record<string, unknown>;
   return createElement(T.Action, { variant: "submit-form", onAction: onSubmit, ...rest });
+};
+// Filesystem / item actions — thin wrappers over capabilities Invoke already has (finder.reveal, trash,
+// open). The action's onAction handler runs back in the child and calls the matching host RPC.
+Action.ShowInFinder = (props) => {
+  const { path, onShow, ...rest } = props as { path?: string; onShow?: () => void } & Record<string, unknown>;
+  return createElement(T.Action, { variant: "default", title: "Show in Finder", icon: "finder", ...rest,
+    onAction: () => { void showInFinder(String(path ?? "")); onShow?.(); } });
+};
+Action.Trash = (props) => {
+  const { paths, onTrashed, ...rest } = props as { paths?: string | string[]; onTrashed?: () => void } & Record<string, unknown>;
+  return createElement(T.Action, { variant: "default", title: "Move to Trash", style: "destructive", ...rest,
+    onAction: () => { void trash((paths ?? []) as string | string[]); onTrashed?.(); } });
+};
+Action.OpenWith = (props) => {
+  // No app-picker panel yet — degrade to opening the path with the default application.
+  const { path, onOpen, ...rest } = props as { path?: string; onOpen?: () => void } & Record<string, unknown>;
+  return createElement(T.Action, { variant: "open", title: "Open With", target: path, onAction: onOpen, ...rest });
+};
+Action.ToggleQuickLook = (props) => {
+  // No Quick Look panel yet — degrade to revealing the item in Finder (so it never crashes the panel).
+  const { path, ...rest } = props as { path?: string } & Record<string, unknown>;
+  return createElement(T.Action, { variant: "default", title: "Quick Look", icon: "eye", ...rest,
+    onAction: () => { if (path) void showInFinder(String(path)); } });
+};
+Action.CreateQuicklink = (props) => {
+  // Programmatic quicklink creation isn't wired to the host store yet — acknowledge instead of crashing.
+  const { onCreate, ...rest } = props as { onCreate?: () => void } & Record<string, unknown>;
+  return createElement(T.Action, { variant: "default", title: "Create Quicklink", ...rest,
+    onAction: () => { void showToast({ title: "Creating quicklinks isn't supported yet" }); onCreate?.(); } });
+};
+Action.CreateSnippet = (props) => {
+  const { onCreate, ...rest } = props as { onCreate?: () => void } & Record<string, unknown>;
+  return createElement(T.Action, { variant: "default", title: "Create Snippet", ...rest,
+    onAction: () => { void showToast({ title: "Creating snippets isn't supported yet" }); onCreate?.(); } });
+};
+Action.PickDate = (props) => {
+  // No inline date popover yet — render a benign action so the panel doesn't crash on <Action.PickDate>.
+  const { ...rest } = props as Record<string, unknown>;
+  return createElement(T.Action, { variant: "default", title: "Pick Date", icon: "calendar", ...rest });
 };
 
 type ActionPanelType = ReturnType<typeof host> & {
@@ -360,9 +419,45 @@ export const Color = {
   SecondaryText: "secondary-text",
 } as const;
 
-export const Toast = {
-  Style: { Success: "success", Failure: "failure", Animated: "animated" } as const,
-};
+/// Raycast's `Toast` is BOTH a namespace (`Toast.Style`) and a constructor (`new Toast({...})`) whose
+/// instance auto-re-shows when you set `.style`/`.title`/`.message` (the Animated→Success pattern). Many
+/// extensions (e.g. 8-ball) construct it directly, so it must be a class, not a plain object.
+export class Toast {
+  static Style = { Success: "success", Failure: "failure", Animated: "animated" } as const;
+  private _style: string;
+  private _title: string;
+  private _message?: string;
+  private _primaryAction?: unknown;
+  private _secondaryAction?: unknown;
+  private _pending = false;
+  constructor(options: { style?: string; title: string; message?: string; primaryAction?: unknown; secondaryAction?: unknown }) {
+    this._style = options.style ?? Toast.Style.Success;
+    this._title = options.title;
+    this._message = options.message;
+    this._primaryAction = options.primaryAction;
+    this._secondaryAction = options.secondaryAction;
+  }
+  private reshow(): void {
+    if (this._pending) return;
+    this._pending = true;
+    queueMicrotask(() => {
+      this._pending = false;
+      void rpc("toast.show", { style: this._style, title: this._title, message: this._message }).catch(() => {});
+    });
+  }
+  get style(): string { return this._style; }
+  set style(v: string) { this._style = v; this.reshow(); }
+  get title(): string { return this._title; }
+  set title(v: string) { this._title = v; this.reshow(); }
+  get message(): string | undefined { return this._message; }
+  set message(v: string | undefined) { this._message = v; this.reshow(); }
+  get primaryAction(): unknown { return this._primaryAction; }
+  set primaryAction(v: unknown) { this._primaryAction = v; }
+  get secondaryAction(): unknown { return this._secondaryAction; }
+  set secondaryAction(v: unknown) { this._secondaryAction = v; }
+  async show(): Promise<void> { await rpc("toast.show", { style: this._style, title: this._title, message: this._message }); }
+  async hide(): Promise<void> { await rpc("toast.show", { style: this._style, title: "", message: "" }); }
+}
 
 export const LaunchType = { UserInitiated: "userInitiated", Background: "background" } as const;
 export const PopToRootType = { Immediate: "immediate", Suspended: "suspended", Default: "default" } as const;
@@ -391,6 +486,10 @@ export const Clipboard = {
     rpc("clipboard.copy", { content, ...opts }) as Promise<void>,
   paste: (content: string) => rpc("clipboard.paste", { content }) as Promise<void>,
   readText: () => rpc("clipboard.readText", {}) as Promise<string | undefined>,
+  // Raycast's Clipboard.read() returns { text, file?, html? }. We surface text (file/html not captured yet).
+  read: async (): Promise<{ text: string; file?: string; html?: string }> => ({
+    text: ((await rpc("clipboard.readText", {})) as string | undefined) ?? "",
+  }),
 };
 
 export interface ToastHandle { style: string; title: string; message?: string; hide: () => Promise<void>; show: () => Promise<void>; }
