@@ -11,7 +11,6 @@
  * then re-filtered per query, so changing topics doesn't re-download megabytes of feeds.
  */
 import { List, ActionPanel, Action, getPreferenceValues } from "@raycast/api";
-import { usePromise } from "@raycast/utils";
 import { useEffect, useState } from "react";
 
 interface Preferences {
@@ -30,14 +29,28 @@ interface Item {
 
 const UA: Record<string, string> = { "User-Agent": "Invoke-TechRadar/0.1 (+https://github.com/kapildave6/invoke-v2)" };
 
+/** fetch with a hard timeout. Sources are merged with Promise.allSettled, which only resolves when
+ *  the SLOWEST one settles — so a single dead/slow source (a stalled RSS feed) would otherwise hang
+ *  the whole merge for Node's full connect timeout (~10s+), leaving the list blank the entire time.
+ *  Aborting at `ms` bounds the worst case and lets the live sources through. */
+async function fetchT(url: string, init?: RequestInit, ms = 6000): Promise<Response> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ms);
+  try {
+    return await fetch(url, { ...init, signal: ctrl.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function getJSON(url: string, headers?: Record<string, string>): Promise<any> {
-  const res = await fetch(url, headers ? { headers } : undefined);
+  const res = await fetchT(url, headers ? { headers } : undefined);
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
   return res.json();
 }
 
 async function getText(url: string): Promise<string> {
-  const res = await fetch(url, { headers: UA });
+  const res = await fetchT(url, { headers: UA });
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
   return res.text();
 }
@@ -231,10 +244,6 @@ async function engineeringBlogs(q: string): Promise<Item[]> {
 
 // ---- glue ---------------------------------------------------------------------------------------
 
-function settled(r: PromiseSettledResult<Item[]>): Item[] {
-  return r.status === "fulfilled" ? r.value : [];
-}
-
 /** Compact relative age, e.g. "3m", "5h", "2d". */
 function rel(unix?: number): string {
   if (!unix) return "";
@@ -301,33 +310,69 @@ export default function Command() {
   const [query, setQuery] = useState(prefs.defaultTopic ?? "");
   const q = useDebounced(query.trim(), 400);
 
-  const { data, isLoading } = usePromise(async (): Promise<Groups | null> => {
-    if (!q) return null;
-    const [hn, hnLatest, stack, dev, gh, papers, blogs] = await Promise.allSettled([
-      hackerNews(q),
-      hackerNews(q, true),
-      stackOverflow(q),
-      devto(tagFrom(q)),
-      github(q),
-      arxiv(q),
-      engineeringBlogs(q),
-    ]);
-    const latest = [...settled(hnLatest), ...settled(stack), ...settled(dev), ...settled(blogs), ...settled(papers)]
-      .filter((i) => i.date)
-      .sort((a, b) => (b.date ?? 0) - (a.date ?? 0))
-      .slice(0, 6);
-    return {
-      latest,
-      hn: settled(hn),
-      stack: settled(stack),
-      blogs: settled(blogs),
-      devto: settled(dev),
-      papers: settled(papers),
-      github: settled(gh),
+  // Progressive merge: each source fills its own slice the moment it resolves, so the fast core
+  // (HN/SO/GitHub/Dev.to/arXiv — typically <1s) renders immediately and the slower engineering-blog
+  // feeds stream in behind it. A dead source simply never fills (its fetch times out) instead of
+  // blanking the whole list — the prior single Promise.allSettled gated every result on the slowest.
+  const [groups, setGroups] = useState<Partial<Groups>>({});
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!q) {
+      setGroups({});
+      setLoading(false);
+      return;
+    }
+    let live = true;
+    setGroups({});
+    setLoading(true);
+    const set = (patch: Partial<Groups>) => {
+      if (live) setGroups((g) => ({ ...g, ...patch }));
+    };
+    // safe() swallows a source's failure (→ empty) so one dead/slow source can't break the merge.
+    const safe = (p: Promise<Item[]>): Promise<Item[]> => p.then((v) => v, () => [] as Item[]);
+    const fill = (key: keyof Groups, p: Promise<Item[]>): Promise<Item[]> =>
+      p.then((v) => {
+        set({ [key]: v } as Partial<Groups>);
+        return v;
+      });
+    // "📰 Latest" = the freshest dated items across the news-y sources. Recompute it incrementally as
+    // each input lands (not via one Promise.all) so the top section also streams in and never waits on
+    // the slowest/dead source.
+    const latestParts: Record<string, Item[]> = {};
+    const addLatest = (name: string, v: Item[]) => {
+      latestParts[name] = v;
+      set({
+        latest: Object.values(latestParts)
+          .flat()
+          .filter((i) => i.date)
+          .sort((a, b) => (b.date ?? 0) - (a.date ?? 0))
+          .slice(0, 6),
+      });
+    };
+    const feed = (name: string, p: Promise<Item[]>): Promise<Item[]> =>
+      p.then((v) => {
+        if (live) addLatest(name, v);
+        return v;
+      });
+
+    const hn = fill("hn", safe(hackerNews(q)));
+    const hnLatest = feed("hnLatest", safe(hackerNews(q, true)));
+    const stack = feed("stack", fill("stack", safe(stackOverflow(q))));
+    const dev = feed("devto", fill("devto", safe(devto(tagFrom(q)))));
+    const gh = fill("github", safe(github(q)));
+    const papers = feed("arxiv", fill("papers", safe(arxiv(q))));
+    const blogs = feed("blogs", fill("blogs", safe(engineeringBlogs(q))));
+
+    Promise.allSettled([hn, hnLatest, stack, dev, gh, papers, blogs]).finally(() => {
+      if (live) setLoading(false);
+    });
+    return () => {
+      live = false;
     };
   }, [q]);
 
-  const busy = isLoading || query.trim() !== q;
+  const busy = loading || query.trim() !== q;
 
   return (
     <List
@@ -340,13 +385,13 @@ export default function Command() {
         <List.Section title="Type a topic to read about — HN · Stack Overflow · engineering blogs · Dev.to · arXiv · GitHub" />
       ) : (
         [
-          section("📰 Latest", data?.latest ?? [], true),
-          section("💬 Hacker News", data?.hn ?? [], true),
-          section("❓ Stack Overflow", data?.stack ?? [], true),
-          section("📚 Engineering Blogs", data?.blogs ?? [], true),
-          section(`📝 Dev.to (#${tagFrom(q)})`, data?.devto ?? [], true),
-          section("📄 arXiv Papers", data?.papers ?? [], true),
-          section("🛠 GitHub Repos", data?.github ?? [], false),
+          section("📰 Latest", groups.latest ?? [], true),
+          section("💬 Hacker News", groups.hn ?? [], true),
+          section("❓ Stack Overflow", groups.stack ?? [], true),
+          section("📚 Engineering Blogs", groups.blogs ?? [], true),
+          section(`📝 Dev.to (#${tagFrom(q)})`, groups.devto ?? [], true),
+          section("📄 arXiv Papers", groups.papers ?? [], true),
+          section("🛠 GitHub Repos", groups.github ?? [], false),
         ]
       )}
     </List>
