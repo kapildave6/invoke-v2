@@ -345,9 +345,9 @@ function classifyExtension({ dir, pkg }) {
   // AI tools[] (manifest) are supported (M4): the model can call them via the agent loop.
   // extension-level `ai` instructions are now honored by the @-mode agent loop (M4).
   // background `interval` commands are scheduled now (M4).
-  if (commands.some((c) => Array.isArray(c.arguments) && c.arguments.length)) {
-    degraded.push("declares command `arguments[]` — not passed by runtime yet");
-  }
+  // command `arguments[]` (search-bar fields) ARE delivered now: the host collects them (inline chips,
+  // with an in-palette form fallback) → INVOKE_ARGUMENTS → child.ts builds LaunchProps.arguments for both
+  // view and no-view commands. So declaring arguments[] is no longer a gap.
 
   // Node built-ins (only matters in sandbox)
   const unsafeBuiltins = [...builtinsUsed].filter((b) => !SAFE_BUILTINS.has(b));
