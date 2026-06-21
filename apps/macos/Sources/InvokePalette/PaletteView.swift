@@ -335,7 +335,9 @@ public final class PaletteView: NSView {
         // Raycast's isLoading: thin sweep bar while any active surface is loading.
         // Re-add as frontmost sibling BEFORE starting: list/split scroll views are added during the
         // surface dispatch above, so without this the bar is occluded by later-added siblings.
-        if surfaces.contains(where: { Self.isTrue($0.props["isLoading"]) }) {
+        // Also honor List.Item.Detail.isLoading (the selected master-detail item's detail pane), distinct
+        // from the surface-level List.isLoading — both drive the same top sweep bar.
+        if surfaces.contains(where: { Self.isTrue($0.props["isLoading"]) }) || detailLoading(in: surfaces, selectedIndex: selectedIndex) {
             addSubview(loadingBar, positioned: .above, relativeTo: nil) // keep the bar frontmost; list/split scroll views are added earlier
             loadingBar.start()
         } else {
@@ -1077,6 +1079,10 @@ public final class PaletteView: NSView {
         title.lineBreakMode = .byTruncatingTail
         title.maximumNumberOfLines = 2
         v.addArrangedSubview(title)
+        // Grid.Item.accessory — a single accessory (icon/text/tag + tooltip), centered under the title.
+        if case .object(let o)? = node.props["accessory"], let acc = parseAccessoryEntry(o) {
+            v.addArrangedSubview(accessoryView(acc))
+        }
         cell.addSubview(v)
         NSLayoutConstraint.activate([
             thumb.heightAnchor.constraint(equalToConstant: thumbHeight),
@@ -1789,25 +1795,29 @@ public final class PaletteView: NSView {
         h.addArrangedSubview(spacer)
 
         // Accessories: each entry = optional icon + optional text/tag (+ tooltip), rendered together.
-        for acc in accessories(node) {
-            let sub = NSStackView()
-            sub.orientation = .horizontal; sub.alignment = .centerY; sub.spacing = 4
-            sub.translatesAutoresizingMaskIntoConstraints = false
-            if let iv = acc.iconValue, let icon = accessoryIcon(iv, tint: acc.iconTint) { sub.addArrangedSubview(icon) }
-            if let label = acc.label {
-                if acc.isTag {
-                    sub.addArrangedSubview(chip(label, color: acc.color))
-                } else {
-                    let l = NSTextField(labelWithString: label)
-                    l.font = .systemFont(ofSize: 13)
-                    l.textColor = acc.color ?? .tertiaryLabelColor
-                    sub.addArrangedSubview(l)
-                }
-            }
-            if let tip = acc.tooltip { sub.toolTip = tip }
-            h.addArrangedSubview(sub)
-        }
+        for acc in accessories(node) { h.addArrangedSubview(accessoryView(acc)) }
         return h
+    }
+
+    /// One accessory → a horizontal [icon?][label/chip?] view (with optional tooltip). Shared by List
+    /// rows and Grid tiles.
+    private func accessoryView(_ acc: Accessory) -> NSView {
+        let sub = NSStackView()
+        sub.orientation = .horizontal; sub.alignment = .centerY; sub.spacing = 4
+        sub.translatesAutoresizingMaskIntoConstraints = false
+        if let iv = acc.iconValue, let icon = accessoryIcon(iv, tint: acc.iconTint) { sub.addArrangedSubview(icon) }
+        if let label = acc.label {
+            if acc.isTag {
+                sub.addArrangedSubview(chip(label, color: acc.color))
+            } else {
+                let l = NSTextField(labelWithString: label)
+                l.font = .systemFont(ofSize: 13)
+                l.textColor = acc.color ?? .tertiaryLabelColor
+                sub.addArrangedSubview(l)
+            }
+        }
+        if let tip = acc.tooltip { sub.toolTip = tip }
+        return sub
     }
 
     private func addItemRow(_ node: ViewNode, selected: Bool, index: Int) {
@@ -2036,34 +2046,46 @@ public final class PaletteView: NSView {
         }
     }
 
+    /// Parse one accessory object (a List.Item.Accessory entry or a Grid.Item.Accessory) → an Accessory,
+    /// or nil if it carries neither an icon nor a label.
+    private func parseAccessoryEntry(_ o: [String: JSONValue]) -> Accessory? {
+        var a = Accessory()
+        a.tooltip = o["tooltip"]?.stringValue
+        // icon: ImageLike | { value, tooltip }
+        if let icon = nonNull(o["icon"]) {
+            if case .object(let io) = icon, let v = nonNull(io["value"]) {
+                a.iconValue = v
+                if a.tooltip == nil { a.tooltip = io["tooltip"]?.stringValue }
+            } else {
+                a.iconValue = icon
+            }
+            if case .object(let io)? = a.iconValue { a.iconTint = accessoryColor(io["tintColor"]) }
+        }
+        // label: tag | date | text, each String | number | { value, color }
+        if let tag = nonNull(o["tag"]) {
+            let (s, c) = labelAndColor(tag, isDate: false); a.label = s; a.color = c; a.isTag = true
+        } else if let date = nonNull(o["date"]) {
+            let (s, c) = labelAndColor(date, isDate: true); a.label = s; a.color = c
+        } else if let text = nonNull(o["text"]) {
+            let (s, c) = labelAndColor(text, isDate: false); a.label = s; a.color = c
+        }
+        return (a.iconValue != nil || a.label != nil) ? a : nil
+    }
+
     private func accessories(_ node: ViewNode) -> [Accessory] {
         guard let acc = node.props["accessories"], case .array(let arr) = acc else { return [] }
-        var out: [Accessory] = []
-        for item in arr {
-            guard case .object(let o) = item else { continue }
-            var a = Accessory()
-            a.tooltip = o["tooltip"]?.stringValue
-            // icon: ImageLike | { value, tooltip }
-            if let icon = nonNull(o["icon"]) {
-                if case .object(let io) = icon, let v = nonNull(io["value"]) {
-                    a.iconValue = v
-                    if a.tooltip == nil { a.tooltip = io["tooltip"]?.stringValue }
-                } else {
-                    a.iconValue = icon
-                }
-                if case .object(let io)? = a.iconValue { a.iconTint = accessoryColor(io["tintColor"]) }
-            }
-            // label: tag | date | text, each String | number | { value, color }
-            if let tag = nonNull(o["tag"]) {
-                let (s, c) = labelAndColor(tag, isDate: false); a.label = s; a.color = c; a.isTag = true
-            } else if let date = nonNull(o["date"]) {
-                let (s, c) = labelAndColor(date, isDate: true); a.label = s; a.color = c
-            } else if let text = nonNull(o["text"]) {
-                let (s, c) = labelAndColor(text, isDate: false); a.label = s; a.color = c
-            }
-            if a.iconValue != nil || a.label != nil { out.append(a) }
-        }
-        return out
+        return arr.compactMap { if case .object(let o) = $0 { return parseAccessoryEntry(o) } else { return nil } }
+    }
+
+    /// True when the selected master-detail item's `List.Item.Detail` has `isLoading` (its own loading
+    /// state, distinct from the surface-level `List.isLoading`); both drive the same top sweep bar.
+    private func detailLoading(in surfaces: [ViewNode], selectedIndex: Int) -> Bool {
+        guard let list = surfaces.first(where: { $0.type == "list" }) else { return false }
+        var rows: [ViewNode] = []
+        func walk(_ n: ViewNode) { if n.type == "list-item" { rows.append(n) }; n.children.forEach(walk) }
+        walk(list)
+        guard selectedIndex >= 0, selectedIndex < rows.count else { return false }
+        return rows[selectedIndex].children.contains { $0.type == "list-item-detail" && Self.isTrue($0.props["isLoading"]) }
     }
 
     /// Accessory icon (15pt) — same ImageLike resolution as `iconView`, minus the node-specific
