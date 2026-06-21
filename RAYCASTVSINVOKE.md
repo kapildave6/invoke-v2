@@ -17,7 +17,7 @@
 
 **What remains is two kinds of gap:**
 1. **Breadth** — many SDK members are *defined* (so extensions importing them type-check and load) but the renderer doesn't honor every prop.
-2. **Depth** — controlled-input semantics (typed DatePicker/TagPicker values) and streaming (AI tokens, `useStreamJSON`) are not fully wired. _(Pagination, `isLoading`, native pickers/masking, and `Detail.Metadata` fidelity landed 2026-06-21. Checkbox onChange→bool, EmptyView, Action style/shortcut landed 2026-06-21 (Chunk E). controlled searchText/throttle/filtering + Dropdown storeValue landed 2026-06-21 (Chunk F).)_
+2. **Depth** — controlled-input semantics (typed DatePicker/TagPicker values) and streaming (AI tokens, `useStreamJSON`) are not fully wired. _(Pagination, `isLoading`, native pickers/masking, and `Detail.Metadata` fidelity landed 2026-06-21. Checkbox onChange→bool, EmptyView, Action style/shortcut landed 2026-06-21 (Chunk E). controlled searchText/throttle/filtering + Dropdown storeValue landed 2026-06-21 (Chunk F). **Alert.Options** `icon`/`dismissAction.style`/`rememberUserChoice` + **`Clipboard.read` full `{text,html,file}`** + **`Clipboard.clear`** landed 2026-06-21 (Chunk G).)_
 
 **Implementation has since outrun the original gap analysis.** The 2026-06-21 code-level reconciliation found the former "takes down the whole view" crash members — `Action.Trash` / `OpenWith` / `ShowInFinder` / `ToggleQuickLook` / `CreateQuicklink` / `CreateSnippet` / `PickDate`, `Form.TagPicker` / `FilePicker` / `LinkAccessory`, and `MenuBarExtra.*` — are **all defined now and either functional or degrade gracefully** (no more `"Element type is invalid"`). Menu-bar commands render to a real `NSStatusItem`; `launchCommand` / `updateCommandMetadata` work; the `Keyboard` namespace is exported. The remaining gaps are mostly **depth** (controlled non-text inputs, AI/JSON streaming) and **named-type exports**, not crashes — pagination, native pickers/masking, and `Detail.Metadata` fidelity landed 2026-06-21.
 
@@ -130,7 +130,7 @@
 | Toast visual style (icon / color per style) | 🟡 | minimal differentiation |
 | `showHUD` | 🟡 | renders, but `options` (`clearRootSearch` / `popToRootType`) are decorative no-ops |
 | `confirmAlert` (in-palette modal, `primaryAction.onAction`, destructive, key capture) | ✅ | landed this iteration, both hosts |
-| `Alert.Options` `icon` / `dismissAction` / `rememberUserChoice` | ⬜ | custom icon, secondary dismiss action & "don't ask again" not honored |
+| `Alert.Options` `icon` / `dismissAction` / `rememberUserChoice` | ✅ | landed Chunk G 2026-06-21; honored by both in-palette modal and native NSAlert hosts |
 | `Alert.ActionStyle` enum (`Default` / `Destructive` / `Cancel`) + `Alert.ActionOptions` | 🟡 | enum exported (`index.ts:873`) + destructive honored end-to-end (`AppController.swift:2013`); `Alert.ActionOptions` type not modeled |
 | `showFailureToast` (utils) | ✅ | |
 
@@ -162,7 +162,7 @@
 |---|---|---|
 | `Clipboard.copy` / `paste` / `readText` | ✅ | `concealed` flag dropped (🟡); `html` / `file` copy — ⬜ (note: `transient` is **not** a current Raycast `CopyOptions` field) |
 | `Clipboard.Content` / `Clipboard.ReadContent` / `Clipboard.CopyOptions` types | 🟡 | text path works; `html` / `file` content shapes not modeled |
-| `Clipboard.read({offset})` → `{text, html, file}` / `Clipboard.clear` | 🟡 | `read` exported + host returns `{text,file,html}` (`AppController.swift:2232`), but the JS shim returns text only (`index.ts:501`; `html`/`file`/`offset` dropped); `Clipboard.clear` still absent |
+| `Clipboard.read({offset})` → `{text, html, file}` / `Clipboard.clear` | 🟡 | full `{text,html,file}` read + `Clipboard.clear` DONE Chunk G 2026-06-21; `offset` (Nth history entry) still pending |
 | **`Keyboard` namespace** — `Keyboard.Shortcut` (`{key, modifiers}`) | 🟡 | **exported** (`index.ts:878`) — namespace is **not** absent; `Shortcut` is a local type (unexported); shortcuts **now applied** to the UI (Chunk E) |
 | `Keyboard.KeyModifier` / `Keyboard.KeyEquivalent` / `Keyboard.Shortcut.Common` | 🟡 | `Shortcut.Common` populated (`index.ts:881`); `KeyModifier` / `KeyEquivalent` unions not exported |
 | `getApplications` / `getDefaultApplication` / `getFrontmostApplication` (+ `Application` type) | ✅ | real; `Application` interface **is** exported (`index.ts:760`) |
@@ -237,9 +237,9 @@
 - _(Done 2026-06-21: List/Grid **pagination** (+ `useFetch`/`useCachedPromise`); `Form.PasswordField` masking + native `Form.DatePicker`; clickable `Detail.Metadata.Link` + `TagList` chips + `Color` in Metadata; `List`/`Detail` `isLoading` bars; `List.Item`/`Grid.Item` accessories incl. `Color`/`Icon` tint + `FileIcon`; grouped `ActionPanel.Section` + drill-in `Submenu`; imperative `open`/`trash`/`showInFinder`; working `mutate` runtime. **Controlled `searchText`/`throttle` (List/Grid) + `List.Dropdown`/`Grid.Dropdown` `storeValue`/`filtering`/`isLoading`/`tooltip` landed (Chunk F, 2026-06-21).**)_
 - `Detail.Metadata.TagList.Item` `onAction` (clickable tag) + TagList wrapping on overflow
 - `Form.DatePicker` `min`/`max` + `isFullDay()`; typed (non-string) field values
-- `Toast` primary / secondary actions (`Toast.ActionOptions`) + `Alert.Options` (`icon` / `dismissAction` / `rememberUserChoice`)
+- `Toast` primary / secondary actions (`Toast.ActionOptions`) — _(`Alert.Options` `icon`/`dismissAction.style`/`rememberUserChoice` DONE 2026-06-21, Chunk G)_
 - `optimisticUpdate` / `rollbackOnError` on the working `mutate`
-- `Clipboard.read` full `{text,html,file}` + `offset` (host already returns them) + `Clipboard.clear`
+- `Clipboard.read` `offset` (Nth history entry) — _(full `{text,html,file}` read + `Clipboard.clear` DONE 2026-06-21, Chunk G)_
 
 ### P2 — breadth / v2
 - _(Done: `menu-bar` mode + `NSStatusItem` + `MenuBarExtra`/`.Item`/`.Submenu`/`.Section`; `launchCommand`; `updateCommandMetadata`; `BrowserExtension`.)_ Remaining: `MenuBarExtra.Item` `alternate`/`shortcut` + click `ActionEvent`

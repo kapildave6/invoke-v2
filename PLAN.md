@@ -676,7 +676,7 @@ The component spine is in place and renders natively: **List, Grid, Detail, Form
 | Toast visual style (icon/color per style) | 🟡 | minimal differentiation |
 | `showHUD` | 🟡 | renders, but `options` (`clearRootSearch` / `popToRootType`) are decorative no-ops |
 | `confirmAlert` (in-palette modal, `primaryAction.onAction`, destructive, key capture) | ✅ | landed this iteration, both hosts |
-| `Alert.Options` `icon` / `dismissAction` / `rememberUserChoice` | ⬜ | custom icon, secondary dismiss action & "don't ask again" not honored |
+| `Alert.Options` `icon` / `dismissAction` / `rememberUserChoice` | ✅ | landed Chunk G 2026-06-21; honored by both in-palette modal and native NSAlert hosts |
 | `Alert.ActionStyle` enum (`Default` / `Destructive` / `Cancel`) + `Alert.ActionOptions` | 🟡 | enum exported (`index.ts:873`) + destructive honored end-to-end (`AppController.swift:2013`); `Alert.ActionOptions` type not modeled |
 | `showFailureToast` (utils) | ✅ | |
 
@@ -708,7 +708,7 @@ The component spine is in place and renders natively: **List, Grid, Detail, Form
 |---|---|---|
 | `Clipboard.copy` / `paste` / `readText` | ✅ | `concealed` flag dropped (🟡); `html`/`file` copy — ⬜ (note: `transient` is **not** a current Raycast `CopyOptions` field) |
 | `Clipboard.Content` / `Clipboard.ReadContent` / `Clipboard.CopyOptions` types | 🟡 | text path works; `html`/`file` content shapes not modeled |
-| `Clipboard.read({offset})` → `{text,html,file}` / `Clipboard.clear` | 🟡 | `read` exported + host returns `{text,file,html}` (`AppController.swift:2232`), but JS shim returns text only (`index.ts:501`); `Clipboard.clear` still absent |
+| `Clipboard.read({offset})` → `{text,html,file}` / `Clipboard.clear` | 🟡 | full `{text,html,file}` read + `Clipboard.clear` DONE Chunk G 2026-06-21; `offset` (Nth history entry) still pending |
 | **`Keyboard` namespace** — `Keyboard.Shortcut` (`{key, modifiers}`) | 🟡 | **exported** (`index.ts:878`) — namespace **not** absent; `Shortcut` is a local type; shortcuts not applied to UI |
 | `Keyboard.KeyModifier` / `Keyboard.KeyEquivalent` / `Keyboard.Shortcut.Common` | 🟡 | `Shortcut.Common` populated (`index.ts:881`); `KeyModifier`/`KeyEquivalent` unions not exported |
 | `getApplications` / `getDefaultApplication` / `getFrontmostApplication` (+ `Application` type) | ✅ | real; `Application` interface **is** exported (`index.ts:760`) |
@@ -770,7 +770,7 @@ The component spine is in place and renders natively: **List, Grid, Detail, Form
 ### A.12 Recommended implementation order
 
 - **P0 — crash-prevention & correctness:** ~~graceful-degrade every undefined component~~ **DONE 2026-06-21** (the `Action.*`, `Form.TagPicker`/`FilePicker`/`LinkAccessory`, `MenuBarExtra.*` members are all defined; nothing throws "Element type is invalid"; `Keyboard` exported). Remaining: render `List.EmptyView`/`Grid.EmptyView`; fire `onChange` for **Checkbox**; honor `Action.style` (destructive) + bind custom `Action.shortcut` to the exported `Keyboard.Shortcut`.
-- **P1 — depth:** _(Done 2026-06-21: List/Grid **pagination** (+ `useFetch`/`useCachedPromise`); `Form.PasswordField` masking + native `DatePicker`; clickable `Detail.Metadata.Link` + `TagList` chips + `Color` in Metadata; `List`/`Detail` `isLoading`; List/Grid accessories incl. `Color`/`Icon` tint + `FileIcon`; grouped `ActionPanel.Section` + drill-in `Submenu`; `open`/`trash`/`showInFinder`; `mutate` runtime. controlled searchText/throttle/filtering + Dropdown storeValue landed (Chunk F, 2026-06-21).)_ Remaining: `TagList.Item` `onAction` + TagList wrapping; `DatePicker` `min`/`max` + typed field values; `Toast`/`Alert.Options` actions; `optimisticUpdate`/`rollbackOnError`; full `Clipboard.read` + `clear`.
+- **P1 — depth:** _(Done 2026-06-21: List/Grid **pagination** (+ `useFetch`/`useCachedPromise`); `Form.PasswordField` masking + native `DatePicker`; clickable `Detail.Metadata.Link` + `TagList` chips + `Color` in Metadata; `List`/`Detail` `isLoading`; List/Grid accessories incl. `Color`/`Icon` tint + `FileIcon`; grouped `ActionPanel.Section` + drill-in `Submenu`; `open`/`trash`/`showInFinder`; `mutate` runtime. controlled searchText/throttle/filtering + Dropdown storeValue landed (Chunk F, 2026-06-21). **`Alert.Options` `icon`/`dismissAction.style`/`rememberUserChoice` + `Clipboard.read` full `{text,html,file}` + `Clipboard.clear` landed (Chunk G, 2026-06-21).**)_ Remaining: `TagList.Item` `onAction` + TagList wrapping; `DatePicker` `min`/`max` + typed field values; `Toast` primary/secondary actions (`Toast.ActionOptions`); `optimisticUpdate`/`rollbackOnError`; `Clipboard.read` `offset` (Nth history entry).
 - **P2 — breadth / v2:** _(Done: `menu-bar` + `NSStatusItem` + `MenuBarExtra.*`; `launchCommand`; `updateCommandMetadata`; `BrowserExtension`.)_ Remaining: `MenuBarExtra.Item` `alternate`/`shortcut` + `ActionEvent`; AI streaming (+ `signal`; honor `model`/`creativity` host-side) + Tools (`Tool.Confirmation`)/MCP/Skills; Window Management API; full `Icon`/`Color` coverage + `Image.Mask`; `useStreamJSON` streaming; fallback commands; real `environment` fields; OAuth provider presets; export remaining named types/enums (`Cache.*`/`Preferences`/`Form.Values`/`KeyModifier`/`Navigation`/`LaunchContext`).
 
 ---
