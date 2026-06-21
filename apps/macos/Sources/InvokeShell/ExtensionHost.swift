@@ -145,6 +145,9 @@ public final class ExtensionHost {
         let script = "cd \(Self.shellQuote(repoRoot)) && exec node --import tsx runtime/node-host/src/child.ts \(Self.shellQuote(entryRelPath)) \(Self.shellQuote(command))"
         let argv = ["/bin/sh", "-c", script]
         var env = ProcessInfo.processInfo.environment
+        // Security: the host's AI key must never be readable by a (possibly unsandboxed) extension.
+        // AI is reached via the gated ai.ask RPC, which runs in the host — the child never needs the key.
+        env["ANTHROPIC_API_KEY"] = nil
         env["INVOKE_COMMAND"] = command
         env["INVOKE_PREFERENCES"] = preferences
         env["INVOKE_MODE"] = mode
