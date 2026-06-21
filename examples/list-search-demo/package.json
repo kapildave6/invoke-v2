@@ -1,0 +1,23 @@
+{
+  "name": "list-search-demo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "title": "List Search Demo",
+  "description": "Exercises controlled searchText/throttle, filtering={false}, and List.Dropdown storeValue/tooltip.",
+  "icon": "icon.png",
+  "author": "invoke",
+  "categories": ["Other"],
+  "platforms": ["macOS"],
+  "preferences": [],
+  "commands": [
+    { "name": "controlled-search", "title": "Controlled Search Demo", "description": "Controlled searchText + throttle + storeValue dropdown", "mode": "view" },
+    { "name": "static-list", "title": "Static List Demo", "description": "filtering={false}: typing filters nothing", "mode": "view" }
+  ],
+  "dependencies": {
+    "@raycast/api": "*"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  }
+}
