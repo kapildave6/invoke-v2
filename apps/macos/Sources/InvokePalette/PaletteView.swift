@@ -2476,41 +2476,7 @@ public final class PaletteView: NSView {
     }
 
     private func sfSymbol(for icon: String) -> String {
-        switch icon {
-        case "circle": return "circle.fill"
-        case "star": return "star.fill"
-        case "clipboard": return "doc.on.clipboard"
-        case "globe": return "globe"
-        case "window": return "macwindow"
-        case "calendar": return "calendar"
-        case "magnifying-glass": return "magnifyingglass"
-        case "app-window-grid-3x3": return "square.grid.3x3"
-        case "car": return "car"
-        case "code": return "chevron.left.forwardslash.chevron.right"
-        case "code-block": return "curlybraces"
-        case "credit-card": return "creditcard"
-        case "crypto": return "bitcoinsign.circle"
-        case "envelope": return "envelope"
-        case "fingerprint": return "touchid"
-        case "gift": return "gift"
-        case "hard-drive": return "internaldrive"
-        case "heartbeat": return "waveform.path.ecg"
-        case "key": return "key"
-        case "paperclip": return "paperclip"
-        case "repeat": return "repeat"
-        case "shield": return "shield"
-        case "star-circle": return "star.circle"
-        case "switch": return "switch.2"
-        case "terminal": return "terminal"
-        case "text": return "text.alignleft"
-        case "tree": return "leaf"
-        case "wallet": return "wallet.pass"
-        case "wifi": return "wifi"
-        case "wifi-disabled": return "wifi.slash"
-        case "check-circle": return "checkmark.circle"
-        case "check": return "checkmark"
-        default: return "app"
-        }
+        return IconSymbol.sfName(for: icon)
     }
 }
 
