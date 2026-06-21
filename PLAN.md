@@ -561,12 +561,13 @@ This is a personal project. The notes below are practical pointers, not legal ad
 
 > **Audited 2026-06-16** against [developers.raycast.com](https://developers.raycast.com), component-by-component, against the live `@invoke/api`/`@invoke/utils` surface and the AppKit renderer.
 > **Member-level re-audit 2026-06-21** — all 29 pages under `/api-reference` swept page-by-page; nested types, enums, and props folded in below (incl. the previously-absent `Keyboard` namespace).
+> **Code-level reconciliation 2026-06-21** — every row re-checked against the actual `@invoke/api` exports + AppKit renderer + host RPC; states corrected with `file:line` evidence (many ⬜/🟡 rows were stale — the implementation had outrun the doc).
 > Legend: **✅ working** · **🟡 partial / lossy** (defined but the renderer ignores props, or semantics differ) · **⬜ missing** (throws `unsupported()`, crashes as "Element type is invalid", or is a silent no-op).
 > This appendix is the canonical pending-implementation list; `STATUS.md` tracks delivery against it.
 
 ### A.0 What already works (parity baseline)
 
-The component spine is in place and renders natively: **List, Grid, Detail, Form, ActionPanel/Action, Detail.Metadata, List.Dropdown (+ .Item/.Section), List.Item.Detail**. Recently landed and verified: **navigation push/pop** (declarative `Action.Push` *and* programmatic `useNavigation().push/pop` via render-on-push frames), **command arguments** (inline search-bar chips), **per-extension Trust** (run unsandboxed + recompute compatibility), **in-palette `confirmAlert`** modal (both launch hosts, `primaryAction.onAction`, destructive styling, key capture), the **world-class search dropdown** (custom popover + favicons), **constant palette size/position**, **Form validation + value preservation**, and **AI.ask / OAuth.PKCEClient** as real host-driven RPCs. The pending work below is **breadth** (SDK members defined but not honored by the renderer) and **depth** (controlled-input semantics, pagination, streaming).
+The component spine is in place and renders natively: **List, Grid, Detail, Form, ActionPanel/Action, Detail.Metadata, List.Dropdown (+ .Item/.Section), List.Item.Detail**. Recently landed and verified: **navigation push/pop** (declarative `Action.Push` *and* programmatic `useNavigation().push/pop`), **command arguments** (inline chips), **per-extension Trust**, **in-palette `confirmAlert`**, the **world-class search dropdown**, **constant palette size/position**, **Form validation + value preservation**, **AI.ask / OAuth.PKCEClient** RPCs, and (2026-06-21) **List/Detail `isLoading` bars, List/Grid accessories with `Color`/`Icon` tint, grouped `ActionPanel.Section` + drill-in `Submenu`, full `menu-bar` + `MenuBarExtra`, `launchCommand`/`updateCommandMetadata`, and `open`/`trash`/`showInFinder`**. The 2026-06-21 code reconciliation found the former "crash" members all defined now (no `"Element type is invalid"`); remaining work is **depth** (controlled non-text inputs, pagination, streaming, native pickers/masking) and **named-type exports**.
 
 ### A.1 List & Grid
 
@@ -577,41 +578,41 @@ The component spine is in place and renders natively: **List, Grid, Detail, Form
 | `List` / `Grid` component-level `actions` (empty-state ActionPanel) | ⬜ | top-level `actions` prop not rendered |
 | `List.Section`, `List.Item` (title/subtitle/icon) | ✅ | |
 | `List.Dropdown` / `.Item` / `.Section` (searchBarAccessory) | ✅ | world-class popover (landed) |
-| `List.Dropdown` / `Grid.Dropdown` controlled props (`value` / `defaultValue` / `onChange` / `storeValue` / `filtering` / `onSearchTextChange` / `isLoading` / `tooltip`) | ⬜ | selection renders, but controlled-value & behavioral props not wired |
-| `List.isLoading` | 🟡→⬜ | prop ignored — no indeterminate progress bar under the search bar |
+| `List.Dropdown` / `Grid.Dropdown` controlled props (`value` / `defaultValue` / `onChange` / `storeValue` / `filtering` / `onSearchTextChange` / `isLoading` / `tooltip`) | 🟡 | `value` / `defaultValue` / `onChange` wired (`AppController.swift:3660`); `storeValue` / `filtering` / `isLoading` / `tooltip` ignored |
+| `List.isLoading` | ✅ | thin accent sweep bar (List/Grid/Detail), 2026-06-21 |
 | `List` pagination `{hasMore, onLoadMore, pageSize}` | ⬜ | not wired anywhere |
-| Native fuzzy `filtering` of static items / `filtering={false}` | 🟡 | extension list filtering deferred to the child; no built-in client-side filter |
+| Native fuzzy `filtering` of static items / `filtering={false}` | 🟡 | built-in client-side filter exists (`AppController.swift:121`), but not fuzzy-ranked & `filtering={false}` not honored |
 | `selectedItemId` / `onSelectionChange` | ⬜ | selection not reported back to the extension |
-| `List.EmptyView` | ⬜ | child element not rendered |
-| `List.Item.accessories[]` | 🟡 | text + tag only; `icon` / `date` / `tooltip` / per-accessory `color` are lossy |
-| `List.Item` `keywords` / `detail` (isShowingDetail) / `quickLook` | 🟡 | partial |
-| `List.Item.Detail.isLoading` (detail-pane bar, distinct from `List.isLoading`) | ⬜ | not honored |
+| `List.EmptyView` | ⬜ | exported but renderer no-ops `empty-view` |
+| `List.Item.accessories[]` | ✅ | text/tag/date/icon/tooltip + per-accessory `color` + combined entries, 2026-06-21 |
+| `List.Item` `keywords` / `detail` (isShowingDetail) / `quickLook` | 🟡 | keywords used by filter; master-detail honored; `quickLook` ⬜ |
+| `List.Item.Detail.isLoading` (detail-pane bar, distinct from `List.isLoading`) | ✅ | selected item's detail `isLoading` drives the top sweep bar, 2026-06-21 |
 | `Grid` `columns` | ✅ | |
 | `Grid` `aspectRatio` / `fit` (contain/fill) / `inset` | ⬜ | ignored |
 | `Grid.Section` / `Grid.Dropdown` / `Grid.EmptyView` | 🟡/⬜ | sections flattened; EmptyView unrendered |
 | `Grid.Section` per-section `columns` / `aspectRatio` / `fit` / `inset` overrides | ⬜ | only top-level Grid layout props read |
-| `Grid.Item.accessory` (`Grid.Item.Accessory`) | ⬜ | single grid-item accessory not rendered |
-| `Grid.ItemSize` (deprecated enum) | ⬜ | undefined |
+| `Grid.Item.accessory` (`Grid.Item.Accessory`) | ✅ | single accessory rendered under the tile title, 2026-06-21 |
+| `Grid.ItemSize` (deprecated enum) | ⬜ | defined but a no-op (renderer sizes by `columns`) |
 
 ### A.2 Detail, Colors & Icons
 
 | API | State | Gap / pending |
 |---|---|---|
 | `Detail` CommonMark `markdown` (incl. images, clamped) | ✅ | tables / LaTeX / footnotes — ⬜ |
-| `Detail` own `isLoading` (accent sweep bar) | ⬜ | Detail-pane loading prop not honored |
-| `Detail.Metadata.Label` (`text` string) / `.Separator` | ✅ | |
+| `Detail` own `isLoading` (accent sweep bar) | ✅ | honored via the shared sweep bar, 2026-06-21 |
+| `Detail.Metadata.Label` (`text` string) / `.Separator` | ✅ | (standalone-`Detail` sidebar renders Label only) |
 | `Detail.Metadata.Label` colored `text:{color,value}` + `icon` | 🟡 | rendered, but `Color` not applied & label icon lossy |
-| `Detail.Metadata.Link` | 🟡 | rendered as text — **not clickable** |
+| `Detail.Metadata.Link` | 🟡 | rendered as text — **not clickable**; dropped on standalone-`Detail` sidebar |
 | `Detail.Metadata.TagList` | 🟡 | comma-joined; no per-tag color/icon chips |
 | `Detail.Metadata.TagList.Item` (`text` / `icon` / `color` / `onAction`) | 🟡 | leaf tag element not individually rendered; `onAction` (clickable tag) ⬜ |
-| `Icon` enum | 🟡 | ~48 of 250+ members defined; ~30 SF-Symbol-mapped, rest fall back to a default glyph |
-| `Color` enum (named + `Color.Dynamic` + raw) | 🟡 | defined but **never applied** as `tintColor` anywhere (icons/tags/text) |
-| `Color.Raw` (HEX/RGB/HSL string/object type) | 🟡 | accepted but never applied (see `Color` above) |
+| `Icon` enum | 🟡 | 48 members defined; 30 SF-Symbol-mapped (`PaletteView.swift:2197`), rest fall back to a default glyph |
+| `Color` enum (9 named members) | 🟡 | applied to List/Grid accessory text/tags/icon tints (`RaycastColor`, `PaletteView.swift:1811`); **not** in `Detail.Metadata`; `Color.Dynamic` not exported |
+| raw HEX / `{light,dark}` color values | 🟡 | honored at runtime for accessories (`PaletteView.swift:2023`); no named `Color.Raw`/`ColorLike` type |
 | `Image.Mask` (Circle / RoundedRectangle) | ⬜ | masks ignored |
-| `Image` fallback + dynamic `{source:{light,dark}}` | ⬜ | |
-| `Image.tintColor` (as `Image` prop) | ⬜ | tint never applied to icons/images |
-| `Image.ImageLike` union (URL \| Asset \| `Icon` \| `FileIcon` \| `Image`) | 🟡 | type accepted; `FileIcon` / masks / tint lossy |
-| `FileIcon` (`{fileIcon}`) — Finder file/folder icon | ⬜ | not resolved to a system icon |
+| `Image` fallback + dynamic `{source:{light,dark}}` | ⬜ | single source resolved; no light/dark image dispatch |
+| `Image.tintColor` (as `Image` prop) | 🟡 | applied to **accessory** icons (`PaletteView.swift:2062`); not Detail/top-level; no `Image.tintColor` export |
+| `Image.ImageLike` union (URL \| Asset \| `Icon` \| `FileIcon` \| `Image`) | 🟡 | type accepted; `fileIcon` resolved; masks / Image tint lossy |
+| `FileIcon` (`{fileIcon}`) — Finder file/folder icon | 🟡 | resolved to a real Finder icon (`PaletteView.swift:1010`); not a named API export |
 
 ### A.3 Form
 
@@ -619,18 +620,18 @@ The component spine is in place and renders natively: **List, Grid, Detail, Form
 |---|---|---|
 | `Form.TextField` / `TextArea` / `Checkbox` / `Dropdown` | ✅ | render + value-collecting submit |
 | `Form.Description` (`text` / `title`) / `Separator` | ✅ | landed |
-| `Form` container props (`navigationTitle` / `isLoading` / `searchBarAccessory`) | ⬜ | form-level nav title, loading bar & accessory slot not honored |
+| `Form` container props (`navigationTitle` / `isLoading` / `searchBarAccessory`) | 🟡 | `isLoading` honored (`PaletteView.swift:335`); `navigationTitle` & `searchBarAccessory` not |
 | `Form.Dropdown.Item` / `Form.Dropdown.Section` | 🟡 | dropdown renders, but item `keywords` & section `title` lossy |
-| `Form.Dropdown` searchable props (`onSearchTextChange` / `filtering` / `throttle` / `isLoading`) | ⬜ | dropdown not searchable/async |
+| `Form.Dropdown` searchable props (`onSearchTextChange` / `filtering` / `throttle` / `isLoading`) | ⬜ | local typeahead only; async/controlled props unwired |
 | `Form.TextArea` `enableMarkdown` | ⬜ | markdown toolbar/preview not rendered |
 | Validation (`FormValidation.Required`) + error rendering | 🟡 | only `Required`; no custom validators / async |
 | `Form.PasswordField` | 🟡 | aliases a plain text field (not masked) |
 | `Form.DatePicker` (+ `min` / `max`) | 🟡 | aliases a plain text field (no native picker, no `Date` value, bounds ignored) |
-| `Form.DatePicker.Type` enum (`Date` / `DateTime`) + `Form.DatePicker.isFullDay()` | ⬜ | granularity enum & helper absent |
-| `Form.TagPicker` / `Form.TagPicker.Item` | ⬜ | undefined → "Element type is invalid" crash on use |
-| `Form.FilePicker` (+ `allowMultipleSelection` / `canChooseFiles` / `canChooseDirectories` / `showHiddenFiles`) | ⬜ | undefined → crash; none of its options exist |
-| `Form.LinkAccessory` (`target` / `text`) | ⬜ | undefined → crash; note: it's a `searchBarAccessory`, **not** a child field |
-| `onChange` | 🟡 | fires for text fields only — **not** Checkbox / Dropdown / DatePicker |
+| `Form.DatePicker.Type` enum (`Date` / `DateTime`) + `Form.DatePicker.isFullDay()` | 🟡 | `Type` enum exported (`index.ts:208`); `isFullDay()` still absent & DatePicker text-aliased |
+| `Form.TagPicker` / `Form.TagPicker.Item` | 🟡 | exported (`index.ts:192`); **no longer crashes** — degrades to a single-select dropdown (string value) |
+| `Form.FilePicker` (+ `allowMultipleSelection` / `canChooseFiles` / `canChooseDirectories` / `showHiddenFiles`) | 🟡 | exported (`index.ts:218`); **no longer crashes** — degrades to a path text field; options ignored |
+| `Form.LinkAccessory` (`target` / `text`) | 🟡 | exported (`index.ts:220`); **no longer crashes** — degrades to inert description text |
+| `onChange` | 🟡 | fires for text fields **and Dropdown** (`PaletteView.swift:1559`); still **not** Checkbox |
 | `onBlur` / `onFocus` / `autoFocus` / `storeValue` / `info` / `enableDrafts` | ⬜ | |
 | `Form.Event` / `Form.Event.Type` (`focus`/`blur`) / `Form.Values` types | ⬜ | event payload & values type not modeled |
 | Typed values (Checkbox→bool, DatePicker→Date, TagPicker→array) | 🟡 | all field values are strings |
@@ -641,15 +642,15 @@ The component spine is in place and renders natively: **List, Grid, Detail, Form
 | API | State | Gap / pending |
 |---|---|---|
 | `Action` (onAction), `CopyToClipboard`, `Paste`, `OpenInBrowser`, `Open`, `SubmitForm`, `Push` | ✅ | the 7 wired actions |
-| `Action.OpenWith` / `Trash` / `ShowInFinder` / `ToggleQuickLook` / `CreateQuicklink` / `CreateSnippet` / `PickDate` | ⬜ | **undefined → crash** ("Element type is invalid") when an extension uses them |
-| `ActionPanel.Submenu` | 🟡 | flattened — no nested popover, no lazy `onOpen` |
-| `ActionPanel.Submenu` search props (`filtering` / `keepSectionOrder` / `throttle` / `onSearchTextChange` / `isLoading`) | ⬜ | submenu not searchable/filterable |
-| `ActionPanel.Section` | 🟡 | flattened — section titles dropped |
+| `Action.OpenWith` / `Trash` / `ShowInFinder` / `ToggleQuickLook` / `CreateQuicklink` / `CreateSnippet` / `PickDate` | 🟡 | all defined + routed (`index.ts:281`–`315`, `AppController.swift:3760`) — **no longer crash**; most fire real host RPCs |
+| `ActionPanel.Submenu` | ✅ | drill-in (level stack); →/Return enters, ←/Esc pops. Lazy `onOpen` ⬜ |
+| `ActionPanel.Submenu` search props (`filtering` / `keepSectionOrder` / `throttle` / `onSearchTextChange` / `isLoading`) | 🟡 | client-side title filter per level; async props not wired |
+| `ActionPanel.Section` | ✅ | grouped: separators + small-caps titles, 2026-06-21 |
 | `Action.shortcut` (custom) | 🟡 | ignored; only first=Enter / second=⌘Enter assigned |
-| `Action.style` (destructive) | ⬜ | no red emphasis |
-| `Action.Style` enum (`Regular` / `Destructive`) | ⬜ | enum type absent (only the lowercase prop is noted) |
+| `Action.style` (destructive) | ⬜ | `props["style"]` never decoded (no red emphasis) |
+| `Action.Style` enum (`Regular` / `Destructive`) | 🟡 | enum exported (`index.ts:273`); `style` prop still not rendered |
 | `Action.PickDate.Type` enum (`Date` / `DateTime`) + `Action.PickDate.isFullDay()` | ⬜ | nested enum & helper absent |
-| `Keyboard.Shortcut` / `Keyboard.Shortcut.Common` (type behind `Action.shortcut`) | ⬜ | see §A.8 — `Keyboard` namespace absent |
+| `Keyboard.Shortcut` / `Keyboard.Shortcut.Common` (type behind `Action.shortcut`) | 🟡 | `Shortcut.Common` exported (`index.ts:878`); custom shortcuts not applied (see §A.8) |
 | `Action.autoFocus` | ⬜ | |
 
 ### A.5 Navigation & Menu Bar
@@ -659,24 +660,24 @@ The component spine is in place and renders natively: **List, Grid, Detail, Form
 | `Action.Push` + `useNavigation().push/pop` + Esc-pops | ✅ | render-on-push frames (landed) |
 | `Navigation` (type returned by `useNavigation`) | 🟡 | push/pop work; type not exported/modeled |
 | `navigationTitle` breadcrumb | ✅ | |
-| `menu-bar` command mode | ⬜ | rejected at discovery; no `NSStatusItem` |
-| `MenuBarExtra` + `.Item` | ⬜ | unrendered |
-| `MenuBarExtra.Submenu` / `.Section` / `.Separator` | ⬜ | undefined → crash |
-| `MenuBarExtra.Item` `alternate` / `subtitle` / `shortcut` | ⬜ | item modifiers absent |
-| `MenuBarExtra.ActionEvent` (`left-click` / `right-click`) | ⬜ | onAction event type absent |
+| `menu-bar` command mode | ✅ | accepted at discovery (`AppController.swift:3001`); real `NSStatusItem` (`MenuBarController.swift:41`) |
+| `MenuBarExtra` + `.Item` | ✅ | exported (`index.ts:345`) + rendered to `NSMenu` (`MenuBarController.swift:76`/`121`) |
+| `MenuBarExtra.Submenu` / `.Section` / `.Separator` | ✅ | rendered (`MenuBarController.swift:123`–`139`) |
+| `MenuBarExtra.Item` `alternate` / `subtitle` / `shortcut` | 🟡 | `subtitle` rendered (`MenuBarController.swift:151`); `alternate` / `shortcut` not |
+| `MenuBarExtra.ActionEvent` (`left-click` / `right-click`) | ⬜ | onAction fires with no event arg |
 
 ### A.6 Feedback
 
 | API | State | Gap / pending |
 |---|---|---|
 | `showToast` (Success/Failure/Animated; object + positional overload; updatable handle) | ✅ | |
-| `Toast.primaryAction` / `secondaryAction` (`Toast.ActionOptions`) | ⬜ | not surfaced |
+| `Toast.primaryAction` / `secondaryAction` (`Toast.ActionOptions`) | ⬜ | accepted in constructor but dropped by the `toast.show` RPC; not surfaced |
 | `Toast.Style` enum (`Success` / `Failure` / `Animated`) | 🟡 | states used by `showToast`, but enum not tracked; minimal visual differentiation |
 | Toast visual style (icon/color per style) | 🟡 | minimal differentiation |
 | `showHUD` | 🟡 | renders, but `options` (`clearRootSearch` / `popToRootType`) are decorative no-ops |
 | `confirmAlert` (in-palette modal, `primaryAction.onAction`, destructive, key capture) | ✅ | landed this iteration, both hosts |
 | `Alert.Options` `icon` / `dismissAction` / `rememberUserChoice` | ⬜ | custom icon, secondary dismiss action & "don't ask again" not honored |
-| `Alert.ActionStyle` enum (`Default` / `Destructive` / `Cancel`) + `Alert.ActionOptions` | 🟡 | destructive handled ad-hoc; enum & action-options type not modeled |
+| `Alert.ActionStyle` enum (`Default` / `Destructive` / `Cancel`) + `Alert.ActionOptions` | 🟡 | enum exported (`index.ts:873`) + destructive honored end-to-end (`AppController.swift:2013`); `Alert.ActionOptions` type not modeled |
 | `showFailureToast` (utils) | ✅ | |
 
 ### A.7 Storage, Preferences & Environment
@@ -693,13 +694,13 @@ The component spine is in place and renders natively: **List, Grid, Detail, Form
 | Per-command preference override + required-before-run | ✅ | |
 | `environment.supportPath` / `assetsPath` / `commandName` / `commandMode` | ✅ | |
 | `environment.extensionName` / `ownerOrAuthorName` | 🟡 | always `""` |
-| `environment.appearance` / `textSize` / `launchType` / `isDevelopment` / `raycastVersion` | 🟡 | hardcoded |
-| `LaunchType` enum (`UserInitiated` / `Background`) | ⬜ | enum & members not exported |
-| `FileSystemItem` (return type of `getSelectedFinderItems`) | ⬜ | type not modeled |
+| `environment.appearance` / `textSize` / `launchType` / `isDevelopment` / `raycastVersion` | 🟡 | `launchType` wired (`index.ts:587`); `appearance`/`textSize`/`isDevelopment`/`raycastVersion` hardcoded |
+| `LaunchType` enum (`UserInitiated` / `Background`) | ✅ | exported (`index.ts:474`); drives `launchCommand` + `environment.launchType` |
+| `FileSystemItem` (return type of `getSelectedFinderItems`) | ⬜ | inline `{path:string}[]`; no named type |
 | `environment.canAccess(api)` | 🟡 | hardcoded `false` |
-| `openExtensionPreferences` / `openCommandPreferences` | 🟡 | open Settings but don't scope to the ext/command |
-| `updateCommandMetadata` | ⬜ | no host handler (silent no-op) — first-class **command** export (also §A.11) |
-| `launchCommand` (cross-command launch) | ⬜ | `unsupported()` throws |
+| `openExtensionPreferences` / `openCommandPreferences` | 🟡 | send a `scope` arg, but host ignores it (not scoped) |
+| `updateCommandMetadata` | ✅ | real RPC (`index.ts:796`) + host stores subtitle override & re-renders (`AppController.swift:2120`) |
+| `launchCommand` (cross-command launch) | ✅ | real `command.launch` RPC (`index.ts:783`) + host handler (`AppController.swift:2127`) |
 
 ### A.8 Clipboard, Keyboard, Window & Applications
 
@@ -707,26 +708,26 @@ The component spine is in place and renders natively: **List, Grid, Detail, Form
 |---|---|---|
 | `Clipboard.copy` / `paste` / `readText` | ✅ | `concealed` flag dropped (🟡); `html`/`file` copy — ⬜ (note: `transient` is **not** a current Raycast `CopyOptions` field) |
 | `Clipboard.Content` / `Clipboard.ReadContent` / `Clipboard.CopyOptions` types | 🟡 | text path works; `html`/`file` content shapes not modeled |
-| `Clipboard.read({offset})` → `{text,html,file}` / `Clipboard.clear` | ⬜ | absent |
-| **`Keyboard` namespace** — `Keyboard.Shortcut` (`{key, modifiers}`) | ⬜ | **entire namespace absent**; only `Action.shortcut`'s behavior is noted (§A.4) |
-| `Keyboard.KeyModifier` / `Keyboard.KeyEquivalent` / `Keyboard.Shortcut.Common` | ⬜ | modifier/key unions & predefined shortcuts (Copy, Save, …) absent |
-| `getApplications` / `getDefaultApplication` / `getFrontmostApplication` (+ `Application` type) | ✅ | real; `Application` type not separately exported (🟡) |
+| `Clipboard.read({offset})` → `{text,html,file}` / `Clipboard.clear` | 🟡 | `read` exported + host returns `{text,file,html}` (`AppController.swift:2232`), but JS shim returns text only (`index.ts:501`); `Clipboard.clear` still absent |
+| **`Keyboard` namespace** — `Keyboard.Shortcut` (`{key, modifiers}`) | 🟡 | **exported** (`index.ts:878`) — namespace **not** absent; `Shortcut` is a local type; shortcuts not applied to UI |
+| `Keyboard.KeyModifier` / `Keyboard.KeyEquivalent` / `Keyboard.Shortcut.Common` | 🟡 | `Shortcut.Common` populated (`index.ts:881`); `KeyModifier`/`KeyEquivalent` unions not exported |
+| `getApplications` / `getDefaultApplication` / `getFrontmostApplication` (+ `Application` type) | ✅ | real; `Application` interface **is** exported (`index.ts:760`) |
 | `getSelectedText` / `getSelectedFinderItems` | ✅ | |
-| `open` / `trash` / `showInFinder` (imperative System-Utilities fns) | ⬜ | only the `Action.*` cousins exist; programmatic forms absent |
-| `captureException` (error reporting) | ⬜ | no-op / absent |
-| `closeMainWindow` (+ `PopToRootType` enum: `Default`/`Immediate`/`Suspended`) | ✅ | `clearRootSearch` / `popToRootType` decorative (🟡); `PopToRootType` enum not exported |
-| `clearSearchBar` | ⬜ | no-op |
+| `open` / `trash` / `showInFinder` (imperative System-Utilities fns) | ✅ | exported (`index.ts:547`/`770`/`774`) + real host handlers (`AppController.swift:2035`/`2300`/`2210`) |
+| `captureException` (error reporting) | 🟡 | exported + host handler (`AppController.swift:2116`) but logs only & **discards** message/stack (privacy) |
+| `closeMainWindow` (+ `PopToRootType` enum: `Default`/`Immediate`/`Suspended`) | ✅ | `PopToRootType` **is** exported (`index.ts:475`); `clearRootSearch` / `popToRootType` options decorative (🟡) |
+| `clearSearchBar` | ⬜ | exported but an empty no-op (import-safe; no RPC) |
 | `popToRoot` | 🟡 | just closes the palette (doesn't pop nav to root and stay open) |
-| Window Management API — `getActiveWindow` / `getWindowsOnActiveDesktop` / `getDesktops` / `setWindowBounds` + `WindowManagement.Window` / `.Desktop` / `.DesktopType` | ⬜ | **entirely absent** from the SDK (native window-mgmt commands exist as built-ins, but no extension API) |
+| Window Management API — `getActiveWindow` / `getWindowsOnActiveDesktop` / `getDesktops` / `setWindowBounds` + `WindowManagement.Window` / `.Desktop` / `.DesktopType` | ⬜ | `WindowManagement` exported but every method throws `unsupported()` (`index.ts:940`); no host handler |
 
 ### A.9 `@raycast/utils` hooks
 
 | API | State | Gap / pending |
 |---|---|---|
 | `usePromise` / `useCachedState` / `useCachedPromise` / `useFetch` / `useExec` / `useSQL` / `useForm` / `useLocalStorage` / `useFrecencySorting` / `useAI` | ✅ | present and used by real extensions |
-| `mutate` / `MutatePromise` (`optimisticUpdate` / `rollbackOnError`) | ⬜ | **type only — no runtime**; data hooks don't return a working `mutate` |
-| Pagination (function-form source in `useFetch`/`useCachedPromise`) | ⬜ | absent everywhere |
-| `useStreamJSON` | ⬜ | |
+| `mutate` / `MutatePromise` (`optimisticUpdate` / `rollbackOnError`) | 🟡 | working runtime `mutate` (awaits update + revalidates, `utils:88`/`358`); `optimisticUpdate`/`rollbackOnError` ignored |
+| Pagination (function-form source in `useFetch`/`useCachedPromise`) | 🟡 | implemented in `usePromise` (`utils:43`); not surfaced by `useFetch`/`useCachedPromise` |
+| `useStreamJSON` | 🟡 | exported + functional (`utils:851`), but buffered (`res.json()`) — not progressive |
 | `useAI` streaming (`.on('data')` token stream) | 🟡 | resolves once; no progressive tokens |
 | `getFavicon` / `getAvatarIcon` / `getProgressIcon` | ✅ | |
 | `createDeeplink` / `withCache` / `OAuthService` / `withAccessToken` / `getAccessToken` | ✅ | present |
@@ -736,17 +737,17 @@ The component spine is in place and renders natively: **List, Grid, Detail, Form
 
 | API | State | Gap / pending |
 |---|---|---|
-| `AI.ask(prompt, {model, creativity, system})` | 🟡 | real host RPC (Anthropic); `signal` (AbortSignal) option not honored |
-| `AI.Creativity` (type / `none`…`maximum` \| 0–2) | 🟡 | accepted in `ask`, not modeled as a type |
+| `AI.ask(prompt, {model, creativity, system})` | 🟡 | real host RPC (Anthropic); `system` honored; `model`/`creativity` sent but **dropped host-side** (`AppController.swift:1856`); `signal` not honored |
+| `AI.Creativity` (type / `none`…`maximum` \| 0–2) | 🟡 | accepted in `ask`, not modeled as a type (dropped host-side) |
 | `AI.ask` streaming / Promise-as-EventEmitter | ⬜ | single resolve only |
-| `AI.Model.*` | 🟡 | Proxy returns the key string; no real model metadata (enum-key fidelity unverified) |
+| `AI.Model.*` | 🟡 | Proxy returns the key string; no real model metadata |
 | `OAuth.PKCEClient` (authorizationRequest/authorize/set·get·removeTokens) | ✅ | host-driven, tokens in Keychain |
-| `OAuth.PKCEClient.Options` (`redirectMethod` / `providerName` / `providerIcon` / `providerId` / `description`) | 🟡 | client constructs; option fields not individually modeled |
-| `OAuth.RedirectMethod` enum (`Web` / `App` / `AppURI`) | ⬜ | enum not exported |
-| `OAuth.TokenSet` (+ `isExpired()`) / `TokenSetOptions` / `TokenResponse` | 🟡 | token round-trip works; named shapes not modeled |
-| `OAuth.AuthorizationRequest` (+ `toURL()`) / `AuthorizationRequestOptions` / `AuthorizationOptions` / `AuthorizationResponse` | 🟡 | request/authorize work; types not exported |
+| `OAuth.PKCEClient.Options` (`redirectMethod` / `providerName` / `providerIcon` / `providerId` / `description`) | 🟡 | client constructs; option fields not modeled as a named type |
+| `OAuth.RedirectMethod` enum (`Web` / `App` / `AppURI`) | ✅ | exported (`index.ts:715`) |
+| `OAuth.TokenSet` (+ `isExpired()`) / `TokenSetOptions` / `TokenResponse` | 🟡 | `TokenSet`/`TokenResponse` exported with `isExpired()`; `TokenSetOptions` not a distinct export |
+| `OAuth.AuthorizationRequest` (+ `toURL()`) / `AuthorizationRequestOptions` / `AuthorizationOptions` / `AuthorizationResponse` | ✅ | exported with working `toURL()` → `buildAuthorizeURL` (`index.ts:702`/`745`) |
 | OAuth prebuilt provider configs (GitHub/Slack/Google/Linear/Zoom) | ⬜ | extensions must hand-roll endpoints |
-| `BrowserExtension.getContent` (+ `cssSelector` / `format` / `tabId`) / `getTabs` / `BrowserExtension.Tab` | ⬜ | `unsupported()` throws; options & `Tab` type absent |
+| `BrowserExtension.getContent` (+ `cssSelector` / `format` / `tabId`) / `getTabs` / `BrowserExtension.Tab` | 🟡 | real RPCs via `BrowserDriver` (`AppController.swift:1879`); `Tab` exported; markdown conversion is a regex approximation |
 | AI Extensions / Tools (`src/tools/*.ts`) | ⬜ | manifest `tools[]` parsed for display only — not invoked |
 | `Tool.Confirmation<T>` type + `confirmation` export (`style`/`info`/`message`/`image`) | ⬜ | AI-extension confirmation API absent |
 | MCP client / Skills | ⬜ | v2 |
@@ -755,12 +756,12 @@ The component spine is in place and renders natively: **List, Grid, Detail, Form
 
 | API | State | Gap / pending |
 |---|---|---|
-| Command modes `view` / `no-view` | ✅ | only these two accepted at discovery |
-| Command mode `menu-bar` | ⬜ | rejected at discovery |
+| Command modes `view` / `no-view` | ✅ | accepted at discovery |
+| Command mode `menu-bar` | ✅ | accepted at discovery + rendered (`AppController.swift:3001`/`3020`); see §A.5 |
 | Arguments `text` / `password` / `dropdown` | ✅ | inline search-bar chips |
-| `LaunchProps` (`arguments` / `draftValues` / `launchContext` / `fallbackText`) | 🟡 | `arguments` delivered; `draftValues` / `launchContext` / `fallbackText` not passed |
-| `LaunchType` enum (`UserInitiated` / `Background`) / `LaunchContext` | ⬜ | not modeled (see §A.7) |
-| Background refresh (`interval`) | ⬜ | |
+| `LaunchProps` (`arguments` / `draftValues` / `launchContext` / `fallbackText`) | 🟡 | `arguments` **and** `launchContext` delivered (`child.ts:140`/`143`); `draftValues` / `fallbackText` not passed |
+| `LaunchType` enum (`UserInitiated` / `Background`) / `LaunchContext` | 🟡 | `LaunchType` exported (§A.7); `LaunchContext` type not modeled |
+| Background refresh (`interval`) | 🟡 | scheduled for `no-view` commands (`AppController.swift:3017`) |
 | Fallback commands | ⬜ | |
 | `disabledByDefault` | ⬜ | |
 | Preferences `textfield`/`password`/`checkbox`/`dropdown`/`appPicker` (+`required`) | ✅ | `file`/`directory` — ⬜; per-platform `default` — 🟡 |
@@ -768,13 +769,9 @@ The component spine is in place and renders natively: **List, Grid, Detail, Form
 
 ### A.12 Recommended implementation order
 
-- **P0 — crash-prevention & correctness (do first; these make real ported extensions fail today):**
-  1. **Graceful-degrade every undefined component** so a missing member renders a placeholder instead of crashing the whole extension with "Element type is invalid": `Action.OpenWith/Trash/ShowInFinder/ToggleQuickLook/CreateQuicklink/CreateSnippet/PickDate`, `Form.TagPicker/FilePicker/LinkAccessory`, `MenuBarExtra.*`.
-  2. Render `List.EmptyView` / `Grid.EmptyView`.
-  3. Fire `onChange` for Checkbox / Dropdown / DatePicker (controlled-input parity).
-  4. Honor `Action.style` (destructive red) and custom `Action.shortcut` — requires exporting the **`Keyboard` namespace** (`Keyboard.Shortcut`/`KeyModifier`/`KeyEquivalent`/`Shortcut.Common`), currently absent (§A.8).
-- **P1 — depth (the props extensions most rely on):** `List.isLoading` progress bar (+ `List.Item.Detail.isLoading`/`Detail.isLoading`); List/Grid **pagination** + controlled `searchText`/`throttle`; clickable `Detail.Metadata.Link` + colored `TagList`/`TagList.Item`; `PasswordField` masking + native `DatePicker` (+ `DatePicker.Type`/`isFullDay`); `Toast` primary/secondary actions + `Alert.Options` (`icon`/`dismissAction`/`rememberUserChoice`); working `mutate`/`MutatePromise`; `Clipboard.read`/`clear` + System-Utilities fns (`open`/`trash`/`showInFinder`/`captureException`); un-flatten `ActionPanel.Section`/`Submenu`; apply `Color`/`Icon` `tintColor` + `FileIcon`.
-- **P2 — breadth / v2:** `menu-bar` mode + `NSStatusItem` + `MenuBarExtra` (+ `.Item` `alternate`/`subtitle`/`shortcut`, `ActionEvent`); AI streaming (+ `signal`) + Tools (`Tool.Confirmation`)/MCP/Skills; Window Management API (+ types); full `Icon`/`Color` coverage + `Image.Mask`/`Image.ImageLike`; `useStreamJSON`; background `interval` refresh; fallback commands; real `environment` fields; OAuth provider presets; export named types/enums project-wide (`LaunchProps`/`LaunchType`/`Cache.*`/`Preferences`/`Form.Values`/`Application`/`PopToRootType`/`Action.Style`/OAuth types).
+- **P0 — crash-prevention & correctness:** ~~graceful-degrade every undefined component~~ **DONE 2026-06-21** (the `Action.*`, `Form.TagPicker`/`FilePicker`/`LinkAccessory`, `MenuBarExtra.*` members are all defined; nothing throws "Element type is invalid"; `Keyboard` exported). Remaining: render `List.EmptyView`/`Grid.EmptyView`; fire `onChange` for **Checkbox**; honor `Action.style` (destructive) + bind custom `Action.shortcut` to the exported `Keyboard.Shortcut`.
+- **P1 — depth:** _(Done 2026-06-21: `List`/`Detail` `isLoading`; List/Grid accessories incl. `Color`/`Icon` tint + `FileIcon`; grouped `ActionPanel.Section` + drill-in `Submenu`; `open`/`trash`/`showInFinder`; `mutate` runtime.)_ Remaining: List/Grid **pagination** + controlled `searchText`/`throttle` (+ surface `pagination` through `useFetch`/`useCachedPromise`); `List.Dropdown` `storeValue`/`filtering`/`isLoading`; clickable `Detail.Metadata.Link` + `TagList.Item` chips + `Color` in Metadata; `PasswordField` masking + native `DatePicker`; typed field values; `Toast`/`Alert.Options` actions; `optimisticUpdate`/`rollbackOnError`; full `Clipboard.read` + `clear`.
+- **P2 — breadth / v2:** _(Done: `menu-bar` + `NSStatusItem` + `MenuBarExtra.*`; `launchCommand`; `updateCommandMetadata`; `BrowserExtension`.)_ Remaining: `MenuBarExtra.Item` `alternate`/`shortcut` + `ActionEvent`; AI streaming (+ `signal`; honor `model`/`creativity` host-side) + Tools (`Tool.Confirmation`)/MCP/Skills; Window Management API; full `Icon`/`Color` coverage + `Image.Mask`; `useStreamJSON` streaming; fallback commands; real `environment` fields; OAuth provider presets; export remaining named types/enums (`Cache.*`/`Preferences`/`Form.Values`/`KeyModifier`/`Navigation`/`LaunchContext`).
 
 ---
 
