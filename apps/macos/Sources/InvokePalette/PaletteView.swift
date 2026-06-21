@@ -333,7 +333,14 @@ public final class PaletteView: NSView {
             renderErrorSurface(reason)
         }
         // Raycast's isLoading: thin sweep bar while any active surface is loading.
-        if surfaces.contains(where: { Self.isTrue($0.props["isLoading"]) }) { loadingBar.start() } else { loadingBar.stop() }
+        // Re-add as frontmost sibling BEFORE starting: list/split scroll views are added during the
+        // surface dispatch above, so without this the bar is occluded by later-added siblings.
+        if surfaces.contains(where: { Self.isTrue($0.props["isLoading"]) }) {
+            addSubview(loadingBar, positioned: .above, relativeTo: nil) // keep the bar frontmost; list/split scroll views are added earlier
+            loadingBar.start()
+        } else {
+            loadingBar.stop()
+        }
         return true
     }
 

@@ -27,9 +27,10 @@ final class LoadingBar: NSView {
     }
 
     func start() {
-        guard !animating, bounds.width > 0 else { isHidden = false; animating = true; return }
-        animating = true
+        guard !animating else { return }
         isHidden = false
+        guard bounds.width > 0 else { return } // not laid out yet — a later start() retries once sized
+        animating = true
         let w = bounds.width
         let anim = CABasicAnimation(keyPath: "position.x")
         anim.fromValue = -w / 3
