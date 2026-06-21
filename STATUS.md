@@ -3,7 +3,7 @@
 > Living checklist of what's **implemented** vs **pending**, tracked against `PLAN.md`.
 > Updated as features land. Legend: ✅ done · 🟡 partial · ⬜ not started.
 
-_Last updated: 2026-06-16_
+_Last updated: 2026-06-21_
 
 ## How we track progress
 - **This file (`STATUS.md`)** — the source of truth for done-vs-pending, mapped to PLAN.md sections.
@@ -64,7 +64,7 @@ _Last updated: 2026-06-16_
 
 | Item | Status | Notes |
 |---|---|---|
-| `@invoke/api` components (List/Grid/Detail/Form/ActionPanel) | 🟡 | all five render natively; List.Dropdown(+Item/Section), Detail.Metadata, Form.Description/Separator, validation+value-preservation landed. **Pending:** EmptyView render; List/Grid pagination + `isLoading` bar; accessories (icon/date/color); clickable Metadata.Link + colored TagList; PasswordField mask + native DatePicker; un-flatten ActionPanel.Section/Submenu |
+| `@invoke/api` components (List/Grid/Detail/Form/ActionPanel) | 🟡 | all five render natively; List.Dropdown(+Item/Section), Detail.Metadata, Form.Description/Separator, validation+value-preservation landed; **List.Item accessories (colored text/tags, icon, relative date, tooltip, combined entries) + `isLoading` sweep bar (List/Grid/Detail) landed** (`RaycastColor`/`LoadingBar`, 2026-06-21). **Pending:** EmptyView render; List/Grid pagination; clickable Metadata.Link + colored TagList; PasswordField mask + native DatePicker; un-flatten ActionPanel.Section/Submenu |
 | **Crash-safety for undefined members** | ⬜ | **P0:** `Action.OpenWith/Trash/ShowInFinder/ToggleQuickLook/CreateQuicklink/CreateSnippet/PickDate`, `Form.TagPicker/FilePicker/LinkAccessory`, `MenuBarExtra.*` are undefined → "Element type is invalid" crash when used. Degrade gracefully first |
 | `@invoke/utils` hooks | 🟡 | usePromise/useFetch(options)/useCachedState/useCachedPromise/useExec/useSQL/useForm/useLocalStorage/useFrecencySorting/useAI present. **Pending:** working `mutate`/`MutatePromise` (type-only today), pagination, `useStreamJSON`, AI token streaming |
 | `@raycast/api` / `@raycast/utils` compat shim | 🟡 | real extensions run end-to-end; surface partial (see Appendix A). Missing members `unsupported()`-throw or crash |
@@ -95,7 +95,7 @@ Per PLAN §7/§8 — all ⬜ (AI Chat, AI Extensions/Tools, MCP, Skills, gateway
 
 ## Pending Implementation — Raycast parity (condensed; full detail in PLAN Appendix A / RAYCASTVSINVOKE.md)
 - **P0 — crash-prevention & correctness:** graceful-degrade every undefined component (the `Action.*`, `Form.*`, `MenuBarExtra.*` members above); render `List/Grid.EmptyView`; fire `onChange` for Checkbox/Dropdown/DatePicker; honor `Action.style` (destructive) + custom `Action.shortcut`.
-- **P1 — depth:** `List.isLoading` progress bar; List/Grid pagination; clickable `Detail.Metadata.Link` + colored `TagList`; `PasswordField` masking + native `DatePicker`; `Toast` primary/secondary actions; working `mutate`/`MutatePromise`; `Clipboard.read`/`clear`; un-flatten `ActionPanel.Section`/`Submenu`; apply `Color`/`Icon` tint.
+- **P1 — depth:** List/Grid pagination; clickable `Detail.Metadata.Link` + colored `TagList`; `PasswordField` masking + native `DatePicker`; `Toast` primary/secondary actions; `Clipboard.read`/`clear`; un-flatten `ActionPanel.Section`/`Submenu`. _(Done: `List.isLoading` bar; List.Item accessories incl. `Color`/`Icon` tint; `mutate`/`MutatePromise`.)_
 - **P2 — breadth / v2:** `menu-bar` mode + `NSStatusItem` + `MenuBarExtra`; AI streaming + Tools/MCP/Skills; Window Management API; full `Icon`/`Color` coverage + `Image.Mask`; `useStreamJSON`; background `interval` refresh; fallback commands; real `environment` fields; OAuth provider presets.
 
 ## Known low-priority follow-ups (tracked, not blocking)
