@@ -65,7 +65,7 @@
 | `Image.Mask` (Circle / RoundedRectangle) | ✅ | **circle (true circle, layout-time radius from real bounds; grid thumb squared only when masked) + RoundedRectangle honored (Chunk I, 2026-06-21)** |
 | `Image` fallback + dynamic `{source:{light,dark}}` | ✅ | **dispatched by appearance (Chunk I, 2026-06-21)** |
 | `Image.tintColor` (as `Image` prop) | 🟡 | applied to **accessory** icons (`PaletteView.swift:2062`/`2108`); not to Detail / top-level row icons; no `Image.tintColor` API export |
-| `Image.ImageLike` union (URL \| Asset \| `Icon` \| `FileIcon` \| `Image`) | 🟡 | type accepted; `fileIcon` resolved; masks / Image tint lossy |
+| `Image.ImageLike` union (URL \| Asset \| `Icon` \| `FileIcon` \| `Image`) | 🟡 | **`Image.ImageLike` + `Image.Source` exported (Chunk I-residuals, 2026-06-21)**; `fileIcon` resolved; masks / Image tint lossy |
 | `FileIcon` (`{fileIcon}`) — Finder file/folder icon | 🟡 | resolved to a real Finder icon for list/grid/detail (`PaletteView.swift:1010`, `NSWorkspace.icon(forFile:)`); not a named API export |
 
 ## 3. Form
@@ -87,7 +87,7 @@
 | `Form.LinkAccessory` (`target` / `text`) | 🟡 | exported (`index.ts:220`); **no longer crashes** — degrades to inert description text (not a clickable accessory) |
 | `onChange` | ✅ | fires for text fields, Dropdown, **and Checkbox** (real `bool`); handler id refreshed each in-place reconcile (Chunk E) |
 | `onBlur` / `onFocus` / `autoFocus` / `storeValue` / `info` / `enableDrafts` | ⬜ | |
-| `Form.Event` / `Form.Event.Type` (`focus`/`blur`) / `Form.Values` types | 🟡 | **`Form.Values` / `FormValues` now exported (`export declare namespace`, Chunk I2, 2026-06-21)**; `Form.Event` + `Form.Event.Type` event payload still not modeled |
+| `Form.Event` / `Form.Event.Type` (`focus`/`blur`) / `Form.Values` types | 🟡 | **`Form.Values` / `FormValues` now exported (`export declare namespace`, Chunk I2, 2026-06-21)**; **`Form.Event` + `Form.Event.Type` exported (Chunk I-residuals, 2026-06-21)**; event payload (focus/blur lifecycle) still not wired |
 | Typed values (Checkbox→`bool`, DatePicker→`Date`, TagPicker→`array`) | 🟡 | **Checkbox→`bool` (Chunk E) + DatePicker→`Date` (Chunk H) done**; TagPicker→`array` still pending |
 | Imperative `focus()` / `reset()` via ref | ⬜ | per-item refs (`useRef<Form.TextField>`) — must be exposed on all controlled item types |
 
@@ -214,7 +214,7 @@
 | Command mode `menu-bar` | ✅ | accepted at discovery + rendered (`AppController.swift:3001`/`3020`); see §5 |
 | Arguments `text` / `password` / `dropdown` | ✅ | inline search-bar chips |
 | `LaunchProps` (`arguments` / `draftValues` / `launchContext` / `fallbackText`) | 🟡 | `arguments` **and** `launchContext` delivered (`child.ts:140`/`143`); **`LaunchProps` type now exported (Chunk I2, 2026-06-21)**; `draftValues` / `fallbackText` not passed |
-| `LaunchType` enum (`UserInitiated` / `Background`) / `LaunchContext` | 🟡 | `LaunchType` exported (§7); **`LaunchContext` type: still not modeled** |
+| `LaunchType` enum (`UserInitiated` / `Background`) / `LaunchContext` | ✅ | `LaunchType` exported (§7); **`LaunchContext` type exported (Chunk I-residuals, 2026-06-21)** |
 | Background refresh (`interval`) | 🟡 | scheduled for `no-view` commands (`AppController.swift:3017`, `parseInterval` → timer) |
 | Fallback commands | ⬜ | |
 | `disabledByDefault` | ⬜ | |
@@ -250,7 +250,7 @@
 - Fallback commands; `disabledByDefault`
 - ~~Real `environment` fields (`appearance` / `textSize` / `extensionName` / `canAccess`)~~ — **DONE (Chunk I2, 2026-06-21):** `appearance` real (NSApp.effectiveAppearance, main-thread-guarded); `textSize` host-provided; `canAccess(AI)` real (AIService.hasStoredKey()). Note: live appearance-change push + non-AI `canAccess` remain. `extensionName` already env-backed.
 - OAuth provider presets
-- ~~Export remaining named types/enums project-wide: `Cache.*` / `Preferences` / `Form.Values` / `KeyModifier` / `Navigation` / `LaunchContext`~~ — **DONE for core set (Chunk I2, 2026-06-21):** `LaunchProps`, `PreferenceValues`, `Preferences` (augmentable), `Navigation`, `Form.Values` / `FormValues`, `Keyboard.KeyModifier` (incl. "win"), `Keyboard.KeyEquivalent` all exported (Cache was already a class). Still absent: `LaunchContext` type.
+- ~~Export remaining named types/enums project-wide: `Cache.*` / `Preferences` / `Form.Values` / `KeyModifier` / `Navigation` / `LaunchContext`~~ — **DONE (Chunk I-residuals, 2026-06-21):** `LaunchContext`, `Form.Event` / `Form.Event.Type`, `Image.ImageLike`, `Image.Source` now exported; prior chunk (I2) covered `LaunchProps`, `PreferenceValues`, `Preferences` (augmentable), `Navigation`, `Form.Values`/`FormValues`, `Keyboard.KeyModifier`/`KeyEquivalent`. Cache was already a class. Only `Cache.*` sub-types remain (low priority).
 
 ---
 
