@@ -2024,6 +2024,12 @@ public final class AppController: NSObject, NSApplicationDelegate {
         return comps.url?.absoluteString
     }
 
+    /// Stable per-extension key for an alert's remembered choice (rememberUserChoice). Same content ⇒
+    /// same key (Raycast semantics). Used by BOTH the async (in-palette) and sync (NSAlert) handlers.
+    private func alertRememberKey(title: String, message: String) -> String {
+        "alertRemember.\(currentExtId).\(title)\u{1}\(message)"
+    }
+
     private func presentConfirmAlert(_ params: JSONValue?, reply: @escaping (JSONValue) -> Void) {
         func arg(_ key: String) -> JSONValue? { if case .object(let o)? = params { return o[key] }; return nil }
         let title = arg("title")?.stringValue ?? ""
@@ -2032,7 +2038,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         var remember = false
         if case .bool(let b)? = arg("rememberUserChoice") { remember = b }
         // Skip the modal if the user previously ticked "Don't ask again" for this alert.
-        let rememberKey = "alertRemember.\(currentExtId).\(title)\u{1}\(message ?? "")"
+        let rememberKey = alertRememberKey(title: title, message: message ?? "")
         if remember, UserDefaults.standard.object(forKey: rememberKey) != nil {
             reply(.bool(UserDefaults.standard.bool(forKey: rememberKey))); return
         }
@@ -2050,7 +2056,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
             icon: icon,
             rememberable: remember,
             dismissDestructive: arg("dismissStyle")?.stringValue == "destructive"
-        ) { [weak self] result, rememberChoice in
+        ) { result, rememberChoice in
             if remember, rememberChoice { UserDefaults.standard.set(result, forKey: rememberKey) }
             reply(.bool(result))
         }
@@ -2140,15 +2146,40 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 return .array([])
             }
         case "confirmAlert":
-            // Modal confirm dialog (Raycast's confirmAlert). handleCapability runs on the main queue, so
-            // runModal() blocks here and the child's `await confirmAlert(...)` resolves with the choice.
+            // Native confirm for headless/background hosts (no palette window). runModal() blocks on the
+            // main queue so the child's await resolves with the choice. Honors Alert.Options icon +
+            // rememberUserChoice (suppression checkbox) + dismissStyle, matching the in-palette modal.
+            let title = arg("title")?.stringValue ?? ""
+            let message = arg("message")?.stringValue ?? ""
+            let remember: Bool = { if case .bool(let b)? = arg("rememberUserChoice") { return b }; return false }()
+            let key = alertRememberKey(title: title, message: message)
+            if remember, UserDefaults.standard.object(forKey: key) != nil {
+                return .bool(UserDefaults.standard.bool(forKey: key))
+            }
             let alert = NSAlert()
-            alert.messageText = arg("title")?.stringValue ?? ""
-            if let m = arg("message")?.stringValue, !m.isEmpty { alert.informativeText = m }
-            if arg("primaryStyle")?.stringValue == "destructive" { alert.alertStyle = .critical }
-            alert.addButton(withTitle: arg("primaryTitle")?.stringValue ?? "OK")
-            alert.addButton(withTitle: arg("dismissTitle")?.stringValue ?? "Cancel")
-            return .bool(alert.runModal() == .alertFirstButtonReturn)
+            alert.messageText = title
+            if !message.isEmpty { alert.informativeText = message }
+            if let src = arg("icon")?.stringValue, let img = NSImage(systemSymbolName: src, accessibilityDescription: nil) {
+                alert.icon = img
+            }
+            let primary = alert.addButton(withTitle: arg("primaryTitle")?.stringValue ?? "OK")
+            let dismiss = alert.addButton(withTitle: arg("dismissTitle")?.stringValue ?? "Cancel")
+            if arg("primaryStyle")?.stringValue == "destructive" {
+                alert.alertStyle = .critical
+                if #available(macOS 11.0, *) { primary.hasDestructiveAction = true }
+            }
+            if arg("dismissStyle")?.stringValue == "destructive", #available(macOS 11.0, *) {
+                dismiss.hasDestructiveAction = true
+            }
+            if remember {
+                alert.showsSuppressionButton = true
+                alert.suppressionButton?.title = "Don't ask again"
+            }
+            let confirmed = alert.runModal() == .alertFirstButtonReturn
+            if remember, alert.suppressionButton?.state == .on {
+                UserDefaults.standard.set(confirmed, forKey: key)
+            }
+            return .bool(confirmed)
         case "preferences.open":
             // open{Extension,Command}Preferences — summon Settings on this extension. Edited prefs apply on
             // the next command launch (they arrive via INVOKE_PREFERENCES at spawn), matching Raycast.

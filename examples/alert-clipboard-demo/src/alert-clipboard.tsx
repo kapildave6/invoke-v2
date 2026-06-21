@@ -1,5 +1,4 @@
 import { List, ActionPanel, Action, Icon, Alert, Clipboard, confirmAlert, showToast, useNavigation, Detail } from "@raycast/api";
-import { useState } from "react";
 
 function Result({ text }: { text: string }) {
   return <Detail markdown={text} />;
