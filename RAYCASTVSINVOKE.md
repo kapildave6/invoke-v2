@@ -117,8 +117,8 @@
 | `menu-bar` command mode | ✅ | accepted at discovery (`AppController.swift:3001`); real `NSStatusItem` (`MenuBarController.swift:41`) |
 | `MenuBarExtra` + `.Item` | ✅ | exported (`index.ts:345`) + rendered to `NSMenu` (`MenuBarController.swift:76`/`121`) |
 | `MenuBarExtra.Submenu` / `.Section` / `.Separator` | ✅ | rendered (`MenuBarController.swift:123`–`139`: separator / disabled-header section / nested submenu) |
-| `MenuBarExtra.Item` `alternate` / `subtitle` / `shortcut` | 🟡 | `subtitle` rendered (`MenuBarController.swift:151`); `alternate` / `shortcut` not |
-| `MenuBarExtra.ActionEvent` (`left-click` / `right-click`) | ⬜ | onAction fires with no event arg |
+| `MenuBarExtra.Item` `alternate` / `subtitle` / `shortcut` | ✅ | `subtitle` rendered (`MenuBarController.swift:151`); **`alternate` (Option-key alternate item) + `shortcut` (NSMenuItem key equivalent) landed (Chunk I-menubar, 2026-06-21)**. Caveat: named-key `KeyEquivalent` mapping latent — single-letter shortcuts work. |
+| `MenuBarExtra.ActionEvent` (`left-click` / `right-click`) | ✅ | **`onAction` now receives `{type:"left-click"}` + `MenuBarExtra.ActionEvent` type exported + typed `MenuBarItemProps` (Chunk I-menubar, 2026-06-21)**. Right-click distinction not possible (NSMenuItem limitation — always "left-click"). |
 
 ## 6. Feedback
 
@@ -242,7 +242,7 @@
 - `Clipboard.read` `offset` (Nth history entry) — _(full `{text,html,file}` read + `Clipboard.clear` DONE 2026-06-21, Chunk G)_
 
 ### P2 — breadth / v2
-- _(Done: `menu-bar` mode + `NSStatusItem` + `MenuBarExtra`/`.Item`/`.Submenu`/`.Section`; `launchCommand`; `updateCommandMetadata`; `BrowserExtension`.)_ Remaining: `MenuBarExtra.Item` `alternate`/`shortcut` + click `ActionEvent`
+- _(Done: `menu-bar` mode + `NSStatusItem` + `MenuBarExtra`/`.Item`/`.Submenu`/`.Section`; `launchCommand`; `updateCommandMetadata`; `BrowserExtension`. **`MenuBarExtra.Item` `alternate`/`shortcut` + click `ActionEvent` (`onAction` `{type:"left-click"}`) + `MenuBarExtra.ActionEvent` type + typed `MenuBarItemProps` DONE (Chunk I-menubar, 2026-06-21).** Caveats: right-click distinction not possible (NSMenuItem); named-key `KeyEquivalent` mapping latent.)_
 - AI streaming (+ `signal`; honor `model`/`creativity` host-side) + AI Extensions / Tools (`Tool.Confirmation`) / MCP / Skills
 - Window Management API (`getActiveWindow` / `getDesktops` / `setWindowBounds` + types) — currently `unsupported()`-throws
 - ~~Full `Icon`/`Color` enum coverage + `Image.Mask` / dynamic light/dark images~~ — **substantially DONE (Chunk I, 2026-06-21):** 102-member `Icon` enum + `IconSymbol` validated fallback; `Color.Dynamic({light,dark})` exported; `Image.Mask` Circle/RoundedRectangle honored; dynamic `{source:{light,dark}}` dispatched by appearance. Residual tail: literal-complete ~250-member `Icon` enum; `Image.tintColor` as a top-level Image-prop API export; appearance-change live re-render
