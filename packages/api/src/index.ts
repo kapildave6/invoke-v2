@@ -383,7 +383,7 @@ export const MenuBarExtra = host(T.MenuBarExtra) as MenuBarType;
 // NOTE: do NOT lift onAction into children — it's a function handler the reconciler serializes to a
 // handler ref (a PROP). Lifting it makes React try to render the function as a child ("Functions are
 // not valid as a React child") and the click handler is lost.
-MenuBarExtra.Item = host(T.MenuBarItem);
+MenuBarExtra.Item = host(T.MenuBarItem, ["alternate"]);
 MenuBarExtra.Section = host(T.MenuBarSection);   // a titled group of items
 MenuBarExtra.Submenu = host(T.MenuBarSubmenu);   // a nested menu
 MenuBarExtra.Separator = host(T.MenuBarSeparator);
@@ -400,6 +400,12 @@ MenuBarExtra.Separator = host(T.MenuBarSeparator);
   (props: CommonActionProps) => createElement(T.MenuBarItem, { title: "Configure Command", ...props });
 (MenuBarExtra as unknown as Record<string, unknown>).LaunchCommand =
   (props: CommonActionProps) => createElement(T.MenuBarItem, props);
+
+// Namespace merge: adds MenuBarExtra.ActionEvent as a type.
+export type MenuBarExtraActionEvent = { type: "left-click" | "right-click" };
+export declare namespace MenuBarExtra {
+  export type ActionEvent = MenuBarExtraActionEvent;
+}
 
 /* ------------------------------------------------------------------ enums */
 export const Icon = {
