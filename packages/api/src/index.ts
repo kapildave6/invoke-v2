@@ -510,6 +510,22 @@ export const Icon = {
   XMarkCircle: "x-mark-circle",
 } as const;
 
+export interface ColorDynamic {
+  light: string;
+  dark: string;
+}
+type ColorType = {
+  readonly Blue: "blue";
+  readonly Green: "green";
+  readonly Magenta: "magenta";
+  readonly Orange: "orange";
+  readonly Purple: "purple";
+  readonly Red: "red";
+  readonly Yellow: "yellow";
+  readonly PrimaryText: "primary-text";
+  readonly SecondaryText: "secondary-text";
+  Dynamic: (o: { light: string; dark: string; adjustContrast?: boolean }) => ColorDynamic;
+};
 export const Color = {
   Blue: "blue",
   Green: "green",
@@ -520,9 +536,8 @@ export const Color = {
   Yellow: "yellow",
   PrimaryText: "primary-text",
   SecondaryText: "secondary-text",
-} as const;
-(Color as unknown as { Dynamic: (o: { light: string; dark: string; adjustContrast?: boolean }) => { light: string; dark: string } }).Dynamic =
-  (o) => ({ light: o.light, dark: o.dark });
+  Dynamic: (o: { light: string; dark: string; adjustContrast?: boolean }): ColorDynamic => ({ light: o.light, dark: o.dark }),
+} as ColorType;
 
 /// Raycast's `Toast` is BOTH a namespace (`Toast.Style`) and a constructor (`new Toast({...})`) whose
 /// instance auto-re-shows when you set `.style`/`.title`/`.message` (the Animated→Success pattern). Many
