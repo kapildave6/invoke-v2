@@ -1,0 +1,22 @@
+{
+  "name": "toast-actions-demo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "title": "Toast Actions Demo",
+  "description": "Exercises Toast primaryAction and secondaryAction with callback round-trip.",
+  "icon": "icon.png",
+  "author": "invoke",
+  "categories": ["Other"],
+  "platforms": ["macOS"],
+  "preferences": [],
+  "commands": [
+    { "name": "toast-actions", "title": "Toast Actions Demo", "description": "Show a Failure toast with Retry + Copy Error buttons", "mode": "view" }
+  ],
+  "dependencies": {
+    "@raycast/api": "*"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  }
+}
