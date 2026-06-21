@@ -122,6 +122,12 @@ export function useFetch<T = unknown, U = T>(
   const last = useRef<U | undefined>(initialData);
 
   const paginated = typeof url === "function";
+  // Paginated mode: the `url` arg is a function (fresh identity every render) — key the effect on
+  // the page-0 URL string instead so the effect only re-runs when the URL content changes (e.g.
+  // searchText the fn closes over), not on every render (which would reset page→0 → refetch loop).
+  const urlKey = paginated
+    ? (url as (o: { page: number }) => string)({ page: 0 })
+    : (url as string);
 
   const state = usePromise<U>(
     paginated
@@ -143,7 +149,7 @@ export function useFetch<T = unknown, U = T>(
           last.current = mapped;
           return mapped;
         }),
-    [url, shouldExecute],
+    [urlKey, shouldExecute],
   );
 
   // keepPreviousData / initialData: surface the last good value while loading or after an error.

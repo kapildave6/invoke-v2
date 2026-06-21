@@ -3606,7 +3606,15 @@ public final class AppController: NSObject, NSApplicationDelegate {
     }
 
     private func onExtensionCommit() {
-        loadMoreInFlight = false
+        // Clear the in-flight guard only when the page has actually landed (item count grew or
+        // pagination ended), not on every commit — the extension's isLoading=true commit fires
+        // immediately mid-fetch and must NOT release the guard prematurely.
+        if loadMoreInFlight, let surface = extensionSurfaceNode(), surface.type == "list" || surface.type == "grid" {
+            let hasMore = { if case .bool(true)? = surface.props["paginationHasMore"] { return true }; return false }()
+            if surfaceItemCount(surface) > loadMoreItemCount || !hasMore { loadMoreInFlight = false }
+        } else {
+            loadMoreInFlight = false   // not an extension list/grid surface anymore → release
+        }
         guard mode == .extensionView else { return }
         renderExtension()
     }
@@ -3686,6 +3694,16 @@ public final class AppController: NSObject, NSApplicationDelegate {
     }
 
     private var loadMoreInFlight = false
+    private var loadMoreItemCount = 0
+
+    /// Count list/grid items under a surface node (mirrors the item-walk pattern).
+    private func surfaceItemCount(_ surface: ViewNode) -> Int {
+        var n = 0
+        func walk(_ node: ViewNode) { if node.type == "list-item" || node.type == "grid-item" { n += 1 }; node.children.forEach(walk) }
+        walk(surface)
+        return n
+    }
+
     /// The renderer reports the user scrolled near the end; if the active list/grid declares more pages and
     /// none is loading, invoke its onLoadMore handler on the extension. Re-armed on the next commit.
     private func handleReachedEnd() {
@@ -3694,6 +3712,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
               surface.type == "list" || surface.type == "grid",
               { if case .bool(true)? = surface.props["paginationHasMore"] { return true }; return false }(),
               let handler = surface.props["onLoadMore"]?.handlerRef else { return }
+        loadMoreItemCount = surfaceItemCount(surface)
         loadMoreInFlight = true
         extHost?.invoke(handler: handler)
     }
