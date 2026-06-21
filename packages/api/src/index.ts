@@ -373,8 +373,22 @@ ActionPanel.Submenu = host(T.ActionPanelSubmenu);
 ActionPanel.Item = Action;
 
 /* ------------------------------------------------------------------ MenuBarExtra */
+export type MenuBarExtraActionEvent = { type: "left-click" | "right-click" };
+export interface MenuBarItemProps {
+  /** The title shown in the menu item. */
+  title?: string;
+  icon?: string;
+  shortcut?: { modifiers: string[]; key: string };
+  style?: "regular" | "destructive";
+  /** An element to show instead when the user holds Option (⌥). */
+  alternate?: ReactElement;
+  /** Called when the item is clicked; receives an ActionEvent describing the click type. */
+  onAction?: (event: MenuBarExtraActionEvent) => void;
+  children?: ReactNode;
+  [key: string]: unknown;
+}
 type MenuBarType = ReturnType<typeof host> & {
-  Item: ReturnType<typeof host>;
+  Item: (props: MenuBarItemProps) => ReactElement;
   Section: ReturnType<typeof host>;
   Submenu: ReturnType<typeof host>;
   Separator: ReturnType<typeof host>;
@@ -401,8 +415,7 @@ MenuBarExtra.Separator = host(T.MenuBarSeparator);
 (MenuBarExtra as unknown as Record<string, unknown>).LaunchCommand =
   (props: CommonActionProps) => createElement(T.MenuBarItem, props);
 
-// Namespace merge: adds MenuBarExtra.ActionEvent as a type.
-export type MenuBarExtraActionEvent = { type: "left-click" | "right-click" };
+// Namespace merge: adds MenuBarExtra.ActionEvent as a type alias for MenuBarExtraActionEvent.
 export declare namespace MenuBarExtra {
   export type ActionEvent = MenuBarExtraActionEvent;
 }
