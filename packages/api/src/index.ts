@@ -132,6 +132,8 @@ export type PreferenceValues = Record<string, unknown>;
 export interface Preferences {}
 export type Navigation = { push: (view: ReactNode) => void; pop: () => void };
 export type FormValues = { [id: string]: unknown };
+export type LaunchContext = Record<string, unknown>;
+export interface FormEvent<T = unknown> { target: { id: string; value?: T } }
 
 /* ------------------------------------------------------------------ List */
 type DropdownType = ReturnType<typeof host> & {
@@ -256,9 +258,11 @@ Form.LinkAccessory = host(T.FormDescription);
 const TagPicker = host(T.FormDropdown) as FormType["TagPicker"];
 TagPicker.Item = host(T.FormDropdownItem);
 Form.TagPicker = TagPicker;
-// Namespace merge: adds Form.Values as a type so extensions can write `Form.Values`.
+// Namespace merge: adds Form.Values as a type so extensions can write `Form.Values`;
+// Form.Event<T> mirrors Raycast's typed form-field onChange payload.
 export declare namespace Form {
   export type Values = FormValues;
+  export type Event<T = unknown> = FormEvent<T>;
 }
 
 /* ------------------------------------------------------------------ Actions */
@@ -1109,6 +1113,11 @@ export declare namespace Keyboard {
   export type KeyEquivalent = string;
 }
 export const Image = { Mask: { Circle: "circle", RoundedRectangle: "roundedRectangle" } as const };
+// Namespace merge: adds Image.ImageLike and Image.Source as types (Mask const above is the runtime value).
+export declare namespace Image {
+  export type ImageLike = string | { source?: string; tintColor?: string; mask?: string; fileIcon?: string };
+  export type Source = string | { light: string; dark: string };
+}
 
 /* ------------------------------------------- legacy v1 @raycast/api aliases (compat)
  * Many older extensions import the pre-namespacing flat names. The modern forms already
