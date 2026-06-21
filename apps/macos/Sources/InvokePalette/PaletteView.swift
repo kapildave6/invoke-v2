@@ -39,6 +39,9 @@ public final class PaletteView: NSView {
     // Virtualized list (Raycast parity): an NSTableView builds/recycles only VISIBLE rows, so a huge list
     // is instant and arrow-nav doesn't rebuild every row (the stack path rebuilt all rows on each render).
     private let listScroll = NSScrollView()
+    /// Centered empty-state view for List/Grid.EmptyView (icon + title + description). Shown in place of
+    /// the table/collection when the surface has zero items AND the tree carries an `empty-view` node.
+    private var emptyStateView: NSView?
     private let listTable = NSTableView()
     private enum ListEntry { case header(String); case item(ViewNode, Int); case card([String: JSONValue], Int) }
     private var listData: [ListEntry] = []
@@ -308,6 +311,7 @@ public final class PaletteView: NSView {
         // renderGrid / renderListVirtualized claim their own. (List visibility is set in renderListVirtualized.)
         lastSurfaceWasList = false
         listScroll.isHidden = true; listData = []
+        emptyStateView?.removeFromSuperview(); emptyStateView = nil
         lastSurfaceWasSplit = false
         lastSurfaceWasForm = false
         detachSplit(); splitData = []; splitItems = []
@@ -1037,6 +1041,10 @@ public final class PaletteView: NSView {
         func collect(_ n: ViewNode) { if n.type == "grid-item" { items.append(n) }; n.children.forEach(collect) }
         collect(grid)
         gridData = items
+        if items.isEmpty, let ev = firstEmptyView(in: grid) {
+            showEmptyState(ev)
+            return
+        }
         gridThumbHeight = itemHeight
         gridSelected = max(0, min(selectedIndex, items.count - 1))
         itemCounter = items.count
@@ -1975,6 +1983,70 @@ public final class PaletteView: NSView {
         ])
     }
 
+    /// Depth-first search for the first `empty-view` node (List.EmptyView / Grid.EmptyView).
+    private func firstEmptyView(in node: ViewNode) -> ViewNode? {
+        if node.type == "empty-view" { return node }
+        for c in node.children { if let e = firstEmptyView(in: c) { return e } }
+        return nil
+    }
+
+    /// A 48pt icon view for the empty state, resolving the same Image.ImageLike sources as grid cells
+    /// (asset/base64, fileIcon, local/remote URL, or an SF Symbol name). May fill asynchronously for a
+    /// remote URL.
+    private func emptyStateIcon(_ v: JSONValue?) -> NSImageView {
+        let iv = NSImageView()
+        iv.translatesAutoresizingMaskIntoConstraints = false
+        iv.contentTintColor = .tertiaryLabelColor
+        iv.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 40, weight: .regular)
+        if let p = fileIconPath(v) {
+            iv.image = NSWorkspace.shared.icon(forFile: p)
+        } else if let src = imageSource(v) {
+            if let local = loadLocalImage(src) { iv.image = local }
+            else if src.hasPrefix("http://") || src.hasPrefix("https://") { loadRemoteImage(src, into: iv) }
+            else { iv.image = NSImage(systemSymbolName: src, accessibilityDescription: nil)
+                ?? NSImage(systemSymbolName: sfSymbol(for: src), accessibilityDescription: nil) }
+        }
+        NSLayoutConstraint.activate([
+            iv.widthAnchor.constraint(equalToConstant: 48),
+            iv.heightAnchor.constraint(equalToConstant: 48),
+        ])
+        return iv
+    }
+
+    /// Show a centered empty state for the given `empty-view` node, hiding the list/grid/stack surfaces.
+    private func showEmptyState(_ node: ViewNode) {
+        listScroll.isHidden = true; gridScroll.isHidden = true; scrollView.isHidden = true
+        let container = NSView(); container.translatesAutoresizingMaskIntoConstraints = false
+        let col = NSStackView(); col.orientation = .vertical; col.alignment = .centerX; col.spacing = 8
+        col.translatesAutoresizingMaskIntoConstraints = false
+        if node.props["icon"] != nil { col.addArrangedSubview(emptyStateIcon(node.props["icon"])) }
+        if let t = node.props["title"]?.stringValue, !t.isEmpty {
+            let lbl = NSTextField(labelWithString: t)
+            lbl.font = .systemFont(ofSize: 15, weight: .semibold); lbl.textColor = .labelColor; lbl.alignment = .center
+            col.addArrangedSubview(lbl)
+        }
+        if let d = node.props["description"]?.stringValue, !d.isEmpty {
+            let lbl = NSTextField(wrappingLabelWithString: d)
+            lbl.font = .systemFont(ofSize: 13); lbl.textColor = .secondaryLabelColor; lbl.alignment = .center
+            lbl.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+            col.addArrangedSubview(lbl)
+            lbl.widthAnchor.constraint(lessThanOrEqualToConstant: 320).isActive = true
+        }
+        container.addSubview(col)
+        addSubview(container)
+        NSLayoutConstraint.activate([
+            container.topAnchor.constraint(equalTo: topAnchor),
+            container.leadingAnchor.constraint(equalTo: leadingAnchor),
+            container.trailingAnchor.constraint(equalTo: trailingAnchor),
+            container.bottomAnchor.constraint(equalTo: bottomAnchor),
+            col.centerXAnchor.constraint(equalTo: container.centerXAnchor),
+            col.centerYAnchor.constraint(equalTo: container.centerYAnchor),
+            col.leadingAnchor.constraint(greaterThanOrEqualTo: container.leadingAnchor, constant: 24),
+            col.trailingAnchor.constraint(lessThanOrEqualTo: container.trailingAnchor, constant: -24),
+        ])
+        emptyStateView = container
+    }
+
     // MARK: - Virtualized list (NSTableView)
 
     /// Build the flattened row model from the tree and reload the table. Only VISIBLE rows are built
@@ -2002,6 +2074,10 @@ public final class PaletteView: NSView {
         walk(root)
         listData = entries
         itemCounter = itemIdx
+        if itemIdx == 0, let ev = firstEmptyView(in: root) {
+            showEmptyState(ev)
+            return
+        }
         listSelected = itemIdx == 0 ? 0 : max(0, min(selectedIndex, itemIdx - 1))
         scrollView.isHidden = true
         gridScroll.isHidden = true
