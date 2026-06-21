@@ -652,7 +652,7 @@ public final class PaletteWindow: NSObject {
             }
             if event.keyCode == 53 { // Esc — works even when a form field (not the search box) has focus
                 if self.confirmModal.isShown { self.confirmModal.cancel() }
-                else if self.actionPanel.isShown { self.actionPanel.dismiss() }
+                else if self.actionPanel.isShown { self.actionPanel.back() }
                 else { self.onCancel?() }
                 return nil
             }

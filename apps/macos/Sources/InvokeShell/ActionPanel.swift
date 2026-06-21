@@ -309,7 +309,7 @@ final class ActionPanel: NSObject, NSTextFieldDelegate {
     }
 
     /// Esc: pop a submenu level, or dismiss at the root.
-    private func back() {
+    func back() {
         if levels.count > 1 { popLevel() } else { dismiss() }
     }
 
