@@ -633,7 +633,7 @@ The component spine is in place and renders natively: **List, Grid, Detail, Form
 | `Form.LinkAccessory` (`target` / `text`) | 🟡 | exported (`index.ts:220`); **no longer crashes** — degrades to inert description text |
 | `onChange` | ✅ | text fields, Dropdown, **and Checkbox** (real bool); handler refreshed each reconcile (Chunk E) |
 | `onBlur` / `onFocus` / `autoFocus` / `storeValue` / `info` / `enableDrafts` | ⬜ | |
-| `Form.Event` / `Form.Event.Type` (`focus`/`blur`) / `Form.Values` types | ⬜ | event payload & values type not modeled |
+| `Form.Event` / `Form.Event.Type` (`focus`/`blur`) / `Form.Values` types | 🟡 | **`Form.Values` / `FormValues` now exported (`export declare namespace`, Chunk I2, 2026-06-21)**; `Form.Event` + `Form.Event.Type` event payload still not modeled |
 | Typed values (Checkbox→bool, DatePicker→Date, TagPicker→array) | 🟡 | **Checkbox→bool (Chunk E) + DatePicker→Date (Chunk H) done**; TagPicker→array still pending |
 | Imperative `focus()` / `reset()` via ref | ⬜ | per-item refs (`useRef<Form.TextField>`), exposed on all controlled item types |
 
@@ -658,7 +658,7 @@ The component spine is in place and renders natively: **List, Grid, Detail, Form
 | API | State | Gap / pending |
 |---|---|---|
 | `Action.Push` + `useNavigation().push/pop` + Esc-pops | ✅ | render-on-push frames (landed) |
-| `Navigation` (type returned by `useNavigation`) | 🟡 | push/pop work; type not exported/modeled |
+| `Navigation` (type returned by `useNavigation`) | ✅ | push/pop work; `Navigation` type now exported (`export declare namespace`, Chunk I2, 2026-06-21) |
 | `navigationTitle` breadcrumb | ✅ | |
 | `menu-bar` command mode | ✅ | accepted at discovery (`AppController.swift:3001`); real `NSStatusItem` (`MenuBarController.swift:41`) |
 | `MenuBarExtra` + `.Item` | ✅ | exported (`index.ts:345`) + rendered to `NSMenu` (`MenuBarController.swift:76`/`121`) |
@@ -690,14 +690,14 @@ The component spine is in place and renders natively: **List, Grid, Detail, Form
 | `Cache` constructor `{namespace, capacity}` / `isEmpty` | 🟡 | namespace isolation & `isEmpty` not honored |
 | `Cache.Subscriber` / `Cache.Subscription` / `Cache.Options` types | ⬜ | not modeled |
 | `getPreferenceValues` + types textfield/password/checkbox/dropdown/appPicker | ✅ | `file` / `directory` pref types — ⬜ |
-| `Preferences` / `PreferenceValues` types | 🟡 | `getPreferenceValues` works; named types not exported |
+| `Preferences` / `PreferenceValues` types | ✅ | `getPreferenceValues` works; `Preferences` (augmentable) + `PreferenceValues` now exported (Chunk I2, 2026-06-21) |
 | Per-command preference override + required-before-run | ✅ | |
 | `environment.supportPath` / `assetsPath` / `commandName` / `commandMode` | ✅ | |
 | `environment.extensionName` / `ownerOrAuthorName` | 🟡 | always `""` |
-| `environment.appearance` / `textSize` / `launchType` / `isDevelopment` / `raycastVersion` | 🟡 | `launchType` wired (`index.ts:587`); `appearance`/`textSize`/`isDevelopment`/`raycastVersion` hardcoded |
+| `environment.appearance` / `textSize` / `launchType` / `isDevelopment` / `raycastVersion` | 🟡 | `launchType` wired (`index.ts:587`); **`appearance` real (NSApp.effectiveAppearance, main-thread-guarded) + `textSize` host-provided (Chunk I2, 2026-06-21)**; `isDevelopment`/`raycastVersion` hardcoded. Note: live appearance-change push remains pending. |
 | `LaunchType` enum (`UserInitiated` / `Background`) | ✅ | exported (`index.ts:474`); drives `launchCommand` + `environment.launchType` |
 | `FileSystemItem` (return type of `getSelectedFinderItems`) | ⬜ | inline `{path:string}[]`; no named type |
-| `environment.canAccess(api)` | 🟡 | hardcoded `false` |
+| `environment.canAccess(api)` | 🟡 | **`canAccess(AI)` real (AIService.hasStoredKey(), boolean, Chunk I2, 2026-06-21)**; non-AI APIs still return `false` |
 | `openExtensionPreferences` / `openCommandPreferences` | 🟡 | send a `scope` arg, but host ignores it (not scoped) |
 | `updateCommandMetadata` | ✅ | real RPC (`index.ts:796`) + host stores subtitle override & re-renders (`AppController.swift:2120`) |
 | `launchCommand` (cross-command launch) | ✅ | real `command.launch` RPC (`index.ts:783`) + host handler (`AppController.swift:2127`) |
@@ -710,7 +710,7 @@ The component spine is in place and renders natively: **List, Grid, Detail, Form
 | `Clipboard.Content` / `Clipboard.ReadContent` / `Clipboard.CopyOptions` types | 🟡 | text path works; `html`/`file` content shapes not modeled |
 | `Clipboard.read({offset})` → `{text,html,file}` / `Clipboard.clear` | 🟡 | full `{text,html,file}` read + `Clipboard.clear` DONE Chunk G 2026-06-21; `offset` (Nth history entry) still pending |
 | **`Keyboard` namespace** — `Keyboard.Shortcut` (`{key, modifiers}`) | 🟡 | **exported** (`index.ts:878`) — namespace **not** absent; `Shortcut` is a local type; shortcuts not applied to UI |
-| `Keyboard.KeyModifier` / `Keyboard.KeyEquivalent` / `Keyboard.Shortcut.Common` | 🟡 | `Shortcut.Common` populated (`index.ts:881`); `KeyModifier`/`KeyEquivalent` unions not exported |
+| `Keyboard.KeyModifier` / `Keyboard.KeyEquivalent` / `Keyboard.Shortcut.Common` | ✅ | `Shortcut.Common` populated (`index.ts:881`); `KeyModifier` (incl. "win") + `KeyEquivalent` unions now exported (Chunk I2, 2026-06-21) |
 | `getApplications` / `getDefaultApplication` / `getFrontmostApplication` (+ `Application` type) | ✅ | real; `Application` interface **is** exported (`index.ts:760`) |
 | `getSelectedText` / `getSelectedFinderItems` | ✅ | |
 | `open` / `trash` / `showInFinder` (imperative System-Utilities fns) | ✅ | exported (`index.ts:547`/`770`/`774`) + real host handlers (`AppController.swift:2035`/`2300`/`2210`) |
@@ -759,8 +759,8 @@ The component spine is in place and renders natively: **List, Grid, Detail, Form
 | Command modes `view` / `no-view` | ✅ | accepted at discovery |
 | Command mode `menu-bar` | ✅ | accepted at discovery + rendered (`AppController.swift:3001`/`3020`); see §A.5 |
 | Arguments `text` / `password` / `dropdown` | ✅ | inline search-bar chips |
-| `LaunchProps` (`arguments` / `draftValues` / `launchContext` / `fallbackText`) | 🟡 | `arguments` **and** `launchContext` delivered (`child.ts:140`/`143`); `draftValues` / `fallbackText` not passed |
-| `LaunchType` enum (`UserInitiated` / `Background`) / `LaunchContext` | 🟡 | `LaunchType` exported (§A.7); `LaunchContext` type not modeled |
+| `LaunchProps` (`arguments` / `draftValues` / `launchContext` / `fallbackText`) | 🟡 | `arguments` **and** `launchContext` delivered (`child.ts:140`/`143`); **`LaunchProps` type now exported (Chunk I2, 2026-06-21)**; `draftValues` / `fallbackText` not passed |
+| `LaunchType` enum (`UserInitiated` / `Background`) / `LaunchContext` | 🟡 | `LaunchType` exported (§A.7); **`LaunchContext` type: still not modeled** |
 | Background refresh (`interval`) | 🟡 | scheduled for `no-view` commands (`AppController.swift:3017`) |
 | Fallback commands | ⬜ | |
 | `disabledByDefault` | ⬜ | |
@@ -771,7 +771,7 @@ The component spine is in place and renders natively: **List, Grid, Detail, Form
 
 - **P0 — crash-prevention & correctness:** ~~graceful-degrade every undefined component~~ **DONE 2026-06-21** (the `Action.*`, `Form.TagPicker`/`FilePicker`/`LinkAccessory`, `MenuBarExtra.*` members are all defined; nothing throws "Element type is invalid"; `Keyboard` exported). Remaining: render `List.EmptyView`/`Grid.EmptyView`; fire `onChange` for **Checkbox**; honor `Action.style` (destructive) + bind custom `Action.shortcut` to the exported `Keyboard.Shortcut`.
 - **P1 — depth:** _(Done 2026-06-21: List/Grid **pagination** (+ `useFetch`/`useCachedPromise`); `Form.PasswordField` masking + native `DatePicker`; clickable `Detail.Metadata.Link` + `TagList` chips + `Color` in Metadata; `List`/`Detail` `isLoading`; List/Grid accessories incl. `Color`/`Icon` tint + `FileIcon`; grouped `ActionPanel.Section` + drill-in `Submenu`; `open`/`trash`/`showInFinder`; `mutate` runtime. controlled searchText/throttle/filtering + Dropdown storeValue landed (Chunk F, 2026-06-21). **`Alert.Options` `icon`/`dismissAction.style`/`rememberUserChoice` + `Clipboard.read` full `{text,html,file}` + `Clipboard.clear` landed (Chunk G, 2026-06-21). `Toast` primary/secondary actions (`Toast.ActionOptions`) landed (Chunk G′, 2026-06-21) — P1 feedback group complete. `TagList.Item` `onAction` + TagList wrapping + `DatePicker` `min`/`max`/type + typed `Date` onChange + `optimisticUpdate`/`rollbackOnError` landed (Chunk H, 2026-06-21).**)_ Remaining: `isFullDay()` + TagPicker→array (typed values); useCachedPromise optimistic cache-write; `Clipboard.read` `offset` (Nth history entry).
-- **P2 — breadth / v2:** _(Done: `menu-bar` + `NSStatusItem` + `MenuBarExtra.*`; `launchCommand`; `updateCommandMetadata`; `BrowserExtension`. **`Icon` coverage + `Color.Dynamic` + `Image.Mask` + dynamic light/dark images substantially DONE (Chunk I, 2026-06-21):** 102-member `Icon` enum + `IconSymbol` validated fallback; `Color.Dynamic({light,dark})` exported; `Image.Mask` Circle/RoundedRectangle honored; dynamic `{source:{light,dark}}` dispatched by appearance. Residual tail: literal-complete ~250-member `Icon` enum; `Image.tintColor` top-level export; appearance-change live re-render.)_ Remaining: `MenuBarExtra.Item` `alternate`/`shortcut` + `ActionEvent`; AI streaming (+ `signal`; honor `model`/`creativity` host-side) + Tools (`Tool.Confirmation`)/MCP/Skills; Window Management API; `useStreamJSON` streaming; fallback commands; real `environment` fields; OAuth provider presets; export remaining named types/enums (`Cache.*`/`Preferences`/`Form.Values`/`KeyModifier`/`Navigation`/`LaunchContext`).
+- **P2 — breadth / v2:** _(Done: `menu-bar` + `NSStatusItem` + `MenuBarExtra.*`; `launchCommand`; `updateCommandMetadata`; `BrowserExtension`. **`Icon` coverage + `Color.Dynamic` + `Image.Mask` + dynamic light/dark images substantially DONE (Chunk I, 2026-06-21):** 102-member `Icon` enum + `IconSymbol` validated fallback; `Color.Dynamic({light,dark})` exported; `Image.Mask` Circle/RoundedRectangle honored; dynamic `{source:{light,dark}}` dispatched by appearance. Residual tail: literal-complete ~250-member `Icon` enum; `Image.tintColor` top-level export; appearance-change live re-render. **Named-type exports + real `environment` fields (Chunk I2, 2026-06-21):** `LaunchProps`, `PreferenceValues`, `Preferences` (augmentable), `Navigation`, `Form.Values`/`FormValues`, `Keyboard.KeyModifier` (incl. "win"), `Keyboard.KeyEquivalent` exported; `environment.appearance` real (NSApp.effectiveAppearance, main-thread-guarded); `textSize` host-provided; `canAccess(AI)` real (AIService.hasStoredKey()). Still pending: live appearance-change push; non-AI `canAccess`; `LaunchContext` type.)_ Remaining: `MenuBarExtra.Item` `alternate`/`shortcut` + `ActionEvent`; AI streaming (+ `signal`; honor `model`/`creativity` host-side) + Tools (`Tool.Confirmation`)/MCP/Skills; Window Management API; `useStreamJSON` streaming; fallback commands; OAuth provider presets; export remaining named types (`Cache.*`/`LaunchContext`).
 
 ---
 
