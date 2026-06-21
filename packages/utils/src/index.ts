@@ -30,6 +30,8 @@ export function usePromise<T>(
   deps: unknown[] = [],
 ): AsyncState<T> & { mutate: MutatePromise<T>; pagination?: PaginationOptions } {
   const [data, setData] = useState<T | undefined>(undefined);
+  const dataRef = useRef(data);
+  dataRef.current = data;
   const [isLoading, setLoading] = useState(true);
   const [error, setError] = useState<Error | undefined>(undefined);
   const [nonce, setNonce] = useState(0);
@@ -85,10 +87,19 @@ export function usePromise<T>(
   }, [hasMore, isLoading, runPage]);
 
   const revalidate = useCallback(() => setNonce((n) => n + 1), []);
-  const mutate: MutatePromise<T> = async (asyncUpdate, _opts) => {
-    const r = asyncUpdate ? await asyncUpdate : undefined;
-    revalidate();
-    return r as never;
+  const mutate: MutatePromise<T> = async (asyncUpdate, opts) => {
+    const rollback = dataRef.current;
+    if (opts?.optimisticUpdate) setData(opts.optimisticUpdate(dataRef.current as T));
+    try {
+      const r = asyncUpdate ? await asyncUpdate : undefined;
+      if (opts?.shouldRevalidateAfter !== false) revalidate();
+      return r as never;
+    } catch (e) {
+      if (opts?.rollbackOnError) {
+        setData(typeof opts.rollbackOnError === "function" ? (opts.rollbackOnError as (d: T) => T)(rollback as T) : rollback);
+      }
+      throw e;
+    }
   };
   const pagination = paginated ? { pageSize: pageSize || 50, hasMore, onLoadMore } : undefined;
   return { data, isLoading, error, revalidate, mutate, pagination };
@@ -387,13 +398,7 @@ export function useCachedPromise<T, A extends unknown[] = unknown[]>(
   // For the paginated path: state.pagination is set and state.data is already the accumulated array.
   const data = state.pagination ? state.data : (state.data ?? options?.initialData);
   useEffect(() => { if (state.error) options?.onError?.(state.error); }, [state.error]); // eslint-disable-line react-hooks/exhaustive-deps
-  // mutate: optimistically update + revalidate (minimal — runs the async update then refetches).
-  const mutate: MutatePromise<T> = async (asyncUpdate, _opts) => {
-    const r = asyncUpdate ? await asyncUpdate : undefined;
-    state.revalidate();
-    return r as never;
-  };
-  return { ...state, data, mutate, pagination: state.pagination };
+  return { ...state, data, pagination: state.pagination };
 }
 
 /* ------------------------------------------------------------------ useForm
