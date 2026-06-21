@@ -41,7 +41,6 @@ final class ActionPanel: NSObject, NSTextFieldDelegate {
 
     private let rowHeight: CGFloat = 34
     private let headerHeight: CGFloat = 22
-    private let sepHeight: CGFloat = 9
     private let maxVisibleRows = 8
     private let panelWidth: CGFloat = 340
 
@@ -213,6 +212,8 @@ final class ActionPanel: NSObject, NSTextFieldDelegate {
                 let l = NSTextField(labelWithString: title.uppercased())
                 l.font = .systemFont(ofSize: 10, weight: .semibold)
                 l.textColor = .tertiaryLabelColor
+                l.lineBreakMode = .byTruncatingTail
+                l.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
                 l.translatesAutoresizingMaskIntoConstraints = false
                 let wrap = NSView(); wrap.translatesAutoresizingMaskIntoConstraints = false
                 wrap.addSubview(l)
@@ -220,6 +221,7 @@ final class ActionPanel: NSObject, NSTextFieldDelegate {
                     wrap.heightAnchor.constraint(equalToConstant: headerHeight),
                     l.leadingAnchor.constraint(equalTo: wrap.leadingAnchor, constant: 12),
                     l.bottomAnchor.constraint(equalTo: wrap.bottomAnchor, constant: -4),
+                    l.trailingAnchor.constraint(lessThanOrEqualTo: wrap.trailingAnchor, constant: -12),
                 ])
                 view = wrap
             case .action(let a):
@@ -249,7 +251,7 @@ final class ActionPanel: NSObject, NSTextFieldDelegate {
             }
             if i < rows.count - 1 { h += listStack.spacing }
         }
-        let maxH = CGFloat(maxVisibleRows) * (rowHeight + listStack.spacing)
+        let maxH = CGFloat(maxVisibleRows) * rowHeight + CGFloat(maxVisibleRows - 1) * listStack.spacing
         scrollHeight.constant = min(max(h, rowHeight), maxH)
     }
 

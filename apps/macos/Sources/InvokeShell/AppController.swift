@@ -3693,10 +3693,10 @@ public final class AppController: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// One extension action node → a PaletteAction that runs via the live `perform(_:)` path.
+    /// One extension action node → a PaletteAction that runs via extHost (all variants + form submit).
     private func paletteAction(for n: ViewNode, shortcut: String? = nil) -> PaletteAction {
         PaletteAction(title: title(for: n), shortcut: shortcut, icon: n.props["icon"]?.stringValue) { [weak self] in
-            self?.perform(n)
+            self?.runExtensionAction(n) // extHost + all variants/form-submit; perform() routes to the resident calc host
         }
     }
 
