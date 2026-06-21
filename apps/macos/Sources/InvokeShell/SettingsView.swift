@@ -114,6 +114,26 @@ struct CommandsPane: View {
     @State private var search = ""
     @State private var selection: String?  // selected command or group id → drives the detail panel
 
+    // MARK: - Flattened command list (used by the Fallback section)
+
+    /// All CommandInfo entries across all groups, in display order.
+    private var allCommands: [CommandInfo] {
+        groups.flatMap { $0.commands }
+    }
+
+    /// Lookup helper: resolve a command id to its CommandInfo (nil if unknown).
+    private func commandInfo(for id: String) -> CommandInfo? {
+        allCommands.first { $0.id == id }
+    }
+
+    /// Commands eligible to be added as fallbacks: supportsBinding (excludes Calculator) and not
+    /// already in the list. Menu-bar/background commands are excluded because extensionGroups()
+    /// never includes them.
+    private var fallbackEligible: [CommandInfo] {
+        let added = Set(settings.fallbackCommands)
+        return allCommands.filter { $0.supportsBinding && !added.contains($0.id) }
+    }
+
     private var filtered: [ExtensionGroup] {
         let q = search.trimmingCharacters(in: .whitespaces).lowercased()
         guard !q.isEmpty else { return groups }
@@ -125,52 +145,56 @@ struct CommandsPane: View {
     }
 
     var body: some View {
-        HStack(spacing: 0) {
-            VStack(spacing: 0) {
-                HStack {
-                    Image(systemName: "magnifyingglass").foregroundColor(.secondary).font(.caption)
-                    // Down from the search field jumps into the (focusable) list; type to filter.
-                    TextField("Search commands", text: $search).textFieldStyle(.plain)
-                        .focused($focus, equals: .search)
-                        .onKeyPress(.downArrow) { focus = .list; if selection == nil { moveSelection(1) }; return .handled }
-                }
-                .padding(.horizontal, 12).padding(.vertical, 7)
-                Divider()
-                columnHeader
-                Divider()
-                ScrollViewReader { proxy in
-                    ScrollView {
-                        LazyVStack(spacing: 0) {
-                            ForEach(filtered) { group in
-                                if group.commands.count > 1 {
-                                    groupRow(group).id(group.id)
-                                    if expanded.contains(group.id) {
-                                        ForEach(group.commands) { commandRow($0, indented: true, groupKey: group.name).id($0.id) }
+        VStack(spacing: 0) {
+            HStack(spacing: 0) {
+                VStack(spacing: 0) {
+                    HStack {
+                        Image(systemName: "magnifyingglass").foregroundColor(.secondary).font(.caption)
+                        // Down from the search field jumps into the (focusable) list; type to filter.
+                        TextField("Search commands", text: $search).textFieldStyle(.plain)
+                            .focused($focus, equals: .search)
+                            .onKeyPress(.downArrow) { focus = .list; if selection == nil { moveSelection(1) }; return .handled }
+                    }
+                    .padding(.horizontal, 12).padding(.vertical, 7)
+                    Divider()
+                    columnHeader
+                    Divider()
+                    ScrollViewReader { proxy in
+                        ScrollView {
+                            LazyVStack(spacing: 0) {
+                                ForEach(filtered) { group in
+                                    if group.commands.count > 1 {
+                                        groupRow(group).id(group.id)
+                                        if expanded.contains(group.id) {
+                                            ForEach(group.commands) { commandRow($0, indented: true, groupKey: group.name).id($0.id) }
+                                        }
+                                    } else if let only = group.commands.first {
+                                        commandRow(only, indented: false, type: "Command", groupKey: group.name).id(only.id)
                                     }
-                                } else if let only = group.commands.first {
-                                    commandRow(only, indented: false, type: "Command", groupKey: group.name).id(only.id)
                                 }
                             }
                         }
+                        .onChange(of: selection) { _, sel in
+                            if let sel { withAnimation(.easeOut(duration: 0.12)) { proxy.scrollTo(sel, anchor: .center) } }
+                        }
                     }
-                    .onChange(of: selection) { _, sel in
-                        if let sel { withAnimation(.easeOut(duration: 0.12)) { proxy.scrollTo(sel, anchor: .center) } }
-                    }
+                    // The list (not the search field) handles arrow navigation — a focused TextField's
+                    // field editor swallows arrow keys, so onKeyPress there never fires.
+                    .focusable()
+                    .focusEffectDisabled()
+                    .focused($focus, equals: .list)
+                    .onKeyPress(.upArrow) { moveSelection(-1); return .handled }
+                    .onKeyPress(.downArrow) { moveSelection(1); return .handled }
+                    .onKeyPress(.rightArrow) { expandSelected(true); return .handled }
+                    .onKeyPress(.leftArrow) { expandSelected(false); return .handled }
                 }
-                // The list (not the search field) handles arrow navigation — a focused TextField's
-                // field editor swallows arrow keys, so onKeyPress there never fires.
-                .focusable()
-                .focusEffectDisabled()
-                .focused($focus, equals: .list)
-                .onKeyPress(.upArrow) { moveSelection(-1); return .handled }
-                .onKeyPress(.downArrow) { moveSelection(1); return .handled }
-                .onKeyPress(.rightArrow) { expandSelected(true); return .handled }
-                .onKeyPress(.leftArrow) { expandSelected(false); return .handled }
+                .frame(minWidth: 560, maxWidth: .infinity)
+                Divider()
+                CommandDetailPane(selection: selection, groups: groups, prefGroups: prefGroups, onBindingsChanged: onBindingsChanged, onClearClipboard: onClearClipboard)
+                    .frame(width: 340)
             }
-            .frame(minWidth: 560, maxWidth: .infinity)
             Divider()
-            CommandDetailPane(selection: selection, groups: groups, prefGroups: prefGroups, onBindingsChanged: onBindingsChanged, onClearClipboard: onClearClipboard)
-                .frame(width: 340)
+            fallbackSection
         }
         .frame(minWidth: 920, maxWidth: .infinity, minHeight: 380, maxHeight: .infinity)
         .onAppear {
@@ -328,6 +352,99 @@ struct CommandsPane: View {
 
     private func toggleExpanded(_ id: String) {
         if expanded.contains(id) { expanded.remove(id) } else { expanded.insert(id) }
+    }
+
+    // MARK: - Fallback Commands section
+
+    /// The group name for a command id — used to key the icon colour, matching the command table.
+    private func groupName(for commandId: String) -> String {
+        groups.first { g in g.commands.contains { $0.id == commandId } }?.name ?? commandId
+    }
+
+    @ViewBuilder private var fallbackSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .firstTextBaseline, spacing: 0) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Fallback Commands")
+                        .font(.caption).foregroundColor(.secondary).textCase(.uppercase)
+                    Text("Shown when a search has no results; the query is passed to the command.")
+                        .font(.caption2).foregroundColor(.secondary)
+                }
+                Spacer()
+                // "Add Fallback Command…" menu — lists eligible commands not already added.
+                Menu {
+                    if fallbackEligible.isEmpty {
+                        Text("All eligible commands already added").foregroundColor(.secondary)
+                    } else {
+                        ForEach(fallbackEligible) { cmd in
+                            Button {
+                                settings.addFallback(cmd.id)
+                            } label: {
+                                Label(cmd.title, systemImage: cmd.icon)
+                            }
+                        }
+                    }
+                } label: {
+                    Label("Add Fallback Command…", systemImage: "plus")
+                        .font(.caption)
+                }
+                .menuStyle(.borderlessButton)
+                .fixedSize()
+            }
+            .padding(.horizontal, 16).padding(.top, 10).padding(.bottom, 6)
+
+            if settings.fallbackCommands.isEmpty {
+                Text("No fallback commands. Add one above.")
+                    .font(.callout).foregroundColor(.secondary)
+                    .padding(.horizontal, 16).padding(.vertical, 8)
+            } else {
+                ForEach(Array(settings.fallbackCommands.enumerated()), id: \.element) { idx, id in
+                    let info = commandInfo(for: id)
+                    let title = info?.title ?? id
+                    let icon = info?.icon ?? "command"
+                    let iconPath = info?.iconPath
+                    let gName = groupName(for: id)
+                    Divider().padding(.leading, 16)
+                    HStack(spacing: 8) {
+                        // Drag-order handle (visual; actual reorder via up/down buttons below)
+                        Image(systemName: "line.3.horizontal").foregroundColor(.secondary.opacity(0.5))
+                            .font(.caption).frame(width: 14)
+                        CommandTileIcon(symbol: icon, colorKey: gName, iconPath: iconPath, size: 18)
+                        Text(title).font(.callout).lineLimit(1)
+                        Spacer()
+                        // Up / Down reorder buttons
+                        HStack(spacing: 2) {
+                            Button {
+                                settings.moveFallback(id, up: true)
+                            } label: {
+                                Image(systemName: "chevron.up")
+                            }
+                            .buttonStyle(.borderless)
+                            .disabled(idx == 0)
+                            Button {
+                                settings.moveFallback(id, up: false)
+                            } label: {
+                                Image(systemName: "chevron.down")
+                            }
+                            .buttonStyle(.borderless)
+                            .disabled(idx == settings.fallbackCommands.count - 1)
+                        }
+                        .font(.caption)
+                        // Remove button
+                        Button {
+                            settings.removeFallback(id)
+                        } label: {
+                            Image(systemName: "xmark.circle.fill").foregroundColor(.secondary)
+                        }
+                        .buttonStyle(.borderless)
+                        .font(.callout)
+                    }
+                    .padding(.horizontal, 16).padding(.vertical, 7)
+                    .contentShape(Rectangle())
+                }
+            }
+        }
+        .padding(.bottom, 6)
     }
 }
 

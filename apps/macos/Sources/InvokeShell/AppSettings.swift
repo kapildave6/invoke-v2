@@ -49,6 +49,18 @@ public final class AppSettings: ObservableObject {
     }
     /// Favorited command ids (Raycast's Favorites) — pinned to the top of the empty root.
     @Published public var favorites: Set<String> { didSet { d.set(Array(favorites), forKey: "favoriteCommands") } }
+    /// Ordered list of command ids to try as fallbacks when a root search has no match.
+    /// The query is passed to the command. Persisted as an array (ordered).
+    @Published public var fallbackCommands: [String] { didSet { d.set(fallbackCommands, forKey: "fallbackCommands") } }
+    public func addFallback(_ id: String) { if !fallbackCommands.contains(id) { fallbackCommands.append(id) } }
+    public func removeFallback(_ id: String) { fallbackCommands.removeAll { $0 == id } }
+    public func moveFallback(_ id: String, up: Bool) {
+        guard let i = fallbackCommands.firstIndex(of: id) else { return }
+        let j = up ? i - 1 : i + 1
+        guard j >= 0, j < fallbackCommands.count else { return }
+        fallbackCommands.swapAt(i, j)
+    }
+
     /// Extension ids the user has explicitly allowed to run AppleScript (a powerful OS-automation
     /// capability). Default-deny: an extension must be granted before runAppleScript executes.
     @Published public var appleScriptGrants: Set<String> { didSet { d.set(Array(appleScriptGrants), forKey: "appleScriptGrants") } }
@@ -94,6 +106,7 @@ public final class AppSettings: ObservableObject {
         fsReadGrants = Set((d.array(forKey: "fsReadGrants") as? [String]) ?? [])
         fsWriteGrants = Set((d.array(forKey: "fsWriteGrants") as? [String]) ?? [])
         trustedExtensions = Set((d.array(forKey: "trustedExtensions") as? [String]) ?? [])
+        fallbackCommands = (d.array(forKey: "fallbackCommands") as? [String]) ?? []
         launchAtLogin = d.bool(forKey: "launchAtLogin")
     }
 
