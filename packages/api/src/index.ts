@@ -1086,7 +1086,7 @@ export const Keyboard = {
 };
 // Namespace merge: adds Keyboard.KeyModifier and Keyboard.KeyEquivalent as types.
 declare namespace Keyboard {
-  export type KeyModifier = "cmd" | "ctrl" | "opt" | "shift";
+  export type KeyModifier = "cmd" | "ctrl" | "opt" | "shift" | "win";
   export type KeyEquivalent = string;
 }
 export const Image = { Mask: { Circle: "circle", RoundedRectangle: "roundedRectangle" } as const };

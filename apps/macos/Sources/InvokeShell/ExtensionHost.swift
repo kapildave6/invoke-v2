@@ -166,10 +166,14 @@ public final class ExtensionHost {
         let extTsconfig = repoRoot + "/" + extDir + "/tsconfig.json"
         if FileManager.default.fileExists(atPath: extTsconfig) { env["TSX_TSCONFIG_PATH"] = extTsconfig }
         // Real host-provided environment values (appearance, textSize, AI access).
-        // NSApp.effectiveAppearance is read here on the calling thread; spawn-time is always from the
-        // main queue (AppController calls launch() on main), so this is safe.
-        let dark = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-        env["INVOKE_APPEARANCE"] = dark ? "dark" : "light"
+        // NSApp.effectiveAppearance is an AppKit property that must be read on the main thread.
+        // launch() is called from main in most paths, but the ai-tool path runs off-main — so we
+        // guard with Thread.isMainThread: already on main → read directly (no deadlock risk);
+        // off-main → hop to main synchronously via DispatchQueue.main.sync.
+        let appearanceDark: Bool = Thread.isMainThread
+            ? (NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua)
+            : DispatchQueue.main.sync { NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua }
+        env["INVOKE_APPEARANCE"] = appearanceDark ? "dark" : "light"
         env["INVOKE_TEXT_SIZE"] = "medium" // host UI exposes no size setting yet; "medium" is the default
         // Boolean flag only — the key value is NEVER read or echoed (security / GDPR).
         env["INVOKE_CAN_ACCESS_AI"] = AIService.hasStoredKey() ? "1" : "0"
