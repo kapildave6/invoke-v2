@@ -377,7 +377,7 @@ export type MenuBarExtraActionEvent = { type: "left-click" | "right-click" };
 export interface MenuBarItemProps {
   /** The title shown in the menu item. */
   title?: string;
-  icon?: string;
+  icon?: string | { source?: string; tintColor?: string; fileIcon?: string; mask?: string };
   shortcut?: { modifiers: string[]; key: string };
   style?: "regular" | "destructive";
   /** An element to show instead when the user holds Option (⌥). */
