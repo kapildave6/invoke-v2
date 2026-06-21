@@ -583,13 +583,13 @@ The component spine is in place and renders natively: **List, Grid, Detail, Form
 | `List` pagination `{hasMore, onLoadMore, pageSize}` | ✅ | renderer near-bottom → `onLoadMore` (in-flight guarded); `@invoke/api` flattens the prop, 2026-06-21 |
 | Native fuzzy `filtering` of static items / `filtering={false}` | 🟡 | built-in client-side filter exists (`AppController.swift:121`), but not fuzzy-ranked & `filtering={false}` not honored |
 | `selectedItemId` / `onSelectionChange` | ⬜ | selection not reported back to the extension |
-| `List.EmptyView` | ⬜ | exported but renderer no-ops `empty-view` |
+| `List.EmptyView` | ✅ | rendered: centered icon+title+description on 0 items + `empty-view` node (Chunk E) |
 | `List.Item.accessories[]` | ✅ | text/tag/date/icon/tooltip + per-accessory `color` + combined entries, 2026-06-21 |
 | `List.Item` `keywords` / `detail` (isShowingDetail) / `quickLook` | 🟡 | keywords used by filter; master-detail honored; `quickLook` ⬜ |
 | `List.Item.Detail.isLoading` (detail-pane bar, distinct from `List.isLoading`) | ✅ | selected item's detail `isLoading` drives the top sweep bar, 2026-06-21 |
 | `Grid` `columns` | ✅ | |
 | `Grid` `aspectRatio` / `fit` (contain/fill) / `inset` | ⬜ | ignored |
-| `Grid.Section` / `Grid.Dropdown` / `Grid.EmptyView` | 🟡/⬜ | sections flattened; EmptyView unrendered |
+| `Grid.Section` / `Grid.Dropdown` / `Grid.EmptyView` | 🟡/✅ | sections flattened; **EmptyView rendered** (Chunk E) |
 | `Grid.Section` per-section `columns` / `aspectRatio` / `fit` / `inset` overrides | ⬜ | only top-level Grid layout props read |
 | `Grid.Item.accessory` (`Grid.Item.Accessory`) | ✅ | single accessory rendered under the tile title, 2026-06-21 |
 | `Grid.ItemSize` (deprecated enum) | ⬜ | defined but a no-op (renderer sizes by `columns`) |
@@ -631,10 +631,10 @@ The component spine is in place and renders natively: **List, Grid, Detail, Form
 | `Form.TagPicker` / `Form.TagPicker.Item` | 🟡 | exported (`index.ts:192`); **no longer crashes** — degrades to a single-select dropdown (string value) |
 | `Form.FilePicker` (+ `allowMultipleSelection` / `canChooseFiles` / `canChooseDirectories` / `showHiddenFiles`) | 🟡 | exported (`index.ts:218`); **no longer crashes** — degrades to a path text field; options ignored |
 | `Form.LinkAccessory` (`target` / `text`) | 🟡 | exported (`index.ts:220`); **no longer crashes** — degrades to inert description text |
-| `onChange` | 🟡 | fires for text fields **and Dropdown** (`PaletteView.swift:1559`); still **not** Checkbox |
+| `onChange` | ✅ | text fields, Dropdown, **and Checkbox** (real bool); handler refreshed each reconcile (Chunk E) |
 | `onBlur` / `onFocus` / `autoFocus` / `storeValue` / `info` / `enableDrafts` | ⬜ | |
 | `Form.Event` / `Form.Event.Type` (`focus`/`blur`) / `Form.Values` types | ⬜ | event payload & values type not modeled |
-| Typed values (Checkbox→bool, DatePicker→Date, TagPicker→array) | 🟡 | all field values are strings |
+| Typed values (Checkbox→bool, DatePicker→Date, TagPicker→array) | 🟡 | **Checkbox→bool via onChange (Chunk E)**; submit still strings; DatePicker→Date / TagPicker→array pending |
 | Imperative `focus()` / `reset()` via ref | ⬜ | per-item refs (`useRef<Form.TextField>`), exposed on all controlled item types |
 
 ### A.4 Actions & ActionPanel
@@ -646,11 +646,11 @@ The component spine is in place and renders natively: **List, Grid, Detail, Form
 | `ActionPanel.Submenu` | ✅ | drill-in (level stack); →/Return enters, ←/Esc pops. Lazy `onOpen` ⬜ |
 | `ActionPanel.Submenu` search props (`filtering` / `keepSectionOrder` / `throttle` / `onSearchTextChange` / `isLoading`) | 🟡 | client-side title filter per level; async props not wired |
 | `ActionPanel.Section` | ✅ | grouped: separators + small-caps titles, 2026-06-21 |
-| `Action.shortcut` (custom) | 🟡 | ignored; only first=Enter / second=⌘Enter assigned |
-| `Action.style` (destructive) | ⬜ | `props["style"]` never decoded (no red emphasis) |
+| `Action.shortcut` (custom) | ✅ | glyph keycaps + functional binding (Chunk E); positional ↵/⌘↵ default |
+| `Action.style` (destructive) | ✅ | red title in ⌘K (Chunk E); action-bar primary red is a follow-up |
 | `Action.Style` enum (`Regular` / `Destructive`) | 🟡 | enum exported (`index.ts:273`); `style` prop still not rendered |
 | `Action.PickDate.Type` enum (`Date` / `DateTime`) + `Action.PickDate.isFullDay()` | ⬜ | nested enum & helper absent |
-| `Keyboard.Shortcut` / `Keyboard.Shortcut.Common` (type behind `Action.shortcut`) | 🟡 | `Shortcut.Common` exported (`index.ts:878`); custom shortcuts not applied (see §A.8) |
+| `Keyboard.Shortcut` / `Keyboard.Shortcut.Common` (type behind `Action.shortcut`) | ✅ | exported; custom shortcuts now applied — display + functional (Chunk E) |
 | `Action.autoFocus` | ⬜ | |
 
 ### A.5 Navigation & Menu Bar

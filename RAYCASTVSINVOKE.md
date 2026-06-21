@@ -17,7 +17,7 @@
 
 **What remains is two kinds of gap:**
 1. **Breadth** — many SDK members are *defined* (so extensions importing them type-check and load) but the renderer doesn't honor every prop.
-2. **Depth** — controlled-input semantics (`onChange` for Checkbox, typed values) and streaming (AI tokens, `useStreamJSON`) are not fully wired. _(Pagination, `isLoading`, native pickers/masking, and `Detail.Metadata` fidelity landed 2026-06-21.)_
+2. **Depth** — controlled-input semantics (typed DatePicker/TagPicker values, controlled searchText) and streaming (AI tokens, `useStreamJSON`) are not fully wired. _(Pagination, `isLoading`, native pickers/masking, and `Detail.Metadata` fidelity landed 2026-06-21. Checkbox onChange→bool, EmptyView, Action style/shortcut landed 2026-06-21 (Chunk E).)_
 
 **Implementation has since outrun the original gap analysis.** The 2026-06-21 code-level reconciliation found the former "takes down the whole view" crash members — `Action.Trash` / `OpenWith` / `ShowInFinder` / `ToggleQuickLook` / `CreateQuicklink` / `CreateSnippet` / `PickDate`, `Form.TagPicker` / `FilePicker` / `LinkAccessory`, and `MenuBarExtra.*` — are **all defined now and either functional or degrade gracefully** (no more `"Element type is invalid"`). Menu-bar commands render to a real `NSStatusItem`; `launchCommand` / `updateCommandMetadata` work; the `Keyboard` namespace is exported. The remaining gaps are mostly **depth** (controlled non-text inputs, AI/JSON streaming) and **named-type exports**, not crashes — pagination, native pickers/masking, and `Detail.Metadata` fidelity landed 2026-06-21.
 
@@ -37,13 +37,13 @@
 | `List` pagination `{hasMore, onLoadMore, pageSize}` | ✅ | renderer near-bottom → `onLoadMore` (in-flight guarded); `@invoke/api` flattens the prop, 2026-06-21 |
 | Native fuzzy `filtering` of static items / `filtering={false}` escape hatch | 🟡 | built-in client-side filter exists (`AppController.swift:121` `filterTree`, substring on title/subtitle/keywords) — but not fuzzy-ranked, and `filtering={false}` is not honored (gated on presence of `onSearchTextChange`) |
 | `selectedItemId` / `onSelectionChange` | ⬜ | selection not reported back to the extension |
-| `List.EmptyView` | ⬜ | exported (`index.ts:139`) so no crash, but renderer never handles `empty-view` → no-op |
+| `List.EmptyView` | ✅ | centered icon+title+description when 0 items + `empty-view` node; its actions populate ⌘K (Chunk E) |
 | `List.Item.accessories[]` | ✅ | text/tag/date/icon/tooltip + per-accessory `color` + combined entries, 2026-06-21 |
 | `List.Item` `keywords` / `detail` (isShowingDetail) / `quickLook` | 🟡 | keywords used by the filter (`AppController.swift:115`); master-detail `isShowingDetail` honored; `quickLook` ⬜ |
 | `List.Item.Detail.isLoading` (detail-pane bar, distinct from `List.isLoading`) | ✅ | selected item's detail `isLoading` drives the top sweep bar, 2026-06-21 |
 | `Grid` `columns` | ✅ | |
 | `Grid` `aspectRatio` / `fit` (contain/fill) / `inset` | ⬜ | ignored (`renderGrid` reads only `columns`/`itemHeight`) |
-| `Grid.Section` / `Grid.Dropdown` / `Grid.EmptyView` | 🟡 / ⬜ | sections flattened; EmptyView unrendered |
+| `Grid.Section` / `Grid.Dropdown` / `Grid.EmptyView` | 🟡 / ✅ | sections flattened; **EmptyView rendered** (Chunk E) |
 | `Grid.Section` per-section `columns` / `aspectRatio` / `fit` / `inset` overrides | ⬜ | only top-level Grid layout props read |
 | `Grid.Item.accessory` (`Grid.Item.Accessory`) | ✅ | single accessory (icon/text/tag + tooltip) rendered under the tile title, 2026-06-21 |
 | `Grid.ItemSize` (deprecated enum) | ⬜ | defined (`index.ts:158`) but a no-op (renderer sizes by `columns`) |
@@ -85,10 +85,10 @@
 | `Form.TagPicker` / `Form.TagPicker.Item` | 🟡 | exported (`index.ts:192`); **no longer crashes** — degrades to a single-select dropdown (value is a string, not an array) |
 | `Form.FilePicker` (+ `allowMultipleSelection` / `canChooseFiles` / `canChooseDirectories` / `showHiddenFiles`) | 🟡 | exported (`index.ts:218`); **no longer crashes** — degrades to a path text field; options still ignored |
 | `Form.LinkAccessory` (`target` / `text`) | 🟡 | exported (`index.ts:220`); **no longer crashes** — degrades to inert description text (not a clickable accessory) |
-| `onChange` | 🟡 | fires for text fields **and Dropdown** (`PaletteView.swift:1559`); still **not** Checkbox (`:1519`) |
+| `onChange` | ✅ | fires for text fields, Dropdown, **and Checkbox** (real `bool`); handler id refreshed each in-place reconcile (Chunk E) |
 | `onBlur` / `onFocus` / `autoFocus` / `storeValue` / `info` / `enableDrafts` | ⬜ | |
 | `Form.Event` / `Form.Event.Type` (`focus`/`blur`) / `Form.Values` types | ⬜ | event payload & values type not modeled |
-| Typed values (Checkbox→`bool`, DatePicker→`Date`, TagPicker→`array`) | 🟡 | all field values are strings |
+| Typed values (Checkbox→`bool`, DatePicker→`Date`, TagPicker→`array`) | 🟡 | **Checkbox→`bool` via onChange (Chunk E)**; submit values still strings; DatePicker→`Date` / TagPicker→`array` pending |
 | Imperative `focus()` / `reset()` via ref | ⬜ | per-item refs (`useRef<Form.TextField>`) — must be exposed on all controlled item types |
 
 ## 4. Actions & ActionPanel
@@ -100,11 +100,11 @@
 | `ActionPanel.Submenu` | ✅ | drill-in (level stack); →/Return enters, ←/Esc pops. Lazy `onOpen` ⬜ |
 | `ActionPanel.Submenu` search props (`filtering` / `keepSectionOrder` / `throttle` / `onSearchTextChange` / `isLoading`) | 🟡 | client-side title filter works per level; async `onSearchTextChange` / `throttle` / `isLoading` not wired |
 | `ActionPanel.Section` | ✅ | grouped: separators + small-caps titles, 2026-06-21 |
-| `Action.shortcut` (custom) | 🟡 | ignored; only first=Enter / second=⌘Enter assigned |
-| `Action.style` (destructive) | ⬜ | `props["style"]` never decoded in the panel (no red emphasis) |
+| `Action.shortcut` (custom) | ✅ | glyph keycaps in ⌘K + functional key binding via window monitor (Chunk E); positional ↵/⌘↵ remain the default |
+| `Action.style` (destructive) | ✅ | red title in the ⌘K panel (Chunk E); action-bar primary-label red is a follow-up |
 | `Action.Style` enum (`Regular` / `Destructive`) | 🟡 | enum exported (`index.ts:273`); the `style` prop is still not rendered |
 | `Action.PickDate.Type` enum (`Date` / `DateTime`) + `Action.PickDate.isFullDay()` | ⬜ | nested enum & helper absent (only `PickDate` itself assigned) |
-| `Keyboard.Shortcut` / `Keyboard.Shortcut.Common` (type behind `Action.shortcut`) | 🟡 | `Keyboard.Shortcut.Common` exported (`index.ts:878`); custom shortcuts still not applied (see §8) |
+| `Keyboard.Shortcut` / `Keyboard.Shortcut.Common` (type behind `Action.shortcut`) | ✅ | exported; custom shortcuts now applied — display + functional (Chunk E, `Keyboard.glyphs`) |
 | `Action.autoFocus` | ⬜ | |
 
 ## 5. Navigation & Menu Bar
@@ -163,7 +163,7 @@
 | `Clipboard.copy` / `paste` / `readText` | ✅ | `concealed` flag dropped (🟡); `html` / `file` copy — ⬜ (note: `transient` is **not** a current Raycast `CopyOptions` field) |
 | `Clipboard.Content` / `Clipboard.ReadContent` / `Clipboard.CopyOptions` types | 🟡 | text path works; `html` / `file` content shapes not modeled |
 | `Clipboard.read({offset})` → `{text, html, file}` / `Clipboard.clear` | 🟡 | `read` exported + host returns `{text,file,html}` (`AppController.swift:2232`), but the JS shim returns text only (`index.ts:501`; `html`/`file`/`offset` dropped); `Clipboard.clear` still absent |
-| **`Keyboard` namespace** — `Keyboard.Shortcut` (`{key, modifiers}`) | 🟡 | **exported** (`index.ts:878`) — namespace is **not** absent; `Shortcut` is a local type (unexported); shortcuts still not applied to the UI |
+| **`Keyboard` namespace** — `Keyboard.Shortcut` (`{key, modifiers}`) | 🟡 | **exported** (`index.ts:878`) — namespace is **not** absent; `Shortcut` is a local type (unexported); shortcuts **now applied** to the UI (Chunk E) |
 | `Keyboard.KeyModifier` / `Keyboard.KeyEquivalent` / `Keyboard.Shortcut.Common` | 🟡 | `Shortcut.Common` populated (`index.ts:881`); `KeyModifier` / `KeyEquivalent` unions not exported |
 | `getApplications` / `getDefaultApplication` / `getFrontmostApplication` (+ `Application` type) | ✅ | real; `Application` interface **is** exported (`index.ts:760`) |
 | `getSelectedText` / `getSelectedFinderItems` | ✅ | |
@@ -227,9 +227,11 @@
 
 ### P0 — crash-prevention & correctness
 1. ~~**Graceful-degrade every undefined component**~~ — **DONE (2026-06-21):** the `Action.*`, `Form.TagPicker`/`FilePicker`/`LinkAccessory`, and `MenuBarExtra.*` members are all defined now; nothing throws `"Element type is invalid"`. (`Keyboard` namespace also exported.)
-2. Render `List.EmptyView` / `Grid.EmptyView` (still ⬜ no-ops).
-3. Fire `onChange` for **Checkbox** (Dropdown now fires; DatePicker is text-aliased so fires as text) — controlled-input parity.
-4. Honor `Action.style` (destructive red) and bind custom `Action.shortcut` to the exported `Keyboard.Shortcut` values (not yet applied to the UI).
+2. ~~Render `List.EmptyView` / `Grid.EmptyView`~~ — **DONE (2026-06-21, Chunk E):** centered icon + title + description when a List/Grid has 0 items and an `empty-view` node; its `actions` populate ⌘K.
+3. ~~Fire `onChange` for **Checkbox**~~ — **DONE (2026-06-21, Chunk E):** fires a real **boolean** via `onFormCheckboxChange`; the rotated handler id is refreshed on every in-place form reconcile (this also closes the same latent staleness for textfield/textarea/dropdown/datepicker onChange).
+4. ~~Honor `Action.style` + custom `Action.shortcut`~~ — **DONE (2026-06-21, Chunk E):** destructive → red title in the ⌘K panel; a custom `Action.shortcut` renders glyph keycaps (`Keyboard.glyphs`) **and** fires functionally via the window key monitor (dismissing ⌘K on activation).
+
+> **P0 is now fully cleared.** All crash-prevention & correctness items are done.
 
 ### P1 — depth (the props extensions most rely on)
 - _(Done 2026-06-21: List/Grid **pagination** (+ `useFetch`/`useCachedPromise`); `Form.PasswordField` masking + native `Form.DatePicker`; clickable `Detail.Metadata.Link` + `TagList` chips + `Color` in Metadata; `List`/`Detail` `isLoading` bars; `List.Item`/`Grid.Item` accessories incl. `Color`/`Icon` tint + `FileIcon`; grouped `ActionPanel.Section` + drill-in `Submenu`; imperative `open`/`trash`/`showInFinder`; working `mutate` runtime.)_
