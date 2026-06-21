@@ -93,7 +93,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private var activeTree: ViewTree {
         if mode == .extensionView, let extHost {
             let raw = extHost.frameTree(activeFrame)
-            if !extSearchFilter.isEmpty, !surfaceSelfFilters() {
+            if !extSearchFilter.isEmpty, hostShouldFilter() {
                 return Self.filterTree(raw, query: extSearchFilter)
             }
             return raw
@@ -101,11 +101,21 @@ public final class AppController: NSObject, NSApplicationDelegate {
         return rootTree ?? host.tree
     }
 
-    /// True if the active extension surface declares its own onSearchTextChange (then the extension
-    /// filters; the host must not). Checks the top-level list/grid node.
-    private func surfaceSelfFilters() -> Bool {
-        guard let s = extHost?.frameTree(activeFrame).root.children.first(where: { ["list", "grid"].contains($0.type) }) else { return false }
-        return s.props["onSearchTextChange"]?.handlerRef != nil
+    /// The active extension's top-level list/grid node (the search surface), or nil.
+    private func searchSurfaceNode() -> ViewNode? {
+        extHost?.frameTree(activeFrame).root.children.first { ["list", "grid"].contains($0.type) }
+    }
+
+    /// True if the search surface declares its own onSearchTextChange (then the extension filters).
+    private func surfaceHasSearchHandler() -> Bool {
+        searchSurfaceNode()?.props["onSearchTextChange"]?.handlerRef != nil
+    }
+
+    /// Whether the HOST applies its built-in item filter. An explicit `filtering` prop wins; otherwise
+    /// the host filters only when the surface has no onSearchTextChange handler (Raycast default).
+    private func hostShouldFilter() -> Bool {
+        if case .bool(let f)? = searchSurfaceNode()?.props["filtering"] { return f }
+        return !surfaceHasSearchHandler()
     }
 
     private static func itemMatches(_ n: ViewNode, _ q: String) -> Bool {
@@ -316,15 +326,13 @@ public final class AppController: NSObject, NSApplicationDelegate {
             return
         }
         if mode == .extensionView {
-            // If the surface handles search itself, forward it; otherwise apply built-in item filtering.
-            if surfaceSelfFilters() {
-                extSearchFilter = ""
-                extHost?.setSearchText(text) // re-render arrives via onCommit
-            } else {
-                extSearchFilter = text
-                selectedIndex = 0
-                renderExtension()
-            }
+            let hasHandler = surfaceHasSearchHandler()
+            let hostFilter = hostShouldFilter()
+            // Host built-in filter uses extSearchFilter; the extension's own search uses onSearchTextChange.
+            // Both can be active (filtering={true} + a handler): forward AND filter.
+            extSearchFilter = hostFilter ? text : ""
+            if hasHandler { extHost?.setSearchText(text) } // re-render arrives via onCommit (throttle: Task 3)
+            if hostFilter { selectedIndex = 0; renderExtension() }
             return
         }
         if mode == .aiAnswer { return } // showing an answer; Esc to go back
