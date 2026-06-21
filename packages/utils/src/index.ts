@@ -14,46 +14,84 @@ export interface AsyncState<T> {
   revalidate: () => void;
 }
 
-export function usePromise<T>(fn: () => Promise<T>, deps: unknown[] = []): AsyncState<T> & { mutate: MutatePromise<T> } {
+export interface PaginationOptions {
+  pageSize: number;
+  hasMore: boolean;
+  onLoadMore: () => void;
+}
+
+/** Merge a freshly-fetched page into the accumulated list: page 0 replaces (a deps reset), later pages append. */
+export function mergePages<T>(existing: T[], pageData: T[], page: number): T[] {
+  return page === 0 ? pageData : existing.concat(pageData);
+}
+
+export function usePromise<T>(
+  fn: (...args: unknown[]) => Promise<T> | ((opts: { page: number }) => Promise<{ data: T; hasMore?: boolean }>),
+  deps: unknown[] = [],
+): AsyncState<T> & { mutate: MutatePromise<T>; pagination?: PaginationOptions } {
   const [data, setData] = useState<T | undefined>(undefined);
   const [isLoading, setLoading] = useState(true);
   const [error, setError] = useState<Error | undefined>(undefined);
   const [nonce, setNonce] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [paginated, setPaginated] = useState(false);
+  const [pageSize, setPageSize] = useState(0);
+  const page = useRef(0);
+  const acc = useRef<unknown[]>([]);
   const latest = useRef(0);
+
+  const runPage = useCallback((p: number, run: number) => {
+    Promise.resolve()
+      .then(() => { const maybe: unknown = fn(...deps); return { maybe }; })
+      .then(({ maybe }) => {
+        if (typeof maybe === "function") {
+          // Raycast paginated form: fn(...deps) returns an async fetcher of { page }.
+          if (run === latest.current) setPaginated(true);
+          return Promise.resolve((maybe as (o: { page: number }) => Promise<{ data: T; hasMore?: boolean }>)({ page: p })).then((res) => {
+            if (run !== latest.current) return;
+            const pageData = (res?.data ?? []) as unknown[];
+            if (p === 0) setPageSize(Array.isArray(pageData) ? pageData.length : 0);
+            acc.current = mergePages(acc.current, pageData, p);
+            setData(acc.current as unknown as T);
+            setHasMore(!!res?.hasMore);
+            setLoading(false);
+          });
+        }
+        // Non-paginated (today's behavior): fn(...deps) is the value/Promise itself.
+        if (run === latest.current) setPaginated(false);
+        return Promise.resolve(maybe as Promise<T>).then((d) => {
+          if (run === latest.current) { setData(d); setLoading(false); }
+        });
+      })
+      .catch((e: unknown) => {
+        if (run === latest.current) { setError(e instanceof Error ? e : new Error(String(e))); setLoading(false); }
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, deps);
 
   useEffect(() => {
     const run = ++latest.current;
-    setLoading(true);
-    setError(undefined);
-    // Tolerate a synchronous fn (returns a value, not a Promise) or one that throws synchronously —
-    // Promise.resolve()/try wrap both, so `fn(...).then is not a function` can't happen.
-    Promise.resolve()
-      .then(() => fn())
-      .then((d) => {
-        if (run === latest.current) {
-          setData(d);
-          setLoading(false);
-        }
-      })
-      .catch((e: unknown) => {
-        if (run === latest.current) {
-          setError(e instanceof Error ? e : new Error(String(e)));
-          setLoading(false);
-        }
-      });
+    setLoading(true); setError(undefined);
+    page.current = 0; acc.current = [];
+    runPage(0, run);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nonce, ...deps]);
 
+  const onLoadMore = useCallback(() => {
+    if (!hasMore || isLoading) return;
+    page.current += 1;
+    setLoading(true);
+    runPage(page.current, latest.current);
+  }, [hasMore, isLoading, runPage]);
+
   const revalidate = useCallback(() => setNonce((n) => n + 1), []);
-  // mutate (Raycast parity): run the optional async update, then revalidate. Extensions destructure this
-  // from usePromise (e.g. useFrontmostApp's `mutate: frontmostMutate`); without it, calling it threw
-  // "frontmostMutate is not a function" and aborted the action before it could navigate.
   const mutate: MutatePromise<T> = async (asyncUpdate, _opts) => {
     const r = asyncUpdate ? await asyncUpdate : undefined;
     revalidate();
     return r as never;
   };
-  return { data, isLoading, error, revalidate, mutate };
+  const pagination = paginated ? { pageSize: pageSize || 50, hasMore, onLoadMore } : undefined;
+  return { data, isLoading, error, revalidate, mutate, pagination };
 }
 
 /** Options for useFetch — mirrors the parts of Raycast's @raycast/utils useFetch extensions rely on. */
