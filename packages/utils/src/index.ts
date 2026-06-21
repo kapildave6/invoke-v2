@@ -933,9 +933,11 @@ export function createArrayStreamParser(): { push(chunk: string): unknown[]; flu
   };
 }
 
-/** Raycast's useStreamJSON — streams a large JSON array from a URL/file. We approximate: fetch the
- *  whole resource, parse the array, optionally filter/transform; good enough for the common case
- *  (true incremental streaming + temp-file caching is a later refinement). */
+/** Raycast's useStreamJSON — streams a large JSON array from a URL/file.
+ *  When no `dataPath` is set and the response body is a readable stream, uses
+ *  `createArrayStreamParser` for memory-incremental parsing (no full-body buffer).
+ *  Falls back to whole-parse when `dataPath` is set, `res.body` is absent, or the
+ *  streaming parse throws (e.g. non-array top-level JSON). */
 export interface UseStreamJSONOptions<T> {
   initialData?: T[];
   filter?: (item: T) => boolean;
@@ -944,19 +946,54 @@ export interface UseStreamJSONOptions<T> {
   execute?: boolean;
   onError?: (e: Error) => void;
 }
+
+/** Apply the same transform-then-filter pipeline used in the whole-parse path. */
+function applyPipeline<T>(raw: unknown[], options: UseStreamJSONOptions<T>): T[] {
+  let arr = raw as unknown[];
+  if (options.transform) arr = arr.map(options.transform);
+  let out = arr as T[];
+  if (options.filter) out = out.filter(options.filter);
+  return out;
+}
+
 export function useStreamJSON<T = unknown>(url: string, options: UseStreamJSONOptions<T> = {}): AsyncState<T[]> & { data: T[] } {
   const execute = options.execute === undefined ? true : options.execute;
   const state = usePromise<T[]>(async () => {
     if (!execute) return options.initialData ?? [];
     const res = await fetch(url);
     if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-    let json: unknown = await res.json();
+
+    // --- Streaming path: only when no dataPath + body is a readable stream ---
+    if (!options.dataPath && res.body) {
+      try {
+        const parser = createArrayStreamParser();
+        const decoder = new TextDecoder();
+        const reader = (res.body as ReadableStream<Uint8Array>).getReader();
+        const accumulated: unknown[] = [];
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const chunk = decoder.decode(value, { stream: true });
+          const elements = parser.push(chunk);
+          accumulated.push(...elements);
+        }
+        // flush handles any trailing content after the last chunk
+        const tail = parser.flush();
+        accumulated.push(...tail);
+        return applyPipeline(accumulated, options);
+      } catch {
+        // Streaming parse failed (e.g. non-array top-level) — fall through to whole-parse.
+        // Re-fetch is needed since we consumed the body; fall through re-issues the request.
+      }
+    }
+
+    // --- Whole-parse fallback (dataPath set, no res.body, or streaming parse error) ---
+    // If we consumed the body above in the streaming path and it threw, we need a fresh response.
+    const freshRes = res.bodyUsed ? await fetch(url) : res;
+    let json: unknown = await freshRes.json();
     if (options.dataPath && json && typeof json === "object") json = (json as Record<string, unknown>)[options.dataPath];
-    let arr = (Array.isArray(json) ? json : []) as unknown[];
-    if (options.transform) arr = arr.map(options.transform);
-    let out = arr as T[];
-    if (options.filter) out = out.filter(options.filter);
-    return out;
+    return applyPipeline(Array.isArray(json) ? json : [], options);
   }, [url, execute]);
   useEffect(() => { if (state.error) options.onError?.(state.error); }, [state.error]); // eslint-disable-line react-hooks/exhaustive-deps
   return { ...state, data: state.data ?? options.initialData ?? [] };
