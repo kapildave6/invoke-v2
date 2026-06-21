@@ -3621,8 +3621,10 @@ public final class AppController: NSObject, NSApplicationDelegate {
         navDepth = depth
         activeFrame = frame
         extSearchFilter = ""
+        searchThrottleWork?.cancel(); searchThrottleWork = nil
         selectedIndex = selectionByFrame[frame] ?? 0  // restore (a brand-new pushed frame starts at 0)
         renderExtension()
+        reflectControlledSearchText()
     }
 
     private func onExtensionCommit() {
@@ -3637,6 +3639,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         }
         guard mode == .extensionView else { return }
         renderExtension()
+        reflectControlledSearchText()
     }
 
     private func renderExtension() {
@@ -3645,7 +3648,6 @@ public final class AppController: NSObject, NSApplicationDelegate {
         palette.render(activeTree, selectedIndex: selectedIndex)
         updateActionBar()
         updateExtensionDropdown()
-        reflectControlledSearchText()
         // Honor the active surface's own searchBarPlaceholder (Raycast) — for the base AND pushed views —
         // instead of the generic "Search <title>…" (which doubled to "Search Search Websites…").
         if let surface = extensionSurfaceNode(),
@@ -3694,7 +3696,10 @@ public final class AppController: NSObject, NSApplicationDelegate {
         let ddId = dd.props["id"]?.stringValue ?? "default"
         let storeKey = "extdd.\(currentExtId).\(lastLaunch?.command ?? "").\(ddId)"
         let stored = storeValue ? UserDefaults.standard.string(forKey: storeKey) : nil
-        // Precedence: controlled value → persisted (storeValue) → user's last pick → defaultValue → first.
+        // Precedence: controlled `value` → persisted (storeValue) → the user's last in-memory pick → defaultValue → first.
+        // extDropdownValue beats defaultValue because an UNCONTROLLED dropdown tracks its selection in the
+        // extension's own state (not the value prop): re-asserting defaultValue every re-render would revert
+        // the user's pick and they could never change it.
         let current = dd.props["value"]?.stringValue ?? stored ?? extDropdownValue
             ?? dd.props["defaultValue"]?.stringValue ?? items.first?.value ?? ""
         let handler = dd.props["onChange"]?.handlerRef

@@ -253,11 +253,13 @@ private final class DropdownOverlay: NSObject, NSTextFieldDelegate {
     private func applyFilter(_ q: String) {
         let query = q.lowercased()
         filtered = (!filtering || query.isEmpty) ? allItems : allItems.filter { $0.title.lowercased().contains(query) }
-        rows.forEach { $0.removeFromSuperview() }
-        rows.removeAll()
-        // Remove any previous loading row.
+        // Remove all visual rows (rows ⊆ arrangedSubviews, so one sweep covers both regular rows and any
+        // prior loading row; rows.removeAll() clears the backing array).
         listStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        rows.removeAll()
         if isLoading {
+            // Nothing is selectable while loading — wipe filtered so move/run/preselect are no-ops.
+            filtered = []
             // A single non-selectable "Loading…" row with a small spinner.
             let loadRow = NSView()
             loadRow.translatesAutoresizingMaskIntoConstraints = false
