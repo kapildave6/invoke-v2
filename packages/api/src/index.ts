@@ -767,7 +767,7 @@ export const LocalStorage = {
 };
 
 export const environment = {
-  appearance: "dark" as "dark" | "light",
+  appearance: ((process.env.INVOKE_APPEARANCE as "dark" | "light") || "dark"),
   launchType: (process.env.INVOKE_LAUNCH_TYPE as string) || LaunchType.UserInitiated,
   commandName: process.env.INVOKE_COMMAND ?? "",
   commandMode: process.env.INVOKE_MODE ?? "view",
@@ -778,9 +778,9 @@ export const environment = {
   supportPath: process.env.INVOKE_SUPPORT_PATH ?? "",
   isDevelopment: false,
   raycastVersion: "1.103.6",
-  textSize: "medium" as "medium" | "large",
-  // Raycast gates some features (e.g. AI) on environment.canAccess(API); we don't expose those yet.
-  canAccess: (_api: unknown): boolean => false,
+  textSize: ((process.env.INVOKE_TEXT_SIZE as "medium" | "large") || "medium"),
+  // Raycast gates some features (e.g. AI) on environment.canAccess(API); honour the host-provided flag.
+  canAccess: (_api: unknown): boolean => process.env.INVOKE_CAN_ACCESS_AI === "1",
   // Extension/owner identity — host sets these when known; "" until then. Used by createDeeplink.
   extensionName: process.env.INVOKE_EXTENSION ?? "",
   ownerOrAuthorName: process.env.INVOKE_OWNER ?? "",

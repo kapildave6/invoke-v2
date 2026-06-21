@@ -2,8 +2,10 @@ import Foundation
 #if canImport(Darwin)
 import Darwin
 #endif
+import AppKit
 import InvokeIPC
 import InvokeRenderer
+import InvokeServices
 
 /// The Swift host side of the extension runtime (PLAN.md §4.4/§4.6).
 ///
@@ -163,6 +165,14 @@ public final class ExtensionHost {
         let extDir = (((entryRelPath as NSString).deletingLastPathComponent) as NSString).deletingLastPathComponent
         let extTsconfig = repoRoot + "/" + extDir + "/tsconfig.json"
         if FileManager.default.fileExists(atPath: extTsconfig) { env["TSX_TSCONFIG_PATH"] = extTsconfig }
+        // Real host-provided environment values (appearance, textSize, AI access).
+        // NSApp.effectiveAppearance is read here on the calling thread; spawn-time is always from the
+        // main queue (AppController calls launch() on main), so this is safe.
+        let dark = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+        env["INVOKE_APPEARANCE"] = dark ? "dark" : "light"
+        env["INVOKE_TEXT_SIZE"] = "medium" // host UI exposes no size setting yet; "medium" is the default
+        // Boolean flag only — the key value is NEVER read or echoed (security / GDPR).
+        env["INVOKE_CAN_ACCESS_AI"] = AIService.hasStoredKey() ? "1" : "0"
         let envp = env.map { "\($0.key)=\($0.value)" }
 
         var childPid: pid_t = 0
