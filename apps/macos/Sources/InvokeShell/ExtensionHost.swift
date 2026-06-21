@@ -60,7 +60,7 @@ public final class ExtensionHost {
     /// The capability allowlist — mirrors the Node supervisor's ALLOWED_RPC. Denial is enforced HERE
     /// in the host, so even a child crafting a raw RPC frame gets nothing it isn't granted (PLAN §4.4).
     private static let allowedRPC: Set<String> = [
-        "clipboard.copy", "clipboard.paste", "clipboard.readText",
+        "clipboard.copy", "clipboard.paste", "clipboard.readText", "clipboard.clear",
         "toast.show", "hud.show", "window.close", "preferences.get",
         "open", "localStorage.getItem", "localStorage.setItem",
         "localStorage.removeItem", "localStorage.clear", "localStorage.allItems",

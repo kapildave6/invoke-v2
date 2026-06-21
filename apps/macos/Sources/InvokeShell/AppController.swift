@@ -2258,6 +2258,9 @@ public final class AppController: NSObject, NSApplicationDelegate {
                let f = urls.first { cb["file"] = .string(f.path) }
             if let html = pb.string(forType: .html) { cb["html"] = .string(html) }
             return .object(cb)
+        case "clipboard.clear":
+            NSPasteboard.general.clearContents()
+            return .null
         case "quicklook.preview":
             // Action.ToggleQuickLook → real macOS Quick Look via qlmanage -p.
             let qlPath = ((arg("path")?.stringValue ?? "") as NSString).expandingTildeInPath

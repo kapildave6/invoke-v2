@@ -510,10 +510,12 @@ export const Clipboard = {
     rpc("clipboard.copy", { content, ...opts }) as Promise<void>,
   paste: (content: string) => rpc("clipboard.paste", { content }) as Promise<void>,
   readText: () => rpc("clipboard.readText", {}) as Promise<string | undefined>,
-  // Raycast's Clipboard.read() returns { text, file?, html? }. We surface text (file/html not captured yet).
-  read: async (): Promise<{ text: string; file?: string; html?: string }> => ({
-    text: ((await rpc("clipboard.readText", {})) as string | undefined) ?? "",
-  }),
+  // Raycast's Clipboard.read() returns { text, file?, html? } from the general pasteboard.
+  read: async (): Promise<{ text: string; file?: string; html?: string }> => {
+    const r = (await rpc("clipboard.read", {})) as { text?: string; file?: string; html?: string } | undefined;
+    return { text: r?.text ?? "", file: r?.file, html: r?.html };
+  },
+  clear: () => rpc("clipboard.clear", {}) as Promise<void>,
 };
 
 export interface ToastHandle { style: string; title: string; message?: string; hide: () => Promise<void>; show: () => Promise<void>; }

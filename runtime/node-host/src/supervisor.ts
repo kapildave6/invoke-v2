@@ -71,6 +71,7 @@ export const ALLOWED_RPC: ReadonlySet<string> = new Set([
   "quicklink.create",   // Action.CreateQuicklink → Invoke quicklink store
   "snippet.create",     // Action.CreateSnippet → Invoke snippet store
   "clipboard.read",     // Clipboard.read() → { text, file, html }
+  "clipboard.clear",    // Clipboard.clear() → clears the general pasteboard
   "quicklook.preview",  // Action.ToggleQuickLook → macOS Quick Look (qlmanage)
   "open.with",          // Action.OpenWith → choose an app and open
   "date.pick",          // Action.PickDate → native NSDatePicker, returns the chosen date
