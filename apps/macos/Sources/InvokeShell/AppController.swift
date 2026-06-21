@@ -89,6 +89,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     // Built-in list/grid filtering: when an extension's surface does NOT handle onSearchTextChange,
     // Raycast filters items by the search text against title/subtitle/keywords. This holds that query.
     private var extSearchFilter = ""
+    private var searchThrottleWork: DispatchWorkItem?
 
     private var activeTree: ViewTree {
         if mode == .extensionView, let extHost {
@@ -326,12 +327,21 @@ public final class AppController: NSObject, NSApplicationDelegate {
             return
         }
         if mode == .extensionView {
-            let hasHandler = surfaceHasSearchHandler()
-            let hostFilter = hostShouldFilter()
-            // Host built-in filter uses extSearchFilter; the extension's own search uses onSearchTextChange.
-            // Both can be active (filtering={true} + a handler): forward AND filter.
+            let surface = searchSurfaceNode()
+            let hasHandler = surface?.props["onSearchTextChange"]?.handlerRef != nil
+            let hostFilter: Bool = { if case .bool(let f)? = surface?.props["filtering"] { return f }; return !hasHandler }()
+            let throttle: Bool = { if case .bool(let t)? = surface?.props["throttle"] { return t }; return false }()
             extSearchFilter = hostFilter ? text : ""
-            if hasHandler { extHost?.setSearchText(text) } // re-render arrives via onCommit (throttle: Task 3)
+            searchThrottleWork?.cancel()
+            if hasHandler {
+                if throttle {
+                    let work = DispatchWorkItem { [weak self] in self?.extHost?.setSearchText(text) }
+                    searchThrottleWork = work
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25, execute: work) // ~250ms debounce
+                } else {
+                    extHost?.setSearchText(text)
+                }
+            }
             if hostFilter { selectedIndex = 0; renderExtension() }
             return
         }
@@ -3596,6 +3606,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         navDepth = 0
         activeFrame = 0
         extSearchFilter = ""
+        searchThrottleWork?.cancel(); searchThrottleWork = nil
         selectionByFrame.removeAll()
         palette.setAssetsPath("")
     }
