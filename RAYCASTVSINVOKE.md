@@ -32,12 +32,12 @@ The single most user-visible risk is category (1)'s crash members — a ported e
 | `List.Section`, `List.Item` (title/subtitle/icon) | ✅ | |
 | `List.Dropdown` / `.Item` / `.Section` (searchBarAccessory) | ✅ | world-class popover (landed) |
 | `List.Dropdown` / `Grid.Dropdown` controlled props (`value` / `defaultValue` / `onChange` / `storeValue` / `filtering` / `onSearchTextChange` / `isLoading` / `tooltip`) | ⬜ | selection renders, but controlled-value & behavioral props not wired |
-| `List.isLoading` | ⬜ | prop ignored — no indeterminate progress bar under the search bar |
+| `List.isLoading` | ✅ | thin accent sweep bar (List/Grid/Detail), 2026-06-21 |
 | `List` pagination `{hasMore, onLoadMore, pageSize}` | ⬜ | not wired anywhere |
 | Native fuzzy `filtering` of static items / `filtering={false}` escape hatch | 🟡 | extension list filtering deferred to the child; no built-in client-side filter |
 | `selectedItemId` / `onSelectionChange` | ⬜ | selection not reported back to the extension |
 | `List.EmptyView` | ⬜ | child element not rendered |
-| `List.Item.accessories[]` | 🟡 | text + tag only; `icon` / `date` / `tooltip` / per-accessory `color` are lossy |
+| `List.Item.accessories[]` | ✅ | text/tag/date/icon/tooltip + per-accessory `color` + combined entries, 2026-06-21 |
 | `List.Item` `keywords` / `detail` (isShowingDetail) / `quickLook` | 🟡 | partial |
 | `List.Item.Detail.isLoading` (detail-pane bar, distinct from `List.isLoading`) | ⬜ | not honored |
 | `Grid` `columns` | ✅ | |
@@ -52,7 +52,7 @@ The single most user-visible risk is category (1)'s crash members — a ported e
 | API | State | Gap / pending |
 |---|---|---|
 | `Detail` CommonMark `markdown` (incl. images, clamped) | ✅ | tables / LaTeX / footnotes — ⬜ |
-| `Detail` own `isLoading` (accent sweep bar) | ⬜ | Detail-pane loading prop not honored |
+| `Detail` own `isLoading` (accent sweep bar) | ✅ | honored via the shared sweep bar, 2026-06-21 |
 | `Detail.Metadata.Label` (`text` string) / `.Separator` | ✅ | |
 | `Detail.Metadata.Label` colored `text:{color,value}` + `icon` | 🟡 | rendered, but `Color` not applied & label icon lossy |
 | `Detail.Metadata.Link` | 🟡 | rendered as text — **not clickable** |
@@ -96,9 +96,9 @@ The single most user-visible risk is category (1)'s crash members — a ported e
 |---|---|---|
 | `Action` (onAction), `CopyToClipboard`, `Paste`, `OpenInBrowser`, `Open`, `SubmitForm`, `Push` | ✅ | the 7 wired actions |
 | `Action.OpenWith` / `Trash` / `ShowInFinder` / `ToggleQuickLook` / `CreateQuicklink` / `CreateSnippet` / `PickDate` | ⬜ | **undefined → crash** (`"Element type is invalid"`) when an extension uses them |
-| `ActionPanel.Submenu` | 🟡 | flattened — no nested popover, no lazy `onOpen` |
-| `ActionPanel.Submenu` search props (`filtering` / `keepSectionOrder` / `throttle` / `onSearchTextChange` / `isLoading`) | ⬜ | submenu not searchable/filterable |
-| `ActionPanel.Section` | 🟡 | flattened — section titles dropped |
+| `ActionPanel.Submenu` | ✅ | drill-in (level stack); →/Return enters, ←/Esc pops. Lazy `onOpen` ⬜ |
+| `ActionPanel.Submenu` search props (`filtering` / `keepSectionOrder` / `throttle` / `onSearchTextChange` / `isLoading`) | 🟡 | client-side title filter works per level; async `onSearchTextChange` / `throttle` / `isLoading` not wired |
+| `ActionPanel.Section` | ✅ | grouped: separators + small-caps titles, 2026-06-21 |
 | `Action.shortcut` (custom) | 🟡 | ignored; only first=Enter / second=⌘Enter assigned |
 | `Action.style` (destructive) | ⬜ | no red emphasis |
 | `Action.Style` enum (`Regular` / `Destructive`) | ⬜ | enum type absent (only the lowercase prop is noted) |
