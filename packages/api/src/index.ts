@@ -120,6 +120,19 @@ export interface CommonActionProps {
   onAction?: () => void;
 }
 
+/** Raycast LaunchProps — command arguments + launch metadata the host passes (see child.ts launchProps). */
+export interface LaunchProps<A extends Record<string, string> = Record<string, string>> {
+  arguments: A;
+  launchType: string;
+  launchContext?: Record<string, unknown>;
+  fallbackText?: string;
+}
+export type PreferenceValues = Record<string, unknown>;
+/** Augmentable base (extensions extend `Preferences` via `declare module "@raycast/api"`). */
+export interface Preferences {}
+export type Navigation = { push: (view: ReactNode) => void; pop: () => void };
+export type FormValues = { [id: string]: unknown };
+
 /* ------------------------------------------------------------------ List */
 type DropdownType = ReturnType<typeof host> & {
   Item: ReturnType<typeof host>;
@@ -243,6 +256,10 @@ Form.LinkAccessory = host(T.FormDescription);
 const TagPicker = host(T.FormDropdown) as FormType["TagPicker"];
 TagPicker.Item = host(T.FormDropdownItem);
 Form.TagPicker = TagPicker;
+// Namespace merge: adds Form.Values as a type so extensions can write `Form.Values`.
+declare namespace Form {
+  export type Values = FormValues;
+}
 
 /* ------------------------------------------------------------------ Actions */
 type ActionType = ((props: CommonActionProps) => ReactElement) & {
@@ -769,7 +786,7 @@ export const environment = {
   ownerOrAuthorName: process.env.INVOKE_OWNER ?? "",
 };
 
-export function getPreferenceValues<T = Record<string, unknown>>(): T {
+export function getPreferenceValues<T = PreferenceValues>(): T {
   try {
     return JSON.parse(process.env.INVOKE_PREFERENCES ?? "{}") as T;
   } catch {
@@ -1036,7 +1053,7 @@ export function captureException(error: unknown): void {
 }
 /** Programmatic navigation. Backed by the runtime's render-on-push frame stack (__setNavController);
  *  push(view) mounts `view` as a new frame, pop() unwinds it. Falls back to no-ops outside the runtime. */
-export function useNavigation(): { push: (view: ReactNode) => void; pop: () => void } {
+export function useNavigation(): Navigation {
   const nav = navController();
   return { push: (view) => nav?.push(view), pop: () => nav?.pop() };
 }
@@ -1067,6 +1084,11 @@ export const Keyboard = {
     } as Record<string, Shortcut>,
   } as Record<string, unknown>,
 };
+// Namespace merge: adds Keyboard.KeyModifier and Keyboard.KeyEquivalent as types.
+declare namespace Keyboard {
+  export type KeyModifier = "cmd" | "ctrl" | "opt" | "shift";
+  export type KeyEquivalent = string;
+}
 export const Image = { Mask: { Circle: "circle", RoundedRectangle: "roundedRectangle" } as const };
 
 /* ------------------------------------------- legacy v1 @raycast/api aliases (compat)
