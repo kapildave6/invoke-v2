@@ -1781,17 +1781,24 @@ public final class PaletteView: NSView {
         spacer.setContentHuggingPriority(.init(1), for: .horizontal)
         h.addArrangedSubview(spacer)
 
-        // Accessories: { text } → plain right-aligned type label (Raycast style); { tag } → chip.
+        // Accessories: each entry = optional icon + optional text/tag (+ tooltip), rendered together.
         for acc in accessories(node) {
-            switch acc {
-            case .text(let t):
-                let l = NSTextField(labelWithString: t)
-                l.font = .systemFont(ofSize: 13)
-                l.textColor = .tertiaryLabelColor
-                h.addArrangedSubview(l)
-            case .tag(let t):
-                h.addArrangedSubview(chip(t))
+            let sub = NSStackView()
+            sub.orientation = .horizontal; sub.alignment = .centerY; sub.spacing = 4
+            sub.translatesAutoresizingMaskIntoConstraints = false
+            if let iv = acc.iconValue, let icon = accessoryIcon(iv, tint: acc.iconTint) { sub.addArrangedSubview(icon) }
+            if let label = acc.label {
+                if acc.isTag {
+                    sub.addArrangedSubview(chip(label, color: acc.color))
+                } else {
+                    let l = NSTextField(labelWithString: label)
+                    l.font = .systemFont(ofSize: 13)
+                    l.textColor = acc.color ?? .tertiaryLabelColor
+                    sub.addArrangedSubview(l)
+                }
             }
+            if let tip = acc.tooltip { sub.toolTip = tip }
+            h.addArrangedSubview(sub)
         }
         return h
     }
@@ -1954,15 +1961,15 @@ public final class PaletteView: NSView {
 
     // MARK: - Helpers
 
-    private func chip(_ text: String) -> NSView {
+    private func chip(_ text: String, color: NSColor? = nil) -> NSView {
         let label = NSTextField(labelWithString: text)
         label.font = .systemFont(ofSize: 11, weight: .medium)
-        label.textColor = .secondaryLabelColor
+        label.textColor = color ?? .secondaryLabelColor
         label.translatesAutoresizingMaskIntoConstraints = false
         let bg = NSView()
         bg.wantsLayer = true
         bg.layer?.cornerRadius = 6
-        bg.layer?.backgroundColor = NSColor.white.withAlphaComponent(0.09).cgColor
+        bg.layer?.backgroundColor = (color?.withAlphaComponent(0.18) ?? NSColor.white.withAlphaComponent(0.09)).cgColor
         bg.translatesAutoresizingMaskIntoConstraints = false
         bg.setContentHuggingPriority(.defaultHigh, for: .horizontal)
         bg.addSubview(label)
@@ -1975,17 +1982,105 @@ public final class PaletteView: NSView {
         return bg
     }
 
-    private enum Accessory { case text(String); case tag(String) }
+    private struct Accessory {
+        var iconValue: JSONValue?   // an Image.ImageLike to render at 15pt
+        var iconTint: NSColor?      // tintColor for an SF-symbol icon
+        var label: String?          // resolved text/tag/date string
+        var isTag: Bool = false     // true → chip; false → plain right-aligned label
+        var color: NSColor?         // text color (label) / tint (tag)
+        var tooltip: String?        // applied as the accessory view's toolTip
+    }
+
+    /// Drop nil / JSON null.
+    private func nonNull(_ v: JSONValue?) -> JSONValue? {
+        guard let v = v else { return nil }
+        if case .null = v { return nil }
+        return v
+    }
+
+    /// Map a Color.ColorLike JSONValue (named | hex | { light, dark }) to an NSColor.
+    private func accessoryColor(_ v: JSONValue?) -> NSColor? {
+        guard let v = nonNull(v) else { return nil }
+        switch v {
+        case .string(let s):
+            return s.hasPrefix("#") ? RaycastColor.colorFromHex(s)
+                                    : (RaycastColor.colorFromNamed(s) ?? RaycastColor.colorFromHex(s))
+        case .object(let o): // { light, dark }
+            let dark = effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+            return accessoryColor(o[dark ? "dark" : "light"]) ?? accessoryColor(o["light"]) ?? accessoryColor(o["dark"])
+        default:
+            return nil
+        }
+    }
+
+    /// Resolve a text/tag/date value (String | number | { value, color }) to a display string + color.
+    private func labelAndColor(_ v: JSONValue, isDate: Bool) -> (String?, NSColor?) {
+        if case .object(let o) = v, let inner = nonNull(o["value"]) {
+            return (labelAndColor(inner, isDate: isDate).0, accessoryColor(o["color"]))
+        }
+        switch v {
+        case .string(let s):
+            if isDate { return (RaycastColor.parseISODate(s).map { RaycastColor.compactRelative($0) } ?? s, nil) }
+            return (s, nil)
+        case .number(let n):
+            return (n == n.rounded() ? String(Int(n)) : String(n), nil)
+        default:
+            return (nil, nil)
+        }
+    }
 
     private func accessories(_ node: ViewNode) -> [Accessory] {
         guard let acc = node.props["accessories"], case .array(let arr) = acc else { return [] }
         var out: [Accessory] = []
         for item in arr {
             guard case .object(let o) = item else { continue }
-            if let tag = o["tag"]?.stringValue { out.append(.tag(tag)) }
-            else if let text = o["text"]?.stringValue { out.append(.text(text)) }
+            var a = Accessory()
+            a.tooltip = o["tooltip"]?.stringValue
+            // icon: ImageLike | { value, tooltip }
+            if let icon = nonNull(o["icon"]) {
+                if case .object(let io) = icon, let v = nonNull(io["value"]) {
+                    a.iconValue = v
+                    if a.tooltip == nil { a.tooltip = io["tooltip"]?.stringValue }
+                } else {
+                    a.iconValue = icon
+                }
+                if case .object(let io)? = a.iconValue { a.iconTint = accessoryColor(io["tintColor"]) }
+            }
+            // label: tag | date | text, each String | number | { value, color }
+            if let tag = nonNull(o["tag"]) {
+                let (s, c) = labelAndColor(tag, isDate: false); a.label = s; a.color = c; a.isTag = true
+            } else if let date = nonNull(o["date"]) {
+                let (s, c) = labelAndColor(date, isDate: true); a.label = s; a.color = c
+            } else if let text = nonNull(o["text"]) {
+                let (s, c) = labelAndColor(text, isDate: false); a.label = s; a.color = c
+            }
+            if a.iconValue != nil || a.label != nil { out.append(a) }
         }
         return out
+    }
+
+    /// Accessory icon (15pt) — same ImageLike resolution as `iconView`, minus the node-specific
+    /// app/file/manifest branches.
+    private func accessoryIcon(_ value: JSONValue, tint: NSColor?) -> NSView? {
+        let size: CGFloat = 15
+        if let src = imageSource(value), loadLocalImage(src) != nil || src.hasPrefix("http://") || src.hasPrefix("https://") {
+            let iv = NSImageView(); iv.imageScaling = .scaleProportionallyUpOrDown
+            iv.translatesAutoresizingMaskIntoConstraints = false
+            iv.widthAnchor.constraint(equalToConstant: size).isActive = true
+            iv.heightAnchor.constraint(equalToConstant: size).isActive = true
+            if let img = loadLocalImage(src) { iv.image = img } else { loadRemoteImage(src, into: iv) }
+            return iv
+        }
+        let name = value.stringValue ?? imageSource(value) ?? ""
+        guard !name.isEmpty,
+              let img = NSImage(systemSymbolName: name, accessibilityDescription: nil)
+                ?? NSImage(systemSymbolName: sfSymbol(for: name), accessibilityDescription: nil) else { return nil }
+        let iv = NSImageView(image: img)
+        iv.contentTintColor = tint ?? .secondaryLabelColor
+        iv.translatesAutoresizingMaskIntoConstraints = false
+        iv.widthAnchor.constraint(equalToConstant: size).isActive = true
+        iv.heightAnchor.constraint(equalToConstant: size).isActive = true
+        return iv
     }
 
     private func iconView(for node: ViewNode, selected: Bool) -> NSView? {
