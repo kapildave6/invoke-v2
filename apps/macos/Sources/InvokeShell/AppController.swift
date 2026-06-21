@@ -2072,9 +2072,17 @@ public final class AppController: NSObject, NSApplicationDelegate {
             let title = arg("title")?.stringValue ?? ""
             let message = arg("message")?.stringValue
             let text = message.map { "\(title) — \($0)" } ?? title
-            if !text.isEmpty {
-                // showHUD is a standalone overlay; a toast shows in the palette when it's visible, but a
-                // no-view command's palette is already closed — fall back to the HUD so it's still seen.
+            // Toast.ActionOptions → buttons (foreground only; headless HUD has no window for buttons).
+            func action(_ key: String) -> (title: String, handler: String)? {
+                if case .object(let o)? = arg(key), let t = o["title"]?.stringValue, let h = o["__handler"]?.stringValue {
+                    return (t, h)
+                }
+                return nil
+            }
+            let acts = [action("primaryAction"), action("secondaryAction")].compactMap { $0 }
+            if method == "toast.show", palette.isVisible, !acts.isEmpty {
+                palette.showToast(title, actions: acts.map { a in (a.title, { [weak self] in self?.extHost?.invoke(handler: a.handler) }) })
+            } else if !text.isEmpty {
                 if method == "hud.show" || !palette.isVisible { hud.show(text) }
                 else { palette.showToast(text) }
             }

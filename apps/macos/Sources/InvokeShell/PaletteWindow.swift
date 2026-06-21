@@ -34,8 +34,10 @@ public final class PaletteWindow: NSObject {
 
     // Toast capsule (action feedback, e.g. "Copied to Clipboard").
     private let toastLabel = NSTextField(labelWithString: "")
+    private let toastActions = NSStackView()
     private var toastContainer: NSView?
     private var toastHideWork: DispatchWorkItem?
+    private var toastActionHandlers: [() -> Void] = []
 
     /// Fired when the user edits the search field — the shell forwards it to the extension.
     public var onSearchChange: ((String) -> Void)?
@@ -226,6 +228,14 @@ public final class PaletteWindow: NSObject {
         toastLabel.textColor = .labelColor
         toastLabel.alignment = .center
         toastLabel.translatesAutoresizingMaskIntoConstraints = false
+        toastActions.orientation = .horizontal
+        toastActions.spacing = 8
+        toastActions.translatesAutoresizingMaskIntoConstraints = false
+        let toastRow = NSStackView(views: [toastLabel, toastActions])
+        toastRow.orientation = .horizontal
+        toastRow.spacing = 12
+        toastRow.alignment = .centerY
+        toastRow.translatesAutoresizingMaskIntoConstraints = false
         let toastBg = NSVisualEffectView()
         toastBg.material = .hudWindow
         toastBg.blendingMode = .withinWindow
@@ -235,14 +245,14 @@ public final class PaletteWindow: NSObject {
         toastBg.layer?.masksToBounds = true
         toastBg.alphaValue = 0
         toastBg.translatesAutoresizingMaskIntoConstraints = false
-        toastBg.addSubview(toastLabel)
+        toastBg.addSubview(toastRow)
         blur.addSubview(toastBg)
         toastContainer = toastBg
         NSLayoutConstraint.activate([
-            toastLabel.leadingAnchor.constraint(equalTo: toastBg.leadingAnchor, constant: 16),
-            toastLabel.trailingAnchor.constraint(equalTo: toastBg.trailingAnchor, constant: -16),
-            toastLabel.topAnchor.constraint(equalTo: toastBg.topAnchor, constant: 8),
-            toastLabel.bottomAnchor.constraint(equalTo: toastBg.bottomAnchor, constant: -8),
+            toastRow.leadingAnchor.constraint(equalTo: toastBg.leadingAnchor, constant: 16),
+            toastRow.trailingAnchor.constraint(equalTo: toastBg.trailingAnchor, constant: -16),
+            toastRow.topAnchor.constraint(equalTo: toastBg.topAnchor, constant: 8),
+            toastRow.bottomAnchor.constraint(equalTo: toastBg.bottomAnchor, constant: -8),
             toastBg.centerXAnchor.constraint(equalTo: blur.centerXAnchor),
             toastBg.bottomAnchor.constraint(equalTo: blur.bottomAnchor, constant: -52),
         ])
@@ -581,6 +591,9 @@ public final class PaletteWindow: NSObject {
     /// Briefly show a feedback capsule (e.g. "Copied to Clipboard"), then fade it out.
     public func showToast(_ message: String) {
         guard let container = toastContainer else { return }
+        // Clear any leftover action buttons/handlers so a plain toast after an actionable one is clean.
+        toastActions.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        toastActionHandlers = []
         toastLabel.stringValue = message
         toastHideWork?.cancel()
         NSAnimationContext.runAnimationGroup { ctx in
@@ -595,6 +608,36 @@ public final class PaletteWindow: NSObject {
         }
         toastHideWork = work
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.3, execute: work)
+    }
+
+    /// Toast with action buttons (Toast.ActionOptions). Stays visible until replaced/acted (no auto-hide).
+    public func showToast(_ title: String, actions: [(title: String, onTap: () -> Void)]) {
+        guard let container = toastContainer else { return }
+        toastHideWork?.cancel(); toastHideWork = nil
+        toastLabel.stringValue = title
+        toastActions.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        toastActionHandlers = actions.map { $0.onTap }
+        for (i, a) in actions.enumerated() {
+            let b = NSButton(title: a.title, target: self, action: #selector(toastActionTapped(_:)))
+            b.bezelStyle = .rounded; b.controlSize = .small; b.tag = i
+            b.translatesAutoresizingMaskIntoConstraints = false
+            toastActions.addArrangedSubview(b)
+        }
+        NSAnimationContext.runAnimationGroup { ctx in ctx.duration = 0.12; container.animator().alphaValue = 1 }
+        // No auto-hide: an actionable toast persists until a new toast or a tap dismisses it.
+    }
+
+    @objc private func toastActionTapped(_ sender: NSButton) {
+        let handlers = toastActionHandlers
+        hideToastNow()
+        if sender.tag >= 0, sender.tag < handlers.count { handlers[sender.tag]() }
+    }
+
+    private func hideToastNow() {
+        toastHideWork?.cancel(); toastHideWork = nil
+        toastActionHandlers = []
+        toastActions.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        NSAnimationContext.runAnimationGroup { ctx in ctx.duration = 0.2; toastContainer?.animator().alphaValue = 0 }
     }
 
     /// Update the bottom bar: the context label (next to the logo) and the primary action chip. The
@@ -648,6 +691,8 @@ public final class PaletteWindow: NSObject {
     public func hide() {
         dismissMenu()
         removeKeyMonitor()
+        // Clear any actionable toast so it doesn't linger when the palette is next shown.
+        if !toastActionHandlers.isEmpty { hideToastNow() }
         panel.orderOut(nil)
     }
 
