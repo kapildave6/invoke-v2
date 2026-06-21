@@ -55,9 +55,9 @@
 | `Detail` CommonMark `markdown` (incl. images, clamped) | ✅ | tables / LaTeX / footnotes — ⬜ |
 | `Detail` own `isLoading` (accent sweep bar) | ✅ | honored via the shared sweep bar, 2026-06-21 |
 | `Detail.Metadata.Label` (`text` string) / `.Separator` | ✅ | (note: standalone-`Detail` sidebar renders Label only — Link/TagList dropped there) |
-| `Detail.Metadata.Label` colored `text:{color,value}` + `icon` | 🟡 | rendered, but `Color` not applied & label icon lossy |
-| `Detail.Metadata.Link` | 🟡 | rendered as text in master-detail — **not clickable**; dropped entirely on the standalone-`Detail` sidebar |
-| `Detail.Metadata.TagList` | 🟡 | comma-joined; no per-tag color/icon chips; dropped on standalone-`Detail` sidebar |
+| `Detail.Metadata.Label` colored `text:{color,value}` + `icon` | ✅ | colored value (`labelAndColor`) + leading icon, both paths, 2026-06-21 |
+| `Detail.Metadata.Link` | ✅ | clickable (opens the URL) on both paths via the shared `renderMetadataNode`, 2026-06-21 |
+| `Detail.Metadata.TagList` | ✅ | per-tag colored chips on both paths, 2026-06-21 (no wrapping on overflow yet — follow-up) |
 | `Detail.Metadata.TagList.Item` (`text` / `icon` / `color` / `onAction`) | 🟡 | leaf tag element not individually rendered; `onAction` (clickable tag) ⬜ |
 | `Icon` enum | 🟡 | 48 members defined (`index.ts:369`); 30 SF-Symbol-mapped (`PaletteView.swift:2197`), the rest fall back to a default glyph |
 | `Color` enum (9 named members) | 🟡 | applied to List/Grid accessory text/tags/icon tints (`RaycastColor`, `PaletteView.swift:1811`/`1815`/`2108`); **not** applied in `Detail.Metadata` (hardcoded). `Color.Dynamic` constant **not** exported |
@@ -79,8 +79,8 @@
 | `Form.Dropdown` searchable props (`onSearchTextChange` / `filtering` / `throttle` / `isLoading`) | ⬜ | popover has local typeahead (`FormDropdown.swift:125`), but the async/controlled API props are unwired |
 | `Form.TextArea` `enableMarkdown` | ⬜ | markdown toolbar/preview not rendered |
 | Validation (`FormValidation.Required`) + error rendering | 🟡 | only `Required`; no custom / async validators |
-| `Form.PasswordField` | 🟡 | aliases a plain text field (not masked — no `NSSecureTextField`) |
-| `Form.DatePicker` (+ `min` / `max`) | 🟡 | aliases a plain text field (no `NSDatePicker`, no `Date` value, bounds ignored) |
+| `Form.PasswordField` | ✅ | masked `NSSecureTextField`, 2026-06-21 |
+| `Form.DatePicker` (+ `min` / `max`) | 🟡 | native `NSDatePicker` (value as ISO string), 2026-06-21; `min`/`max` bounds still ignored |
 | `Form.DatePicker.Type` enum (`Date` / `DateTime`) + `Form.DatePicker.isFullDay()` | 🟡 | `Type` enum exported (`index.ts:208`); `isFullDay()` helper still absent & DatePicker itself text-aliased |
 | `Form.TagPicker` / `Form.TagPicker.Item` | 🟡 | exported (`index.ts:192`); **no longer crashes** — degrades to a single-select dropdown (value is a string, not an array) |
 | `Form.FilePicker` (+ `allowMultipleSelection` / `canChooseFiles` / `canChooseDirectories` / `showHiddenFiles`) | 🟡 | exported (`index.ts:218`); **no longer crashes** — degrades to a path text field; options still ignored |
