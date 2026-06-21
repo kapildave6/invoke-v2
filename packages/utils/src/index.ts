@@ -127,6 +127,7 @@ export function useFetch<T = unknown, U = T>(
     paginated
       ? (() => async ({ page }: { page: number }) => {
           const res = await fetch((url as (o: { page: number }) => string)({ page }), { method, headers, body, signal });
+          if (!res.ok && !parseResponse) throw new Error(`${res.status} ${res.statusText}`);
           const parsed = (parseResponse ? await parseResponse(res) : await res.json()) as T;
           const mapped = mapResult ? mapResult(parsed) : { data: parsed as unknown as U, hasMore: false };
           return { data: mapped.data, hasMore: mapped.hasMore ?? false };
@@ -363,12 +364,9 @@ export function useCachedPromise<T, A extends unknown[] = unknown[]>(
   const innerFn = (..._deps: unknown[]): unknown => {
     const result = fn(...(argsRef.current as A)) as unknown;
     if (typeof result === "function") {
-      const rf = result as (...a: unknown[]) => unknown;
-      // Paginated curried form: fn(...args) → async ({page}) => {data, hasMore}. Such fns take
-      // exactly 1 parameter. Thunks take 0. Use .length to distinguish them.
-      if (rf.length >= 1) return rf; // page-fetcher — let usePromise accumulate
-      // Thunk form (() => Promise<T>): call it immediately.
-      return (rf as () => unknown)();
+      // Paginated curried form: fn(...args) → async ({page}) => {data, hasMore}.
+      // usePromise detects this by typeof === "function" and calls it with { page }; just return it.
+      return result;
     }
     // Non-function result: handle {data, hasMore} shape convention for non-paginated path.
     return Promise.resolve(result).then((resolved) => {
