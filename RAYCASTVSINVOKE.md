@@ -125,7 +125,7 @@
 | API | State | Gap / pending |
 |---|---|---|
 | `showToast` (Success/Failure/Animated; object + positional overload; updatable handle) | ✅ | |
-| `Toast.primaryAction` / `secondaryAction` (`Toast.ActionOptions`) | ⬜ | accepted in the constructor but the `toast.show` RPC drops them; not surfaced |
+| `Toast.primaryAction` / `secondaryAction` (`Toast.ActionOptions`) | ✅ | rendered as buttons in in-palette toast; `onAction` fires via imperative host→child callback channel; actionable toast persists until acted/dismissed. Landed Chunk G′ 2026-06-21. Toast-action `shortcut` key-binding + headless-HUD actions remain follow-ups. |
 | `Toast.Style` enum (`Success` / `Failure` / `Animated`) | 🟡 | states used by `showToast`, but enum not tracked; minimal visual differentiation |
 | Toast visual style (icon / color per style) | 🟡 | minimal differentiation |
 | `showHUD` | 🟡 | renders, but `options` (`clearRootSearch` / `popToRootType`) are decorative no-ops |
@@ -237,7 +237,7 @@
 - _(Done 2026-06-21: List/Grid **pagination** (+ `useFetch`/`useCachedPromise`); `Form.PasswordField` masking + native `Form.DatePicker`; clickable `Detail.Metadata.Link` + `TagList` chips + `Color` in Metadata; `List`/`Detail` `isLoading` bars; `List.Item`/`Grid.Item` accessories incl. `Color`/`Icon` tint + `FileIcon`; grouped `ActionPanel.Section` + drill-in `Submenu`; imperative `open`/`trash`/`showInFinder`; working `mutate` runtime. **Controlled `searchText`/`throttle` (List/Grid) + `List.Dropdown`/`Grid.Dropdown` `storeValue`/`filtering`/`isLoading`/`tooltip` landed (Chunk F, 2026-06-21).**)_
 - `Detail.Metadata.TagList.Item` `onAction` (clickable tag) + TagList wrapping on overflow
 - `Form.DatePicker` `min`/`max` + `isFullDay()`; typed (non-string) field values
-- `Toast` primary / secondary actions (`Toast.ActionOptions`) — _(`Alert.Options` `icon`/`dismissAction.style`/`rememberUserChoice` DONE 2026-06-21, Chunk G)_
+- _(`Toast` primary/secondary actions (`Toast.ActionOptions`) DONE 2026-06-21, Chunk G′; `Alert.Options` DONE Chunk G. Toast-action `shortcut` key-binding + headless-HUD actions remain follow-ups.)_
 - `optimisticUpdate` / `rollbackOnError` on the working `mutate`
 - `Clipboard.read` `offset` (Nth history entry) — _(full `{text,html,file}` read + `Clipboard.clear` DONE 2026-06-21, Chunk G)_
 
