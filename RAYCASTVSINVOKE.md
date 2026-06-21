@@ -17,9 +17,9 @@
 
 **What remains is two kinds of gap:**
 1. **Breadth** — many SDK members are *defined* (so extensions importing them type-check and load) but the renderer doesn't honor every prop.
-2. **Depth** — controlled-input semantics (`onChange` for Checkbox, typed values), pagination, and streaming (AI tokens, `useStreamJSON`) are not fully wired.
+2. **Depth** — controlled-input semantics (`onChange` for Checkbox, typed values) and streaming (AI tokens, `useStreamJSON`) are not fully wired. _(Pagination, `isLoading`, native pickers/masking, and `Detail.Metadata` fidelity landed 2026-06-21.)_
 
-**Implementation has since outrun the original gap analysis.** The 2026-06-21 code-level reconciliation found the former "takes down the whole view" crash members — `Action.Trash` / `OpenWith` / `ShowInFinder` / `ToggleQuickLook` / `CreateQuicklink` / `CreateSnippet` / `PickDate`, `Form.TagPicker` / `FilePicker` / `LinkAccessory`, and `MenuBarExtra.*` — are **all defined now and either functional or degrade gracefully** (no more `"Element type is invalid"`). Menu-bar commands render to a real `NSStatusItem`; `launchCommand` / `updateCommandMetadata` work; the `Keyboard` namespace is exported. The remaining gaps are mostly **depth** (controlled non-text inputs, pagination, streaming, native pickers/masking) and **named-type exports**, not crashes.
+**Implementation has since outrun the original gap analysis.** The 2026-06-21 code-level reconciliation found the former "takes down the whole view" crash members — `Action.Trash` / `OpenWith` / `ShowInFinder` / `ToggleQuickLook` / `CreateQuicklink` / `CreateSnippet` / `PickDate`, `Form.TagPicker` / `FilePicker` / `LinkAccessory`, and `MenuBarExtra.*` — are **all defined now and either functional or degrade gracefully** (no more `"Element type is invalid"`). Menu-bar commands render to a real `NSStatusItem`; `launchCommand` / `updateCommandMetadata` work; the `Keyboard` namespace is exported. The remaining gaps are mostly **depth** (controlled non-text inputs, AI/JSON streaming) and **named-type exports**, not crashes — pagination, native pickers/masking, and `Detail.Metadata` fidelity landed 2026-06-21.
 
 ---
 
@@ -60,7 +60,7 @@
 | `Detail.Metadata.TagList` | ✅ | per-tag colored chips on both paths, 2026-06-21 (no wrapping on overflow yet — follow-up) |
 | `Detail.Metadata.TagList.Item` (`text` / `icon` / `color` / `onAction`) | 🟡 | leaf tag element not individually rendered; `onAction` (clickable tag) ⬜ |
 | `Icon` enum | 🟡 | 48 members defined (`index.ts:369`); 30 SF-Symbol-mapped (`PaletteView.swift:2197`), the rest fall back to a default glyph |
-| `Color` enum (9 named members) | 🟡 | applied to List/Grid accessory text/tags/icon tints (`RaycastColor`, `PaletteView.swift:1811`/`1815`/`2108`); **not** applied in `Detail.Metadata` (hardcoded). `Color.Dynamic` constant **not** exported |
+| `Color` enum (9 named members) | 🟡 | applied to List/Grid accessories **and** `Detail.Metadata` Label/TagList (`RaycastColor`), 2026-06-21; `Color.Dynamic` constant **not** exported |
 | raw HEX / `{light,dark}` color values | 🟡 | honored at runtime for accessories (`RaycastColor.colorFromHex`, `PaletteView.swift:2023`); no named `Color.Raw` / `ColorLike` type exported |
 | `Image.Mask` (Circle / RoundedRectangle) | ⬜ | masks ignored |
 | `Image` fallback + dynamic `{source:{light,dark}}` | ⬜ | single source resolved; no light/dark image dispatch |
@@ -232,11 +232,11 @@
 4. Honor `Action.style` (destructive red) and bind custom `Action.shortcut` to the exported `Keyboard.Shortcut` values (not yet applied to the UI).
 
 ### P1 — depth (the props extensions most rely on)
-- _(Done 2026-06-21: `List`/`Detail` `isLoading` bars; `List.Item`/`Grid.Item` accessories incl. `Color`/`Icon` tint + `FileIcon`; grouped `ActionPanel.Section` + drill-in `Submenu`; imperative `open`/`trash`/`showInFinder`; working `mutate` runtime.)_
-- List / Grid **pagination** (`hasMore` / `onLoadMore`) + controlled `searchText` / `throttle`; surface `pagination` through `useFetch` / `useCachedPromise`
+- _(Done 2026-06-21: List/Grid **pagination** (+ `useFetch`/`useCachedPromise`); `Form.PasswordField` masking + native `Form.DatePicker`; clickable `Detail.Metadata.Link` + `TagList` chips + `Color` in Metadata; `List`/`Detail` `isLoading` bars; `List.Item`/`Grid.Item` accessories incl. `Color`/`Icon` tint + `FileIcon`; grouped `ActionPanel.Section` + drill-in `Submenu`; imperative `open`/`trash`/`showInFinder`; working `mutate` runtime.)_
+- Controlled `searchText` / `throttle` (List/Grid)
 - `List.Dropdown` / `Grid.Dropdown` remaining controlled props (`storeValue` / `filtering` / `isLoading`)
-- Clickable `Detail.Metadata.Link` + per-tag `TagList.Item` chips (+ `onAction`); apply `Color` inside `Detail.Metadata`
-- `Form.PasswordField` masking + native `Form.DatePicker` (+ `isFullDay`); typed (non-string) field values
+- `Detail.Metadata.TagList.Item` `onAction` (clickable tag) + TagList wrapping on overflow
+- `Form.DatePicker` `min`/`max` + `isFullDay()`; typed (non-string) field values
 - `Toast` primary / secondary actions (`Toast.ActionOptions`) + `Alert.Options` (`icon` / `dismissAction` / `rememberUserChoice`)
 - `optimisticUpdate` / `rollbackOnError` on the working `mutate`
 - `Clipboard.read` full `{text,html,file}` + `offset` (host already returns them) + `Clipboard.clear`

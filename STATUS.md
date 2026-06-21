@@ -60,13 +60,13 @@ _Last updated: 2026-06-21_
 | Favorites/Pins + manual ranking overrides | ⬜ | |
 
 ## Extension platform & SDK (PLAN §5, Appendix A)
-> Component spine renders natively; pending work is **breadth** (SDK members the renderer ignores) + **depth** (controlled inputs, pagination, streaming). Full table: **PLAN.md Appendix A** / **`RAYCASTVSINVOKE.md`**.
+> Component spine renders natively; pending work is **breadth** (SDK members the renderer ignores) + **depth** (controlled non-text inputs, AI/JSON streaming; pagination + native pickers/masking + Detail.Metadata fidelity landed 2026-06-21). Full table: **PLAN.md Appendix A** / **`RAYCASTVSINVOKE.md`**.
 
 | Item | Status | Notes |
 |---|---|---|
 | `@invoke/api` components (List/Grid/Detail/Form/ActionPanel) | 🟡 | all five render natively; List.Dropdown(+Item/Section), Detail.Metadata, Form.Description/Separator, validation+value-preservation landed; **List.Item accessories (colored text/tags, icon, relative date, tooltip, combined entries) + `isLoading` sweep bar (List/Grid/Detail) + grouped `ActionPanel.Section`/drill-in `Submenu` + List/Grid pagination + Form PasswordField/DatePicker + Detail.Metadata Link/TagList/colored Label landed** (`RaycastColor`/`LoadingBar`/`ActionSection`, 2026-06-21). **Pending:** EmptyView render |
 | **Crash-safety for undefined members** | ✅ | **DONE 2026-06-21** (code reconciliation): `Action.OpenWith/Trash/ShowInFinder/ToggleQuickLook/CreateQuicklink/CreateSnippet/PickDate`, `Form.TagPicker/FilePicker/LinkAccessory`, `MenuBarExtra.*` are all **defined + routed now** — none throw "Element type is invalid"; most functional or degrade gracefully |
-| `@invoke/utils` hooks | 🟡 | usePromise/useFetch(options)/useCachedState/useCachedPromise/useExec/useSQL/useForm/useLocalStorage/useFrecencySorting/useAI present; **pagination (usePromise/useFetch/useCachedPromise → page accumulation + `pagination` object) landed 2026-06-21**. **Pending:** working `mutate`/`MutatePromise` (type-only today), `useStreamJSON`, AI token streaming |
+| `@invoke/utils` hooks | 🟡 | usePromise/useFetch(options)/useCachedState/useCachedPromise/useExec/useSQL/useForm/useLocalStorage/useFrecencySorting/useAI present; **pagination (page accumulation + `pagination` object) + runtime `mutate` landed 2026-06-21**. **Pending:** `optimisticUpdate`/`rollbackOnError`; true `useStreamJSON` streaming; AI token streaming |
 | `@raycast/api` / `@raycast/utils` compat shim | 🟡 | real extensions run end-to-end; surface partial (see Appendix A). Missing members `unsupported()`-throw or crash |
 | Host capabilities (allowlisted RPC) | ✅ | clipboard/toast/hud/window.close/localStorage/cache/runAppleScript/executeSQL/**confirmAlert**/preferences/app.list/frontmost/default/selection/finder fulfilled natively; allowlist enforced; red-team gated |
 | **AI.ask / OAuth.PKCEClient** | ✅ | real host-driven RPCs (Anthropic / Keychain tokens). **Pending:** AI streaming, OAuth provider presets |

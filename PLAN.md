@@ -567,7 +567,7 @@ This is a personal project. The notes below are practical pointers, not legal ad
 
 ### A.0 What already works (parity baseline)
 
-The component spine is in place and renders natively: **List, Grid, Detail, Form, ActionPanel/Action, Detail.Metadata, List.Dropdown (+ .Item/.Section), List.Item.Detail**. Recently landed and verified: **navigation push/pop** (declarative `Action.Push` *and* programmatic `useNavigation().push/pop`), **command arguments** (inline chips), **per-extension Trust**, **in-palette `confirmAlert`**, the **world-class search dropdown**, **constant palette size/position**, **Form validation + value preservation**, **AI.ask / OAuth.PKCEClient** RPCs, and (2026-06-21) **List/Detail `isLoading` bars, List/Grid accessories with `Color`/`Icon` tint, grouped `ActionPanel.Section` + drill-in `Submenu`, full `menu-bar` + `MenuBarExtra`, `launchCommand`/`updateCommandMetadata`, and `open`/`trash`/`showInFinder`**. The 2026-06-21 code reconciliation found the former "crash" members all defined now (no `"Element type is invalid"`); remaining work is **depth** (controlled non-text inputs, pagination, streaming, native pickers/masking) and **named-type exports**.
+The component spine is in place and renders natively: **List, Grid, Detail, Form, ActionPanel/Action, Detail.Metadata, List.Dropdown (+ .Item/.Section), List.Item.Detail**. Recently landed and verified: **navigation push/pop** (declarative `Action.Push` *and* programmatic `useNavigation().push/pop`), **command arguments** (inline chips), **per-extension Trust**, **in-palette `confirmAlert`**, the **world-class search dropdown**, **constant palette size/position**, **Form validation + value preservation**, **AI.ask / OAuth.PKCEClient** RPCs, and (2026-06-21) **List/Detail `isLoading` bars, List/Grid accessories with `Color`/`Icon` tint, grouped `ActionPanel.Section` + drill-in `Submenu`, full `menu-bar` + `MenuBarExtra`, `launchCommand`/`updateCommandMetadata`, and `open`/`trash`/`showInFinder`**. The 2026-06-21 code reconciliation found the former "crash" members all defined now (no `"Element type is invalid"`); remaining work is **depth** (controlled non-text inputs, AI/JSON streaming) and **named-type exports** — pagination, native pickers/masking, and `Detail.Metadata` fidelity landed 2026-06-21.
 
 ### A.1 List & Grid
 
@@ -580,7 +580,7 @@ The component spine is in place and renders natively: **List, Grid, Detail, Form
 | `List.Dropdown` / `.Item` / `.Section` (searchBarAccessory) | ✅ | world-class popover (landed) |
 | `List.Dropdown` / `Grid.Dropdown` controlled props (`value` / `defaultValue` / `onChange` / `storeValue` / `filtering` / `onSearchTextChange` / `isLoading` / `tooltip`) | 🟡 | `value` / `defaultValue` / `onChange` wired (`AppController.swift:3660`); `storeValue` / `filtering` / `isLoading` / `tooltip` ignored |
 | `List.isLoading` | ✅ | thin accent sweep bar (List/Grid/Detail), 2026-06-21 |
-| `List` pagination `{hasMore, onLoadMore, pageSize}` | ⬜ | not wired anywhere |
+| `List` pagination `{hasMore, onLoadMore, pageSize}` | ✅ | renderer near-bottom → `onLoadMore` (in-flight guarded); `@invoke/api` flattens the prop, 2026-06-21 |
 | Native fuzzy `filtering` of static items / `filtering={false}` | 🟡 | built-in client-side filter exists (`AppController.swift:121`), but not fuzzy-ranked & `filtering={false}` not honored |
 | `selectedItemId` / `onSelectionChange` | ⬜ | selection not reported back to the extension |
 | `List.EmptyView` | ⬜ | exported but renderer no-ops `empty-view` |
@@ -600,13 +600,13 @@ The component spine is in place and renders natively: **List, Grid, Detail, Form
 |---|---|---|
 | `Detail` CommonMark `markdown` (incl. images, clamped) | ✅ | tables / LaTeX / footnotes — ⬜ |
 | `Detail` own `isLoading` (accent sweep bar) | ✅ | honored via the shared sweep bar, 2026-06-21 |
-| `Detail.Metadata.Label` (`text` string) / `.Separator` | ✅ | (standalone-`Detail` sidebar renders Label only) |
-| `Detail.Metadata.Label` colored `text:{color,value}` + `icon` | 🟡 | rendered, but `Color` not applied & label icon lossy |
-| `Detail.Metadata.Link` | 🟡 | rendered as text — **not clickable**; dropped on standalone-`Detail` sidebar |
-| `Detail.Metadata.TagList` | 🟡 | comma-joined; no per-tag color/icon chips |
+| `Detail.Metadata.Label` (`text` string) / `.Separator` | ✅ | both paths share `renderMetadataNode` (sidebar no longer Label-only), 2026-06-21 |
+| `Detail.Metadata.Label` colored `text:{color,value}` + `icon` | ✅ | colored value (`labelAndColor`) + leading icon, both paths, 2026-06-21 |
+| `Detail.Metadata.Link` | ✅ | clickable (opens the URL) on both paths via the shared `renderMetadataNode`, 2026-06-21 |
+| `Detail.Metadata.TagList` | ✅ | per-tag colored chips on both paths, 2026-06-21 (no wrapping on overflow yet — follow-up) |
 | `Detail.Metadata.TagList.Item` (`text` / `icon` / `color` / `onAction`) | 🟡 | leaf tag element not individually rendered; `onAction` (clickable tag) ⬜ |
 | `Icon` enum | 🟡 | 48 members defined; 30 SF-Symbol-mapped (`PaletteView.swift:2197`), rest fall back to a default glyph |
-| `Color` enum (9 named members) | 🟡 | applied to List/Grid accessory text/tags/icon tints (`RaycastColor`, `PaletteView.swift:1811`); **not** in `Detail.Metadata`; `Color.Dynamic` not exported |
+| `Color` enum (9 named members) | 🟡 | applied to List/Grid accessories **and** `Detail.Metadata` Label/TagList (`RaycastColor`), 2026-06-21; `Color.Dynamic` not exported |
 | raw HEX / `{light,dark}` color values | 🟡 | honored at runtime for accessories (`PaletteView.swift:2023`); no named `Color.Raw`/`ColorLike` type |
 | `Image.Mask` (Circle / RoundedRectangle) | ⬜ | masks ignored |
 | `Image` fallback + dynamic `{source:{light,dark}}` | ⬜ | single source resolved; no light/dark image dispatch |
@@ -625,8 +625,8 @@ The component spine is in place and renders natively: **List, Grid, Detail, Form
 | `Form.Dropdown` searchable props (`onSearchTextChange` / `filtering` / `throttle` / `isLoading`) | ⬜ | local typeahead only; async/controlled props unwired |
 | `Form.TextArea` `enableMarkdown` | ⬜ | markdown toolbar/preview not rendered |
 | Validation (`FormValidation.Required`) + error rendering | 🟡 | only `Required`; no custom validators / async |
-| `Form.PasswordField` | 🟡 | aliases a plain text field (not masked) |
-| `Form.DatePicker` (+ `min` / `max`) | 🟡 | aliases a plain text field (no native picker, no `Date` value, bounds ignored) |
+| `Form.PasswordField` | ✅ | masked `NSSecureTextField`, 2026-06-21 |
+| `Form.DatePicker` (+ `min` / `max`) | 🟡 | native `NSDatePicker` (value as ISO string), 2026-06-21; `min`/`max` bounds still ignored |
 | `Form.DatePicker.Type` enum (`Date` / `DateTime`) + `Form.DatePicker.isFullDay()` | 🟡 | `Type` enum exported (`index.ts:208`); `isFullDay()` still absent & DatePicker text-aliased |
 | `Form.TagPicker` / `Form.TagPicker.Item` | 🟡 | exported (`index.ts:192`); **no longer crashes** — degrades to a single-select dropdown (string value) |
 | `Form.FilePicker` (+ `allowMultipleSelection` / `canChooseFiles` / `canChooseDirectories` / `showHiddenFiles`) | 🟡 | exported (`index.ts:218`); **no longer crashes** — degrades to a path text field; options ignored |
@@ -726,7 +726,7 @@ The component spine is in place and renders natively: **List, Grid, Detail, Form
 |---|---|---|
 | `usePromise` / `useCachedState` / `useCachedPromise` / `useFetch` / `useExec` / `useSQL` / `useForm` / `useLocalStorage` / `useFrecencySorting` / `useAI` | ✅ | present and used by real extensions |
 | `mutate` / `MutatePromise` (`optimisticUpdate` / `rollbackOnError`) | 🟡 | working runtime `mutate` (awaits update + revalidates, `utils:88`/`358`); `optimisticUpdate`/`rollbackOnError` ignored |
-| Pagination (function-form source in `useFetch`/`useCachedPromise`) | 🟡 | implemented in `usePromise` (`utils:43`); not surfaced by `useFetch`/`useCachedPromise` |
+| Pagination (function-form source in `useFetch`/`useCachedPromise`) | ✅ | `usePromise` + `useFetch` (url-as-fn) + `useCachedPromise` accumulate pages (`mergePages`) + expose `pagination`, 2026-06-21 |
 | `useStreamJSON` | 🟡 | exported + functional (`utils:851`), but buffered (`res.json()`) — not progressive |
 | `useAI` streaming (`.on('data')` token stream) | 🟡 | resolves once; no progressive tokens |
 | `getFavicon` / `getAvatarIcon` / `getProgressIcon` | ✅ | |
@@ -770,7 +770,7 @@ The component spine is in place and renders natively: **List, Grid, Detail, Form
 ### A.12 Recommended implementation order
 
 - **P0 — crash-prevention & correctness:** ~~graceful-degrade every undefined component~~ **DONE 2026-06-21** (the `Action.*`, `Form.TagPicker`/`FilePicker`/`LinkAccessory`, `MenuBarExtra.*` members are all defined; nothing throws "Element type is invalid"; `Keyboard` exported). Remaining: render `List.EmptyView`/`Grid.EmptyView`; fire `onChange` for **Checkbox**; honor `Action.style` (destructive) + bind custom `Action.shortcut` to the exported `Keyboard.Shortcut`.
-- **P1 — depth:** _(Done 2026-06-21: `List`/`Detail` `isLoading`; List/Grid accessories incl. `Color`/`Icon` tint + `FileIcon`; grouped `ActionPanel.Section` + drill-in `Submenu`; `open`/`trash`/`showInFinder`; `mutate` runtime.)_ Remaining: List/Grid **pagination** + controlled `searchText`/`throttle` (+ surface `pagination` through `useFetch`/`useCachedPromise`); `List.Dropdown` `storeValue`/`filtering`/`isLoading`; clickable `Detail.Metadata.Link` + `TagList.Item` chips + `Color` in Metadata; `PasswordField` masking + native `DatePicker`; typed field values; `Toast`/`Alert.Options` actions; `optimisticUpdate`/`rollbackOnError`; full `Clipboard.read` + `clear`.
+- **P1 — depth:** _(Done 2026-06-21: List/Grid **pagination** (+ `useFetch`/`useCachedPromise`); `Form.PasswordField` masking + native `DatePicker`; clickable `Detail.Metadata.Link` + `TagList` chips + `Color` in Metadata; `List`/`Detail` `isLoading`; List/Grid accessories incl. `Color`/`Icon` tint + `FileIcon`; grouped `ActionPanel.Section` + drill-in `Submenu`; `open`/`trash`/`showInFinder`; `mutate` runtime.)_ Remaining: controlled `searchText`/`throttle`; `List.Dropdown` `storeValue`/`filtering`/`isLoading`; `TagList.Item` `onAction` + TagList wrapping; `DatePicker` `min`/`max` + typed field values; `Toast`/`Alert.Options` actions; `optimisticUpdate`/`rollbackOnError`; full `Clipboard.read` + `clear`.
 - **P2 — breadth / v2:** _(Done: `menu-bar` + `NSStatusItem` + `MenuBarExtra.*`; `launchCommand`; `updateCommandMetadata`; `BrowserExtension`.)_ Remaining: `MenuBarExtra.Item` `alternate`/`shortcut` + `ActionEvent`; AI streaming (+ `signal`; honor `model`/`creativity` host-side) + Tools (`Tool.Confirmation`)/MCP/Skills; Window Management API; full `Icon`/`Color` coverage + `Image.Mask`; `useStreamJSON` streaming; fallback commands; real `environment` fields; OAuth provider presets; export remaining named types/enums (`Cache.*`/`Preferences`/`Form.Values`/`KeyModifier`/`Navigation`/`LaunchContext`).
 
 ---
