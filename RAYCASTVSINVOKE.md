@@ -17,7 +17,7 @@
 
 **What remains is two kinds of gap:**
 1. **Breadth** — many SDK members are *defined* (so extensions importing them type-check and load) but the renderer doesn't honor every prop.
-2. **Depth** — controlled-input semantics (typed DatePicker/TagPicker values, controlled searchText) and streaming (AI tokens, `useStreamJSON`) are not fully wired. _(Pagination, `isLoading`, native pickers/masking, and `Detail.Metadata` fidelity landed 2026-06-21. Checkbox onChange→bool, EmptyView, Action style/shortcut landed 2026-06-21 (Chunk E).)_
+2. **Depth** — controlled-input semantics (typed DatePicker/TagPicker values) and streaming (AI tokens, `useStreamJSON`) are not fully wired. _(Pagination, `isLoading`, native pickers/masking, and `Detail.Metadata` fidelity landed 2026-06-21. Checkbox onChange→bool, EmptyView, Action style/shortcut landed 2026-06-21 (Chunk E). controlled searchText/throttle/filtering + Dropdown storeValue landed 2026-06-21 (Chunk F).)_
 
 **Implementation has since outrun the original gap analysis.** The 2026-06-21 code-level reconciliation found the former "takes down the whole view" crash members — `Action.Trash` / `OpenWith` / `ShowInFinder` / `ToggleQuickLook` / `CreateQuicklink` / `CreateSnippet` / `PickDate`, `Form.TagPicker` / `FilePicker` / `LinkAccessory`, and `MenuBarExtra.*` — are **all defined now and either functional or degrade gracefully** (no more `"Element type is invalid"`). Menu-bar commands render to a real `NSStatusItem`; `launchCommand` / `updateCommandMetadata` work; the `Keyboard` namespace is exported. The remaining gaps are mostly **depth** (controlled non-text inputs, AI/JSON streaming) and **named-type exports**, not crashes — pagination, native pickers/masking, and `Detail.Metadata` fidelity landed 2026-06-21.
 
@@ -28,14 +28,14 @@
 | API | State | Gap / pending |
 |---|---|---|
 | `List` render + `searchBarPlaceholder` + `onSearchTextChange` | ✅ | search text routes to the child |
-| `List` / `Grid` controlled `searchText` + `throttle` | ⬜ | controlled search value & debounce prop not honored |
+| `List` / `Grid` controlled `searchText` + `throttle` | ✅ | controlled `searchText` reflected on commit + `throttle` debounces the onSearchTextChange forward ~250ms (Chunk F) |
 | `List` / `Grid` component-level `actions` (empty-state ActionPanel) | ⬜ | top-level `actions` prop not rendered |
 | `List.Section`, `List.Item` (title/subtitle/icon) | ✅ | |
 | `List.Dropdown` / `.Item` / `.Section` (searchBarAccessory) | ✅ | world-class popover (landed) |
-| `List.Dropdown` / `Grid.Dropdown` controlled props (`value` / `defaultValue` / `onChange` / `storeValue` / `filtering` / `onSearchTextChange` / `isLoading` / `tooltip`) | 🟡 | `value` / `defaultValue` / `onChange` wired (`AppController.swift:3660`); `storeValue` / `filtering` / `isLoading` / `tooltip` ignored |
+| `List.Dropdown` / `Grid.Dropdown` controlled props (`value` / `defaultValue` / `onChange` / `storeValue` / `filtering` / `onSearchTextChange` / `isLoading` / `tooltip`) | ✅ | value/defaultValue/onChange + **storeValue (persisted) / filtering / isLoading / tooltip** all wired (Chunk F); List.Dropdown has no onSearchTextChange in Raycast |
 | `List.isLoading` | ✅ | thin accent sweep bar (List/Grid/Detail), 2026-06-21 |
 | `List` pagination `{hasMore, onLoadMore, pageSize}` | ✅ | renderer near-bottom → `onLoadMore` (in-flight guarded); `@invoke/api` flattens the prop, 2026-06-21 |
-| Native fuzzy `filtering` of static items / `filtering={false}` escape hatch | 🟡 | built-in client-side filter exists (`AppController.swift:121` `filterTree`, substring on title/subtitle/keywords) — but not fuzzy-ranked, and `filtering={false}` is not honored (gated on presence of `onSearchTextChange`) |
+| Native fuzzy `filtering` of static items / `filtering={false}` escape hatch | 🟡 | built-in substring filter (`filterTree`); **`filtering={false}` + explicit `filtering={true}` now honored via `hostShouldFilter()` (Chunk F)**; still substring, not fuzzy-ranked |
 | `selectedItemId` / `onSelectionChange` | ⬜ | selection not reported back to the extension |
 | `List.EmptyView` | ✅ | centered icon+title+description when 0 items + `empty-view` node; its actions populate ⌘K (Chunk E) |
 | `List.Item.accessories[]` | ✅ | text/tag/date/icon/tooltip + per-accessory `color` + combined entries, 2026-06-21 |
@@ -234,9 +234,7 @@
 > **P0 is now fully cleared.** All crash-prevention & correctness items are done.
 
 ### P1 — depth (the props extensions most rely on)
-- _(Done 2026-06-21: List/Grid **pagination** (+ `useFetch`/`useCachedPromise`); `Form.PasswordField` masking + native `Form.DatePicker`; clickable `Detail.Metadata.Link` + `TagList` chips + `Color` in Metadata; `List`/`Detail` `isLoading` bars; `List.Item`/`Grid.Item` accessories incl. `Color`/`Icon` tint + `FileIcon`; grouped `ActionPanel.Section` + drill-in `Submenu`; imperative `open`/`trash`/`showInFinder`; working `mutate` runtime.)_
-- Controlled `searchText` / `throttle` (List/Grid)
-- `List.Dropdown` / `Grid.Dropdown` remaining controlled props (`storeValue` / `filtering` / `isLoading`)
+- _(Done 2026-06-21: List/Grid **pagination** (+ `useFetch`/`useCachedPromise`); `Form.PasswordField` masking + native `Form.DatePicker`; clickable `Detail.Metadata.Link` + `TagList` chips + `Color` in Metadata; `List`/`Detail` `isLoading` bars; `List.Item`/`Grid.Item` accessories incl. `Color`/`Icon` tint + `FileIcon`; grouped `ActionPanel.Section` + drill-in `Submenu`; imperative `open`/`trash`/`showInFinder`; working `mutate` runtime. **Controlled `searchText`/`throttle` (List/Grid) + `List.Dropdown`/`Grid.Dropdown` `storeValue`/`filtering`/`isLoading`/`tooltip` landed (Chunk F, 2026-06-21).**)_
 - `Detail.Metadata.TagList.Item` `onAction` (clickable tag) + TagList wrapping on overflow
 - `Form.DatePicker` `min`/`max` + `isFullDay()`; typed (non-string) field values
 - `Toast` primary / secondary actions (`Toast.ActionOptions`) + `Alert.Options` (`icon` / `dismissAction` / `rememberUserChoice`)

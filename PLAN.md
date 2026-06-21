@@ -574,14 +574,14 @@ The component spine is in place and renders natively: **List, Grid, Detail, Form
 | API | State | Gap / pending |
 |---|---|---|
 | `List` render + `searchBarPlaceholder` + `onSearchTextChange` | ✅ | search text routes to the child |
-| `List` / `Grid` controlled `searchText` + `throttle` | ⬜ | controlled search value & debounce prop not honored |
+| `List` / `Grid` controlled `searchText` + `throttle` | ✅ | controlled `searchText` reflected on commit + `throttle` debounces the onSearchTextChange forward ~250ms (Chunk F) |
 | `List` / `Grid` component-level `actions` (empty-state ActionPanel) | ⬜ | top-level `actions` prop not rendered |
 | `List.Section`, `List.Item` (title/subtitle/icon) | ✅ | |
 | `List.Dropdown` / `.Item` / `.Section` (searchBarAccessory) | ✅ | world-class popover (landed) |
-| `List.Dropdown` / `Grid.Dropdown` controlled props (`value` / `defaultValue` / `onChange` / `storeValue` / `filtering` / `onSearchTextChange` / `isLoading` / `tooltip`) | 🟡 | `value` / `defaultValue` / `onChange` wired (`AppController.swift:3660`); `storeValue` / `filtering` / `isLoading` / `tooltip` ignored |
+| `List.Dropdown` / `Grid.Dropdown` controlled props (`value` / `defaultValue` / `onChange` / `storeValue` / `filtering` / `onSearchTextChange` / `isLoading` / `tooltip`) | ✅ | value/defaultValue/onChange + **storeValue (persisted) / filtering / isLoading / tooltip** all wired (Chunk F); List.Dropdown has no onSearchTextChange in Raycast |
 | `List.isLoading` | ✅ | thin accent sweep bar (List/Grid/Detail), 2026-06-21 |
 | `List` pagination `{hasMore, onLoadMore, pageSize}` | ✅ | renderer near-bottom → `onLoadMore` (in-flight guarded); `@invoke/api` flattens the prop, 2026-06-21 |
-| Native fuzzy `filtering` of static items / `filtering={false}` | 🟡 | built-in client-side filter exists (`AppController.swift:121`), but not fuzzy-ranked & `filtering={false}` not honored |
+| Native fuzzy `filtering` of static items / `filtering={false}` | 🟡 | built-in substring filter (`filterTree`); **`filtering={false}` + explicit `filtering={true}` now honored via `hostShouldFilter()` (Chunk F)**; still substring, not fuzzy-ranked |
 | `selectedItemId` / `onSelectionChange` | ⬜ | selection not reported back to the extension |
 | `List.EmptyView` | ✅ | rendered: centered icon+title+description on 0 items + `empty-view` node (Chunk E) |
 | `List.Item.accessories[]` | ✅ | text/tag/date/icon/tooltip + per-accessory `color` + combined entries, 2026-06-21 |
@@ -770,7 +770,7 @@ The component spine is in place and renders natively: **List, Grid, Detail, Form
 ### A.12 Recommended implementation order
 
 - **P0 — crash-prevention & correctness:** ~~graceful-degrade every undefined component~~ **DONE 2026-06-21** (the `Action.*`, `Form.TagPicker`/`FilePicker`/`LinkAccessory`, `MenuBarExtra.*` members are all defined; nothing throws "Element type is invalid"; `Keyboard` exported). Remaining: render `List.EmptyView`/`Grid.EmptyView`; fire `onChange` for **Checkbox**; honor `Action.style` (destructive) + bind custom `Action.shortcut` to the exported `Keyboard.Shortcut`.
-- **P1 — depth:** _(Done 2026-06-21: List/Grid **pagination** (+ `useFetch`/`useCachedPromise`); `Form.PasswordField` masking + native `DatePicker`; clickable `Detail.Metadata.Link` + `TagList` chips + `Color` in Metadata; `List`/`Detail` `isLoading`; List/Grid accessories incl. `Color`/`Icon` tint + `FileIcon`; grouped `ActionPanel.Section` + drill-in `Submenu`; `open`/`trash`/`showInFinder`; `mutate` runtime.)_ Remaining: controlled `searchText`/`throttle`; `List.Dropdown` `storeValue`/`filtering`/`isLoading`; `TagList.Item` `onAction` + TagList wrapping; `DatePicker` `min`/`max` + typed field values; `Toast`/`Alert.Options` actions; `optimisticUpdate`/`rollbackOnError`; full `Clipboard.read` + `clear`.
+- **P1 — depth:** _(Done 2026-06-21: List/Grid **pagination** (+ `useFetch`/`useCachedPromise`); `Form.PasswordField` masking + native `DatePicker`; clickable `Detail.Metadata.Link` + `TagList` chips + `Color` in Metadata; `List`/`Detail` `isLoading`; List/Grid accessories incl. `Color`/`Icon` tint + `FileIcon`; grouped `ActionPanel.Section` + drill-in `Submenu`; `open`/`trash`/`showInFinder`; `mutate` runtime. controlled searchText/throttle/filtering + Dropdown storeValue landed (Chunk F, 2026-06-21).)_ Remaining: `TagList.Item` `onAction` + TagList wrapping; `DatePicker` `min`/`max` + typed field values; `Toast`/`Alert.Options` actions; `optimisticUpdate`/`rollbackOnError`; full `Clipboard.read` + `clear`.
 - **P2 — breadth / v2:** _(Done: `menu-bar` + `NSStatusItem` + `MenuBarExtra.*`; `launchCommand`; `updateCommandMetadata`; `BrowserExtension`.)_ Remaining: `MenuBarExtra.Item` `alternate`/`shortcut` + `ActionEvent`; AI streaming (+ `signal`; honor `model`/`creativity` host-side) + Tools (`Tool.Confirmation`)/MCP/Skills; Window Management API; full `Icon`/`Color` coverage + `Image.Mask`; `useStreamJSON` streaming; fallback commands; real `environment` fields; OAuth provider presets; export remaining named types/enums (`Cache.*`/`Preferences`/`Form.Values`/`KeyModifier`/`Navigation`/`LaunchContext`).
 
 ---
