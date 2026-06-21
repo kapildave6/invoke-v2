@@ -24,6 +24,12 @@ public final class AppSettings: ObservableObject {
     @Published public var clipboardLimit: Int { didSet { d.set(clipboardLimit, forKey: "clipboardLimit") } }
     @Published public var emojiSkinTone: Int { didSet { d.set(emojiSkinTone, forKey: "emojiSkinTone") } } // 0 = default
     @Published public var disabledCommands: Set<String> { didSet { d.set(Array(disabledCommands), forKey: "disabledCommands") } }
+    // Commands the user has explicitly ENABLED (opt-in), for disabledByDefault commands. (disabledCommands
+    // remains the opt-OUT set for normal commands.)
+    @Published public var enabledCommands: Set<String> { didSet { d.set(Array(enabledCommands), forKey: "enabledCommands") } }
+    // NON-persisted registry of command ids whose manifest sets disabledByDefault: true (set by AppController
+    // each discovery). isEnabled/setEnabled consult it so callers don't need the flag.
+    public var disabledByDefaultIds: Set<String> = []
     /// commandId → typed alias (unique across commands). Surfaced first when typed in the root.
     @Published public var aliases: [String: String] { didSet { d.set(aliases, forKey: "commandAliases") } }
     /// commandId → recorded global hotkey.
@@ -68,6 +74,7 @@ public final class AppSettings: ObservableObject {
         clipboardLimit = (d.object(forKey: "clipboardLimit") as? Int) ?? 100
         emojiSkinTone = d.integer(forKey: "emojiSkinTone")
         disabledCommands = Set((d.array(forKey: "disabledCommands") as? [String]) ?? [])
+        enabledCommands = Set((d.array(forKey: "enabledCommands") as? [String]) ?? [])
         aliases = (d.dictionary(forKey: "commandAliases") as? [String: String]) ?? [:]
         hotkeys = {
             guard let data = UserDefaults.standard.data(forKey: "commandHotkeys"),
@@ -163,10 +170,16 @@ public final class AppSettings: ObservableObject {
         SecItemAdd(add as CFDictionary, nil)
     }
 
-    public func isEnabled(_ commandID: String) -> Bool { !disabledCommands.contains(commandID) }
+    public func isEnabled(_ commandID: String) -> Bool {
+        disabledByDefaultIds.contains(commandID) ? enabledCommands.contains(commandID) : !disabledCommands.contains(commandID)
+    }
 
     public func setEnabled(_ commandID: String, _ enabled: Bool) {
-        if enabled { disabledCommands.remove(commandID) } else { disabledCommands.insert(commandID) }
+        if disabledByDefaultIds.contains(commandID) {
+            if enabled { enabledCommands.insert(commandID) } else { enabledCommands.remove(commandID) }
+        } else {
+            if enabled { disabledCommands.remove(commandID) } else { disabledCommands.insert(commandID) }
+        }
     }
 
     // MARK: - Favorites

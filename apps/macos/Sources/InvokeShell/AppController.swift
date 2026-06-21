@@ -163,6 +163,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         let keywords: [String]
         let closesPalette: Bool // folder-opens close; "navigating" commands (clipboard) keep it open
         var argSpec: [[String: Any]] = [] // Raycast command arguments → inline search-bar chips
+        var disabledByDefault: Bool = false // manifest disabledByDefault: true → hidden until user enables
         let run: () -> Void
     }
 
@@ -3097,6 +3098,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
                     let iconPath = resolveIcon(c["icon"]) ?? extIconPath
                     // Raycast command arguments (collected before the command runs; distinct from prefs).
                     let argSpec = (c["arguments"] as? [[String: Any]]) ?? []
+                    let cmdDisabledByDefault = (c["disabledByDefault"] as? Bool) ?? false
                     // Record every command so launchCommand() can resolve + (re)launch it later.
                     extLaunchables[cmdId] = ExtLaunchable(extKey: extKey, extTitle: title, title: ctitle,
                                                           rel: rel, command: cname, mode: cmode, prefsSpec: prefsSpec)
@@ -3113,7 +3115,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
                         out.append(RootCommand(id: cmdId, title: ctitle, subtitle: "\(title) · Menu Bar", runTitle: "Toggle in Menu Bar",
                                                icon: "menubar.rectangle", iconPath: iconPath,
                                                keywords: [name, cname, title.lowercased(), "menu bar"],
-                                               closesPalette: true, argSpec: argSpec) { [weak self] in
+                                               closesPalette: true, argSpec: argSpec,
+                                               disabledByDefault: cmdDisabledByDefault) { [weak self] in
                             guard let self else { return }
                             let prefs = self.resolvePreferencesJSON(extKey: extKey, spec: prefsSpec)
                             let paths = self.extensionPaths(id: cmdId, entryRelPath: rel)
@@ -3126,7 +3129,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
                         out.append(RootCommand(id: cmdId, title: ctitle, subtitle: title, runTitle: "Run",
                                                icon: "bolt.fill", iconPath: iconPath,
                                                keywords: [name, cname, title.lowercased()],
-                                               closesPalette: false, argSpec: argSpec) { [weak self] in
+                                               closesPalette: false, argSpec: argSpec,
+                                               disabledByDefault: cmdDisabledByDefault) { [weak self] in
                             // closesPalette:false so a first-run prefs-onboarding form can open in the
                             // palette; the no-view action itself tears the palette down when it runs.
                             guard let self else { return }
@@ -3140,7 +3144,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
                         out.append(RootCommand(id: cmdId, title: ctitle, subtitle: title, runTitle: "Open",
                                                icon: "puzzlepiece.extension.fill", iconPath: iconPath,
                                                keywords: [name, cname, title.lowercased()],
-                                               closesPalette: false, argSpec: argSpec) { [weak self] in
+                                               closesPalette: false, argSpec: argSpec,
+                                               disabledByDefault: cmdDisabledByDefault) { [weak self] in
                             guard let self else { return }
                             self.launchExtensionCommand(extKey: extKey, extTitle: title, spec: prefsSpec,
                                                         argSpec: argSpec, commandTitle: ctitle,
@@ -3152,6 +3157,11 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 }
             }
         }
+        // Register the disabledByDefault ids so isEnabled() can hide these commands until the user
+        // explicitly enables them. This runs synchronously inside makeCommands() (via discoverExtensionCommands),
+        // which is called by the `commands` lazy var — so the registry is populated before the first
+        // matchCommands() call consults isEnabled().
+        AppSettings.shared.disabledByDefaultIds = Set(out.filter { $0.disabledByDefault }.map { $0.id })
         return out
     }
 
