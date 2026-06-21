@@ -61,10 +61,11 @@ final class SearchBarDropdown: NSView {
     /// Point the cursor finger at the pill.
     override func resetCursorRects() { addCursorRect(bounds, cursor: .pointingHand) }
 
-    func configure(items: [Item], selected: String, onSelect: @escaping (String) -> Void) {
+    func configure(items: [Item], selected: String, tooltip: String? = nil, onSelect: @escaping (String) -> Void) {
         self.items = items
         self.selectedValue = selected
         self.onSelect = onSelect
+        self.toolTip = tooltip
         if let cur = items.first(where: { $0.value == selected }) ?? items.first {
             titleLabel.stringValue = cur.title
             FaviconLoader.load(cur.iconRef, into: iconView)

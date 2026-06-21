@@ -3690,15 +3690,19 @@ public final class AppController: NSObject, NSApplicationDelegate {
         }
         collect(dd)
         guard !items.isEmpty else { palette.hideSearchDropdown(); return }
-        // Raycast's Dropdown is controlled (`value`) OR uncontrolled (`defaultValue`). For an uncontrolled
-        // dropdown the extension tracks the selection in its OWN state (not the value prop), so on each
-        // re-render `defaultValue` is unchanged — if we reset to it, the user's pick reverts and they can't
-        // change the engine. So prefer the controlled value, then the user's last pick, then defaultValue.
-        let current = dd.props["value"]?.stringValue ?? extDropdownValue ?? dd.props["defaultValue"]?.stringValue ?? items.first?.value ?? ""
+        let storeValue: Bool = { if case .bool(let s)? = dd.props["storeValue"] { return s }; return false }()
+        let ddId = dd.props["id"]?.stringValue ?? "default"
+        let storeKey = "extdd.\(currentExtId).\(lastLaunch?.command ?? "").\(ddId)"
+        let stored = storeValue ? UserDefaults.standard.string(forKey: storeKey) : nil
+        // Precedence: controlled value → persisted (storeValue) → user's last pick → defaultValue → first.
+        let current = dd.props["value"]?.stringValue ?? stored ?? extDropdownValue
+            ?? dd.props["defaultValue"]?.stringValue ?? items.first?.value ?? ""
         let handler = dd.props["onChange"]?.handlerRef
-        palette.setSearchDropdown(items: items, selected: current) { [weak self] value in
+        let tooltip = dd.props["tooltip"]?.stringValue
+        palette.setSearchDropdown(items: items, selected: current, tooltip: tooltip) { [weak self] value in
             guard let self, let handler else { return }
-            self.extDropdownValue = value // remember the user's pick (uncontrolled dropdowns don't echo it back)
+            self.extDropdownValue = value
+            if storeValue { UserDefaults.standard.set(value, forKey: storeKey) }
             self.extHost?.invoke(handler: handler, args: [.string(value)]) // re-renders via the next commit
         }
         // Fire onChange ONCE when the dropdown first appears, to initialize the extension's selection
