@@ -257,7 +257,7 @@ const TagPicker = host(T.FormDropdown) as FormType["TagPicker"];
 TagPicker.Item = host(T.FormDropdownItem);
 Form.TagPicker = TagPicker;
 // Namespace merge: adds Form.Values as a type so extensions can write `Form.Values`.
-declare namespace Form {
+export declare namespace Form {
   export type Values = FormValues;
 }
 
@@ -1085,7 +1085,7 @@ export const Keyboard = {
   } as Record<string, unknown>,
 };
 // Namespace merge: adds Keyboard.KeyModifier and Keyboard.KeyEquivalent as types.
-declare namespace Keyboard {
+export declare namespace Keyboard {
   export type KeyModifier = "cmd" | "ctrl" | "opt" | "shift" | "win";
   export type KeyEquivalent = string;
 }
