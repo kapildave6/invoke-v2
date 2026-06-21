@@ -17,7 +17,7 @@
 
 **What remains is two kinds of gap:**
 1. **Breadth** — many SDK members are *defined* (so extensions importing them type-check and load) but the renderer doesn't honor every prop.
-2. **Depth** — controlled-input semantics (typed DatePicker/TagPicker values) and streaming (AI tokens, `useStreamJSON`) are not fully wired. _(Pagination, `isLoading`, native pickers/masking, and `Detail.Metadata` fidelity landed 2026-06-21. Checkbox onChange→bool, EmptyView, Action style/shortcut landed 2026-06-21 (Chunk E). controlled searchText/throttle/filtering + Dropdown storeValue landed 2026-06-21 (Chunk F). **Alert.Options** `icon`/`dismissAction.style`/`rememberUserChoice` + **`Clipboard.read` full `{text,html,file}`** + **`Clipboard.clear`** landed 2026-06-21 (Chunk G).)_
+2. **Depth** — controlled-input semantics (typed DatePicker/TagPicker values) and streaming (AI tokens, `useStreamJSON`) are not fully wired. _(Pagination, `isLoading`, native pickers/masking, and `Detail.Metadata` fidelity landed 2026-06-21. Checkbox onChange→bool, EmptyView, Action style/shortcut landed 2026-06-21 (Chunk E). controlled searchText/throttle/filtering + Dropdown storeValue landed 2026-06-21 (Chunk F). **Alert.Options** `icon`/`dismissAction.style`/`rememberUserChoice` + **`Clipboard.read` full `{text,html,file}`** + **`Clipboard.clear`** landed 2026-06-21 (Chunk G). **TagList `onAction`/overflow-wrap + DatePicker typed `Date`/min/max + `mutate` `optimisticUpdate`/`rollbackOnError` landed 2026-06-21 (Chunk H).**)_
 
 **Implementation has since outrun the original gap analysis.** The 2026-06-21 code-level reconciliation found the former "takes down the whole view" crash members — `Action.Trash` / `OpenWith` / `ShowInFinder` / `ToggleQuickLook` / `CreateQuicklink` / `CreateSnippet` / `PickDate`, `Form.TagPicker` / `FilePicker` / `LinkAccessory`, and `MenuBarExtra.*` — are **all defined now and either functional or degrade gracefully** (no more `"Element type is invalid"`). Menu-bar commands render to a real `NSStatusItem`; `launchCommand` / `updateCommandMetadata` work; the `Keyboard` namespace is exported. The remaining gaps are mostly **depth** (controlled non-text inputs, AI/JSON streaming) and **named-type exports**, not crashes — pagination, native pickers/masking, and `Detail.Metadata` fidelity landed 2026-06-21.
 
@@ -57,8 +57,8 @@
 | `Detail.Metadata.Label` (`text` string) / `.Separator` | ✅ | (note: standalone-`Detail` sidebar renders Label only — Link/TagList dropped there) |
 | `Detail.Metadata.Label` colored `text:{color,value}` + `icon` | ✅ | colored value (`labelAndColor`) + leading icon, both paths, 2026-06-21 |
 | `Detail.Metadata.Link` | ✅ | clickable (opens the URL) on both paths via the shared `renderMetadataNode`, 2026-06-21 |
-| `Detail.Metadata.TagList` | ✅ | per-tag colored chips on both paths, 2026-06-21 (no wrapping on overflow yet — follow-up) |
-| `Detail.Metadata.TagList.Item` (`text` / `icon` / `color` / `onAction`) | 🟡 | leaf tag element not individually rendered; `onAction` (clickable tag) ⬜ |
+| `Detail.Metadata.TagList` | ✅ | per-tag colored chips on both paths, 2026-06-21; wraps on overflow (FlowStackView), Chunk H |
+| `Detail.Metadata.TagList.Item` (`text` / `icon` / `color` / `onAction`) | ✅ | per-tag chips + `onAction` clickable + wrapping on overflow (FlowStackView), Chunk H |
 | `Icon` enum | 🟡 | 48 members defined (`index.ts:369`); 30 SF-Symbol-mapped (`PaletteView.swift:2197`), the rest fall back to a default glyph |
 | `Color` enum (9 named members) | 🟡 | applied to List/Grid accessories **and** `Detail.Metadata` Label/TagList (`RaycastColor`), 2026-06-21; `Color.Dynamic` constant **not** exported |
 | raw HEX / `{light,dark}` color values | 🟡 | honored at runtime for accessories (`RaycastColor.colorFromHex`, `PaletteView.swift:2023`); no named `Color.Raw` / `ColorLike` type exported |
@@ -80,15 +80,15 @@
 | `Form.TextArea` `enableMarkdown` | ⬜ | markdown toolbar/preview not rendered |
 | Validation (`FormValidation.Required`) + error rendering | 🟡 | only `Required`; no custom / async validators |
 | `Form.PasswordField` | ✅ | masked `NSSecureTextField`, 2026-06-21 |
-| `Form.DatePicker` (+ `min` / `max`) | 🟡 | native `NSDatePicker` (value as ISO string), 2026-06-21; `min`/`max` bounds still ignored |
-| `Form.DatePicker.Type` enum (`Date` / `DateTime`) + `Form.DatePicker.isFullDay()` | 🟡 | `Type` enum exported (`index.ts:208`); `isFullDay()` helper still absent & DatePicker itself text-aliased |
+| `Form.DatePicker` (+ `min` / `max`) | ✅ | native `NSDatePicker`; `min`/`max` bounds + date/datetime `type` + typed `Date` `onChange` (api ISO→Date wrapper), Chunk H |
+| `Form.DatePicker.Type` enum (`Date` / `DateTime`) + `Form.DatePicker.isFullDay()` | 🟡 | `Type` enum exported + `date`/`datetime` type honored (Chunk H); `isFullDay()` helper still absent |
 | `Form.TagPicker` / `Form.TagPicker.Item` | 🟡 | exported (`index.ts:192`); **no longer crashes** — degrades to a single-select dropdown (value is a string, not an array) |
 | `Form.FilePicker` (+ `allowMultipleSelection` / `canChooseFiles` / `canChooseDirectories` / `showHiddenFiles`) | 🟡 | exported (`index.ts:218`); **no longer crashes** — degrades to a path text field; options still ignored |
 | `Form.LinkAccessory` (`target` / `text`) | 🟡 | exported (`index.ts:220`); **no longer crashes** — degrades to inert description text (not a clickable accessory) |
 | `onChange` | ✅ | fires for text fields, Dropdown, **and Checkbox** (real `bool`); handler id refreshed each in-place reconcile (Chunk E) |
 | `onBlur` / `onFocus` / `autoFocus` / `storeValue` / `info` / `enableDrafts` | ⬜ | |
 | `Form.Event` / `Form.Event.Type` (`focus`/`blur`) / `Form.Values` types | ⬜ | event payload & values type not modeled |
-| Typed values (Checkbox→`bool`, DatePicker→`Date`, TagPicker→`array`) | 🟡 | **Checkbox→`bool` via onChange (Chunk E)**; submit values still strings; DatePicker→`Date` / TagPicker→`array` pending |
+| Typed values (Checkbox→`bool`, DatePicker→`Date`, TagPicker→`array`) | 🟡 | **Checkbox→`bool` (Chunk E) + DatePicker→`Date` (Chunk H) done**; TagPicker→`array` still pending |
 | Imperative `focus()` / `reset()` via ref | ⬜ | per-item refs (`useRef<Form.TextField>`) — must be exposed on all controlled item types |
 
 ## 4. Actions & ActionPanel
@@ -179,7 +179,7 @@
 | API | State | Gap / pending |
 |---|---|---|
 | `usePromise` / `useCachedState` / `useCachedPromise` / `useFetch` / `useExec` / `useSQL` / `useForm` / `useLocalStorage` / `useFrecencySorting` / `useAI` | ✅ | present and used by real extensions |
-| `mutate` / `MutatePromise` (`optimisticUpdate` / `rollbackOnError`) | 🟡 | working runtime `mutate` (awaits update + revalidates, `utils:88`/`358`); `optimisticUpdate` / `rollbackOnError` options still ignored |
+| `mutate` / `MutatePromise` (`optimisticUpdate` / `rollbackOnError`) | ✅ | working runtime `mutate`; `optimisticUpdate` / `rollbackOnError` now honored (Chunk H); useCachedPromise cache-write is a follow-up |
 | Pagination (function-form source in `useFetch` / `useCachedPromise`) | ✅ | `usePromise` + `useFetch` (url-as-fn) + `useCachedPromise` accumulate pages (`mergePages`) + expose `pagination`, 2026-06-21 |
 | `useStreamJSON` | 🟡 | exported + functional (`dataPath`/`filter`/`transform`, `utils:851`), but buffered (`res.json()`) — not progressive streaming |
 | `useAI` streaming (`.on('data')` token stream) | 🟡 | resolves once; no progressive tokens |
@@ -235,10 +235,10 @@
 
 ### P1 — depth (the props extensions most rely on)
 - _(Done 2026-06-21: List/Grid **pagination** (+ `useFetch`/`useCachedPromise`); `Form.PasswordField` masking + native `Form.DatePicker`; clickable `Detail.Metadata.Link` + `TagList` chips + `Color` in Metadata; `List`/`Detail` `isLoading` bars; `List.Item`/`Grid.Item` accessories incl. `Color`/`Icon` tint + `FileIcon`; grouped `ActionPanel.Section` + drill-in `Submenu`; imperative `open`/`trash`/`showInFinder`; working `mutate` runtime. **Controlled `searchText`/`throttle` (List/Grid) + `List.Dropdown`/`Grid.Dropdown` `storeValue`/`filtering`/`isLoading`/`tooltip` landed (Chunk F, 2026-06-21).**)_
-- `Detail.Metadata.TagList.Item` `onAction` (clickable tag) + TagList wrapping on overflow
-- `Form.DatePicker` `min`/`max` + `isFullDay()`; typed (non-string) field values
+- ~~`Detail.Metadata.TagList.Item` `onAction` (clickable tag) + TagList wrapping on overflow~~ — **DONE (Chunk H, 2026-06-21)**
+- ~~`Form.DatePicker` `min`/`max` + `isFullDay()`; typed (non-string) field values~~ — **DONE for min/max + date/datetime type + DatePicker→Date (Chunk H, 2026-06-21)**; `isFullDay()` + TagPicker→array still pending
 - _(`Toast` primary/secondary actions (`Toast.ActionOptions`) DONE 2026-06-21, Chunk G′; `Alert.Options` DONE Chunk G. Toast-action `shortcut` key-binding + headless-HUD actions remain follow-ups.)_
-- `optimisticUpdate` / `rollbackOnError` on the working `mutate`
+- ~~`optimisticUpdate` / `rollbackOnError` on the working `mutate`~~ — **DONE (Chunk H, 2026-06-21)**; useCachedPromise cache-write is a follow-up
 - `Clipboard.read` `offset` (Nth history entry) — _(full `{text,html,file}` read + `Clipboard.clear` DONE 2026-06-21, Chunk G)_
 
 ### P2 — breadth / v2
