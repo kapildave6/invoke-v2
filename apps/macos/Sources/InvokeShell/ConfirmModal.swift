@@ -3,6 +3,12 @@ import AppKit
 /// A Raycast-style confirmation modal (confirmAlert): a dimmed backdrop + a centered rounded card with
 /// title, message, and Cancel / primary buttons. Lives INSIDE the palette window (like ActionPanel) so
 /// it doesn't steal key focus or trip auto-hide, and resolves asynchronously on the user's choice.
+///
+/// Optional extras (all default-off so the card looks identical to before when not used):
+///   - `icon`          — NSImage shown at 32×32pt centered above the title (hidden when nil).
+///   - `rememberable`  — adds a "Don't ask again" checkbox below the message (hidden when false).
+///   - `dismissDestructive` — tints the cancel/dismiss button red (e.g. for irreversible dismiss flows).
+/// The result callback is `(confirmed: Bool, remember: Bool)` where `remember` reflects the checkbox.
 final class ConfirmModal: NSObject {
     private final class Backdrop: NSView {
         var onClick: (() -> Void)?
@@ -12,11 +18,13 @@ final class ConfirmModal: NSObject {
 
     private let backdrop = Backdrop()
     private let card = NSVisualEffectView()
+    private let iconView = NSImageView()
     private let titleLabel = NSTextField(labelWithString: "")
     private let messageLabel = NSTextField(labelWithString: "")
+    private let rememberCheck = NSButton(checkboxWithTitle: "Don't ask again", target: nil, action: nil)
     private let cancelButton = NSButton(title: "Cancel", target: nil, action: nil)
     private let primaryButton = NSButton(title: "OK", target: nil, action: nil)
-    private var onResult: ((Bool) -> Void)?
+    private var onResult: ((Bool, Bool) -> Void)?
 
     var isShown: Bool { card.superview != nil }
 
@@ -41,6 +49,16 @@ final class ConfirmModal: NSObject {
         card.layer?.borderColor = NSColor.separatorColor.cgColor
         card.translatesAutoresizingMaskIntoConstraints = false
 
+        // Icon view — 32×32pt, centered above the title; hidden by default (no space consumed).
+        iconView.translatesAutoresizingMaskIntoConstraints = false
+        iconView.imageScaling = .scaleProportionallyUpOrDown
+        iconView.contentTintColor = .secondaryLabelColor
+        iconView.isHidden = true
+        NSLayoutConstraint.activate([
+            iconView.widthAnchor.constraint(equalToConstant: 32),
+            iconView.heightAnchor.constraint(equalToConstant: 32),
+        ])
+
         titleLabel.font = .systemFont(ofSize: 14, weight: .semibold)
         titleLabel.alignment = .center
         titleLabel.lineBreakMode = .byTruncatingTail
@@ -52,6 +70,11 @@ final class ConfirmModal: NSObject {
         messageLabel.maximumNumberOfLines = 0
         messageLabel.lineBreakMode = .byWordWrapping
         messageLabel.translatesAutoresizingMaskIntoConstraints = false
+
+        // "Don't ask again" checkbox — subtle, below the message; hidden by default.
+        rememberCheck.translatesAutoresizingMaskIntoConstraints = false
+        rememberCheck.font = .systemFont(ofSize: 11)
+        rememberCheck.isHidden = true
 
         for b in [cancelButton, primaryButton] {
             b.bezelStyle = .rounded
@@ -68,7 +91,9 @@ final class ConfirmModal: NSObject {
         buttons.spacing = 12
         buttons.translatesAutoresizingMaskIntoConstraints = false
 
-        let v = NSStackView(views: [titleLabel, messageLabel, buttons])
+        // Stack order: icon (hidden) → title → message → rememberCheck (hidden) → buttons.
+        // NSStackView collapses hidden arranged subviews, so the card height is unaffected when they're off.
+        let v = NSStackView(views: [iconView, titleLabel, messageLabel, rememberCheck, buttons])
         v.orientation = .vertical
         v.alignment = .centerX
         v.spacing = 10
@@ -84,12 +109,16 @@ final class ConfirmModal: NSObject {
         ])
     }
 
-    /// Present centered in `parent` (the palette content view); calls `then(true)` on the primary
-    /// action, `then(false)` on cancel / click-outside / Esc. The primary button is styled red when
-    /// destructive and bound to Return; Esc cancels (routed from the palette key monitor).
+    /// Present centered in `parent` (the palette content view); calls `then(confirmed, remember)` on
+    /// resolution. The primary button is styled red when `destructive` and bound to Return; Esc cancels
+    /// (routed from the palette key monitor). `icon` appears above the title (32pt); `rememberable` adds
+    /// the "Don't ask again" checkbox. `dismissDestructive` tints the cancel button red.
     func present(in parent: NSView, title: String, message: String?, primaryTitle: String,
-                 destructive: Bool, dismissTitle: String, then: @escaping (Bool) -> Void) {
+                 destructive: Bool, dismissTitle: String,
+                 icon: NSImage? = nil, rememberable: Bool = false, dismissDestructive: Bool = false,
+                 then: @escaping (_ confirmed: Bool, _ remember: Bool) -> Void) {
         onResult = then
+
         titleLabel.stringValue = title
         messageLabel.stringValue = message ?? ""
         messageLabel.isHidden = (message ?? "").isEmpty
@@ -97,6 +126,17 @@ final class ConfirmModal: NSObject {
         primaryButton.title = primaryTitle
         primaryButton.contentTintColor = destructive ? .systemRed : nil
         primaryButton.keyEquivalent = "\r" // default button → Return triggers it
+
+        // Icon: set image + show/hide (NSStackView collapses hidden views — no gap when absent).
+        iconView.image = icon
+        iconView.isHidden = (icon == nil)
+
+        // "Don't ask again" checkbox: always start unchecked; show only when rememberable.
+        rememberCheck.state = .off
+        rememberCheck.isHidden = !rememberable
+
+        // Dismiss button: tinted red only when dismissDestructive (e.g. an irreversible dismiss).
+        cancelButton.contentTintColor = dismissDestructive ? .systemRed : nil
 
         backdrop.removeFromSuperview(); card.removeFromSuperview()
         parent.addSubview(backdrop)
@@ -120,7 +160,7 @@ final class ConfirmModal: NSObject {
         card.removeFromSuperview()
         let cb = onResult
         onResult = nil
-        cb?(value)
+        cb?(value, rememberCheck.state == .on)
     }
 
     @objc private func cancelTapped() { resolve(false) }

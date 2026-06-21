@@ -551,17 +551,24 @@ public final class PaletteWindow: NSObject {
 
     public func hideSearchDropdown() { hideFilter() } // hideFilter clears both accessories
 
-    /// Show the Raycast-style confirmation modal in-palette (confirmAlert). `then(true)` on the primary
-    /// action, `then(false)` on cancel/Esc/click-outside. Keeps the palette visible (suppressAutoHide)
-    /// so the underlying list stays put and re-renders after the action resolves.
+    /// Show the Raycast-style confirmation modal in-palette (confirmAlert). `then(confirmed, remember)`
+    /// resolves on the user's choice. Keeps the palette visible (suppressAutoHide) so the underlying
+    /// list stays put and re-renders after the action resolves.
+    ///   - `icon`               — optional 32pt image above the title (nil = hidden, no space).
+    ///   - `rememberable`       — adds a "Don't ask again" checkbox below the message.
+    ///   - `dismissDestructive` — tints the cancel/dismiss button red.
     public func presentConfirm(title: String, message: String?, primaryTitle: String, destructive: Bool,
-                               dismissTitle: String, then: @escaping (Bool) -> Void) {
-        guard let content = panel.contentView else { then(false); return }
+                               dismissTitle: String, icon: NSImage? = nil, rememberable: Bool = false,
+                               dismissDestructive: Bool = false,
+                               then: @escaping (_ confirmed: Bool, _ remember: Bool) -> Void) {
+        guard let content = panel.contentView else { then(false, false); return }
         suppressAutoHide = true
         confirmModal.present(in: content, title: title, message: message, primaryTitle: primaryTitle,
-                             destructive: destructive, dismissTitle: dismissTitle) { [weak self] result in
+                             destructive: destructive, dismissTitle: dismissTitle,
+                             icon: icon, rememberable: rememberable, dismissDestructive: dismissDestructive
+        ) { [weak self] confirmed, remember in
             self?.suppressAutoHide = false
-            then(result)
+            then(confirmed, remember)
         }
     }
 

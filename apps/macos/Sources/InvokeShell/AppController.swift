@@ -2032,7 +2032,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
             primaryTitle: arg("primaryTitle")?.stringValue ?? "OK",
             destructive: arg("primaryStyle")?.stringValue == "destructive",
             dismissTitle: arg("dismissTitle")?.stringValue ?? "Cancel"
-        ) { result in reply(.bool(result)) }
+        ) { confirmed, _ in reply(.bool(confirmed)) }
     }
 
     private func handleCapability(_ method: String, _ params: JSONValue?) -> JSONValue {
