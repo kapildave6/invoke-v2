@@ -1,0 +1,23 @@
+{
+  "name": "empty-action-demo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "title": "Empty + Action Demo",
+  "description": "Exercises List/Grid.EmptyView, Checkbox onChange (boolean), and Action style/shortcut.",
+  "icon": "icon.png",
+  "author": "invoke",
+  "categories": ["Other"],
+  "platforms": ["macOS"],
+  "preferences": [],
+  "commands": [
+    { "name": "list-demo", "title": "Empty + Actions Demo", "description": "EmptyView + destructive + custom shortcut", "mode": "view" },
+    { "name": "checkbox-demo", "title": "Checkbox Boolean Demo", "description": "Checkbox onChange delivers a real boolean", "mode": "view" }
+  ],
+  "dependencies": {
+    "@raycast/api": "*"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  }
+}

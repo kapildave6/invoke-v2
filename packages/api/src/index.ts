@@ -116,6 +116,7 @@ export interface CommonActionProps {
   title?: string;
   icon?: string;
   shortcut?: { modifiers: string[]; key: string };
+  style?: "regular" | "destructive";
   onAction?: () => void;
 }
 
