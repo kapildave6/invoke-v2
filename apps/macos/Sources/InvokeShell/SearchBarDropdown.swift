@@ -114,6 +114,8 @@ private final class DropdownOverlay: NSObject, NSTextFieldDelegate {
     private let scroll = NSScrollView()
     private var scrollHeight: NSLayoutConstraint!
     private var searchFieldHeight: NSLayoutConstraint!
+    private var scrollTopWithFilter: NSLayoutConstraint!   // scroll.top == sep.bottom + 6   (filtering=true)
+    private var scrollTopNoFilter: NSLayoutConstraint!     // scroll.top == container.top + 6 (filtering=false)
     private var anchorConstraints: [NSLayoutConstraint] = []
 
     private weak var parent: NSView?
@@ -174,6 +176,8 @@ private final class DropdownOverlay: NSObject, NSTextFieldDelegate {
 
         scrollHeight = scroll.heightAnchor.constraint(equalToConstant: rowHeight)
         searchFieldHeight = searchField.heightAnchor.constraint(equalToConstant: 20)
+        scrollTopWithFilter = scroll.topAnchor.constraint(equalTo: sep.bottomAnchor, constant: 6)
+        scrollTopNoFilter = scroll.topAnchor.constraint(equalTo: container.topAnchor, constant: 6)
         NSLayoutConstraint.activate([
             container.widthAnchor.constraint(equalToConstant: panelWidth),
             searchField.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 14),
@@ -185,7 +189,6 @@ private final class DropdownOverlay: NSObject, NSTextFieldDelegate {
             sep.topAnchor.constraint(equalTo: searchField.bottomAnchor, constant: 10),
             scroll.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 6),
             scroll.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -6),
-            scroll.topAnchor.constraint(equalTo: sep.bottomAnchor, constant: 6),
             scroll.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -6),
             scrollHeight,
             docView.topAnchor.constraint(equalTo: scroll.contentView.topAnchor),
@@ -196,6 +199,7 @@ private final class DropdownOverlay: NSObject, NSTextFieldDelegate {
             listStack.trailingAnchor.constraint(equalTo: docView.trailingAnchor),
             listStack.bottomAnchor.constraint(equalTo: docView.bottomAnchor),
         ])
+        scrollTopWithFilter.isActive = true  // default: filtering=true layout
     }
 
     func present(in parent: NSView, anchor: NSView, items: [SearchBarDropdown.Item], selected: String, filtering: Bool = true, isLoading: Bool = false, onSelect: @escaping (String) -> Void) {
@@ -210,6 +214,9 @@ private final class DropdownOverlay: NSObject, NSTextFieldDelegate {
         searchField.isHidden = !filtering
         sep.isHidden = !filtering
         searchFieldHeight.constant = filtering ? 20 : 0
+        // Swap the scroll-top constraint so no dead space appears when filtering=false.
+        scrollTopWithFilter.isActive = filtering
+        scrollTopNoFilter.isActive = !filtering
 
         backdrop.removeFromSuperview(); container.removeFromSuperview()
         NSLayoutConstraint.deactivate(anchorConstraints)
