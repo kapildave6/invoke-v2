@@ -62,6 +62,8 @@ const T = {
   FormDropdown: "form-dropdown",
   FormDropdownItem: "form-dropdown-item",
   FormDropdownSection: "form-dropdown-section",
+  FormPassword: "form-password",
+  FormDatePicker: "form-datepicker",
   ActionPanel: "action-panel",
   ActionPanelSection: "action-panel-section",
   ActionPanelSubmenu: "action-panel-submenu",
@@ -210,8 +212,8 @@ Form.Checkbox = host(T.FormCheckbox);
 // or <Form.Separator> renders <undefined> → "Element type is invalid" and the whole view fails.
 Form.Description = host(T.FormDescription);
 Form.Separator = host(T.FormSeparator);
-Form.PasswordField = host(T.FormTextField); // a password field renders as a (secure) text field
-Form.DatePicker = host(T.FormTextField); // no native date picker yet — degrade to a text field
+Form.PasswordField = host(T.FormPassword);
+Form.DatePicker = host(T.FormDatePicker);
 // Extensions read Form.DatePicker.Type.Date / .DateTime at render — a missing enum throws and the whole
 // form renders blank. Define it (the control still renders as a text field for now).
 (Form.DatePicker as unknown as { Type: { Date: string; DateTime: string } }).Type = { Date: "date", DateTime: "date-time" };

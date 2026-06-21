@@ -73,6 +73,10 @@ public final class PaletteView: NSView {
     /// Called when the user has scrolled near the bottom of the list or grid.
     public var onReachedEnd: (() -> Void)?
     @objc private func formFieldEnter() { onSubmit?() }
+    @objc private func formDatePickerChanged(_ sender: NSDatePicker) {
+        guard let info = formFieldInfo[ObjectIdentifier(sender)], let h = info.onChange else { return }
+        onFormFieldChange?(h, ISO8601DateFormatter().string(from: sender.dateValue))
+    }
 
     private func wireClick(_ row: ClickableRow, index: Int) {
         row.onClick = { [weak self] count in
@@ -1259,7 +1263,7 @@ public final class PaletteView: NSView {
     /// jump. Returns false if the structure changed (field added/removed/reordered, or an error appeared/
     /// cleared) so the caller falls back to a full rebuild. This is what makes typing smooth.
     private func reconcileFormInPlace(_ form: ViewNode) -> Bool {
-        let fieldTypes: Set<String> = ["form-textfield", "form-textarea", "form-checkbox", "form-dropdown", "form-description", "form-separator"]
+        let fieldTypes: Set<String> = ["form-textfield", "form-textarea", "form-checkbox", "form-dropdown", "form-description", "form-separator", "form-password", "form-datepicker"]
         var fields: [ViewNode] = []
         func collect(_ n: ViewNode) {
             if fieldTypes.contains(n.type) { fields.append(n); return }
@@ -1359,7 +1363,7 @@ public final class PaletteView: NSView {
         var fields: [ViewNode] = []
         // Includes form-description / form-separator so they render in document order (they're not
         // interactive fields, but they're part of the form's visual layout — Raycast parity).
-        let fieldTypes: Set<String> = ["form-textfield", "form-textarea", "form-checkbox", "form-dropdown", "form-description", "form-separator"]
+        let fieldTypes: Set<String> = ["form-textfield", "form-textarea", "form-checkbox", "form-dropdown", "form-description", "form-separator", "form-password", "form-datepicker"]
         func collect(_ n: ViewNode) {
             // A field owns its own children (e.g. a dropdown's items) — don't treat those as fields.
             if fieldTypes.contains(n.type) { fields.append(n); return }
@@ -1478,6 +1482,56 @@ public final class PaletteView: NSView {
             formApply[id] = { [weak tf] n in
                 if let v = n.props["value"]?.stringValue, tf?.stringValue != v { tf?.stringValue = v }
             }
+            control = box
+            rowAlignment = .centerY
+        case "form-password":
+            let seeded = f.props["value"]?.stringValue ?? f.props["defaultValue"]?.stringValue ?? ""
+            let sf = NSSecureTextField(string: seeded.isEmpty ? (preservedFormValues[id] ?? "") : seeded)
+            sf.placeholderString = f.props["placeholder"]?.stringValue
+            sf.isBezeled = false; sf.drawsBackground = false; sf.focusRingType = .none
+            sf.font = .systemFont(ofSize: 13); sf.textColor = .labelColor
+            sf.translatesAutoresizingMaskIntoConstraints = false
+            sf.target = self; sf.action = #selector(formFieldEnter)
+            sf.cell?.sendsActionOnEndEditing = false
+            let box = Self.styledFieldBox(); box.addSubview(sf)
+            NSLayoutConstraint.activate([
+                box.heightAnchor.constraint(equalToConstant: 28),
+                sf.leadingAnchor.constraint(equalTo: box.leadingAnchor, constant: 9),
+                sf.trailingAnchor.constraint(equalTo: box.trailingAnchor, constant: -9),
+                sf.centerYAnchor.constraint(equalTo: box.centerYAnchor),
+            ])
+            formControls.append((id, { [weak sf] in sf?.stringValue ?? "" }))
+            sf.delegate = self
+            formFieldInfo[ObjectIdentifier(sf)] = (id, f.props["onChange"]?.handlerRef)
+            formFieldViewById[id] = sf
+            if firstFormResponder == nil { firstFormResponder = sf }
+            formResponderViews.append(sf)
+            formApply[id] = { [weak sf] n in if let v = n.props["value"]?.stringValue, sf?.stringValue != v { sf?.stringValue = v } }
+            control = box
+            rowAlignment = .centerY
+        case "form-datepicker":
+            let dp = NSDatePicker()
+            dp.datePickerStyle = .textFieldAndStepper
+            dp.datePickerElements = .yearMonthDay
+            dp.isBezeled = false; dp.drawsBackground = false
+            dp.font = .systemFont(ofSize: 13)
+            dp.translatesAutoresizingMaskIntoConstraints = false
+            if let iso = f.props["value"]?.stringValue ?? f.props["defaultValue"]?.stringValue,
+               let d = RaycastColor.parseISODate(iso) { dp.dateValue = d }
+            dp.target = self; dp.action = #selector(formDatePickerChanged(_:))
+            let box = Self.styledFieldBox(); box.addSubview(dp)
+            NSLayoutConstraint.activate([
+                box.heightAnchor.constraint(equalToConstant: 28),
+                dp.leadingAnchor.constraint(equalTo: box.leadingAnchor, constant: 9),
+                dp.trailingAnchor.constraint(equalTo: box.trailingAnchor, constant: -9),
+                dp.centerYAnchor.constraint(equalTo: box.centerYAnchor),
+            ])
+            let isoOut = ISO8601DateFormatter()
+            formControls.append((id, { [weak dp] in dp.map { isoOut.string(from: $0.dateValue) } ?? "" }))
+            formFieldInfo[ObjectIdentifier(dp)] = (id, f.props["onChange"]?.handlerRef)
+            formFieldViewById[id] = dp
+            formResponderViews.append(dp)
+            formApply[id] = { [weak dp] n in if let iso = n.props["value"]?.stringValue, let d = RaycastColor.parseISODate(iso) { dp?.dateValue = d } }
             control = box
             rowAlignment = .centerY
         case "form-textarea":
