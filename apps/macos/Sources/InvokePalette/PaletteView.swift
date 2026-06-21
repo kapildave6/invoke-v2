@@ -737,10 +737,11 @@ public final class PaletteView: NSView {
         let title = child.props["title"]?.stringValue ?? ""
         switch child.type {
         case "metadata-label":
-            let value = child.props["text"]?.stringValue ?? child.props["value"]?.stringValue ?? ""
-            let lbl = NSTextField(labelWithString: value)
+            let raw = nonNull(child.props["text"]) ?? nonNull(child.props["value"])
+            let (value, inlineColor) = raw.map { labelAndColor($0, isDate: false) } ?? (nil, nil)
+            let lbl = NSTextField(labelWithString: value ?? "")
             lbl.font = .systemFont(ofSize: 12)
-            lbl.textColor = accessoryColor(child.props["color"]) ?? .labelColor
+            lbl.textColor = inlineColor ?? accessoryColor(child.props["color"]) ?? .labelColor
             lbl.alignment = .right; lbl.lineBreakMode = .byTruncatingTail
             if let icon = nonNull(child.props["icon"]), let iv = accessoryIcon(icon, tint: nil) {
                 let h = NSStackView(views: [iv, lbl]); h.spacing = 4; h.alignment = .centerY
@@ -2358,6 +2359,8 @@ public final class PaletteView: NSView {
         case "wallet": return "wallet.pass"
         case "wifi": return "wifi"
         case "wifi-disabled": return "wifi.slash"
+        case "check-circle": return "checkmark.circle"
+        case "check": return "checkmark"
         default: return "app"
         }
     }

@@ -7,7 +7,7 @@ function Result({ pwLen, date }: { pwLen: number; date: string }) {
       markdown={md}
       metadata={
         <Detail.Metadata>
-          <Detail.Metadata.Label title="Status" text={{ value: "Active", color: Color.Green }} icon={Icon.Check} />
+          <Detail.Metadata.Label title="Status" text={{ value: "Active", color: Color.Green }} icon={Icon.CheckCircle} />
           <Detail.Metadata.Link title="Docs" target="https://developers.raycast.com" text="developers.raycast.com" />
           <Detail.Metadata.Separator />
           <Detail.Metadata.TagList title="Tags">
@@ -27,7 +27,7 @@ export default function Command() {
     <Form
       actions={
         <ActionPanel>
-          <Action.SubmitForm title="Submit" onSubmit={(v) => push(<Result pwLen={(v.password ?? "").length} date={String(v.when ?? "")} />)} />
+          <Action.SubmitForm title="Submit" onSubmit={(v) => push(<Result pwLen={String(v.password ?? "").length} date={String(v.when ?? "")} />)} />
         </ActionPanel>
       }
     >
