@@ -899,7 +899,11 @@ export function createArrayStreamParser(): { push(chunk: string): unknown[]; flu
     const out: unknown[] = [];
     while (cursor < buf.length) {
       const c = buf[cursor];
-      if (!opened) { if (c === "[") { opened = true; } cursor++; continue; }
+      if (!opened) {
+        if (/\s/.test(c)) { cursor++; continue; }
+        if (c === "[") { opened = true; cursor++; continue; }
+        throw new SyntaxError("useStreamJSON: stream is not a top-level JSON array");
+      }
       if (closed) { cursor++; continue; }
       if (inStr) {
         if (esc) esc = false;
@@ -929,7 +933,11 @@ export function createArrayStreamParser(): { push(chunk: string): unknown[]; flu
   }
   return {
     push(chunk: string) { buf += chunk; return scan(); },
-    flush() { return scan(); },
+    flush() {
+      const out = scan();
+      if (opened && !closed) throw new SyntaxError("useStreamJSON: array not terminated");
+      return out;
+    },
   };
 }
 
