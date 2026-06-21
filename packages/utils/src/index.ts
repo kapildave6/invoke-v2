@@ -883,6 +883,56 @@ function isLikelyComponent(fn: unknown): boolean {
   return typeof fn === "function" && /^[A-Z]/.test((fn as { name?: string }).name ?? "");
 }
 
+/** Incremental top-level-array JSON parser — emits complete elements as text chunks arrive.
+ *  Pure/dependency-free; the basis for true progressive streaming in useStreamJSON.
+ *  `push(chunk)` returns newly-completed top-level elements; `flush()` handles end-of-stream. */
+export function createArrayStreamParser(): { push(chunk: string): unknown[]; flush(): unknown[] } {
+  let buf = "";
+  let cursor = 0;        // scan position in buf
+  let opened = false;    // seen the top-level '['
+  let closed = false;
+  let depth = 0;         // nesting INSIDE the array (0 = directly in the array)
+  let inStr = false, esc = false;
+  let elemStart = -1;    // index in buf where the current element began, or -1 between elements
+
+  function scan(): unknown[] {
+    const out: unknown[] = [];
+    while (cursor < buf.length) {
+      const c = buf[cursor];
+      if (!opened) { if (c === "[") { opened = true; } cursor++; continue; }
+      if (closed) { cursor++; continue; }
+      if (inStr) {
+        if (esc) esc = false;
+        else if (c === "\\") esc = true;
+        else if (c === '"') inStr = false;
+        cursor++; continue;
+      }
+      if (c === '"') { if (elemStart === -1) elemStart = cursor; inStr = true; cursor++; continue; }
+      if (c === "{" || c === "[") { if (elemStart === -1) elemStart = cursor; depth++; cursor++; continue; }
+      if (c === "}" || c === "]") {
+        if (depth > 0) { depth--; cursor++; continue; }
+        // depth 0 and a closing char → must be the array's ']'
+        if (elemStart !== -1) { out.push(JSON.parse(buf.slice(elemStart, cursor))); elemStart = -1; }
+        closed = true; cursor++; continue;
+      }
+      if (c === "," && depth === 0) {
+        if (elemStart !== -1) { out.push(JSON.parse(buf.slice(elemStart, cursor))); elemStart = -1; }
+        cursor++; continue;
+      }
+      if (elemStart === -1 && !/\s/.test(c)) elemStart = cursor; // element begins at first non-ws
+      cursor++;
+    }
+    // bound memory: drop consumed prefix when between elements (elemStart === -1)
+    if (elemStart === -1 && cursor > 0) { buf = buf.slice(cursor); cursor = 0; }
+    else if (elemStart > 0) { buf = buf.slice(elemStart); cursor -= elemStart; elemStart = 0; }
+    return out;
+  }
+  return {
+    push(chunk: string) { buf += chunk; return scan(); },
+    flush() { return scan(); },
+  };
+}
+
 /** Raycast's useStreamJSON — streams a large JSON array from a URL/file. We approximate: fetch the
  *  whole resource, parse the array, optionally filter/transform; good enough for the common case
  *  (true incremental streaming + temp-file caching is a later refinement). */
