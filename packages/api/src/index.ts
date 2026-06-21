@@ -537,7 +537,7 @@ export const Color = {
   PrimaryText: "primary-text",
   SecondaryText: "secondary-text",
   Dynamic: (o: { light: string; dark: string; adjustContrast?: boolean }): ColorDynamic => ({ light: o.light, dark: o.dark }),
-} as ColorType;
+} satisfies ColorType;
 
 /// Raycast's `Toast` is BOTH a namespace (`Toast.Style`) and a constructor (`new Toast({...})`) whose
 /// instance auto-re-shows when you set `.style`/`.title`/`.message` (the Animated→Success pattern). Many
