@@ -1121,10 +1121,15 @@ public final class PaletteView: NSView {
             }
         }
         // Apply Image.Mask (circle / roundedRectangle) if specified on the ImageLike prop object.
-        // The thumb is (gridThumbHeight - 16)pt tall (8pt inset top + bottom inside bg).
+        // When a mask is present, switch thumb to centered-square layout so cornerRadius = side/2
+        // produces a TRUE circle (not an ellipse). When no mask, restore rectangular fill.
         let imgProp = node.props["content"] ?? node.props["icon"]
         if case .object(let o)? = imgProp, let maskStr = o["mask"]?.stringValue {
+            item.setMasked(true)
             applyImageMask(maskStr, to: item.thumb, side: gridThumbHeight - 16)
+        } else {
+            item.setMasked(false)
+            item.thumb.layer?.cornerRadius = 6 // restore default rounded corner for non-masked cells
         }
     }
 
@@ -2548,6 +2553,12 @@ final class GridItemView: NSCollectionViewItem {
     let thumb = NSImageView()
     let label = NSTextField(labelWithString: "")
 
+    // Constraint sets toggled by setMasked(_:).
+    // thumbFill: rectangular fill of bg (default, non-masked).
+    // thumbSquare: centered square sized to bg height - 16 (masked, for true-circle rendering).
+    private var thumbFill: [NSLayoutConstraint] = []
+    private var thumbSquare: [NSLayoutConstraint] = []
+
     override func loadView() {
         let root = NSView()
         bg.wantsLayer = true; bg.layer?.cornerRadius = 7; bg.translatesAutoresizingMaskIntoConstraints = false
@@ -2559,21 +2570,38 @@ final class GridItemView: NSCollectionViewItem {
         label.textColor = .labelColor; label.translatesAutoresizingMaskIntoConstraints = false
         label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         root.addSubview(bg); root.addSubview(label); bg.addSubview(thumb)
-        NSLayoutConstraint.activate([
-            bg.topAnchor.constraint(equalTo: root.topAnchor),
-            bg.leadingAnchor.constraint(equalTo: root.leadingAnchor),
-            bg.trailingAnchor.constraint(equalTo: root.trailingAnchor),
+
+        // Build the two constraint sets before activating either.
+        thumbFill = [
             thumb.leadingAnchor.constraint(equalTo: bg.leadingAnchor, constant: 8),
             thumb.trailingAnchor.constraint(equalTo: bg.trailingAnchor, constant: -8),
             thumb.topAnchor.constraint(equalTo: bg.topAnchor, constant: 8),
             thumb.bottomAnchor.constraint(equalTo: bg.bottomAnchor, constant: -8),
+        ]
+        thumbSquare = [
+            thumb.widthAnchor.constraint(equalTo: thumb.heightAnchor),
+            thumb.centerXAnchor.constraint(equalTo: bg.centerXAnchor),
+            thumb.centerYAnchor.constraint(equalTo: bg.centerYAnchor),
+            thumb.heightAnchor.constraint(equalTo: bg.heightAnchor, constant: -16),
+        ]
+
+        NSLayoutConstraint.activate([
+            bg.topAnchor.constraint(equalTo: root.topAnchor),
+            bg.leadingAnchor.constraint(equalTo: root.leadingAnchor),
+            bg.trailingAnchor.constraint(equalTo: root.trailingAnchor),
             label.topAnchor.constraint(equalTo: bg.bottomAnchor, constant: 2),
             label.leadingAnchor.constraint(equalTo: root.leadingAnchor, constant: 2),
             label.trailingAnchor.constraint(equalTo: root.trailingAnchor, constant: -2),
             label.bottomAnchor.constraint(equalTo: root.bottomAnchor),
-        ])
+        ] + thumbFill) // activate fill pins (non-masked default)
         view = root
         applySelected(false)
+    }
+
+    /// Toggle between rectangular-fill (non-masked) and centered-square (masked) thumb layout.
+    func setMasked(_ masked: Bool) {
+        thumbFill.forEach { $0.isActive = !masked }
+        thumbSquare.forEach { $0.isActive = masked }
     }
 
     func applySelected(_ sel: Bool) {
@@ -2585,6 +2613,8 @@ final class GridItemView: NSCollectionViewItem {
     override func prepareForReuse() {
         super.prepareForReuse()
         thumb.image = nil; thumb.identifier = nil; thumb.contentTintColor = nil; label.stringValue = ""
+        thumb.layer?.cornerRadius = 6 // reset mask corner radius
+        setMasked(false)              // restore rectangular fill for recycled cells
         applySelected(false)
     }
 }
