@@ -1,0 +1,22 @@
+{
+  "name": "metadata-form-demo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "title": "Metadata + Form Demo",
+  "description": "Exercises Detail.Metadata.TagList wrapping + clickable TagList.Item onAction, and Form.DatePicker with type/min/max and typed Date onChange.",
+  "icon": "icon.png",
+  "author": "invoke",
+  "categories": ["Other"],
+  "platforms": ["macOS"],
+  "preferences": [],
+  "commands": [
+    { "name": "metadata-form", "title": "Metadata + Form Demo", "description": "TagList wrap/onAction + DatePicker typed Date/min/max", "mode": "view" }
+  ],
+  "dependencies": {
+    "@raycast/api": "*"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  }
+}

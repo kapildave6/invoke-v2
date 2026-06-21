@@ -191,6 +191,10 @@ Detail.Metadata = Metadata;
 ListItem.Detail.Metadata = Metadata; // List.Item.Detail.Metadata === Detail.Metadata (Raycast)
 
 /* ------------------------------------------------------------------ Form */
+type DatePickerProps = Record<string, unknown> & { onChange?: (d: Date | null) => void };
+type DatePickerFn = ((props: DatePickerProps) => ReactElement) & {
+  Type: { Date: string; DateTime: string };
+};
 type FormType = ReturnType<typeof host> & {
   TextField: ReturnType<typeof host>;
   TextArea: ReturnType<typeof host>;
@@ -198,7 +202,7 @@ type FormType = ReturnType<typeof host> & {
   Description: ReturnType<typeof host>;
   Separator: ReturnType<typeof host>;
   PasswordField: ReturnType<typeof host>;
-  DatePicker: ReturnType<typeof host>;
+  DatePicker: DatePickerFn;
   FilePicker: ReturnType<typeof host>;
   LinkAccessory: ReturnType<typeof host>;
   TagPicker: ReturnType<typeof host> & { Item: ReturnType<typeof host> };
@@ -214,14 +218,14 @@ Form.Checkbox = host(T.FormCheckbox);
 Form.Description = host(T.FormDescription);
 Form.Separator = host(T.FormSeparator);
 Form.PasswordField = host(T.FormPassword);
-Form.DatePicker = ((props: Record<string, unknown> & { onChange?: (d: Date | null) => void }) =>
+Form.DatePicker = ((props: DatePickerProps) =>
   createElement(T.FormDatePicker, {
     ...props,
     onChange: props.onChange ? (v: unknown) => props.onChange!(v ? new Date(String(v)) : null) : undefined,
-  })) as typeof Form.DatePicker;
+  })) as unknown as typeof Form.DatePicker;
 // Extensions read Form.DatePicker.Type.Date / .DateTime at render — a missing enum throws and the whole
 // form renders blank. Define it (the control still renders as a text field for now).
-(Form.DatePicker as unknown as { Type: { Date: string; DateTime: string } }).Type = { Date: "date", DateTime: "date-time" };
+(Form.DatePicker as DatePickerFn).Type = { Date: "date", DateTime: "date-time" };
 const Dropdown = host(T.FormDropdown) as FormType["Dropdown"];
 Dropdown.Item = host(T.FormDropdownItem);
 Dropdown.Section = host(T.FormDropdownSection);
@@ -1022,5 +1026,10 @@ export const WindowManagement = {
   setWindowBounds: (_opts?: unknown): Promise<void> => unsupported("WindowManagement.setWindowBounds"),
   getDesktops: (): Promise<unknown[]> => unsupported("WindowManagement.getDesktops"),
 };
+
+// Standalone DatePicker export — some extensions import `{ DatePicker }` from "@raycast/api"
+// and access DatePicker.Type.Date / .DateTime directly (rather than via Form.DatePicker.Type).
+// Alias it to Form.DatePicker so it shares the same implementation and the attached .Type enum.
+export const DatePicker = Form.DatePicker;
 
 export type { ReactNode };
