@@ -39,12 +39,12 @@ The single most user-visible risk is category (1)'s crash members — a ported e
 | `List.EmptyView` | ⬜ | child element not rendered |
 | `List.Item.accessories[]` | ✅ | text/tag/date/icon/tooltip + per-accessory `color` + combined entries, 2026-06-21 |
 | `List.Item` `keywords` / `detail` (isShowingDetail) / `quickLook` | 🟡 | partial |
-| `List.Item.Detail.isLoading` (detail-pane bar, distinct from `List.isLoading`) | ⬜ | not honored |
+| `List.Item.Detail.isLoading` (detail-pane bar, distinct from `List.isLoading`) | ✅ | selected item's detail `isLoading` drives the top sweep bar, 2026-06-21 |
 | `Grid` `columns` | ✅ | |
 | `Grid` `aspectRatio` / `fit` (contain/fill) / `inset` | ⬜ | ignored |
 | `Grid.Section` / `Grid.Dropdown` / `Grid.EmptyView` | 🟡 / ⬜ | sections flattened; EmptyView unrendered |
 | `Grid.Section` per-section `columns` / `aspectRatio` / `fit` / `inset` overrides | ⬜ | only top-level Grid layout props read |
-| `Grid.Item.accessory` (`Grid.Item.Accessory`) | ⬜ | single grid-item accessory not rendered |
+| `Grid.Item.accessory` (`Grid.Item.Accessory`) | ✅ | single accessory (icon/text/tag + tooltip) rendered under the tile title, 2026-06-21 |
 | `Grid.ItemSize` (deprecated enum) | ⬜ | undefined |
 
 ## 2. Detail, Colors & Icons
