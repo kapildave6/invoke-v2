@@ -1,0 +1,22 @@
+{
+  "name": "env-demo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "title": "Environment Demo",
+  "description": "Renders real environment fields and exercises LaunchProps/Navigation/PreferenceValues types.",
+  "icon": "icon.png",
+  "author": "invoke",
+  "categories": ["Other"],
+  "platforms": ["macOS"],
+  "preferences": [],
+  "commands": [
+    { "name": "env", "title": "Environment Demo", "description": "Shows real environment fields", "mode": "view" }
+  ],
+  "dependencies": {
+    "@raycast/api": "*"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  }
+}
