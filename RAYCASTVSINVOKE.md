@@ -13,7 +13,7 @@
 
 **The spine is in place.** Invoke renders the core Raycast component model natively: **List, Grid, Detail, Form, ActionPanel/Action, Detail.Metadata, List.Dropdown, List.Item.Detail**. Real Raycast-shaped extensions launch end-to-end through the process-per-extension runtime + mutation-mode reconciler.
 
-**Recently landed & verified:** navigation push/pop (declarative `Action.Push` **and** programmatic `useNavigation().push/pop`), command arguments (inline search-bar chips), per-extension Trust (run unsandboxed), in-palette `confirmAlert` modal (both launch hosts), world-class search dropdown (custom popover + favicons), constant palette size/position, Form validation + value preservation, and `AI.ask` / `OAuth.PKCEClient` as real host-driven RPCs.
+**Recently landed & verified:** navigation push/pop (declarative `Action.Push` **and** programmatic `useNavigation().push/pop`), command arguments (inline search-bar chips), per-extension Trust (run unsandboxed), in-palette `confirmAlert` modal (both launch hosts), world-class search dropdown (custom popover + favicons), constant palette size/position, Form validation + value preservation, `AI.ask` / `OAuth.PKCEClient` as real host-driven RPCs. **Icon coverage + `Color.Dynamic` + `Image.Mask` + dynamic light/dark images landed (Chunk I, 2026-06-21)** — 102-member `Icon` enum + `IconSymbol` validated fallback; all 9 `Color` named members + `Color.Dynamic({light,dark})` exported; `Image.Mask` Circle/RoundedRectangle honored; dynamic `{source:{light,dark}}` dispatched by appearance.
 
 **What remains is two kinds of gap:**
 1. **Breadth** — many SDK members are *defined* (so extensions importing them type-check and load) but the renderer doesn't honor every prop.
@@ -59,11 +59,11 @@
 | `Detail.Metadata.Link` | ✅ | clickable (opens the URL) on both paths via the shared `renderMetadataNode`, 2026-06-21 |
 | `Detail.Metadata.TagList` | ✅ | per-tag colored chips on both paths, 2026-06-21; wraps on overflow (FlowStackView), Chunk H |
 | `Detail.Metadata.TagList.Item` (`text` / `icon` / `color` / `onAction`) | ✅ | per-tag chips + `onAction` clickable + wrapping on overflow (FlowStackView), Chunk H |
-| `Icon` enum | 🟡 | 48 members defined (`index.ts:369`); 30 SF-Symbol-mapped (`PaletteView.swift:2197`), the rest fall back to a default glyph |
-| `Color` enum (9 named members) | 🟡 | applied to List/Grid accessories **and** `Detail.Metadata` Label/TagList (`RaycastColor`), 2026-06-21; `Color.Dynamic` constant **not** exported |
-| raw HEX / `{light,dark}` color values | 🟡 | honored at runtime for accessories (`RaycastColor.colorFromHex`, `PaletteView.swift:2023`); no named `Color.Raw` / `ColorLike` type exported |
-| `Image.Mask` (Circle / RoundedRectangle) | ⬜ | masks ignored |
-| `Image` fallback + dynamic `{source:{light,dark}}` | ⬜ | single source resolved; no light/dark image dispatch |
+| `Icon` enum | 🟡 | **102 members + `IconSymbol` validated dashes→dots SF-symbol fallback (most resolve; unmapped → placeholder, never wrong glyph) (Chunk I, 2026-06-21)**; literal-complete ~250-member set is a remaining tail |
+| `Color` enum (9 named members) | ✅ | all 9 named members + **`Color.Dynamic({light,dark})` exported + `satisfies ColorType` (Chunk I, 2026-06-21)**; applied in accessories + Detail.Metadata |
+| raw HEX / `{light,dark}` color values | 🟡 | honored at runtime for accessories (`RaycastColor.colorFromHex`, `PaletteView.swift:2023`); **dynamic `{light,dark}` honored — `Color.Dynamic` produces this shape (Chunk I)**; no named `Color.Raw` / `ColorLike` type exported |
+| `Image.Mask` (Circle / RoundedRectangle) | ✅ | **circle (true circle, layout-time radius from real bounds; grid thumb squared only when masked) + RoundedRectangle honored (Chunk I, 2026-06-21)** |
+| `Image` fallback + dynamic `{source:{light,dark}}` | ✅ | **dispatched by appearance (Chunk I, 2026-06-21)** |
 | `Image.tintColor` (as `Image` prop) | 🟡 | applied to **accessory** icons (`PaletteView.swift:2062`/`2108`); not to Detail / top-level row icons; no `Image.tintColor` API export |
 | `Image.ImageLike` union (URL \| Asset \| `Icon` \| `FileIcon` \| `Image`) | 🟡 | type accepted; `fileIcon` resolved; masks / Image tint lossy |
 | `FileIcon` (`{fileIcon}`) — Finder file/folder icon | 🟡 | resolved to a real Finder icon for list/grid/detail (`PaletteView.swift:1010`, `NSWorkspace.icon(forFile:)`); not a named API export |
@@ -245,7 +245,7 @@
 - _(Done: `menu-bar` mode + `NSStatusItem` + `MenuBarExtra`/`.Item`/`.Submenu`/`.Section`; `launchCommand`; `updateCommandMetadata`; `BrowserExtension`.)_ Remaining: `MenuBarExtra.Item` `alternate`/`shortcut` + click `ActionEvent`
 - AI streaming (+ `signal`; honor `model`/`creativity` host-side) + AI Extensions / Tools (`Tool.Confirmation`) / MCP / Skills
 - Window Management API (`getActiveWindow` / `getDesktops` / `setWindowBounds` + types) — currently `unsupported()`-throws
-- Full `Icon` / `Color` enum coverage + `Image.Mask` / dynamic light/dark images
+- ~~Full `Icon`/`Color` enum coverage + `Image.Mask` / dynamic light/dark images~~ — **substantially DONE (Chunk I, 2026-06-21):** 102-member `Icon` enum + `IconSymbol` validated fallback; `Color.Dynamic({light,dark})` exported; `Image.Mask` Circle/RoundedRectangle honored; dynamic `{source:{light,dark}}` dispatched by appearance. Residual tail: literal-complete ~250-member `Icon` enum; `Image.tintColor` as a top-level Image-prop API export; appearance-change live re-render
 - `useStreamJSON` true progressive streaming; `useAI` token stream
 - Fallback commands; `disabledByDefault`
 - Real `environment` fields (`appearance` / `textSize` / `extensionName` / `canAccess`)
