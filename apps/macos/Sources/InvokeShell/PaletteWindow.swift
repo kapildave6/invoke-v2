@@ -676,6 +676,7 @@ public final class PaletteWindow: NSObject {
                 if !key.isEmpty, let match = (self.actionsProvider?() ?? []).first(where: {
                     $0.shortcutKey == key && Set($0.shortcutModifiers ?? []) == pressed
                 }) {
+                    if self.actionPanel.isShown { self.actionPanel.dismiss() }
                     match.run()
                     return nil
                 }

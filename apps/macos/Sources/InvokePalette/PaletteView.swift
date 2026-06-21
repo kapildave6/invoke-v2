@@ -1312,6 +1312,12 @@ public final class PaletteView: NSView {
     /// items appearing, a validation error) falls back to a full rebuild instead of a false in-place update.
     private var formStructure: [String] = []
     private var formApply: [String: (ViewNode) -> Void] = [:]
+    /// Per-field closure that re-reads the field's onChange handler id from the new node and updates the
+    /// field's stored handler. The runtime rotates handler ids every commit, and the in-place reconcile
+    /// never rebuilds controls, so without this a controlled field's onChange fires a dead id after the
+    /// first change. Runs for EVERY field (handler refresh has no visible/caret effect).
+    private var formRefreshHandler: [String: (ViewNode) -> Void] = [:]
+    private var formDropdownOnChange: [String: String] = [:]
     /// Auto-grow: each textarea's height constraint keyed by the text view, so multiple textareas each grow
     /// with their own content (capped, then scroll).
     private var formTextareaHeights: [ObjectIdentifier: NSLayoutConstraint] = [:]
@@ -1355,7 +1361,8 @@ public final class PaletteView: NSView {
         let focusedId = focusedFormFieldId()
         for f in fields {
             let id = f.props["id"]?.stringValue ?? ""
-            if id == focusedId { continue } // don't clobber the field the user is typing into
+            formRefreshHandler[id]?(f)        // always: refresh the (rotated) onChange handler id
+            if id == focusedId { continue }   // don't clobber the value/caret of the edited field
             formApply[id]?(f)
         }
         return true
@@ -1434,6 +1441,8 @@ public final class PaletteView: NSView {
         formResponderViews.removeAll()
         formStructure.removeAll()
         formApply.removeAll()
+        formRefreshHandler.removeAll()
+        formDropdownOnChange.removeAll()
         formTextareaHeights.removeAll()
         let form = NSStackView()
         form.orientation = .vertical
@@ -1562,6 +1571,10 @@ public final class PaletteView: NSView {
             formApply[id] = { [weak tf] n in
                 if let v = n.props["value"]?.stringValue, tf?.stringValue != v { tf?.stringValue = v }
             }
+            formRefreshHandler[id] = { [weak self, weak tf] n in
+                guard let self, let c = tf else { return }
+                self.formFieldInfo[ObjectIdentifier(c)] = (id, n.props["onChange"]?.handlerRef)
+            }
             control = box
             rowAlignment = .centerY
         case "form-password":
@@ -1587,6 +1600,10 @@ public final class PaletteView: NSView {
             if firstFormResponder == nil { firstFormResponder = sf }
             formResponderViews.append(sf)
             formApply[id] = { [weak sf] n in if let v = n.props["value"]?.stringValue, sf?.stringValue != v { sf?.stringValue = v } }
+            formRefreshHandler[id] = { [weak self, weak sf] n in
+                guard let self, let c = sf else { return }
+                self.formFieldInfo[ObjectIdentifier(c)] = (id, n.props["onChange"]?.handlerRef)
+            }
             control = box
             rowAlignment = .centerY
         case "form-datepicker":
@@ -1612,6 +1629,10 @@ public final class PaletteView: NSView {
             formFieldViewById[id] = dp
             formResponderViews.append(dp)
             formApply[id] = { [weak dp] n in if let iso = n.props["value"]?.stringValue, let d = RaycastColor.parseISODate(iso) { dp?.dateValue = d } }
+            formRefreshHandler[id] = { [weak self, weak dp] n in
+                guard let self, let c = dp else { return }
+                self.formFieldInfo[ObjectIdentifier(c)] = (id, n.props["onChange"]?.handlerRef)
+            }
             control = box
             rowAlignment = .centerY
         case "form-textarea":
@@ -1659,6 +1680,10 @@ public final class PaletteView: NSView {
                 tv.needsDisplay = true
                 self?.growTextarea(tv)
             }
+            formRefreshHandler[id] = { [weak self, weak tv] n in
+                guard let self, let c = tv else { return }
+                self.formFieldInfo[ObjectIdentifier(c)] = (id, n.props["onChange"]?.handlerRef)
+            }
             DispatchQueue.main.async { [weak self, weak tv] in if let tv { self?.growTextarea(tv) } } // size to initial content
             control = s
             rowAlignment = .top
@@ -1675,6 +1700,14 @@ public final class PaletteView: NSView {
                 objc_setAssociatedObject(cb, &Self.checkboxHandlerKey, h, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
                 cb.target = self
                 cb.action = #selector(formCheckboxChanged(_:))
+            }
+            formRefreshHandler[id] = { [weak cb] n in
+                guard let cb else { return }
+                if let h = n.props["onChange"]?.handlerRef {
+                    objc_setAssociatedObject(cb, &Self.checkboxHandlerKey, h, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+                } else {
+                    objc_setAssociatedObject(cb, &Self.checkboxHandlerKey, nil, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+                }
             }
             control = cb
             rowAlignment = .firstBaseline
@@ -1709,9 +1742,12 @@ public final class PaletteView: NSView {
                 ?? preservedFormValues[id]
                 ?? f.props["defaultValue"]?.stringValue
                 ?? ""
-            let onChangeRef = f.props["onChange"]?.handlerRef
+            formDropdownOnChange[id] = f.props["onChange"]?.handlerRef
             dd.configure(items: ddItems, selected: current) { [weak self] value in
-                if let h = onChangeRef { self?.onFormFieldChange?(h, value) }
+                if let h = self?.formDropdownOnChange[id] { self?.onFormFieldChange?(h, value) }
+            }
+            formRefreshHandler[id] = { [weak self] n in
+                self?.formDropdownOnChange[id] = n.props["onChange"]?.handlerRef
             }
             formControls.append((id, { [weak dd] in dd?.selectedValue ?? "" }))
             formApply[id] = { [weak dd] n in
