@@ -589,19 +589,7 @@ public final class PaletteView: NSView {
         }
         if let meta = node.children.first(where: { $0.type == "metadata" }) {
             for child in meta.children {
-                switch child.type {
-                case "metadata-label", "metadata-link":
-                    let value = child.props["text"]?.stringValue ?? child.props["target"]?.stringValue ?? "—"
-                    stack.addArrangedSubview(metadataRow(label: child.props["title"]?.stringValue ?? "", value: value))
-                case "metadata-taglist":
-                    let tags = child.children.compactMap { $0.props["text"]?.stringValue ?? $0.title }.joined(separator: ", ")
-                    stack.addArrangedSubview(metadataRow(label: child.props["title"]?.stringValue ?? "", value: tags))
-                case "metadata-separator":
-                    let sep = NSBox(); sep.boxType = .separator; sep.translatesAutoresizingMaskIntoConstraints = false
-                    stack.addArrangedSubview(sep)
-                    sep.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
-                default: break
-                }
+                if let row = renderMetadataNode(child) { stack.addArrangedSubview(row) }
             }
         }
         pane.addSubview(stack)
@@ -705,6 +693,82 @@ public final class PaletteView: NSView {
             info.bottomAnchor.constraint(lessThanOrEqualTo: pane.bottomAnchor, constant: -14),
         ])
         return pane
+    }
+
+    /// A metadata row: secondary title on the left, an arbitrary value view on the right.
+    private func metaRow(_ label: String, _ valueView: NSView) -> NSView {
+        let l = NSTextField(labelWithString: label)
+        l.font = .systemFont(ofSize: 12); l.textColor = .secondaryLabelColor
+        l.translatesAutoresizingMaskIntoConstraints = false
+        valueView.translatesAutoresizingMaskIntoConstraints = false
+        let row = NSView(); row.translatesAutoresizingMaskIntoConstraints = false
+        row.addSubview(l); row.addSubview(valueView)
+        NSLayoutConstraint.activate([
+            row.heightAnchor.constraint(greaterThanOrEqualToConstant: 18),
+            l.leadingAnchor.constraint(equalTo: row.leadingAnchor),
+            l.centerYAnchor.constraint(equalTo: row.centerYAnchor),
+            l.topAnchor.constraint(greaterThanOrEqualTo: row.topAnchor),
+            valueView.trailingAnchor.constraint(equalTo: row.trailingAnchor),
+            valueView.centerYAnchor.constraint(equalTo: row.centerYAnchor),
+            valueView.leadingAnchor.constraint(greaterThanOrEqualTo: l.trailingAnchor, constant: 12),
+            valueView.topAnchor.constraint(greaterThanOrEqualTo: row.topAnchor),
+            valueView.bottomAnchor.constraint(lessThanOrEqualTo: row.bottomAnchor),
+        ])
+        return row
+    }
+
+    /// A clickable metadata link — accent-colored text that opens `target` on click.
+    private func metadataLink(_ text: String, target: String) -> NSView {
+        let b = NSButton(title: text, target: self, action: #selector(openMetadataLink(_:)))
+        b.isBordered = false
+        b.contentTintColor = .linkColor
+        b.font = .systemFont(ofSize: 12)
+        b.translatesAutoresizingMaskIntoConstraints = false
+        b.identifier = NSUserInterfaceItemIdentifier(target)
+        return b
+    }
+    @objc private func openMetadataLink(_ sender: NSButton) {
+        guard let t = sender.identifier?.rawValue, let url = URL(string: t) else { return }
+        NSWorkspace.shared.open(url)
+    }
+
+    /// Render one extension Detail.Metadata child (Label/Link/TagList/Separator). nil if unsupported/empty.
+    private func renderMetadataNode(_ child: ViewNode) -> NSView? {
+        let title = child.props["title"]?.stringValue ?? ""
+        switch child.type {
+        case "metadata-label":
+            let value = child.props["text"]?.stringValue ?? child.props["value"]?.stringValue ?? ""
+            let lbl = NSTextField(labelWithString: value)
+            lbl.font = .systemFont(ofSize: 12)
+            lbl.textColor = accessoryColor(child.props["color"]) ?? .labelColor
+            lbl.alignment = .right; lbl.lineBreakMode = .byTruncatingTail
+            if let icon = nonNull(child.props["icon"]), let iv = accessoryIcon(icon, tint: nil) {
+                let h = NSStackView(views: [iv, lbl]); h.spacing = 4; h.alignment = .centerY
+                return metaRow(title, h)
+            }
+            return metaRow(title, lbl)
+        case "metadata-link":
+            let text = child.props["text"]?.stringValue ?? title
+            guard let target = child.props["target"]?.stringValue, !target.isEmpty else {
+                let lbl = NSTextField(labelWithString: text); lbl.font = .systemFont(ofSize: 12); lbl.alignment = .right
+                return metaRow(title, lbl)
+            }
+            return metaRow(title, metadataLink(text, target: target))
+        case "metadata-taglist":
+            let flow = NSStackView(); flow.orientation = .horizontal; flow.spacing = 4; flow.alignment = .centerY
+            for item in child.children where item.type == "metadata-taglist-item" {
+                let txt = item.props["text"]?.stringValue ?? item.props["title"]?.stringValue ?? ""
+                guard !txt.isEmpty else { continue }
+                flow.addArrangedSubview(chip(txt, color: accessoryColor(item.props["color"])))
+            }
+            return flow.arrangedSubviews.isEmpty ? nil : metaRow(title, flow)
+        case "metadata-separator":
+            let box = NSBox(); box.boxType = .separator; box.translatesAutoresizingMaskIntoConstraints = false
+            box.heightAnchor.constraint(equalToConstant: 1).isActive = true
+            return box
+        default:
+            return nil
+        }
     }
 
     private func metadataRow(label: String, value: String) -> NSView {
@@ -945,8 +1009,8 @@ public final class PaletteView: NSView {
         header.font = .systemFont(ofSize: 11, weight: .semibold)
         header.textColor = .tertiaryLabelColor
         v.addArrangedSubview(header)
-        for child in metaNode.children where child.type == "metadata-label" {
-            v.addArrangedSubview(metadataRow(label: child.props["title"]?.stringValue ?? "", value: child.props["text"]?.stringValue ?? ""))
+        for child in metaNode.children {
+            if let row = renderMetadataNode(child) { v.addArrangedSubview(row) }
         }
         let wrap = NSView()
         wrap.translatesAutoresizingMaskIntoConstraints = false
