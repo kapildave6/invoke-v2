@@ -119,10 +119,12 @@ final class MenuBarController {
         for child in node.children {
             switch child.type {
             case "menubar-item":
-                menu.addItem(makeItem(child, entry: entry))
+                let primaryItem = makeItem(child, entry: entry)
+                menu.addItem(primaryItem)
                 if let alt = child.children.first(where: { $0.type == "menubar-item" }) {
                     let altItem = makeItem(alt, entry: entry)
                     altItem.isAlternate = true
+                    altItem.keyEquivalent = primaryItem.keyEquivalent      // MUST match primary for isAlternate to pair
                     altItem.keyEquivalentModifierMask = [.option]
                     menu.addItem(altItem)
                 }
