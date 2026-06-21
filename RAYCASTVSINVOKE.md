@@ -34,7 +34,7 @@
 | `List.Dropdown` / `.Item` / `.Section` (searchBarAccessory) | ✅ | world-class popover (landed) |
 | `List.Dropdown` / `Grid.Dropdown` controlled props (`value` / `defaultValue` / `onChange` / `storeValue` / `filtering` / `onSearchTextChange` / `isLoading` / `tooltip`) | 🟡 | `value` / `defaultValue` / `onChange` wired (`AppController.swift:3660`); `storeValue` / `filtering` / `isLoading` / `tooltip` ignored |
 | `List.isLoading` | ✅ | thin accent sweep bar (List/Grid/Detail), 2026-06-21 |
-| `List` pagination `{hasMore, onLoadMore, pageSize}` | ⬜ | not wired anywhere |
+| `List` pagination `{hasMore, onLoadMore, pageSize}` | ✅ | renderer near-bottom → `onLoadMore` (in-flight guarded); `@invoke/api` flattens the prop, 2026-06-21 |
 | Native fuzzy `filtering` of static items / `filtering={false}` escape hatch | 🟡 | built-in client-side filter exists (`AppController.swift:121` `filterTree`, substring on title/subtitle/keywords) — but not fuzzy-ranked, and `filtering={false}` is not honored (gated on presence of `onSearchTextChange`) |
 | `selectedItemId` / `onSelectionChange` | ⬜ | selection not reported back to the extension |
 | `List.EmptyView` | ⬜ | exported (`index.ts:139`) so no crash, but renderer never handles `empty-view` → no-op |
@@ -180,7 +180,7 @@
 |---|---|---|
 | `usePromise` / `useCachedState` / `useCachedPromise` / `useFetch` / `useExec` / `useSQL` / `useForm` / `useLocalStorage` / `useFrecencySorting` / `useAI` | ✅ | present and used by real extensions |
 | `mutate` / `MutatePromise` (`optimisticUpdate` / `rollbackOnError`) | 🟡 | working runtime `mutate` (awaits update + revalidates, `utils:88`/`358`); `optimisticUpdate` / `rollbackOnError` options still ignored |
-| Pagination (function-form source in `useFetch` / `useCachedPromise`) | 🟡 | implemented in `usePromise` (`utils:43`, accumulates pages + `pagination`); **not** surfaced by `useFetch` / `useCachedPromise` |
+| Pagination (function-form source in `useFetch` / `useCachedPromise`) | ✅ | `usePromise` + `useFetch` (url-as-fn) + `useCachedPromise` accumulate pages (`mergePages`) + expose `pagination`, 2026-06-21 |
 | `useStreamJSON` | 🟡 | exported + functional (`dataPath`/`filter`/`transform`, `utils:851`), but buffered (`res.json()`) — not progressive streaming |
 | `useAI` streaming (`.on('data')` token stream) | 🟡 | resolves once; no progressive tokens |
 | `getFavicon` / `getAvatarIcon` / `getProgressIcon` | ✅ | |
