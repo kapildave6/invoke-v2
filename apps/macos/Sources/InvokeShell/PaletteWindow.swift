@@ -662,6 +662,24 @@ public final class PaletteWindow: NSObject {
                 else { self.onCancel?() }
                 return nil
             }
+            // Custom Action.shortcut binding (Raycast Keyboard.Shortcut): match the pressed combo against
+            // the current actions and run the first match. Requires a cmd/ctrl/opt modifier so plain
+            // typing in the search field is never hijacked, and runs before the ⌘K toggle so an action
+            // bound to ⌘⇧K wins over the bare ⌘K panel toggle.
+            if event.modifierFlags.intersection([.command, .control, .option]) != [] {
+                var pressed = Set<String>()
+                if event.modifierFlags.contains(.command) { pressed.insert("cmd") }
+                if event.modifierFlags.contains(.shift) { pressed.insert("shift") }
+                if event.modifierFlags.contains(.option) { pressed.insert("opt") }
+                if event.modifierFlags.contains(.control) { pressed.insert("ctrl") }
+                let key = (event.charactersIgnoringModifiers ?? "").lowercased()
+                if !key.isEmpty, let match = (self.actionsProvider?() ?? []).first(where: {
+                    $0.shortcutKey == key && Set($0.shortcutModifiers ?? []) == pressed
+                }) {
+                    match.run()
+                    return nil
+                }
+            }
             guard event.modifierFlags.contains(.command) else { return event }
             if event.charactersIgnoringModifiers?.lowercased() == "k" {
                 self.actionPanel.isShown ? self.actionPanel.dismiss() : self.showActionMenu() // ⌘K toggles
