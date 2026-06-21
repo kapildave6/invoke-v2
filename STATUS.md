@@ -70,7 +70,7 @@ _Last updated: 2026-06-21_
 | `@raycast/api` / `@raycast/utils` compat shim | 🟡 | real extensions run end-to-end; surface partial (see Appendix A). Missing members `unsupported()`-throw or crash |
 | Host capabilities (allowlisted RPC) | ✅ | clipboard/toast/hud/window.close/localStorage/cache/runAppleScript/executeSQL/**confirmAlert**/preferences/app.list/frontmost/default/selection/finder fulfilled natively; allowlist enforced; red-team gated |
 | **AI.ask / OAuth.PKCEClient** | ✅ | real host-driven RPCs (Anthropic / Keychain tokens). **Pending:** AI streaming, OAuth provider presets |
-| BrowserExtension / launchCommand / Window Management API / AI Tools | ⬜ | `unsupported()` / absent (see Appendix A §A.8, §A.10) |
+| BrowserExtension / launchCommand / Window Management API / AI Tools / **`Keyboard`** namespace | ⬜ | `unsupported()` / absent — incl. the entire **`Keyboard`** namespace (`Keyboard.Shortcut` et al.) + most named types/enums (`LaunchProps`/`LaunchType`/`OAuth.*`/`Cache.*`/`Action.Style`…); see Appendix A §A.8, §A.10 |
 | **Run extensions in the macOS app** | ✅ | discovered (manifest), surfaced as an "Extensions" group, launched as `.extension` palette mode; search routes to child; actions fire. Verified live (Hacker News, etc.) |
 | `invoke` CLI (dev / import) | 🟡 | `npm run dev:ext` / `npm run import:ext` (compatibility scan + codemod + `--trusted`). Go CLI/build/publish still stubs |
 | In-app store + registry | ⬜ | |
@@ -93,10 +93,10 @@ _Last updated: 2026-06-21_
 ## AI / v2 / v3
 Per PLAN §7/§8 — all ⬜ (AI Chat, AI Extensions/Tools, MCP, Skills, gateway, store pipeline, sync, Translate, Screenshot OCR, Windows/iOS, Teams). Branded third-party integrations arrive via the **ecosystem** (compat shim + store), not built here.
 
-## Pending Implementation — Raycast parity (condensed; full detail in PLAN Appendix A / RAYCASTVSINVOKE.md)
-- **P0 — crash-prevention & correctness:** graceful-degrade every undefined component (the `Action.*`, `Form.*`, `MenuBarExtra.*` members above); render `List/Grid.EmptyView`; fire `onChange` for Checkbox/Dropdown/DatePicker; honor `Action.style` (destructive) + custom `Action.shortcut`.
+## Pending Implementation — Raycast parity (condensed; full detail in PLAN Appendix A / RAYCASTVSINVOKE.md; member-level re-audit 2026-06-21 — all 29 /api-reference pages)
+- **P0 — crash-prevention & correctness:** graceful-degrade every undefined component (the `Action.*`, `Form.*`, `MenuBarExtra.*` members above); render `List/Grid.EmptyView`; fire `onChange` for Checkbox/Dropdown/DatePicker; honor `Action.style` (destructive) + custom `Action.shortcut` (needs the absent **`Keyboard`** namespace).
 - **P1 — depth:** List/Grid pagination; clickable `Detail.Metadata.Link` + colored `TagList`; `PasswordField` masking + native `DatePicker`; `Toast` primary/secondary actions; `Clipboard.read`/`clear`; un-flatten `ActionPanel.Section`/`Submenu`. _(Done: `List.isLoading` bar; List.Item accessories incl. `Color`/`Icon` tint; `mutate`/`MutatePromise`.)_
-- **P2 — breadth / v2:** `menu-bar` mode + `NSStatusItem` + `MenuBarExtra`; AI streaming + Tools/MCP/Skills; Window Management API; full `Icon`/`Color` coverage + `Image.Mask`; `useStreamJSON`; background `interval` refresh; fallback commands; real `environment` fields; OAuth provider presets.
+- **P2 — breadth / v2:** `menu-bar` mode + `NSStatusItem` + `MenuBarExtra`; AI streaming + Tools/MCP/Skills; Window Management API; full `Icon`/`Color` coverage + `Image.Mask`; `useStreamJSON`; background `interval` refresh; fallback commands; real `environment` fields; OAuth provider presets; export named types/enums (`LaunchProps`/`LaunchType`/`OAuth.*`/`Cache.*`/`Form.Values`/`Action.Style`).
 
 ## Known low-priority follow-ups (tracked, not blocking)
 - **Mouse interaction**: drag-to-move + click-select + double-click-run shipped; scroll under real mouse events awaiting confirmation.
