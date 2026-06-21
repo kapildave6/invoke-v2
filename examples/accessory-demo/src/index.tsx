@@ -19,7 +19,7 @@ export default function Command() {
       <List.Item title="Tinted icon" accessories={[{ icon: { source: Icon.Circle, tintColor: Color.Orange } }]} />
       <List.Item title="Relative date" accessories={[{ date: new Date(now - 3 * 86_400_000) }]} />
       <List.Item title="Colored date" accessories={[{ date: { value: new Date(now + 2 * 3_600_000), color: Color.Blue } }]} />
-      <List.Item title="Tooltip + hex + multi" accessories={[{ icon: Icon.Dot, tooltip: "status: ok" }, { tag: { value: "Live", color: "#22C55E" } }]} />
+      <List.Item title="Tooltip + hex + multi" accessories={[{ icon: Icon.Circle, tooltip: "status: ok" }, { tag: { value: "Live", color: "#22C55E" } }]} />
     </List>
   );
 }
