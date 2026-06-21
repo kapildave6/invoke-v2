@@ -2026,13 +2026,34 @@ public final class AppController: NSObject, NSApplicationDelegate {
 
     private func presentConfirmAlert(_ params: JSONValue?, reply: @escaping (JSONValue) -> Void) {
         func arg(_ key: String) -> JSONValue? { if case .object(let o)? = params { return o[key] }; return nil }
+        let title = arg("title")?.stringValue ?? ""
+        let message = arg("message")?.stringValue
+        // Decode rememberUserChoice inline (isTrue is private to PaletteView).
+        var remember = false
+        if case .bool(let b)? = arg("rememberUserChoice") { remember = b }
+        // Skip the modal if the user previously ticked "Don't ask again" for this alert.
+        let rememberKey = "alertRemember.\(currentExtId).\(title)\u{1}\(message ?? "")"
+        if remember, UserDefaults.standard.object(forKey: rememberKey) != nil {
+            reply(.bool(UserDefaults.standard.bool(forKey: rememberKey))); return
+        }
+        // Icon: SF-symbol name best-effort (sfSymbol mapper is private to PaletteView; use raw string only).
+        var icon: NSImage? = nil
+        if let src = arg("icon")?.stringValue, !src.isEmpty {
+            icon = NSImage(systemSymbolName: src, accessibilityDescription: nil)
+        }
         palette.presentConfirm(
-            title: arg("title")?.stringValue ?? "",
-            message: arg("message")?.stringValue,
+            title: title,
+            message: message,
             primaryTitle: arg("primaryTitle")?.stringValue ?? "OK",
             destructive: arg("primaryStyle")?.stringValue == "destructive",
-            dismissTitle: arg("dismissTitle")?.stringValue ?? "Cancel"
-        ) { confirmed, _ in reply(.bool(confirmed)) }
+            dismissTitle: arg("dismissTitle")?.stringValue ?? "Cancel",
+            icon: icon,
+            rememberable: remember,
+            dismissDestructive: arg("dismissStyle")?.stringValue == "destructive"
+        ) { [weak self] result, rememberChoice in
+            if remember, rememberChoice { UserDefaults.standard.set(result, forKey: rememberKey) }
+            reply(.bool(result))
+        }
     }
 
     private func handleCapability(_ method: String, _ params: JSONValue?) -> JSONValue {
