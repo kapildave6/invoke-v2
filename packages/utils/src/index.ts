@@ -114,30 +114,43 @@ export interface UseFetchOptions<T = unknown, U = T> {
 }
 
 export function useFetch<T = unknown, U = T>(
-  url: string,
+  url: string | ((opts: { page: number }) => string),
   options: UseFetchOptions<T, U> = {},
-): AsyncState<U> {
+): AsyncState<U> & { pagination?: PaginationOptions } {
   const { parseResponse, mapResult, keepPreviousData, execute, initialData, onError, onData, method, headers, body, signal } = options;
   const shouldExecute = execute === undefined ? true : execute;
   const last = useRef<U | undefined>(initialData);
 
-  const state = usePromise<U>(async () => {
-    if (!shouldExecute) return (keepPreviousData ? last.current : initialData) as U;
-    const res = await fetch(url, { method, headers, body, signal });
-    // A custom parseResponse owns status handling (Raycast extensions often return an error string for
-    // non-2xx); only throw on a bad status when there's no custom parser.
-    if (!res.ok && !parseResponse) throw new Error(`${res.status} ${res.statusText}`);
-    const parsed = parseResponse ? await parseResponse(res) : ((await res.json()) as T);
-    const mapped = (mapResult ? mapResult(parsed).data : (parsed as unknown as U));
-    last.current = mapped;
-    return mapped;
-  }, [url, shouldExecute]);
+  const paginated = typeof url === "function";
+
+  const state = usePromise<U>(
+    paginated
+      ? (() => async ({ page }: { page: number }) => {
+          const res = await fetch((url as (o: { page: number }) => string)({ page }), { method, headers, body, signal });
+          const parsed = (parseResponse ? await parseResponse(res) : await res.json()) as T;
+          const mapped = mapResult ? mapResult(parsed) : { data: parsed as unknown as U, hasMore: false };
+          return { data: mapped.data, hasMore: mapped.hasMore ?? false };
+        })
+      : (async () => {
+          if (!shouldExecute) return (keepPreviousData ? last.current : initialData) as U;
+          const res = await fetch(url as string, { method, headers, body, signal });
+          // A custom parseResponse owns status handling (Raycast extensions often return an error string for
+          // non-2xx); only throw on a bad status when there's no custom parser.
+          if (!res.ok && !parseResponse) throw new Error(`${res.status} ${res.statusText}`);
+          const parsed = parseResponse ? await parseResponse(res) : ((await res.json()) as T);
+          const mapped = (mapResult ? mapResult(parsed).data : (parsed as unknown as U));
+          last.current = mapped;
+          return mapped;
+        }),
+    [url, shouldExecute],
+  );
 
   // keepPreviousData / initialData: surface the last good value while loading or after an error.
-  const data = state.data ?? (keepPreviousData ? last.current : initialData);
+  // For the paginated path, data is already the accumulated array from usePromise — don't override it.
+  const data = paginated ? state.data : (state.data ?? (keepPreviousData ? last.current : initialData));
   useEffect(() => { if (state.error) onError?.(state.error); }, [state.error]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (state.data !== undefined) onData?.(state.data); }, [state.data]); // eslint-disable-line react-hooks/exhaustive-deps
-  return { ...state, data };
+  return { ...state, data, pagination: state.pagination };
 }
 
 /* Cached state shared across hook instances AND persisted across launches (Raycast parity — Raycast
@@ -325,10 +338,10 @@ export function useSQL<T = unknown>(
  * Like usePromise, but the dependency tuple is also the argument list passed to `fn`. (Our cache layer
  * is the same process-local store as useCachedState; cross-session persistence lands with the host Cache.) */
 export function useCachedPromise<T, A extends unknown[] = unknown[]>(
-  fn: (...args: A) => Promise<T> | (() => Promise<T>) | T,
+  fn: (...args: A) => Promise<T> | (() => Promise<T>) | T | ((opts: { page: number }) => Promise<{ data: T; hasMore?: boolean }>),
   args: A = [] as unknown as A,
   options?: { initialData?: T; keepPreviousData?: boolean; onError?: (e: Error) => void },
-): AsyncState<T> & { mutate: MutatePromise<T> } {
+): AsyncState<T> & { mutate: MutatePromise<T>; pagination?: PaginationOptions } {
   // Depend on a STRUCTURAL key of args, not the array's identity: callers routinely pass a fresh
   // literal each render (e.g. [note.id]); spreading that straight into deps re-runs the effect every
   // render → infinite refetch loop when an element is itself a fresh object. Call fn with the latest
@@ -341,18 +354,34 @@ export function useCachedPromise<T, A extends unknown[] = unknown[]>(
   }
   const argsRef = useRef(args);
   argsRef.current = args;
-  const state = usePromise<T>(async () => {
-    let result = fn(...(argsRef.current as A)) as unknown;
-    // Raycast supports an "abortable" form where fn returns a thunk (() => Promise) — call it.
-    if (typeof result === "function") result = (result as () => unknown)();
-    result = await result;
-    // Pagination/return-shape convention: a `{ data, hasMore }` result exposes `data` as the value.
-    if (result && typeof result === "object" && "data" in (result as Record<string, unknown>) && !Array.isArray(result)) {
-      return (result as { data: T }).data;
+  // Build an inner fn that usePromise can call. usePromise calls fn(...deps) where deps=[key] here.
+  // We ignore the key arg and forward to the real fn via argsRef to keep args current.
+  // If fn(...args) returns a page-fetcher function (paginated curried form), we return it directly
+  // so usePromise's paginated detection fires and accumulates pages.
+  // If fn(...args) returns a thunk (() => Promise<T>, length 0) we call it (non-paginated path).
+  // If fn(...args) returns a value/Promise directly, we handle {data,hasMore} unwrapping as before.
+  const innerFn = (..._deps: unknown[]): unknown => {
+    const result = fn(...(argsRef.current as A)) as unknown;
+    if (typeof result === "function") {
+      const rf = result as (...a: unknown[]) => unknown;
+      // Paginated curried form: fn(...args) → async ({page}) => {data, hasMore}. Such fns take
+      // exactly 1 parameter. Thunks take 0. Use .length to distinguish them.
+      if (rf.length >= 1) return rf; // page-fetcher — let usePromise accumulate
+      // Thunk form (() => Promise<T>): call it immediately.
+      return (rf as () => unknown)();
     }
-    return result as T;
-  }, [key]);
-  const data = state.data ?? options?.initialData;
+    // Non-function result: handle {data, hasMore} shape convention for non-paginated path.
+    return Promise.resolve(result).then((resolved) => {
+      if (resolved && typeof resolved === "object" && "data" in (resolved as Record<string, unknown>) && !Array.isArray(resolved)) {
+        return (resolved as { data: T }).data;
+      }
+      return resolved as T;
+    });
+  };
+  const state = usePromise<T>(innerFn as never, [key]);
+  // For the non-paginated path: surface cached data / initialData as before.
+  // For the paginated path: state.pagination is set and state.data is already the accumulated array.
+  const data = state.pagination ? state.data : (state.data ?? options?.initialData);
   useEffect(() => { if (state.error) options?.onError?.(state.error); }, [state.error]); // eslint-disable-line react-hooks/exhaustive-deps
   // mutate: optimistically update + revalidate (minimal — runs the async update then refetches).
   const mutate: MutatePromise<T> = async (asyncUpdate, _opts) => {
@@ -360,7 +389,7 @@ export function useCachedPromise<T, A extends unknown[] = unknown[]>(
     state.revalidate();
     return r as never;
   };
-  return { ...state, data, mutate };
+  return { ...state, data, mutate, pagination: state.pagination };
 }
 
 /* ------------------------------------------------------------------ useForm
