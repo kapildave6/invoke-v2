@@ -3634,12 +3634,19 @@ public final class AppController: NSObject, NSApplicationDelegate {
         palette.render(activeTree, selectedIndex: selectedIndex)
         updateActionBar()
         updateExtensionDropdown()
+        reflectControlledSearchText()
         // Honor the active surface's own searchBarPlaceholder (Raycast) — for the base AND pushed views —
         // instead of the generic "Search <title>…" (which doubled to "Search Search Websites…").
         if let surface = extensionSurfaceNode(),
            let ph = surface.props["searchBarPlaceholder"]?.stringValue, !ph.isEmpty {
             palette.setPlaceholder(ph)
         }
+    }
+
+    /// If the search surface has a controlled `searchText` prop, mirror it into the search field.
+    private func reflectControlledSearchText() {
+        guard mode == .extensionView, let st = searchSurfaceNode()?.props["searchText"]?.stringValue else { return }
+        palette.reflectSearchText(st)
     }
 
     /// Surface an extension List/Grid's search-bar Dropdown accessory (<List.Dropdown>) as the search-bar

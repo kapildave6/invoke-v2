@@ -428,6 +428,17 @@ public final class PaletteWindow: NSObject {
         searchField.stringValue = ""
     }
 
+    /// Reflect an extension-controlled List/Grid `searchText` into the search field. No-op when already
+    /// equal (so the caret isn't disturbed in the common echo case); otherwise sets the value + caret to
+    /// end. Setting `.stringValue` programmatically does not fire `controlTextDidChange`, so no onSearch loop.
+    public func reflectSearchText(_ text: String) {
+        guard searchField.stringValue != text else { return }
+        searchField.stringValue = text
+        if let editor = searchField.currentEditor() {
+            editor.selectedRange = NSRange(location: (text as NSString).length, length: 0)
+        }
+    }
+
     /// Update the search-field placeholder (per mode — e.g. "Search snippets…", or the quicklink
     /// argument prompt).
     public func setPlaceholder(_ text: String) {
