@@ -640,6 +640,10 @@ public final class PaletteWindow: NSObject {
         NSAnimationContext.runAnimationGroup { ctx in ctx.duration = 0.2; toastContainer?.animator().alphaValue = 0 }
     }
 
+    /// Programmatically dismiss any visible toast (plain or actionable). Called by the host on
+    /// hide(), surface teardown, and exit-to-root so a persistent actionable toast never lingers.
+    public func dismissToast() { hideToastNow() }
+
     /// Update the bottom bar: the context label (next to the logo) and the primary action chip. The
     /// context label is hidden at root so the root view stays logo-only like Raycast.
     public func setActionBar(command: String, primary: String?) {

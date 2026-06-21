@@ -466,6 +466,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private func exitToRoot() {
         palette.suppressAutoHide = false
         suspendedExtAt = nil
+        palette.dismissToast() // clear any persistent actionable toast before the surface changes
         teardownExtension()
         mode = .root
         pendingQuicklink = nil
@@ -2080,6 +2081,11 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 return nil
             }
             let acts = [action("primaryAction"), action("secondaryAction")].compactMap { $0 }
+            // Explicit dismiss: Toast.hide() / handle.hide() sends title="" message=nil/empty actions=[].
+            if method == "toast.show", title.isEmpty, (message ?? "").isEmpty, acts.isEmpty {
+                palette.dismissToast()
+                return .null
+            }
             if method == "toast.show", palette.isVisible, !acts.isEmpty {
                 palette.showToast(title, actions: acts.map { a in (a.title, { [weak self] in self?.extHost?.invoke(handler: a.handler) }) })
             } else if !text.isEmpty {
@@ -3662,6 +3668,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     }
 
     private func teardownExtension() {
+        palette.dismissToast() // clear any persistent actionable toast; its handlers reference extHost which is about to be nil'd
         extHost?.terminate()
         extHost = nil
         currentExtId = ""
