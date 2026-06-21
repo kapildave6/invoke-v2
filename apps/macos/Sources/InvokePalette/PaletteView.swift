@@ -1107,6 +1107,8 @@ public final class PaletteView: NSView {
         item.thumb.image = nil
         item.thumb.contentTintColor = nil
         item.thumb.identifier = nil
+        // Reset any previously applied mask before setting the new image.
+        item.thumb.layer?.cornerRadius = 6 // default rounded corner from GridItemView.loadView
         if let b64 = node.props["thumb"]?.stringValue, let img = cachedImage(b64) {
             item.thumb.image = img
         } else if let p = fileIconPath(node.props["content"] ?? node.props["icon"]) {
@@ -1117,6 +1119,12 @@ public final class PaletteView: NSView {
             else if let sym = NSImage(systemSymbolName: src, accessibilityDescription: nil) ?? NSImage(systemSymbolName: sfSymbol(for: src), accessibilityDescription: nil) {
                 item.thumb.image = sym; item.thumb.contentTintColor = .secondaryLabelColor
             }
+        }
+        // Apply Image.Mask (circle / roundedRectangle) if specified on the ImageLike prop object.
+        // The thumb is (gridThumbHeight - 16)pt tall (8pt inset top + bottom inside bg).
+        let imgProp = node.props["content"] ?? node.props["icon"]
+        if case .object(let o)? = imgProp, let maskStr = o["mask"]?.stringValue {
+            applyImageMask(maskStr, to: item.thumb, side: gridThumbHeight - 16)
         }
     }
 
@@ -1239,15 +1247,42 @@ public final class PaletteView: NSView {
     public var assetsPath = ""
 
     /// Extract an image source string from an Image.ImageLike value (a bare string, or `{ source }`).
+    /// When `source` is a `{ light, dark }` object, picks by the current system appearance.
     private func imageSource(_ v: JSONValue?) -> String? {
         if case .string(let s)? = v { return s }
         if case .object(let o)? = v {
+            // Dynamic { light, dark } source — pick by effective appearance.
+            if case .object(let src)? = o["source"],
+               let light = src["light"]?.stringValue, let dark = src["dark"]?.stringValue {
+                let isDark = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+                return isDark ? dark : light
+            }
             if case .string(let s)? = o["source"] { return s }
             // Grid.Item / List.Item content can wrap the ImageLike: { value: <ImageLike>, tooltip }.
-            if case .object(let inner)? = o["value"], case .string(let s)? = inner["source"] { return s }
+            if case .object(let inner)? = o["value"] {
+                // Dynamic source inside wrapped value.
+                if case .object(let src)? = inner["source"],
+                   let light = src["light"]?.stringValue, let dark = src["dark"]?.stringValue {
+                    let isDark = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+                    return isDark ? dark : light
+                }
+                if case .string(let s)? = inner["source"] { return s }
+            }
             if case .string(let s)? = o["value"] { return s }
         }
         return nil
+    }
+
+    /// Apply a Raycast Image.Mask to a rendered icon/thumbnail. `side` = the view's square side.
+    private func applyImageMask(_ mask: String?, to iv: NSImageView, side: CGFloat) {
+        guard let mask else { return }
+        iv.wantsLayer = true
+        iv.layer?.masksToBounds = true
+        switch mask {
+        case "circle": iv.layer?.cornerRadius = side / 2
+        case "roundedRectangle": iv.layer?.cornerRadius = side * 0.18
+        default: iv.layer?.cornerRadius = 0
+        }
     }
 
     /// Load a local image from a data: URI, file:// URL, absolute path, or a path RELATIVE to the
@@ -2422,6 +2457,10 @@ public final class PaletteView: NSView {
             iv.widthAnchor.constraint(equalToConstant: 18).isActive = true
             iv.heightAnchor.constraint(equalToConstant: 18).isActive = true
             if let img = loadLocalImage(src) { iv.image = img } else { loadRemoteImage(src, into: iv) }
+            // Apply Image.Mask (circle / roundedRectangle) if the icon prop is an ImageLike object.
+            if case .object(let o)? = node.props["icon"], let maskStr = o["mask"]?.stringValue {
+                applyImageMask(maskStr, to: iv, side: 18)
+            }
             return iv
         }
         // SF Symbol: try the name directly (e.g. "house"), else map the Icon enum.
