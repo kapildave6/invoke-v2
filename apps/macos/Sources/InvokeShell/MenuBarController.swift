@@ -120,6 +120,12 @@ final class MenuBarController {
             switch child.type {
             case "menubar-item":
                 menu.addItem(makeItem(child, entry: entry))
+                if let alt = child.children.first(where: { $0.type == "menubar-item" }) {
+                    let altItem = makeItem(alt, entry: entry)
+                    altItem.isAlternate = true
+                    altItem.keyEquivalentModifierMask = [.option]
+                    menu.addItem(altItem)
+                }
             case "menubar-separator":
                 menu.addItem(.separator())
             case "menubar-section":
@@ -143,10 +149,27 @@ final class MenuBarController {
         }
     }
 
+    private func modifierFlags(_ raw: JSONValue?) -> NSEvent.ModifierFlags {
+        guard case .array(let arr)? = raw else { return [] }
+        let mods = Keyboard.normalize(arr.compactMap { $0.stringValue })
+        var f: NSEvent.ModifierFlags = []
+        if mods.contains("cmd") { f.insert(.command) }
+        if mods.contains("shift") { f.insert(.shift) }
+        if mods.contains("opt") { f.insert(.option) }
+        if mods.contains("ctrl") { f.insert(.control) }
+        return f
+    }
+
     private func makeItem(_ node: ViewNode, entry: Entry) -> NSMenuItem {
         let title = node.props["title"]?.stringValue ?? node.title ?? ""
         if let handler = node.props["onAction"]?.handlerRef {
-            let action = MenuItemAction(title: title) { [weak host = entry.host] in host?.invoke(handler: handler) }
+            let action = MenuItemAction(title: title) { [weak host = entry.host] in
+                host?.invoke(handler: handler, args: [.object(["type": .string("left-click")])])
+            }
+            if case .object(let sc)? = node.props["shortcut"], let key = sc["key"]?.stringValue, !key.isEmpty {
+                action.menuItem.keyEquivalent = key.lowercased()
+                action.menuItem.keyEquivalentModifierMask = modifierFlags(sc["modifiers"])
+            }
             // Subtitle (Raycast shows it dimmed) — append in parens if present.
             if let sub = node.props["subtitle"]?.stringValue, !sub.isEmpty { action.menuItem.title = "\(title)  —  \(sub)" }
             entry.actions.append(action)
