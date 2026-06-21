@@ -485,9 +485,9 @@ export class Toast {
   get message(): string | undefined { return this._message; }
   set message(v: string | undefined) { this._message = v; this.reshow(); }
   get primaryAction(): unknown { return this._primaryAction; }
-  set primaryAction(v: unknown) { this._primaryAction = v; }
+  set primaryAction(v: unknown) { this._primaryAction = v; this.reshow(); }
   get secondaryAction(): unknown { return this._secondaryAction; }
-  set secondaryAction(v: unknown) { this._secondaryAction = v; }
+  set secondaryAction(v: unknown) { this._secondaryAction = v; this.reshow(); }
   async show(): Promise<void> { await rpc("toast.show", this.buildPayload()); }
   async hide(): Promise<void> { await rpc("toast.show", { style: this._style, title: "", message: "" }); }
 }
@@ -578,34 +578,33 @@ export async function showToast(
   // the update was invisible. Debounce via microtask so setting all three fires a single re-show.
   const state = { style: opts.style ?? Toast.Style.Success, title: opts.title, message: opts.message as string | undefined };
   let pending = false;
+  // Builds and sends the full toast payload (state + action handlers). Used by initial send,
+  // reshow microtask, and handle.show() so action buttons are never lost on re-show.
+  const sendToast = (): Promise<unknown> => {
+    const payload: Record<string, unknown> = { ...state };
+    if (primaryAction || secondaryAction) {
+      __clearToastCallbacks();
+      if (primaryAction) payload.primaryAction = buildToastAction(primaryAction, handle);
+      if (secondaryAction) payload.secondaryAction = buildToastAction(secondaryAction, handle);
+    }
+    return rpc("toast.show", payload);
+  };
   const handle = {
     get style() { return state.style; }, set style(v: string) { state.style = v; reshow(); },
     get title() { return state.title; }, set title(v: string) { state.title = v; reshow(); },
     get message() { return state.message; }, set message(v: string | undefined) { state.message = v; reshow(); },
     hide: async () => { await rpc("toast.show", { style: state.style, title: "", message: "" }); },
-    show: async () => { await rpc("toast.show", { ...state }); },
+    show: async () => { await sendToast(); },
   } as ToastHandle;
   const reshow = (): void => {
     if (pending) return;
     pending = true;
     queueMicrotask(() => {
       pending = false;
-      const payload: Record<string, unknown> = { ...state };
-      if (primaryAction || secondaryAction) {
-        __clearToastCallbacks();
-        if (primaryAction) payload.primaryAction = buildToastAction(primaryAction, handle);
-        if (secondaryAction) payload.secondaryAction = buildToastAction(secondaryAction, handle);
-      }
-      void rpc("toast.show", payload).catch(() => {});
+      void sendToast().catch(() => {});
     });
   };
-  const initialPayload: Record<string, unknown> = { ...state };
-  if (primaryAction || secondaryAction) {
-    __clearToastCallbacks();
-    if (primaryAction) initialPayload.primaryAction = buildToastAction(primaryAction, handle);
-    if (secondaryAction) initialPayload.secondaryAction = buildToastAction(secondaryAction, handle);
-  }
-  await rpc("toast.show", initialPayload);
+  await sendToast();
   return handle;
 }
 export async function showHUD(title: string): Promise<void> {
