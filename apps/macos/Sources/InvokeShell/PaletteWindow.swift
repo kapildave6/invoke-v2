@@ -63,6 +63,8 @@ public final class PaletteWindow: NSObject {
     public var onActivateRow: ((Int) -> Void)?
     /// A Form field changed (live onChange): (onChange handler id, new value).
     public var onFormFieldChange: ((String, String) -> Void)?
+    /// Fired when the user scrolls near the bottom of the active list or grid.
+    public var onReachedEnd: (() -> Void)?
     /// Fired when the palette auto-hides on losing key focus (a prompt/another app stole focus), as
     /// opposed to an explicit dismiss — lets the controller remember to RESTORE this view on re-summon.
     public var onAutoHide: (() -> Void)?
@@ -135,6 +137,7 @@ public final class PaletteWindow: NSObject {
         paletteView.onActivate = { [weak self] i in self?.onActivateRow?(i) }
         paletteView.onSubmit = { [weak self] in self?.onActivate?(false) } // Return in a Form field → submit
         paletteView.onFormFieldChange = { [weak self] h, v in self?.onFormFieldChange?(h, v) }
+        paletteView.onReachedEnd = { [weak self] in self?.onReachedEnd?() }
 
         filterButton.translatesAutoresizingMaskIntoConstraints = false
         filterButton.isBordered = false // borderless, subtle — fits the translucent theme

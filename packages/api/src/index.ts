@@ -85,6 +85,15 @@ function host(tag: string, slots: string[] = []) {
         delete rest[name];
       }
     }
+    // pagination.onLoadMore is a nested function; serializeProps only converts TOP-LEVEL functions to
+    // handlers, so hoist it (and the scalars) to top-level props. Only List/Grid pass `pagination`.
+    if (rest.pagination && typeof rest.pagination === "object") {
+      const p = rest.pagination as { pageSize?: number; hasMore?: boolean; onLoadMore?: () => void };
+      if (typeof p.onLoadMore === "function") rest.onLoadMore = p.onLoadMore;
+      rest.paginationHasMore = !!p.hasMore;
+      rest.paginationPageSize = p.pageSize;
+      delete rest.pagination;
+    }
     const kids: ReactNode[] = [
       ...lifted,
       ...(Array.isArray(children) ? children : children != null ? [children] : []),

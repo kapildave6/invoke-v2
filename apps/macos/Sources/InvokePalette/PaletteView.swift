@@ -70,6 +70,8 @@ public final class PaletteView: NSView {
     public var onActivate: ((Int) -> Void)?
     /// Return pressed inside a Form field → submit the form (run the primary action).
     public var onSubmit: (() -> Void)?
+    /// Called when the user has scrolled near the bottom of the list or grid.
+    public var onReachedEnd: (() -> Void)?
     @objc private func formFieldEnter() { onSubmit?() }
 
     private func wireClick(_ row: ClickableRow, index: Int) {
@@ -184,6 +186,12 @@ public final class PaletteView: NSView {
             listScroll.trailingAnchor.constraint(equalTo: trailingAnchor),
             listScroll.bottomAnchor.constraint(equalTo: bottomAnchor),
         ])
+
+        for sv in [listScroll, gridScroll] {
+            sv.contentView.postsBoundsChangedNotifications = true
+            NotificationCenter.default.addObserver(self, selector: #selector(paletteDidScroll(_:)),
+                                                   name: NSView.boundsDidChangeNotification, object: sv.contentView)
+        }
 
         // Master-detail split surface: a fixed-width virtualized left table + a divider + the detail holder.
         let splitCol = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("split"))
@@ -545,6 +553,12 @@ public final class PaletteView: NSView {
         return v
     }
 
+
+    @objc private func paletteDidScroll(_ note: Notification) {
+        guard let clip = note.object as? NSClipView, let doc = clip.documentView, doc.bounds.height > 0 else { return }
+        // Near the bottom: the visible region's max-Y is within half a viewport of the document end.
+        if clip.bounds.maxY >= doc.bounds.height - clip.bounds.height * 0.5 { onReachedEnd?() }
+    }
 
     static func isTrue(_ v: JSONValue?) -> Bool { if case .bool(true)? = v { return true }; return false }
 

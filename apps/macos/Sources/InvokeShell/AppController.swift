@@ -210,6 +210,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         palette.onSelectRow = { [weak self] i in self?.setSelection(i) }
         palette.onActivateRow = { [weak self] i in self?.clickActivate(i) }
         palette.onFormFieldChange = { [weak self] handler, value in self?.extHost?.invoke(handler: handler, args: [.string(value)]) }
+        palette.onReachedEnd = { [weak self] in self?.handleReachedEnd() }
 
         // The repo (node_modules, runtime/node-host, examples/, imported/) must be locatable. When run
         // via `swift run` from the repo, cwd-walking finds it. When run as /Applications/Invoke.app, cwd
@@ -3605,6 +3606,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     }
 
     private func onExtensionCommit() {
+        loadMoreInFlight = false
         guard mode == .extensionView else { return }
         renderExtension()
     }
@@ -3681,6 +3683,19 @@ public final class AppController: NSObject, NSApplicationDelegate {
     /// ActionPanel when the surface has no selectable rows (Detail/Form), and to detect form submits.
     private func extensionSurfaceNode() -> ViewNode? {
         activeTree.root.children.first { ["detail", "form", "grid", "list"].contains($0.type) }
+    }
+
+    private var loadMoreInFlight = false
+    /// The renderer reports the user scrolled near the end; if the active list/grid declares more pages and
+    /// none is loading, invoke its onLoadMore handler on the extension. Re-armed on the next commit.
+    private func handleReachedEnd() {
+        guard mode == .extensionView, !loadMoreInFlight,
+              let surface = extensionSurfaceNode(),
+              surface.type == "list" || surface.type == "grid",
+              { if case .bool(true)? = surface.props["paginationHasMore"] { return true }; return false }(),
+              let handler = surface.props["onLoadMore"]?.handlerRef else { return }
+        loadMoreInFlight = true
+        extHost?.invoke(handler: handler)
     }
 
     /// Actions for the selected extension row. Extension-driven actions (onAction) re-enter the child;
