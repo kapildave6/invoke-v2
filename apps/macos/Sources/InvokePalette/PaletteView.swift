@@ -63,6 +63,7 @@ public final class PaletteView: NSView {
     private var splitMasterWidthConstraint: NSLayoutConstraint!
     private let splitMasterWideWidth: CGFloat = 300
     private let splitMasterDetailWidth: CGFloat = 230
+    private let loadingBar = LoadingBar()
 
     /// Single-click a row → select that item index. Double-click → activate it.
     public var onSelect: ((Int) -> Void)?
@@ -144,6 +145,15 @@ public final class PaletteView: NSView {
             gridScroll.leadingAnchor.constraint(equalTo: leadingAnchor),
             gridScroll.trailingAnchor.constraint(equalTo: trailingAnchor),
             gridScroll.bottomAnchor.constraint(equalTo: bottomAnchor),
+        ])
+
+        addSubview(loadingBar)
+        loadingBar.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            loadingBar.topAnchor.constraint(equalTo: topAnchor),
+            loadingBar.leadingAnchor.constraint(equalTo: leadingAnchor),
+            loadingBar.trailingAnchor.constraint(equalTo: trailingAnchor),
+            loadingBar.heightAnchor.constraint(equalToConstant: 2),
         ])
 
         // Virtualized list surface — view-based NSTableView, its own scroll view, shown only for plain
@@ -322,6 +332,8 @@ public final class PaletteView: NSView {
         }) {
             renderErrorSurface(reason)
         }
+        // Raycast's isLoading: thin sweep bar while any active surface is loading.
+        if surfaces.contains(where: { Self.isTrue($0.props["isLoading"]) }) { loadingBar.start() } else { loadingBar.stop() }
         return true
     }
 
