@@ -1,4 +1,4 @@
-import { Detail, Form, ActionPanel, Action, DatePicker, showToast, useNavigation } from "@raycast/api";
+import { Detail, Form, ActionPanel, Action, showToast, useNavigation } from "@raycast/api";
 
 function Tags() {
   return (
@@ -26,7 +26,7 @@ export default function MetadataForm() {
       <Form.DatePicker
         id="when"
         title="When"
-        type={DatePicker.Type.Date}
+        type={Form.DatePicker.Type.Date}
         min={new Date(2020, 0, 1)}
         max={new Date(2030, 11, 31)}
         onChange={(d) => showToast({ title: `Date: ${d instanceof Date ? d.toISOString() : "not a Date!"}` })}

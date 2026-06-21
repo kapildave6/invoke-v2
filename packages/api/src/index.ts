@@ -1027,9 +1027,4 @@ export const WindowManagement = {
   getDesktops: (): Promise<unknown[]> => unsupported("WindowManagement.getDesktops"),
 };
 
-// Standalone DatePicker export — some extensions import `{ DatePicker }` from "@raycast/api"
-// and access DatePicker.Type.Date / .DateTime directly (rather than via Form.DatePicker.Type).
-// Alias it to Form.DatePicker so it shares the same implementation and the attached .Type enum.
-export const DatePicker = Form.DatePicker;
-
 export type { ReactNode };
