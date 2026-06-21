@@ -214,7 +214,11 @@ Form.Checkbox = host(T.FormCheckbox);
 Form.Description = host(T.FormDescription);
 Form.Separator = host(T.FormSeparator);
 Form.PasswordField = host(T.FormPassword);
-Form.DatePicker = host(T.FormDatePicker);
+Form.DatePicker = ((props: Record<string, unknown> & { onChange?: (d: Date | null) => void }) =>
+  createElement(T.FormDatePicker, {
+    ...props,
+    onChange: props.onChange ? (v: unknown) => props.onChange!(v ? new Date(String(v)) : null) : undefined,
+  })) as typeof Form.DatePicker;
 // Extensions read Form.DatePicker.Type.Date / .DateTime at render — a missing enum throws and the whole
 // form renders blank. Define it (the control still renders as a text field for now).
 (Form.DatePicker as unknown as { Type: { Date: string; DateTime: string } }).Type = { Date: "date", DateTime: "date-time" };

@@ -1630,7 +1630,10 @@ public final class PaletteView: NSView {
         case "form-datepicker":
             let dp = NSDatePicker()
             dp.datePickerStyle = .textFieldAndStepper
-            dp.datePickerElements = .yearMonthDay
+            let dtType = (f.props["type"]?.stringValue ?? "date").lowercased()
+            dp.datePickerElements = (dtType == "date-time" || dtType == "date_time" || dtType == "datetime") ? [.yearMonthDay, .hourMinute] : .yearMonthDay
+            if let isoMin = f.props["min"]?.stringValue, let dMin = RaycastColor.parseISODate(isoMin) { dp.minDate = dMin }
+            if let isoMax = f.props["max"]?.stringValue, let dMax = RaycastColor.parseISODate(isoMax) { dp.maxDate = dMax }
             dp.isBezeled = false; dp.drawsBackground = false
             dp.font = .systemFont(ofSize: 13)
             dp.translatesAutoresizingMaskIntoConstraints = false
