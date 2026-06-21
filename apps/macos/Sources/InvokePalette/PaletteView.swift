@@ -764,13 +764,32 @@ public final class PaletteView: NSView {
             }
             return metaRow(title, metadataLink(text, target: target))
         case "metadata-taglist":
-            let flow = NSStackView(); flow.orientation = .horizontal; flow.spacing = 4; flow.alignment = .centerY
+            let flow = FlowStackView()
+            flow.translatesAutoresizingMaskIntoConstraints = false
+            var chips: [NSView] = []
             for item in child.children where item.type == "metadata-taglist-item" {
                 let txt = item.props["text"]?.stringValue ?? item.props["title"]?.stringValue ?? ""
                 guard !txt.isEmpty else { continue }
-                flow.addArrangedSubview(chip(txt, color: accessoryColor(item.props["color"])))
+                let pill = chip(txt, color: accessoryColor(item.props["color"]))
+                if let h = item.props["onAction"]?.handlerRef {
+                    let click = ClickableContainer(); click.translatesAutoresizingMaskIntoConstraints = false
+                    click.onClick = { [weak self] in self?.onInvokeHandler?(h) }
+                    pill.translatesAutoresizingMaskIntoConstraints = false
+                    click.addSubview(pill)
+                    NSLayoutConstraint.activate([
+                        click.leadingAnchor.constraint(equalTo: pill.leadingAnchor),
+                        click.trailingAnchor.constraint(equalTo: pill.trailingAnchor),
+                        click.topAnchor.constraint(equalTo: pill.topAnchor),
+                        click.bottomAnchor.constraint(equalTo: pill.bottomAnchor),
+                    ])
+                    chips.append(click)
+                } else {
+                    chips.append(pill)
+                }
             }
-            return flow.arrangedSubviews.isEmpty ? nil : metaRow(title, flow)
+            guard !chips.isEmpty else { return nil }
+            flow.setChips(chips)
+            return metaRow(title, flow)
         case "metadata-separator":
             let box = NSBox(); box.boxType = .separator; box.translatesAutoresizingMaskIntoConstraints = false
             box.heightAnchor.constraint(equalToConstant: 1).isActive = true
@@ -1294,6 +1313,8 @@ public final class PaletteView: NSView {
     /// Fired live as a Form field's value changes (args: onChange handler id, new value). The shell
     /// invokes the handler in the extension so controlled forms (e.g. live-computed results) update.
     public var onFormFieldChange: ((String, String) -> Void)?
+    /// Invoke an arbitrary extension handler ref (e.g. a clickable Detail.Metadata.TagList.Item onAction).
+    public var onInvokeHandler: ((String) -> Void)?
     /// Checkbox delivers a real Bool (a "false" string is truthy in JS — would break onChange={(c)=>…}).
     public var onFormCheckboxChange: ((String, Bool) -> Void)?
     private static var checkboxHandlerKey: UInt8 = 0

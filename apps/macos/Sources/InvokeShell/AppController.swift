@@ -222,6 +222,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         palette.onActivateRow = { [weak self] i in self?.clickActivate(i) }
         palette.onFormFieldChange = { [weak self] handler, value in self?.extHost?.invoke(handler: handler, args: [.string(value)]) }
         palette.onFormCheckboxChange = { [weak self] handler, on in self?.extHost?.invoke(handler: handler, args: [.bool(on)]) }
+        palette.onInvokeHandler = { [weak self] handler in self?.extHost?.invoke(handler: handler) }
         palette.onReachedEnd = { [weak self] in self?.handleReachedEnd() }
 
         // The repo (node_modules, runtime/node-host, examples/, imported/) must be locatable. When run
