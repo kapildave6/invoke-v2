@@ -47,6 +47,8 @@ public final class PaletteWindow: NSObject {
     public var onCancel: (() -> Void)?
     /// Supplies the actions for the currently-selected result (for the ⌘K Action Panel).
     public var actionsProvider: (() -> [PaletteAction])?
+    /// Supplies the structured action sections for the ⌘K Action Panel (sections + submenus).
+    var actionSectionsProvider: (() -> [ActionSection])?
     /// Title shown atop the ⌘K Action Panel (typically the selected result's name).
     public var actionPanelTitleProvider: (() -> String)?
     /// Clicking the bottom-left logo opens Settings (Raycast parity).
@@ -678,8 +680,9 @@ public final class PaletteWindow: NSObject {
     }
 
     private func showActionMenu() {
-        guard let actions = actionsProvider?(), !actions.isEmpty, let content = panel.contentView else { return }
-        actionPanel.present(in: content, actions: actions, title: actionPanelTitleProvider?() ?? "")
+        let sections = actionSectionsProvider?() ?? []
+        guard let content = panel.contentView else { return }
+        actionPanel.present(in: content, sections: sections, title: actionPanelTitleProvider?() ?? "")
     }
 }
 

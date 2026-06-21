@@ -198,6 +198,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
             }
         }
         palette.actionsProvider = { [weak self] in self?.currentActions() ?? [] }
+        palette.actionSectionsProvider = { [weak self] in self?.currentActionSections() ?? [] }
         palette.actionPanelTitleProvider = { [weak self] in self?.actionPanelTitle() ?? "" }
         palette.onOpenSettings = { [weak self] in self?.openSettings() }
         palette.onFilterChange = { [weak self] kind in
