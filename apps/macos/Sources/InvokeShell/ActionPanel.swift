@@ -225,7 +225,7 @@ final class ActionPanel: NSObject, NSTextFieldDelegate {
                 ])
                 view = wrap
             case .action(let a):
-                let r = ActionRowView(title: a.title, shortcut: a.shortcut, icon: ActionPanel.inferIcon(a), isSubmenu: false, height: rowHeight)
+                let r = ActionRowView(title: a.title, shortcut: a.shortcut, icon: ActionPanel.inferIcon(a), isSubmenu: false, height: rowHeight, destructive: a.isDestructive)
                 r.onClick = { [weak self] in self?.activate(i) }
                 r.onHover = { [weak self] in self?.setSelected(i) }
                 view = r
@@ -355,7 +355,7 @@ final class ActionRowView: NSView {
     private let highlight = NSView()
     private var tracking: NSTrackingArea?
 
-    init(title: String, shortcut: String?, icon: String, isSubmenu: Bool, height: CGFloat) {
+    init(title: String, shortcut: String?, icon: String, isSubmenu: Bool, height: CGFloat, destructive: Bool = false) {
         super.init(frame: .zero)
         translatesAutoresizingMaskIntoConstraints = false
         wantsLayer = true
@@ -374,7 +374,7 @@ final class ActionRowView: NSView {
 
         let titleLabel = NSTextField(labelWithString: title)
         titleLabel.font = .systemFont(ofSize: 13)
-        titleLabel.textColor = .labelColor
+        titleLabel.textColor = destructive ? .systemRed : .labelColor
         titleLabel.lineBreakMode = .byTruncatingTail
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)

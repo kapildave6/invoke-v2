@@ -5,16 +5,26 @@ import Foundation
 /// lists them all. `run` closes over the invoke-over-IPC / native-copy behavior in AppController.
 public struct PaletteAction {
     public let title: String
-    /// Display-only shortcut hint (e.g. "↵", "⌘↵").
+    /// Display-only shortcut hint (e.g. "↵", "⌘↵", or a custom "⇧⌘K").
     public let shortcut: String?
     /// Optional SF Symbol name for the ⌘K Action Panel row (inferred from the title when nil).
     public let icon: String?
+    /// Action.Style.Destructive → render the title red.
+    public let isDestructive: Bool
+    /// Parsed custom Action.shortcut for functional key-equivalent binding (nil = positional only).
+    public let shortcutModifiers: [String]?
+    public let shortcutKey: String?
     public let run: () -> Void
 
-    public init(title: String, shortcut: String?, icon: String? = nil, run: @escaping () -> Void) {
+    public init(title: String, shortcut: String?, icon: String? = nil,
+                isDestructive: Bool = false, shortcutModifiers: [String]? = nil, shortcutKey: String? = nil,
+                run: @escaping () -> Void) {
         self.title = title
         self.shortcut = shortcut
         self.icon = icon
+        self.isDestructive = isDestructive
+        self.shortcutModifiers = shortcutModifiers
+        self.shortcutKey = shortcutKey
         self.run = run
     }
 }

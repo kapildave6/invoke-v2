@@ -3722,16 +3722,28 @@ public final class AppController: NSObject, NSApplicationDelegate {
     /// declarative ones (open-in-browser/copy/paste) are fulfilled natively.
     private func extensionActions(under node: ViewNode) -> [PaletteAction] {
         actions(under: node).enumerated().map { i, n in
-            PaletteAction(title: title(for: n), shortcut: i == 0 ? "↵" : (i == 1 ? "⌘↵" : nil)) { [weak self] in
-                self?.runExtensionAction(n)
-            }
+            paletteAction(for: n, shortcut: i == 0 ? "↵" : (i == 1 ? "⌘↵" : nil))
         }
     }
 
     /// One extension action node → a PaletteAction that runs via extHost (all variants + form submit).
+    /// Reads Action.style (destructive) and a custom Action.shortcut ({ modifiers, key }) — the custom
+    /// shortcut overrides the positional ↵/⌘↵ display and is bound functionally by the window keyMonitor.
     private func paletteAction(for n: ViewNode, shortcut: String? = nil) -> PaletteAction {
-        PaletteAction(title: title(for: n), shortcut: shortcut, icon: n.props["icon"]?.stringValue) { [weak self] in
-            self?.runExtensionAction(n) // extHost + all variants/form-submit; perform() routes to the resident calc host
+        let destructive = (n.props["style"]?.stringValue == "destructive")
+        var display = shortcut
+        var mods: [String]? = nil
+        var key: String? = nil
+        if case .object(let sc)? = n.props["shortcut"], let k = sc["key"]?.stringValue, !k.isEmpty {
+            var ml: [String] = []
+            if case .array(let arr)? = sc["modifiers"] { ml = arr.compactMap { $0.stringValue } }
+            mods = Array(Keyboard.normalize(ml))
+            key = k.lowercased()
+            display = Keyboard.glyphs(modifiers: ml, key: k)
+        }
+        return PaletteAction(title: title(for: n), shortcut: display, icon: n.props["icon"]?.stringValue,
+                             isDestructive: destructive, shortcutModifiers: mods, shortcutKey: key) { [weak self] in
+            self?.runExtensionAction(n)
         }
     }
 
