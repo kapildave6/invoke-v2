@@ -15,6 +15,8 @@ final class SearchBarDropdown: NSView {
     private var items: [Item] = []
     private var selectedValue = ""
     private var onSelect: ((String) -> Void)?
+    private var filtering = true
+    private var isLoading = false
     /// The view the popover is presented inside (the palette's content/blur view).
     weak var hostContentView: NSView?
 
@@ -61,11 +63,13 @@ final class SearchBarDropdown: NSView {
     /// Point the cursor finger at the pill.
     override func resetCursorRects() { addCursorRect(bounds, cursor: .pointingHand) }
 
-    func configure(items: [Item], selected: String, tooltip: String? = nil, onSelect: @escaping (String) -> Void) {
+    func configure(items: [Item], selected: String, tooltip: String? = nil, filtering: Bool = true, isLoading: Bool = false, onSelect: @escaping (String) -> Void) {
         self.items = items
         self.selectedValue = selected
         self.onSelect = onSelect
         self.toolTip = tooltip
+        self.filtering = filtering
+        self.isLoading = isLoading
         if let cur = items.first(where: { $0.value == selected }) ?? items.first {
             titleLabel.stringValue = cur.title
             FaviconLoader.load(cur.iconRef, into: iconView)
@@ -78,7 +82,7 @@ final class SearchBarDropdown: NSView {
 
     func open() {
         guard let host = hostContentView, !items.isEmpty else { return }
-        overlay.present(in: host, anchor: self, items: items, selected: selectedValue) { [weak self] value in
+        overlay.present(in: host, anchor: self, items: items, selected: selectedValue, filtering: filtering, isLoading: isLoading) { [weak self] value in
             guard let self else { return }
             self.selectedValue = value
             if let cur = self.items.first(where: { $0.value == value }) {
@@ -104,10 +108,12 @@ private final class DropdownOverlay: NSObject, NSTextFieldDelegate {
     private let backdrop = Backdrop()
     private let container = NSVisualEffectView()
     private let searchField = NSTextField()
+    private let sep = NSBox()
     private let listStack = NSStackView()
     private let docView = Flipped()
     private let scroll = NSScrollView()
     private var scrollHeight: NSLayoutConstraint!
+    private var searchFieldHeight: NSLayoutConstraint!
     private var anchorConstraints: [NSLayoutConstraint] = []
 
     private weak var parent: NSView?
@@ -116,6 +122,8 @@ private final class DropdownOverlay: NSObject, NSTextFieldDelegate {
     private var rows: [DropdownRow] = []
     private var selected = 0
     private var onSelect: ((String) -> Void)?
+    private var filtering = true
+    private var isLoading = false
 
     private let rowHeight: CGFloat = 36
     private let maxVisibleRows = 8
@@ -147,7 +155,7 @@ private final class DropdownOverlay: NSObject, NSTextFieldDelegate {
         searchField.delegate = self
         searchField.translatesAutoresizingMaskIntoConstraints = false
 
-        let sep = NSBox(); sep.boxType = .separator; sep.translatesAutoresizingMaskIntoConstraints = false
+        sep.boxType = .separator; sep.translatesAutoresizingMaskIntoConstraints = false
 
         listStack.orientation = .vertical
         listStack.spacing = 2
@@ -165,11 +173,13 @@ private final class DropdownOverlay: NSObject, NSTextFieldDelegate {
         container.addSubview(scroll)
 
         scrollHeight = scroll.heightAnchor.constraint(equalToConstant: rowHeight)
+        searchFieldHeight = searchField.heightAnchor.constraint(equalToConstant: 20)
         NSLayoutConstraint.activate([
             container.widthAnchor.constraint(equalToConstant: panelWidth),
             searchField.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 14),
             searchField.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -14),
             searchField.topAnchor.constraint(equalTo: container.topAnchor, constant: 11),
+            searchFieldHeight,
             sep.leadingAnchor.constraint(equalTo: container.leadingAnchor),
             sep.trailingAnchor.constraint(equalTo: container.trailingAnchor),
             sep.topAnchor.constraint(equalTo: searchField.bottomAnchor, constant: 10),
@@ -188,11 +198,18 @@ private final class DropdownOverlay: NSObject, NSTextFieldDelegate {
         ])
     }
 
-    func present(in parent: NSView, anchor: NSView, items: [SearchBarDropdown.Item], selected: String, onSelect: @escaping (String) -> Void) {
+    func present(in parent: NSView, anchor: NSView, items: [SearchBarDropdown.Item], selected: String, filtering: Bool = true, isLoading: Bool = false, onSelect: @escaping (String) -> Void) {
         self.parent = parent
         self.allItems = items
         self.onSelect = onSelect
+        self.filtering = filtering
+        self.isLoading = isLoading
         searchField.stringValue = ""
+
+        // Toggle the search field + separator visibility based on the filtering flag.
+        searchField.isHidden = !filtering
+        sep.isHidden = !filtering
+        searchFieldHeight.constant = filtering ? 20 : 0
 
         backdrop.removeFromSuperview(); container.removeFromSuperview()
         NSLayoutConstraint.deactivate(anchorConstraints)
@@ -212,7 +229,8 @@ private final class DropdownOverlay: NSObject, NSTextFieldDelegate {
         applyFilter("")
         // Preselect the current value.
         if let idx = filtered.firstIndex(where: { $0.value == selected }) { selected2(idx) }
-        parent.window?.makeFirstResponder(searchField)
+        // Only grab first responder when filtering is on — with it off the search field is hidden.
+        if filtering { parent.window?.makeFirstResponder(searchField) }
     }
 
     func dismiss() {
@@ -227,9 +245,42 @@ private final class DropdownOverlay: NSObject, NSTextFieldDelegate {
 
     private func applyFilter(_ q: String) {
         let query = q.lowercased()
-        filtered = query.isEmpty ? allItems : allItems.filter { $0.title.lowercased().contains(query) }
+        filtered = (!filtering || query.isEmpty) ? allItems : allItems.filter { $0.title.lowercased().contains(query) }
         rows.forEach { $0.removeFromSuperview() }
         rows.removeAll()
+        // Remove any previous loading row.
+        listStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        if isLoading {
+            // A single non-selectable "Loading…" row with a small spinner.
+            let loadRow = NSView()
+            loadRow.translatesAutoresizingMaskIntoConstraints = false
+            loadRow.wantsLayer = true
+            let spinner = NSProgressIndicator()
+            spinner.style = .spinning
+            spinner.controlSize = .small
+            spinner.translatesAutoresizingMaskIntoConstraints = false
+            spinner.startAnimation(nil)
+            let label = NSTextField(labelWithString: "Loading…")
+            label.font = .systemFont(ofSize: 13)
+            label.textColor = .secondaryLabelColor
+            label.translatesAutoresizingMaskIntoConstraints = false
+            loadRow.addSubview(spinner)
+            loadRow.addSubview(label)
+            NSLayoutConstraint.activate([
+                loadRow.heightAnchor.constraint(equalToConstant: rowHeight),
+                spinner.leadingAnchor.constraint(equalTo: loadRow.leadingAnchor, constant: 12),
+                spinner.centerYAnchor.constraint(equalTo: loadRow.centerYAnchor),
+                label.leadingAnchor.constraint(equalTo: spinner.trailingAnchor, constant: 8),
+                label.centerYAnchor.constraint(equalTo: loadRow.centerYAnchor),
+            ])
+            listStack.addArrangedSubview(loadRow)
+            loadRow.widthAnchor.constraint(equalTo: listStack.widthAnchor).isActive = true
+            // Not added to `rows` — not keyboard-navigable or selectable.
+            selected = 0
+            let visible = 1
+            scrollHeight.constant = CGFloat(visible) * rowHeight
+            return
+        }
         for (i, it) in filtered.enumerated() {
             let row = DropdownRow(item: it, height: rowHeight)
             row.onClick = { [weak self] in self?.run(i) }

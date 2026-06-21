@@ -538,11 +538,12 @@ public final class PaletteWindow: NSObject {
     /// Show an extension List/Grid's search-bar Dropdown accessory (Raycast's <List.Dropdown>) as the
     /// world-class custom dropdown (SearchBarDropdown): a styled pill + searchable favicon popover.
     public func setSearchDropdown(items: [(title: String, value: String, iconPath: String?)], selected: String,
-                                  tooltip: String? = nil, onChange: @escaping (String) -> Void) {
+                                  tooltip: String? = nil, filtering: Bool = true, isLoading: Bool = false,
+                                  onChange: @escaping (String) -> Void) {
         filterButton.isHidden = true
         searchDropdown.configure(
             items: items.map { SearchBarDropdown.Item(title: $0.title, value: $0.value, iconRef: $0.iconPath) },
-            selected: selected, tooltip: tooltip, onSelect: onChange)
+            selected: selected, tooltip: tooltip, filtering: filtering, isLoading: isLoading, onSelect: onChange)
         searchTrailingDefault.isActive = false
         searchTrailingWithFilter.isActive = false
         searchTrailingWithDropdown.isActive = true

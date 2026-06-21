@@ -3699,7 +3699,9 @@ public final class AppController: NSObject, NSApplicationDelegate {
             ?? dd.props["defaultValue"]?.stringValue ?? items.first?.value ?? ""
         let handler = dd.props["onChange"]?.handlerRef
         let tooltip = dd.props["tooltip"]?.stringValue
-        palette.setSearchDropdown(items: items, selected: current, tooltip: tooltip) { [weak self] value in
+        let filtering: Bool = { if case .bool(let f)? = dd.props["filtering"] { return f }; return true }()
+        let isLoading: Bool = { if case .bool(let l)? = dd.props["isLoading"] { return l }; return false }()
+        palette.setSearchDropdown(items: items, selected: current, tooltip: tooltip, filtering: filtering, isLoading: isLoading) { [weak self] value in
             guard let self, let handler else { return }
             self.extDropdownValue = value
             if storeValue { UserDefaults.standard.set(value, forKey: storeKey) }
