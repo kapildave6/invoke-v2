@@ -1121,15 +1121,14 @@ public final class PaletteView: NSView {
             }
         }
         // Apply Image.Mask (circle / roundedRectangle) if specified on the ImageLike prop object.
-        // When a mask is present, switch thumb to centered-square layout so cornerRadius = side/2
-        // produces a TRUE circle (not an ellipse). When no mask, restore rectangular fill.
+        // applyThumbMask toggles the fill/square constraint set and defers cornerRadius to
+        // viewDidLayout, where real bounds are known — producing a TRUE circle (radius = side/2)
+        // rather than the previous static estimate from gridThumbHeight - 16.
         let imgProp = node.props["content"] ?? node.props["icon"]
         if case .object(let o)? = imgProp, let maskStr = o["mask"]?.stringValue {
-            item.setMasked(true)
-            applyImageMask(maskStr, to: item.thumb, side: gridThumbHeight - 16)
+            item.applyThumbMask(maskStr)
         } else {
-            item.setMasked(false)
-            item.thumb.layer?.cornerRadius = 6 // restore default rounded corner for non-masked cells
+            item.applyThumbMask(nil)
         }
     }
 
@@ -2553,11 +2552,12 @@ final class GridItemView: NSCollectionViewItem {
     let thumb = NSImageView()
     let label = NSTextField(labelWithString: "")
 
-    // Constraint sets toggled by setMasked(_:).
+    // Constraint sets toggled by applyThumbMask(_:).
     // thumbFill: rectangular fill of bg (default, non-masked).
     // thumbSquare: centered square sized to bg height - 16 (masked, for true-circle rendering).
     private var thumbFill: [NSLayoutConstraint] = []
     private var thumbSquare: [NSLayoutConstraint] = []
+    private var thumbMask: String?
 
     override func loadView() {
         let root = NSView()
@@ -2598,10 +2598,25 @@ final class GridItemView: NSCollectionViewItem {
         applySelected(false)
     }
 
-    /// Toggle between rectangular-fill (non-masked) and centered-square (masked) thumb layout.
-    func setMasked(_ masked: Bool) {
+    /// Store the mask name, toggle fill/square constraints, and defer cornerRadius to viewDidLayout.
+    func applyThumbMask(_ mask: String?) {
+        thumbMask = mask
+        let masked = mask != nil
         thumbFill.forEach { $0.isActive = !masked }
         thumbSquare.forEach { $0.isActive = masked }
+        view.needsLayout = true
+    }
+
+    /// Toggle between rectangular-fill (non-masked) and centered-square (masked) thumb layout.
+    /// Kept for call-sites that only need a bool (delegates to applyThumbMask).
+    func setMasked(_ masked: Bool) { applyThumbMask(masked ? thumbMask : nil) }
+
+    override func viewDidLayout() {
+        super.viewDidLayout()
+        guard let m = thumbMask else { thumb.layer?.cornerRadius = 6; return }
+        thumb.wantsLayer = true; thumb.layer?.masksToBounds = true
+        let side = min(thumb.bounds.width, thumb.bounds.height)
+        thumb.layer?.cornerRadius = m == "circle" ? side / 2 : (m == "roundedRectangle" ? side * 0.18 : 0)
     }
 
     func applySelected(_ sel: Bool) {
@@ -2613,8 +2628,7 @@ final class GridItemView: NSCollectionViewItem {
     override func prepareForReuse() {
         super.prepareForReuse()
         thumb.image = nil; thumb.identifier = nil; thumb.contentTintColor = nil; label.stringValue = ""
-        thumb.layer?.cornerRadius = 6 // reset mask corner radius
-        setMasked(false)              // restore rectangular fill for recycled cells
+        applyThumbMask(nil)  // restore rectangular fill + reset cornerRadius (via viewDidLayout guard)
         applySelected(false)
     }
 }
