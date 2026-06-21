@@ -80,6 +80,10 @@ public final class PaletteView: NSView {
         guard let info = formFieldInfo[ObjectIdentifier(sender)], let h = info.onChange else { return }
         onFormFieldChange?(h, ISO8601DateFormatter().string(from: sender.dateValue))
     }
+    @objc private func formCheckboxChanged(_ sender: NSButton) {
+        guard let h = objc_getAssociatedObject(sender, &Self.checkboxHandlerKey) as? String else { return }
+        onFormCheckboxChange?(h, sender.state == .on)
+    }
 
     private func wireClick(_ row: ClickableRow, index: Int) {
         row.onClick = { [weak self] count in
@@ -1290,6 +1294,9 @@ public final class PaletteView: NSView {
     /// Fired live as a Form field's value changes (args: onChange handler id, new value). The shell
     /// invokes the handler in the extension so controlled forms (e.g. live-computed results) update.
     public var onFormFieldChange: ((String, String) -> Void)?
+    /// Checkbox delivers a real Bool (a "false" string is truthy in JS — would break onChange={(c)=>…}).
+    public var onFormCheckboxChange: ((String, Bool) -> Void)?
+    private static var checkboxHandlerKey: UInt8 = 0
     /// The palette's content/blur view — where a FormDropdown presents its popover so it floats above
     /// the form's scroll view (set by PaletteWindow, mirroring SearchBarDropdown.hostContentView).
     public weak var dropdownHostView: NSView?
@@ -1663,6 +1670,11 @@ public final class PaletteView: NSView {
             formApply[id] = { [weak cb] n in
                 if case .bool(let b)? = n.props["value"] { cb?.state = b ? .on : .off }
                 else if let s = n.props["value"]?.stringValue { cb?.state = (s == "true") ? .on : .off } // string-encoded bool
+            }
+            if let h = f.props["onChange"]?.handlerRef {
+                objc_setAssociatedObject(cb, &Self.checkboxHandlerKey, h, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+                cb.target = self
+                cb.action = #selector(formCheckboxChanged(_:))
             }
             control = cb
             rowAlignment = .firstBaseline

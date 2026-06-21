@@ -63,6 +63,8 @@ public final class PaletteWindow: NSObject {
     public var onActivateRow: ((Int) -> Void)?
     /// A Form field changed (live onChange): (onChange handler id, new value).
     public var onFormFieldChange: ((String, String) -> Void)?
+    /// Checkbox onChange fires a real Bool (not a string — "false" is truthy in JS).
+    public var onFormCheckboxChange: ((String, Bool) -> Void)?
     /// Fired when the user scrolls near the bottom of the active list or grid.
     public var onReachedEnd: (() -> Void)?
     /// Fired when the palette auto-hides on losing key focus (a prompt/another app stole focus), as
@@ -137,6 +139,7 @@ public final class PaletteWindow: NSObject {
         paletteView.onActivate = { [weak self] i in self?.onActivateRow?(i) }
         paletteView.onSubmit = { [weak self] in self?.onActivate?(false) } // Return in a Form field → submit
         paletteView.onFormFieldChange = { [weak self] h, v in self?.onFormFieldChange?(h, v) }
+        paletteView.onFormCheckboxChange = { [weak self] h, on in self?.onFormCheckboxChange?(h, on) }
         paletteView.onReachedEnd = { [weak self] in self?.onReachedEnd?() }
 
         filterButton.translatesAutoresizingMaskIntoConstraints = false
