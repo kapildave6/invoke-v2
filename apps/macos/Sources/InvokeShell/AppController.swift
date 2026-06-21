@@ -3710,23 +3710,22 @@ public final class AppController: NSObject, NSApplicationDelegate {
         guard let panel = firstActionPanel(node) else {
             return [ActionSection(title: nil, entries: actions(under: node).map { .action(paletteAction(for: $0)) })]
         }
-        // ↵/⌘↵ to the first two LEAF actions in document order (do not descend into submenus).
-        var leafIndex = 0
-        func makeEntry(_ n: ViewNode) -> ActionEntry? {
-            switch n.type {
-            case "action":
-                let sc = leafIndex == 0 ? "↵" : (leafIndex == 1 ? "⌘↵" : nil)
-                leafIndex += 1
-                return .action(paletteAction(for: n, shortcut: sc))
-            case "action-panel-submenu":
-                return .submenu(title: n.props["title"]?.stringValue ?? "Submenu",
-                                icon: n.props["icon"]?.stringValue,
-                                sections: sectionsOf(n))
-            default:
-                return nil
+        func makeSections(_ container: ViewNode) -> [ActionSection] {
+            var leafIndex = 0 // per-level: ↵/⌘↵ count does NOT descend into submenus
+            func makeEntry(_ n: ViewNode) -> ActionEntry? {
+                switch n.type {
+                case "action":
+                    let sc = leafIndex == 0 ? "↵" : (leafIndex == 1 ? "⌘↵" : nil)
+                    leafIndex += 1
+                    return .action(paletteAction(for: n, shortcut: sc))
+                case "action-panel-submenu":
+                    return .submenu(title: n.props["title"]?.stringValue ?? "Submenu",
+                                    icon: n.props["icon"]?.stringValue,
+                                    sections: makeSections(n)) // fresh counter for the submenu's own level
+                default:
+                    return nil
+                }
             }
-        }
-        func sectionsOf(_ container: ViewNode) -> [ActionSection] {
             var out: [ActionSection] = []
             var loose: [ActionEntry] = []
             func flushLoose() { if !loose.isEmpty { out.append(ActionSection(title: nil, entries: loose)); loose = [] } }
@@ -3742,7 +3741,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
             flushLoose()
             return out
         }
-        return sectionsOf(panel)
+        return makeSections(panel)
     }
 
     /// Sections for the ⌘K panel: real sections for an extension view, else one untitled section over
