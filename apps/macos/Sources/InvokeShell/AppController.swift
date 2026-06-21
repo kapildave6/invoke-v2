@@ -3692,6 +3692,70 @@ public final class AppController: NSObject, NSApplicationDelegate {
         }
     }
 
+    /// One extension action node → a PaletteAction that runs via the live `perform(_:)` path.
+    private func paletteAction(for n: ViewNode, shortcut: String? = nil) -> PaletteAction {
+        PaletteAction(title: title(for: n), shortcut: shortcut, icon: n.props["icon"]?.stringValue) { [weak self] in
+            self?.perform(n)
+        }
+    }
+
+    /// Build the structured ⌘K model from the selected item's `<ActionPanel>` subtree (Raycast sections
+    /// + submenus). No action-panel node → one untitled section over the flat actions (back-compat).
+    private func extensionActionSections(under node: ViewNode) -> [ActionSection] {
+        func firstActionPanel(_ n: ViewNode) -> ViewNode? {
+            if n.type == "action-panel" { return n }
+            for c in n.children { if let p = firstActionPanel(c) { return p } }
+            return nil
+        }
+        guard let panel = firstActionPanel(node) else {
+            return [ActionSection(title: nil, entries: actions(under: node).map { .action(paletteAction(for: $0)) })]
+        }
+        // ↵/⌘↵ to the first two LEAF actions in document order (do not descend into submenus).
+        var leafIndex = 0
+        func makeEntry(_ n: ViewNode) -> ActionEntry? {
+            switch n.type {
+            case "action":
+                let sc = leafIndex == 0 ? "↵" : (leafIndex == 1 ? "⌘↵" : nil)
+                leafIndex += 1
+                return .action(paletteAction(for: n, shortcut: sc))
+            case "action-panel-submenu":
+                return .submenu(title: n.props["title"]?.stringValue ?? "Submenu",
+                                icon: n.props["icon"]?.stringValue,
+                                sections: sectionsOf(n))
+            default:
+                return nil
+            }
+        }
+        func sectionsOf(_ container: ViewNode) -> [ActionSection] {
+            var out: [ActionSection] = []
+            var loose: [ActionEntry] = []
+            func flushLoose() { if !loose.isEmpty { out.append(ActionSection(title: nil, entries: loose)); loose = [] } }
+            for child in container.children {
+                if child.type == "action-panel-section" {
+                    flushLoose()
+                    out.append(ActionSection(title: child.props["title"]?.stringValue,
+                                             entries: child.children.compactMap(makeEntry)))
+                } else if let e = makeEntry(child) {
+                    loose.append(e)
+                }
+            }
+            flushLoose()
+            return out
+        }
+        return sectionsOf(panel)
+    }
+
+    /// Sections for the ⌘K panel: real sections for an extension view, else one untitled section over
+    /// the existing flat `currentActions()` (built-in modes unchanged).
+    private func currentActionSections() -> [ActionSection] {
+        if mode == .extensionView {
+            let rows = items()
+            guard let node = (selectedIndex < rows.count) ? rows[selectedIndex] : extensionSurfaceNode() else { return [] }
+            return extensionActionSections(under: node)
+        }
+        return [ActionSection(title: nil, entries: currentActions().map { ActionEntry.action($0) })]
+    }
+
     private func runExtensionAction(_ n: ViewNode) {
         if let handler = n.props["onAction"]?.handlerRef {
             // On a Form, the action is a submit — gather the field values and pass them to the handler.

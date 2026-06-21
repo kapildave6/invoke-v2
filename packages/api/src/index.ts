@@ -64,6 +64,7 @@ const T = {
   FormDropdownSection: "form-dropdown-section",
   ActionPanel: "action-panel",
   ActionPanelSection: "action-panel-section",
+  ActionPanelSubmenu: "action-panel-submenu",
   Action: "action",
   MenuBarExtra: "menubar-extra",
   MenuBarItem: "menubar-item",
@@ -328,11 +329,7 @@ type ActionPanelType = ReturnType<typeof host> & {
 };
 export const ActionPanel = host(T.ActionPanel) as ActionPanelType;
 ActionPanel.Section = host(T.ActionPanelSection);
-// Submenu (e.g. "Open Links"). We don't render a true nested menu yet, so treat it as a section — its
-// child actions surface inline. The important thing is it's a DEFINED component: a bare
-// <ActionPanel.Submenu> (undefined) throws while serializing a List.Item's `actions`, which silently
-// drops the whole item.
-ActionPanel.Submenu = host(T.ActionPanelSection);
+ActionPanel.Submenu = host(T.ActionPanelSubmenu);
 // Legacy Raycast API: <ActionPanel.Item> was the base action before <Action> (same props: title/icon/
 // shortcut/onAction). Aliasing to Action fixes ~49 extensions whose actions otherwise render undefined
 // (→ "Element type is invalid" → the whole view crashes).
