@@ -16,7 +16,7 @@ import net from "node:net";
 import { pathToFileURL } from "node:url";
 import { createElement, type ReactNode } from "react";
 import { createSurface } from "@invoke/reconciler";
-import { __setHostBridge, __setNavController, showToast, Toast } from "@invoke/api";
+import { __setHostBridge, __setNavController, __invokeCallback, showToast, Toast } from "@invoke/api";
 import {
   type ChildBound,
   type HostBound,
@@ -129,7 +129,8 @@ async function main(): Promise<void> {
           break;
         }
         case "invoke":
-          surface?.invokeHandler(msg.handler, msg.args);
+          if (typeof msg.handler === "string" && msg.handler.startsWith("icb-")) __invokeCallback(msg.handler, msg.args);
+          else surface?.invokeHandler(msg.handler, msg.args);
           break;
       }
     }

@@ -461,12 +461,21 @@ export class Toast {
     this._primaryAction = options.primaryAction;
     this._secondaryAction = options.secondaryAction;
   }
+  private buildPayload(): Record<string, unknown> {
+    const payload: Record<string, unknown> = { style: this._style, title: this._title, message: this._message };
+    if (this._primaryAction || this._secondaryAction) {
+      __clearToastCallbacks();
+      if (this._primaryAction) payload.primaryAction = buildToastAction(this._primaryAction, this as unknown as ToastHandle);
+      if (this._secondaryAction) payload.secondaryAction = buildToastAction(this._secondaryAction, this as unknown as ToastHandle);
+    }
+    return payload;
+  }
   private reshow(): void {
     if (this._pending) return;
     this._pending = true;
     queueMicrotask(() => {
       this._pending = false;
-      void rpc("toast.show", { style: this._style, title: this._title, message: this._message }).catch(() => {});
+      void rpc("toast.show", this.buildPayload()).catch(() => {});
     });
   }
   get style(): string { return this._style; }
@@ -479,7 +488,7 @@ export class Toast {
   set primaryAction(v: unknown) { this._primaryAction = v; }
   get secondaryAction(): unknown { return this._secondaryAction; }
   set secondaryAction(v: unknown) { this._secondaryAction = v; }
-  async show(): Promise<void> { await rpc("toast.show", { style: this._style, title: this._title, message: this._message }); }
+  async show(): Promise<void> { await rpc("toast.show", this.buildPayload()); }
   async hide(): Promise<void> { await rpc("toast.show", { style: this._style, title: "", message: "" }); }
 }
 
@@ -505,6 +514,27 @@ async function rpc(method: string, params: unknown): Promise<unknown> {
   return send(method, params);
 }
 
+/* ----- imperative host→child callback channel (toast actions; reusable). Lives on globalThis because
+   @invoke/api may be instantiated more than once per child (see BRIDGE_KEY note). ----- */
+const TOAST_CB_KEY = "__invokeToastCallbacks__";
+const TOAST_CB_SEQ = "__invokeToastCbSeq__";
+function toastCbMap(): Map<string, () => void> {
+  const g = globalThis as Record<string, unknown>;
+  let m = g[TOAST_CB_KEY] as Map<string, () => void> | undefined;
+  if (!m) { m = new Map(); g[TOAST_CB_KEY] = m; }
+  return m;
+}
+export function __clearToastCallbacks(): void { toastCbMap().clear(); }
+export function __registerToastCallback(fn: () => void): string {
+  const g = globalThis as Record<string, unknown>;
+  const n = ((g[TOAST_CB_SEQ] as number | undefined) ?? 0) + 1;
+  g[TOAST_CB_SEQ] = n;
+  const id = `icb-${n}`;
+  toastCbMap().set(id, fn);
+  return id;
+}
+export function __invokeCallback(id: string, _args: unknown[]): void { toastCbMap().get(id)?.(); }
+
 export const Clipboard = {
   copy: (content: string, opts?: { concealed?: boolean; transient?: boolean }) =>
     rpc("clipboard.copy", { content, ...opts }) as Promise<void>,
@@ -519,28 +549,35 @@ export const Clipboard = {
 };
 
 export interface ToastHandle { style: string; title: string; message?: string; hide: () => Promise<void>; show: () => Promise<void>; }
+
+function buildToastAction(action: unknown, handle: ToastHandle): { title: string; __handler?: string; shortcut?: unknown } | undefined {
+  if (!action || typeof action !== "object") return undefined;
+  const a = action as { title?: string; onAction?: (t: ToastHandle) => void; shortcut?: unknown };
+  const out: { title: string; __handler?: string; shortcut?: unknown } = { title: a.title ?? "" };
+  if (typeof a.onAction === "function") out.__handler = __registerToastCallback(() => a.onAction!(handle));
+  if (a.shortcut) out.shortcut = a.shortcut;
+  return out;
+}
+
 /// Raycast's showToast has two call forms — the object form `showToast({ style, title, message })`
 /// and the positional overload `showToast(style, title, message?)`. Support both, and return a mutable
 /// handle so extensions can update `.style`/`.title`/`.message` (re-shown) or `.hide()` it.
 export async function showToast(
-  optsOrStyle: { style?: string; title: string; message?: string } | string,
+  optsOrStyle: { style?: string; title: string; message?: string; primaryAction?: unknown; secondaryAction?: unknown } | string,
   title?: string,
   message?: string,
 ): Promise<ToastHandle> {
-  const opts = typeof optsOrStyle === "string"
-    ? { style: optsOrStyle, title: title ?? "", message }
-    : { style: optsOrStyle.style ?? Toast.Style.Success, title: optsOrStyle.title, message: optsOrStyle.message };
-  await rpc("toast.show", opts);
+  const isObj = typeof optsOrStyle !== "string";
+  const opts: { style?: string; title: string; message?: string; primaryAction?: unknown; secondaryAction?: unknown } = isObj
+    ? { style: optsOrStyle.style ?? Toast.Style.Success, title: optsOrStyle.title, message: optsOrStyle.message, primaryAction: optsOrStyle.primaryAction, secondaryAction: optsOrStyle.secondaryAction }
+    : { style: optsOrStyle, title: title ?? "", message };
+  const primaryAction = opts.primaryAction;
+  const secondaryAction = opts.secondaryAction;
   // Mutating .style/.title/.message must RE-SHOW the toast (Raycast's live-updating pattern:
   // an "Animated/Loading…" toast updated to Success/Failure). Setters were plain assignments before, so
   // the update was invisible. Debounce via microtask so setting all three fires a single re-show.
-  const state = { style: opts.style, title: opts.title, message: opts.message as string | undefined };
+  const state = { style: opts.style ?? Toast.Style.Success, title: opts.title, message: opts.message as string | undefined };
   let pending = false;
-  const reshow = (): void => {
-    if (pending) return;
-    pending = true;
-    queueMicrotask(() => { pending = false; void rpc("toast.show", { ...state }).catch(() => {}); });
-  };
   const handle = {
     get style() { return state.style; }, set style(v: string) { state.style = v; reshow(); },
     get title() { return state.title; }, set title(v: string) { state.title = v; reshow(); },
@@ -548,6 +585,27 @@ export async function showToast(
     hide: async () => { await rpc("toast.show", { style: state.style, title: "", message: "" }); },
     show: async () => { await rpc("toast.show", { ...state }); },
   } as ToastHandle;
+  const reshow = (): void => {
+    if (pending) return;
+    pending = true;
+    queueMicrotask(() => {
+      pending = false;
+      const payload: Record<string, unknown> = { ...state };
+      if (primaryAction || secondaryAction) {
+        __clearToastCallbacks();
+        if (primaryAction) payload.primaryAction = buildToastAction(primaryAction, handle);
+        if (secondaryAction) payload.secondaryAction = buildToastAction(secondaryAction, handle);
+      }
+      void rpc("toast.show", payload).catch(() => {});
+    });
+  };
+  const initialPayload: Record<string, unknown> = { ...state };
+  if (primaryAction || secondaryAction) {
+    __clearToastCallbacks();
+    if (primaryAction) initialPayload.primaryAction = buildToastAction(primaryAction, handle);
+    if (secondaryAction) initialPayload.secondaryAction = buildToastAction(secondaryAction, handle);
+  }
+  await rpc("toast.show", initialPayload);
   return handle;
 }
 export async function showHUD(title: string): Promise<void> {
