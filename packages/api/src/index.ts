@@ -676,9 +676,14 @@ export const Clipboard = {
     rpc("clipboard.copy", { content, ...opts }) as Promise<void>,
   paste: (content: string) => rpc("clipboard.paste", { content }) as Promise<void>,
   readText: () => rpc("clipboard.readText", {}) as Promise<string | undefined>,
-  // Raycast's Clipboard.read() returns { text, file?, html? } from the general pasteboard.
-  read: async (): Promise<{ text: string; file?: string; html?: string }> => {
-    const r = (await rpc("clipboard.read", {})) as { text?: string; file?: string; html?: string } | undefined;
+  // Raycast's Clipboard.read() returns { text, file?, html? } from the general pasteboard. With
+  // { offset }, it reads an OLDER entry from the clipboard history: offset 0 (default) = the latest /
+  // current pasteboard (the richest read — includes html/file); offset 1 = the previous entry, etc.
+  read: async (options?: { offset?: number }): Promise<{ text: string; file?: string; html?: string }> => {
+    const offset = options?.offset;
+    const params =
+      typeof offset === "number" && Number.isFinite(offset) && offset >= 1 ? { offset: Math.floor(offset) } : {};
+    const r = (await rpc("clipboard.read", params)) as { text?: string; file?: string; html?: string } | undefined;
     return { text: r?.text ?? "", file: r?.file, html: r?.html };
   },
   clear: () => rpc("clipboard.clear", {}) as Promise<void>,
