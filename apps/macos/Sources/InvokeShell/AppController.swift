@@ -164,6 +164,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         let closesPalette: Bool // folder-opens close; "navigating" commands (clipboard) keep it open
         var argSpec: [[String: Any]] = [] // Raycast command arguments → inline search-bar chips
         var disabledByDefault: Bool = false // manifest disabledByDefault: true → hidden until user enables
+        var fallbackEligible: Bool = false // true only for query-driven commands (view/no-view/AI-ask); false for menu-bar, interval/background, and system built-ins
         let run: () -> Void
     }
 
@@ -3079,7 +3080,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
                         out.append(RootCommand(id: askId, title: "Ask \(title)", subtitle: "\(title) · AI", runTitle: "Ask",
                                                icon: "sparkles", iconPath: extIconPath,
                                                keywords: [name, title.lowercased(), "ai", "ask", "@"],
-                                               closesPalette: false, argSpec: []) { [weak self] in
+                                               closesPalette: false, argSpec: [], fallbackEligible: true) { [weak self] in
                             self?.promptAIExtension(extKey: extKey, title: title, instructions: aiInstructions)
                         })
                     }
@@ -3106,12 +3107,15 @@ public final class AppController: NSObject, NSApplicationDelegate {
                     // no-view commands. A menu-bar/view command run as no-view would call its React
                     // component as a plain function → "useState of null". (Menu-bar refresh, when toggled
                     // on, is handled by the live menu-bar host, not the interval scheduler.)
+                    var isIntervalNoView = false
                     if cmode == "no-view", let iv = c["interval"] as? String, let secs = Self.parseInterval(iv) {
                         intervalSpecs.append(IntervalSpec(cmdId: cmdId, extKey: extKey, rel: rel, cname: cname, seconds: secs, prefsSpec: prefsSpec))
+                        isIntervalNoView = true
                     }
                     if cmode == "menu-bar" {
                         // Many extensions title their menu-bar command identically to a sibling command;
                         // mark it so the two are distinguishable in the list.
+                        // fallbackEligible stays false (default): menu-bar commands are toggle-driven, not query-driven.
                         out.append(RootCommand(id: cmdId, title: ctitle, subtitle: "\(title) · Menu Bar", runTitle: "Toggle in Menu Bar",
                                                icon: "menubar.rectangle", iconPath: iconPath,
                                                keywords: [name, cname, title.lowercased(), "menu bar"],
@@ -3126,11 +3130,13 @@ public final class AppController: NSObject, NSApplicationDelegate {
                                                  assetsPath: paths.assets, supportPath: paths.support)
                         })
                     } else if cmode == "no-view" {
+                        // fallbackEligible: true for user-invoked no-view commands; false for interval/background ones.
                         out.append(RootCommand(id: cmdId, title: ctitle, subtitle: title, runTitle: "Run",
                                                icon: "bolt.fill", iconPath: iconPath,
                                                keywords: [name, cname, title.lowercased()],
                                                closesPalette: false, argSpec: argSpec,
-                                               disabledByDefault: cmdDisabledByDefault) { [weak self] in
+                                               disabledByDefault: cmdDisabledByDefault,
+                                               fallbackEligible: !isIntervalNoView) { [weak self] in
                             // closesPalette:false so a first-run prefs-onboarding form can open in the
                             // palette; the no-view action itself tears the palette down when it runs.
                             guard let self else { return }
@@ -3141,11 +3147,13 @@ public final class AppController: NSObject, NSApplicationDelegate {
                             }
                         })
                     } else {
+                        // view commands: always fallback-eligible (query-driven UI surface).
                         out.append(RootCommand(id: cmdId, title: ctitle, subtitle: title, runTitle: "Open",
                                                icon: "puzzlepiece.extension.fill", iconPath: iconPath,
                                                keywords: [name, cname, title.lowercased()],
                                                closesPalette: false, argSpec: argSpec,
-                                               disabledByDefault: cmdDisabledByDefault) { [weak self] in
+                                               disabledByDefault: cmdDisabledByDefault,
+                                               fallbackEligible: true) { [weak self] in
                             guard let self else { return }
                             self.launchExtensionCommand(extKey: extKey, extTitle: title, spec: prefsSpec,
                                                         argSpec: argSpec, commandTitle: ctitle,
@@ -4015,7 +4023,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
             RootCommand(id: "quicklink.search", title: "Search Quicklinks", subtitle: "Quicklinks", runTitle: "Open", icon: "link", keywords: ["quicklink", "quicklinks", "link", "url", "bookmark"], closesPalette: false) { [weak self] in self?.enterQuicklinks() },
             RootCommand(id: "quicklink.create", title: "Create Quicklink", subtitle: "Quicklinks", runTitle: "Open", icon: "link.badge.plus", keywords: ["quicklink", "create", "new", "add", "link"], closesPalette: false) { [weak self] in self?.presentQuicklinkForm() },
             RootCommand(id: "app.settings", title: "Open Settings", subtitle: "Invoke", runTitle: "Open", icon: "gearshape", keywords: ["settings", "preferences", "config", "options"], closesPalette: true) { [weak self] in self?.openSettings() },
-            RootCommand(id: "ai.chat", title: "AI Chat", subtitle: "AI", runTitle: "Open", icon: "bubble.left.and.bubble.right", keywords: ["ai", "chat", "ask", "claude", "assistant", "gpt"], closesPalette: false) { [weak self] in self?.enterAIChat(initial: "") },
+            RootCommand(id: "ai.chat", title: "AI Chat", subtitle: "AI", runTitle: "Open", icon: "bubble.left.and.bubble.right", keywords: ["ai", "chat", "ask", "claude", "assistant", "gpt"], closesPalette: false, fallbackEligible: true) { [weak self] in self?.enterAIChat(initial: "") },
             windowCommand("window.maximize", "Maximize", "macwindow", ["maximize", "full", "fill"], .maximize),
             windowCommand("window.leftHalf", "Left Half", "rectangle.lefthalf.filled", ["left", "half"], .leftHalf),
             windowCommand("window.rightHalf", "Right Half", "rectangle.righthalf.filled", ["right", "half"], .rightHalf),
@@ -4156,7 +4164,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 m = Self.extensionMeta(for: c.id)
             }
             if metas[m.id] == nil { metas[m.id] = m; order.append(m.id) }
-            kids[m.id, default: []].append(CommandInfo(id: c.id, title: c.title, subtitle: "", icon: c.icon, iconPath: c.iconPath))
+            kids[m.id, default: []].append(CommandInfo(id: c.id, title: c.title, subtitle: "", icon: c.icon, iconPath: c.iconPath, fallbackEligible: c.fallbackEligible))
         }
         var groups = order.map { id -> ExtensionGroup in
             // The group's icon image is the extension's manifest icon (commands of an extension share it).

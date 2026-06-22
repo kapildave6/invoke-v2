@@ -11,13 +11,15 @@ public struct CommandInfo: Identifiable {
     public let icon: String        // SF Symbol (fallback)
     public let iconPath: String?   // absolute path to the extension's real manifest icon, preferred
     public let supportsBinding: Bool // false for the calculator (a typed-fallback, not a runnable command)
-    public init(id: String, title: String, subtitle: String, icon: String = "command", iconPath: String? = nil, supportsBinding: Bool = true) {
+    public let fallbackEligible: Bool // true only for query-driven commands (view/no-view non-interval/AI-ask); false for menu-bar, interval/background, system built-ins
+    public init(id: String, title: String, subtitle: String, icon: String = "command", iconPath: String? = nil, supportsBinding: Bool = true, fallbackEligible: Bool = false) {
         self.id = id
         self.title = title
         self.subtitle = subtitle
         self.icon = icon
         self.iconPath = iconPath
         self.supportsBinding = supportsBinding
+        self.fallbackEligible = fallbackEligible
     }
 }
 
@@ -126,12 +128,12 @@ struct CommandsPane: View {
         allCommands.first { $0.id == id }
     }
 
-    /// Commands eligible to be added as fallbacks: supportsBinding (excludes Calculator) and not
-    /// already in the list. Menu-bar/background commands are excluded because extensionGroups()
-    /// never includes them.
-    private var fallbackEligible: [CommandInfo] {
+    /// Commands eligible to be added as fallbacks: fallbackEligible (view/no-view non-interval/AI-ask
+    /// commands only) and not already in the list. Menu-bar, interval/background, system built-ins, and
+    /// the calculator are excluded because their fallbackEligible flag is false.
+    private var fallbackEligibleCommands: [CommandInfo] {
         let added = Set(settings.fallbackCommands)
-        return allCommands.filter { $0.supportsBinding && !added.contains($0.id) }
+        return allCommands.filter { $0.fallbackEligible && !added.contains($0.id) }
     }
 
     private var filtered: [ExtensionGroup] {
@@ -373,10 +375,10 @@ struct CommandsPane: View {
                 Spacer()
                 // "Add Fallback Command…" menu — lists eligible commands not already added.
                 Menu {
-                    if fallbackEligible.isEmpty {
+                    if fallbackEligibleCommands.isEmpty {
                         Text("All eligible commands already added").foregroundColor(.secondary)
                     } else {
-                        ForEach(fallbackEligible) { cmd in
+                        ForEach(fallbackEligibleCommands) { cmd in
                             Button {
                                 settings.addFallback(cmd.id)
                             } label: {
@@ -398,7 +400,7 @@ struct CommandsPane: View {
                     .font(.callout).foregroundColor(.secondary)
                     .padding(.horizontal, 16).padding(.vertical, 8)
             } else {
-                ForEach(Array(settings.fallbackCommands.enumerated()), id: \.element) { idx, id in
+                ForEach(Array(settings.fallbackCommands.enumerated()), id: \.offset) { idx, id in
                     let info = commandInfo(for: id)
                     let title = info?.title ?? id
                     let icon = info?.icon ?? "command"
