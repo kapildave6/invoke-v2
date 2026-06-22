@@ -1435,15 +1435,17 @@ public final class AppController: NSObject, NSApplicationDelegate {
             if let target = extLaunchables[fbId] {
                 return [PaletteAction(title: cmd.runTitle, shortcut: "↵", icon: cmd.icon) { [weak self] in
                     guard let self else { return }
-                    self.frecency.bump("cmd:\(fbId)")
                     self.launchExtensionCommand(extKey: target.extKey, extTitle: target.extTitle,
                                                 spec: target.prefsSpec, argSpec: cmd.argSpec,
                                                 commandTitle: cmd.title, providedArgs: nil) { prefs, args in
                         if target.mode == "no-view" {
+                            // runNoViewExtension bumps frecency internally — do not bump here.
                             self.runNoViewExtension(id: fbId, title: cmd.title, entryRelPath: target.rel,
                                                     command: target.command, preferences: prefs, arguments: args,
                                                     fallbackText: q)
                         } else {
+                            // launchExtension does not bump — bump here for the view path.
+                            self.frecency.bump("cmd:\(fbId)")
                             self.launchExtension(id: fbId, title: cmd.title, entryRelPath: target.rel,
                                                  command: target.command, preferences: prefs, arguments: args,
                                                  fallbackText: q)
