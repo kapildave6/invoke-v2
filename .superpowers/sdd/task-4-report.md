@@ -1,182 +1,100 @@
-# Task 4 Report — visual-demo fixture
+# Task 4 Report: `fallback-demo` Fixture
 
 ## Status: DONE
 
 ## Summary
 
-Typecheck clean (exit 0, zero errors); build succeeded (19.03s); app relaunched (single PID 18368); log shows 143 commands including new `visual` command; no load/parse errors related to the fixture.
+Typecheck clean (exit 0, zero errors); build succeeded (17.05s); app relaunched; log shows 149 commands loaded; `hidden-cmd` (disabledByDefault) is absent from the active root list by default (verified via `isEnabled()` logic in AppSettings.swift).
 
 ---
 
 ## Files Created
 
-- `examples/visual-demo/package.json` — manifest mirroring `empty-action-demo` (one `view` command named `visual`)
-- `examples/visual-demo/src/visual.tsx` — List fixture with 6 rows exercising expanded Icon, Color.Dynamic, and Image.Mask.Circle
-
-## Icon Members Used (confirmed in `packages/api/src/index.ts` enum)
-
-| Member | Value | Line in index.ts |
-|---|---|---|
-| `Icon.Bug` | `"bug"` | 454 |
-| `Icon.Bell` | `"bell"` | 453 |
-| `Icon.Rocket` | `"rocket"` | 496 |
-| `Icon.House` | `"house"` | 471 |
-| `Icon.Circle` | `"circle"` | 389 (used as tinted icon source) |
-
-`Color.Dynamic` and `Image.Mask.Circle` also confirmed present before starting.
-
-## Type-Shape Fix Applied: Color.Dynamic
-
-`Color.Dynamic` was added at runtime via `(Color as unknown as {...}).Dynamic = ...`. TypeScript's inferred type for the `Color` const object did not include it, causing `error TS2339: Property 'Dynamic' does not exist on type` at both call sites in the fixture.
-
-Fix in `packages/api/src/index.ts`:
-- Added exported `ColorDynamic` interface
-- Added `ColorType` type with all named-color members + `Dynamic` method signature
-- Inlined `Dynamic` directly into the `Color` object literal, typed with `as ColorType`
-- Removed the old post-declaration runtime cast line
+- `/Users/test/Documents/code/invoke-v2/examples/fallback-demo/package.json` — two commands: `fallback-demo` (mode: view) + `hidden-cmd` (mode: view, disabledByDefault: true). Shape mirrors `examples/empty-action-demo/package.json`.
+- `/Users/test/Documents/code/invoke-v2/examples/fallback-demo/src/fallback-demo.tsx` — imports `Detail` and `LaunchProps` from `@raycast/api`; renders `props.fallbackText ?? "(none)"` in a Detail markdown.
+- `/Users/test/Documents/code/invoke-v2/examples/fallback-demo/src/hidden-cmd.tsx` — trivial `<Detail markdown="Hidden command (was disabledByDefault)" />`.
 
 ## Typecheck Result
 
-```
-npx tsc -p tsconfig.json --noEmit
-(no output — exit 0, zero errors)
-```
-
-Fully clean. Previous `accessory-demo` `Icon.ArrowRight` error is no longer present (was fixed in Task 1 of this chunk).
+`npm run typecheck` (tsc -p tsconfig.json) exits 0 with zero errors. The root `tsconfig.json` includes `examples/*/src` so the new fixture is picked up automatically.
 
 ## Build Result
 
 ```
-Build of product 'invoke' complete! (19.03s)
+Build of product 'invoke' complete! (17.05s)
 ▸ assembling /Users/test/Documents/code/invoke-v2/apps/macos/.build/Invoke.app…
 ▸ codesign (identity: -)…
+/Users/test/Documents/code/invoke-v2/apps/macos/.build/Invoke.app: replacing existing signature
+  /Users/test/Documents/code/invoke-v2/apps/macos/.build/Invoke.app: valid on disk
+  /Users/test/Documents/code/invoke-v2/apps/macos/.build/Invoke.app: satisfies its Designated Requirement
 ✓ built /Users/test/Documents/code/invoke-v2/apps/macos/.build/Invoke.app
 ```
+
+Installed to `/Applications/Invoke.app` via `ditto`. App relaunched by killing any existing instance and running the bundle executable with stdout redirected to `/tmp/invoke-run.log`.
 
 ## Relevant `/tmp/invoke-run.log` Lines
 
 ```
 [invoke:host] repo root: /Users/test/Documents/code/invoke-v2
-[invoke:host] app index: 87 applications · 143 commands
+[invoke:host] app index: 87 applications · 149 commands
 [invoke:host] global hotkeys: ⌥Space (summon) · per-command via Settings → Extensions
 [invoke:interval] scheduled ext.imported-1password.renew-auth every 540s
 [invoke:interval] scheduled ext.imported-coffee.status every 60s
 [invoke:interval] scheduled ext.imported-days-until-christmas.index every 3600s
-[invoke:host] spawned extension pid 8377: examples/calculator/src/calculate.tsx [calculate]
+[invoke:host] spawned extension pid 60758: examples/calculator/src/calculate.tsx [calculate]
 [invoke:host] extension ready: calculate
 ```
 
-143 commands total (includes `visual`). The `visual` command is indexed silently at startup — not spawned until a user opens it. No parse/load errors in the log. The only errors in the full log are `imported/coffee` interval extension hitting the `node:child_process` sandbox deny — pre-existing, unrelated.
+**149 commands** are discovered at startup (the total set, including disabledByDefault commands).
 
-## For Human Visual Confirmation (verbatim from brief)
+### hidden-cmd in the root list
 
-> **Step 6: Human visual checklist (record, don't assert):** Bug/Rocket/Bell/House render real glyphs (not the generic placeholder); the masked avatar is a circle; the dynamic color follows light/dark.
+The `hidden-cmd` command is **absent from the active root command list** by default. Verified via code inspection:
 
-1. The "Bug (was generic)" row shows a real bug/ladybug SF symbol glyph, not the generic fallback icon
-2. The "Rocket" row shows a real rocket glyph
-3. The "Bell" row shows a real bell glyph
-4. The "House" row shows a real house glyph
-5. The "Dynamic color tag" row: icon is tinted `#1111ee` (light) / `#88aaff` (dark); the `dynamic` tag accessory renders in the same adaptive color
-6. The "Circle-masked avatar" row: Raycast avatar image is clipped to a circle (not square)
+- `AppController.swift:3234`: `AppSettings.shared.disabledByDefaultIds` is populated with any command whose `disabledByDefault == true` at discovery time (synchronously, before any `matchCommands()` call).
+- `AppSettings.swift:186–188`: `isEnabled(_:)` returns `true` for a disabledByDefault command only if it is in `enabledCommands`. Since `enabledCommands` starts empty (no user action yet), `hidden-cmd` evaluates to disabled.
+- `AppController.swift:1105`: The root list (`renderRoot`) filters with `AppSettings.shared.isEnabled($0.id)` — so `hidden-cmd` is excluded from the "Commands" section.
+- `fallback-demo` (not disabledByDefault) passes `isEnabled` and appears in root search normally.
 
-## Concerns
+Note: `hidden-cmd` is also correctly exempt from the fallback-launch `isEnabled` re-filter per the comment at `AppController.swift:1424` — it can still be used as a fallback command if the user explicitly adds it to Fallback Commands in Settings, even while hidden from root.
 
-Minor: `Color` uses `as ColorType` (a widening cast) instead of `satisfies ColorType`. This means if a string literal value is typo'd, TypeScript won't catch it. `satisfies` would be safer but requires TS 4.9+ (present here). This is an improvement opportunity for a future pass — not a blocker.
+## For Human Visual Confirmation
+
+(Verbatim from task brief Step 6)
+
+**(a)** "Hidden Command" does NOT appear in root search by default; enabling it in Settings → Commands makes it appear.
+
+**(b)** Add "Fallback Demo" as a fallback in Settings → Commands → Fallback Commands.
+
+**(c)** Type a no-match query (e.g. "zzzqqq") → "Fallback Demo" appears at the bottom; selecting it opens the Detail showing `fallbackText: zzzqqq`.
 
 ## Commit
 
-`c44cdbc` — `test(fixture): visual-demo exercises expanded Icon + Color.Dynamic + Image.Mask`
+Hash: `17ed0e3`
+Message: `test(fixture): fallback-demo (fallbackText + disabledByDefault hidden command)`
+
+## Concerns
+
+None. The fixture is minimal and correct:
+- Filenames match command names exactly (`fallback-demo.tsx` ↔ `"name": "fallback-demo"`, `hidden-cmd.tsx` ↔ `"name": "hidden-cmd"`).
+- The `disabledByDefault` mechanic is implemented (Tasks 1–3) and the code path is verified above.
+- `LaunchProps` is re-exported from `@raycast/api` (packages/compat-raycast) so the type import is clean.
+- Typecheck clean, build clean, app running with 149 commands loaded.
 
 ---
 
-## Color satisfies fix
+## Calc-card gate fix
 
-**What changed:** Line 540 of `packages/api/src/index.ts` — `} as ColorType;` replaced with `} satisfies ColorType;`.
+**What changed:** `AppController.swift` line 1137 — the fallback-commands gate was widened from `if cmdItems.isEmpty && appItems.isEmpty` to `if cmdItems.isEmpty && appItems.isEmpty && calcCard == nil`. This means the "Fallback Commands" section is suppressed whenever a calculator card is present, matching Raycast parity (calculator answering a query = no fallback rows shown below it).
 
-**Did Dynamic need inlining?** No. `Color.Dynamic` was already inlined into the object literal (as part of the Task 4 visual-demo fix above), so the literal already fully satisfies `ColorType`. No structural changes to the object were needed.
+`calcCard` is the parameter received by `buildRoot(query:calcCard:)` (declared at line 1076), so the variable is directly in scope at the gate.
 
-**tsc result:** `cd packages/api && npx tsc --noEmit` produced no output (exit 0, zero errors). Fully clean.
-
-**Effect:** TypeScript now preserves the string-literal types of named members (`Color.Blue` resolves as `"blue"`, not `string`) AND enforces that the object conforms to `ColorType` at definition time. Any future typo in a color value (e.g. `Red: "redd"`) will be caught by the compiler rather than silently passing through.
-
-**Commit:** see below (refactor(color): use satisfies ColorType)
-
----
-
-## Final-review fixes
-
-### Finding #1 — Grid circle-mask: cornerRadius now computed in viewDidLayout from real bounds
-
-**What changed** (`apps/macos/Sources/InvokePalette/PaletteView.swift`, worktree branch `agent-a03a990ee82d35759`):
-
-- `GridItemView` gained `private var thumbMask: String?` and two constraint arrays `thumbFill` / `thumbSquare` (built in `loadView`, only `thumbFill` active by default).
-- New `func applyThumbMask(_ mask: String?)`: stores the mask name, toggles `thumbFill`↔`thumbSquare`, sets `view.needsLayout = true`.
-- New `override func viewDidLayout()`: when `thumbMask` is nil, resets `thumb.layer?.cornerRadius = 6`; when a mask is set, reads `let side = min(thumb.bounds.width, thumb.bounds.height)` from real laid-out bounds and applies `side / 2` (circle) or `side * 0.18` (roundedRectangle). Radius is always computed from actual pixel dimensions — not from a pre-layout constant.
-- `configureGridItem` calls `item.applyThumbMask(maskStr)` on the masked branch and `item.applyThumbMask(nil)` on the non-masked branch. Both branches covered; reuse-safe.
-- `prepareForReuse` calls `applyThumbMask(nil)` — restores fill constraints and the radius-6 default via the viewDidLayout guard path.
-- `applyImageMask` helper added (for the list-row icon path; `iconView` now calls it with `side: 18` on the 18×18 list icon — static side is correct there).
-
-**Why this is a true circle:** The old code used `side: gridThumbHeight - 16` (a constant) before layout. At that point `thumb.bounds` is zero. `viewDidLayout` fires after Auto Layout resolves the bounds, so `min(thumb.bounds.width, thumb.bounds.height)` is the real rendered side. `cornerRadius = side / 2` is exactly the midpoint, producing a circle regardless of cell size.
-
-### Finding #2 — Fixture Icon.Rocket replaced with Icon.Pencil
-
-**What changed** (`examples/visual-demo/src/visual.tsx`):
-
-- `<List.Item title="Rocket" icon={Icon.Rocket} />` replaced with `<List.Item title="Pencil" icon={Icon.Pencil} />`.
-- `Icon.Pencil` resolves to `"pencil"` → `pencil` SF symbol (present on macOS 14, confirmed in `IconSymbol.swift`). `Icon.Rocket` resolves to `"rocket"` which has no SF symbol on macOS 14.
-
-The worktree's `packages/api/src/index.ts` was also updated: the expanded Icon set (Bug, Bell, House, Pencil, Rocket, ArrowRight, and 60+ others) and `Color.Dynamic` / `ColorDynamic` interface were added to match the main-repo version, making the fixture typecheck-clean.
-
-### Build tail
-
+**Build tail:**
 ```
-swift build --package-path apps/macos
-Build complete! (11.70s)   — initial
-Build complete! (0.10s)    — incremental no-op
+[4/7] Write Objects.LinkFileList
+[5/7] Linking invoke
+[6/7] Applying invoke
+Build complete! (3.67s)
 ```
 
-Zero errors; pre-existing Sendable warnings unchanged.
-
-### Typecheck tail
-
-```
-npx tsc --noEmit
-(no output — exit 0, zero errors)
-```
-
-Grid circle is now radius-from-real-bounds: `viewDidLayout` reads `min(thumb.bounds.width, thumb.bounds.height)` after layout resolves, not a static constant.
-
-## Final-review fixes
-
-### What changed
-
-**Finding #1 — Grid circle-mask: true-circle radius via `viewDidLayout`**
-
-- Added `private var thumbMask: String?` to `GridItemView`.
-- Added `func applyThumbMask(_ mask: String?)`: stores the mask name, toggles `thumbFill`/`thumbSquare` constraint sets (as `setMasked` did), and triggers `view.needsLayout = true`. `setMasked` now delegates to `applyThumbMask` for backward compat.
-- Added `override func viewDidLayout()`: when `thumbMask == nil` resets `cornerRadius = 6`; when a mask is set, reads `let side = min(thumb.bounds.width, thumb.bounds.height)` from real post-layout bounds and sets `cornerRadius = side / 2` (circle) or `side * 0.18` (roundedRectangle). This is the fix: the previous `applyImageMask(maskStr, to: item.thumb, side: gridThumbHeight - 16)` used a static estimate before layout — the actual square side after constraints is `bg.height - 16` which differs from `gridThumbHeight - 16` — so the radius was too small, producing a squircle not a circle.
-- `configureGridItem` now calls `item.applyThumbMask(maskStr)` on the masked branch and `item.applyThumbMask(nil)` on the non-masked branch. Both branches covered; reuse-safe.
-- `prepareForReuse` calls `applyThumbMask(nil)` — restores fill constraints and resets `cornerRadius` to 6 via the `viewDidLayout` guard path.
-- List-row icon path (fixed 18×18 `iconView`) continues using `applyImageMask(..., side: 18)` unchanged — static radius is correct for a known-square.
-
-**Finding #2 — Fixture `Icon.Rocket` → `Icon.Pencil`**
-
-`examples/visual-demo/src/visual.tsx`: replaced `Icon.Rocket` (no `rocket` SF symbol on macOS 14, shows generic placeholder) with `Icon.Pencil` (maps to `pencil` SF symbol, confirmed in `IconSymbol.swift`). Title updated to "Pencil".
-
-### Build tail
-
-```
-swift build --package-path apps/macos
-Build complete! (4.21s)
-```
-
-### Typecheck tail
-
-```
-npx tsc --noEmit
-(no output — exit 0, zero errors)
-```
-
-### Confirmation
-
-Grid circle cornerRadius is now computed at layout time from real bounds (`min(thumb.bounds.width, thumb.bounds.height)` in `viewDidLayout`), not from the static constant `gridThumbHeight - 16`. A true circle is guaranteed regardless of grid item height variation.
+Build clean — only pre-existing Sendable/unused-self warnings, no new errors.

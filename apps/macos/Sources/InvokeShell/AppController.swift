@@ -1134,7 +1134,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
             // Fallback commands — shown at the bottom ONLY when nothing else matched (no commands, no apps).
             // Each id in fallbackCommands is resolved from `commands` regardless of isEnabled (a
             // disabledByDefault command added as a fallback is still eligible to receive the query).
-            if cmdItems.isEmpty && appItems.isEmpty {
+            if cmdItems.isEmpty && appItems.isEmpty && calcCard == nil {
                 let settings = AppSettings.shared
                 let fbItems: [ViewNode] = settings.fallbackCommands.compactMap { fbId in
                     guard let cmd = commands.first(where: { $0.id == fbId }) else { return nil }
