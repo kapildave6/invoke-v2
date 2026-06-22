@@ -102,7 +102,7 @@ public final class ExtensionHost {
     /// Launch `<repoRoot>/<entryRelPath>`. `mode` is "view" (renders + streams mutations) or "no-view"
     /// (runs the command's default export as a headless action, then the process exits).
     /// `preferences` is the JSON the extension reads via getPreferenceValues() (INVOKE_PREFERENCES).
-    public func launch(repoRoot: String, entryRelPath: String, command: String, preferences: String = "{}", mode: String = "view", trusted: Bool = false, assetsPath: String = "", supportPath: String = "", arguments: String = "{}", launchType: String = "userInitiated", toolInput: String = "{}", launchContext: String = "{}") {
+    public func launch(repoRoot: String, entryRelPath: String, command: String, preferences: String = "{}", mode: String = "view", trusted: Bool = false, assetsPath: String = "", supportPath: String = "", arguments: String = "{}", launchType: String = "userInitiated", toolInput: String = "{}", launchContext: String = "{}", fallbackText: String = "") {
         var fds: [Int32] = [0, 0]
         guard socketpair(AF_UNIX, SOCK_STREAM, 0, &fds) == 0 else {
             log("socketpair failed: \(String(cString: strerror(errno)))")
@@ -162,6 +162,7 @@ public final class ExtensionHost {
         env["INVOKE_ARGUMENTS"] = arguments
         env["INVOKE_LAUNCH_TYPE"] = launchType // "userInitiated" | "background" (interval-scheduled)
         env["INVOKE_LAUNCH_CONTEXT"] = launchContext // launchCommand({context}) payload for the target
+        if !fallbackText.isEmpty { env["INVOKE_FALLBACK_TEXT"] = fallbackText }
         env["INVOKE_TOOL_INPUT"] = toolInput   // ai-tool mode: the model-provided tool input (JSON)
         // Point tsx at the extension's own tsconfig so its `@/*` → `src/*` path alias resolves (entry is
         // <extDir>/src/<cmd>.<ext>). Without this tsx picks the repo-root tsconfig and `@/x` fails to load.

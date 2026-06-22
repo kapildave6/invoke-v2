@@ -142,7 +142,7 @@ async function main(): Promise<void> {
   // launchContext: data passed by another command via launchCommand({ context }) (Raycast parity).
   let launchContext: Record<string, unknown> = {};
   try { launchContext = JSON.parse(process.env.INVOKE_LAUNCH_CONTEXT || "{}"); } catch { launchContext = {}; }
-  const launchProps = { arguments: launchArguments, launchType: process.env.INVOKE_LAUNCH_TYPE || "userInitiated", launchContext };
+  const launchProps = { arguments: launchArguments, launchType: process.env.INVOKE_LAUNCH_TYPE || "userInitiated", launchContext, fallbackText: process.env.INVOKE_FALLBACK_TEXT || undefined };
 
   // ai-tool: run an AI-extension tool's default export with the model-provided input, return its
   // JSON result, then exit. The tool entry is the bundle (Command); input arrives as INVOKE_TOOL_INPUT.

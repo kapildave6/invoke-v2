@@ -1130,6 +1130,27 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 aiItem.props["aiAsk"] = .string(q)
                 sections.append(sectionNode("Use AI", [aiItem]))
             }
+
+            // Fallback commands — shown at the bottom ONLY when nothing else matched (no commands, no apps).
+            // Each id in fallbackCommands is resolved from `commands` regardless of isEnabled (a
+            // disabledByDefault command added as a fallback is still eligible to receive the query).
+            if cmdItems.isEmpty && appItems.isEmpty {
+                let settings = AppSettings.shared
+                let fbItems: [ViewNode] = settings.fallbackCommands.compactMap { fbId in
+                    guard let cmd = commands.first(where: { $0.id == fbId }) else { return nil }
+                    let node = itemNode(id: nextId(), title: cmd.title, subtitle: cmd.subtitle,
+                                       kind: "Command", appPath: nil, icon: cmd.icon, commandId: nil,
+                                       iconPath: cmd.iconPath)
+                    // Mark as a fallback row so currentActions() knows to pass fallbackText on activation.
+                    node.props["fallbackCommandId"] = .string(fbId)
+                    // Echo the query as an accessory tag so the user sees "Fallback" + their query text.
+                    node.props["accessories"] = .array([.object(["text": .string("Fallback")]), .object(["tag": .string(q)])])
+                    return node
+                }
+                if !fbItems.isEmpty {
+                    sections.append(sectionNode("Fallback Commands", fbItems))
+                }
+            }
         }
 
         list.children = sections
@@ -1398,6 +1419,45 @@ public final class AppController: NSObject, NSApplicationDelegate {
             // Settings-tab launchers are self-referential — the management panel (Disable/Configure/…)
             // is meaningless on them, so only the primary Open action.
             return cid.hasPrefix("settings.") ? [primary] : [primary] + defaultCommandActions(commandId: cid)
+        }
+        // Fallback-command row: launch the command passing the current query as LaunchProps.fallbackText.
+        // Does NOT re-filter by isEnabled — a disabledByDefault command added as a fallback still launches.
+        if let fbId = node.props["fallbackCommandId"]?.stringValue,
+           let cmd = commands.first(where: { $0.id == fbId }) {
+            let q = lastQuery // captured at action-build time; safe because currentActions() is called just before activation
+            // ai.chat built-in: seed the chat with the query directly.
+            if fbId == "ai.chat" {
+                return [PaletteAction(title: "Ask AI", shortcut: "↵", icon: cmd.icon) { [weak self] in
+                    self?.enterAIChat(initial: q)
+                }]
+            }
+            // Extension commands (view or no-view): resolve via extLaunchables and thread fallbackText.
+            if let target = extLaunchables[fbId] {
+                return [PaletteAction(title: cmd.runTitle, shortcut: "↵", icon: cmd.icon) { [weak self] in
+                    guard let self else { return }
+                    self.frecency.bump("cmd:\(fbId)")
+                    self.launchExtensionCommand(extKey: target.extKey, extTitle: target.extTitle,
+                                                spec: target.prefsSpec, argSpec: cmd.argSpec,
+                                                commandTitle: cmd.title, providedArgs: nil) { prefs, args in
+                        if target.mode == "no-view" {
+                            self.runNoViewExtension(id: fbId, title: cmd.title, entryRelPath: target.rel,
+                                                    command: target.command, preferences: prefs, arguments: args,
+                                                    fallbackText: q)
+                        } else {
+                            self.launchExtension(id: fbId, title: cmd.title, entryRelPath: target.rel,
+                                                 command: target.command, preferences: prefs, arguments: args,
+                                                 fallbackText: q)
+                        }
+                    }
+                }]
+            }
+            // Generic built-in fallback (e.g. snippet search, clipboard history): run normally.
+            // fallbackText does not apply to these, but they still launch in response to the query.
+            return [PaletteAction(title: cmd.runTitle, shortcut: "↵", icon: cmd.icon) { [weak self] in
+                self?.frecency.bump("cmd:\(fbId)")
+                cmd.run()
+                if cmd.closesPalette { self?.afterLaunch() }
+            }]
         }
         return actions(under: node).enumerated().map { index, n in
             PaletteAction(title: title(for: n), shortcut: index == 0 ? "↵" : (index == 1 ? "⌘↵" : nil)) { [weak self] in self?.perform(n) }
@@ -3287,7 +3347,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         return (assets, support)
     }
 
-    private func launchExtension(id: String, title: String, entryRelPath: String, command: String, preferences: String, arguments: String = "{}", launchContext: String = "{}") {
+    private func launchExtension(id: String, title: String, entryRelPath: String, command: String, preferences: String, arguments: String = "{}", launchContext: String = "{}", fallbackText: String = "") {
         teardownExtension()
         palette.clearArguments() // leaving the root list for the extension view — drop argument chips
         extDropdownMountSig = ""; extDropdownValue = nil // re-fire engine dropdown onChange-on-mount; forget last pick
@@ -3325,7 +3385,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
         palette.setAssetsPath(paths.assets) // resolve the extension's relative image sources (icons, grid thumbs)
         h.launch(repoRoot: repoRoot, entryRelPath: entryRelPath, command: command, preferences: preferences,
                  trusted: AppSettings.shared.isTrusted(Self.extGrantKey(forId: id)),
-                 assetsPath: paths.assets, supportPath: paths.support, arguments: arguments, launchContext: launchContext)
+                 assetsPath: paths.assets, supportPath: paths.support, arguments: arguments, launchContext: launchContext,
+                 fallbackText: fallbackText)
     }
 
     /// Running no-view extension processes, keyed so each can remove itself on exit (no retain cycle:
@@ -3336,7 +3397,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     /// export as a function; its host capabilities (runAppleScript, showHUD, clipboard, …) are fulfilled
     /// over RPC, and the process exits when the action finishes. captureTarget() first so AppleScript /
     /// paste hit the app that was frontmost before Invoke was summoned.
-    private func runNoViewExtension(id: String, title: String, entryRelPath: String, command: String, preferences: String, arguments: String = "{}", launchContext: String = "{}") {
+    private func runNoViewExtension(id: String, title: String, entryRelPath: String, command: String, preferences: String, arguments: String = "{}", launchContext: String = "{}", fallbackText: String = "") {
         frecency.bump("cmd:\(id)")
         captureTarget()
         afterLaunch() // an action command: tear the palette down first; the action runs in the background.
@@ -3363,7 +3424,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
         }
         h.launch(repoRoot: repoRoot, entryRelPath: entryRelPath, command: command, preferences: preferences,
                  mode: "no-view", trusted: AppSettings.shared.isTrusted(Self.extGrantKey(forId: id)),
-                 assetsPath: paths.assets, supportPath: paths.support, arguments: arguments, launchContext: launchContext)
+                 assetsPath: paths.assets, supportPath: paths.support, arguments: arguments, launchContext: launchContext,
+                 fallbackText: fallbackText)
     }
 
     // MARK: - Background interval commands
