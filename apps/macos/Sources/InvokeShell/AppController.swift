@@ -2381,7 +2381,24 @@ public final class AppController: NSObject, NSApplicationDelegate {
             hud.show("Added snippet “\(snipName.isEmpty ? String(snipText.prefix(24)) : snipName)”")
             return .null
         case "clipboard.read":
-            // Clipboard.read() → { text, file, html } from the general pasteboard.
+            // Clipboard.read() → { text, file, html }. With offset >= 1, read an OLDER entry from the
+            // in-memory clipboard history (offset 0 / absent = the live pasteboard — the richest read).
+            // History excludes concealed clips (ClipboardHistory.poll), so password-manager copies never appear.
+            let offset = Int(arg("offset")?.doubleValue ?? 0)
+            if offset >= 1 {
+                guard let clip = clipboard.entry(at: offset) else { return .object(["text": .string("")]) }
+                var cb: [String: JSONValue] = [:]
+                switch clip.kind {
+                case "File":
+                    cb["text"] = .string(clip.filePath ?? clip.text)
+                    if let p = clip.filePath { cb["file"] = .string(p) }
+                case "Image":
+                    cb["text"] = .string("") // image clips carry no text/file path
+                default: // "Text" / "Link"
+                    cb["text"] = .string(clip.text)
+                }
+                return .object(cb)
+            }
             let pb = NSPasteboard.general
             var cb: [String: JSONValue] = [:]
             if let t = pb.string(forType: .string) { cb["text"] = .string(t) }

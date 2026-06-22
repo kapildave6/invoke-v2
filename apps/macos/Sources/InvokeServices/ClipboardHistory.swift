@@ -85,6 +85,9 @@ public final class ClipboardHistory {
 
     public func clip(forKey key: String) -> Clip? { clips.first { $0.key == key } }
 
+    /// Nth-most-recent clip (0 = latest). Bounds-safe → nil when out of range. Used by Clipboard.read({offset}).
+    public func entry(at index: Int) -> Clip? { index >= 0 && index < clips.count ? clips[index] : nil }
+
     public func availableKinds() -> [String] {
         var seen = ["All Types"]
         for k in ["Text", "Link", "File", "Image"] where clips.contains(where: { $0.kind == k }) { seen.append(k) }
