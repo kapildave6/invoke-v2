@@ -2384,7 +2384,10 @@ public final class AppController: NSObject, NSApplicationDelegate {
             // Clipboard.read() → { text, file, html }. With offset >= 1, read an OLDER entry from the
             // in-memory clipboard history (offset 0 / absent = the live pasteboard — the richest read).
             // History excludes concealed clips (ClipboardHistory.poll), so password-manager copies never appear.
-            let offset = Int(arg("offset")?.doubleValue ?? 0)
+            // The api guards offset (finite, >= 1, floored), but a raw RPC frame could send NaN/∞/huge —
+            // Int(Double) traps on those. Floor + sanity-cap, falling back to the live read (offset 0) on garbage.
+            let offsetRaw = arg("offset")?.doubleValue ?? 0
+            let offset = (offsetRaw.isFinite && offsetRaw >= 1 && offsetRaw < 1_000_000) ? Int(offsetRaw) : 0
             if offset >= 1 {
                 guard let clip = clipboard.entry(at: offset) else { return .object(["text": .string("")]) }
                 var cb: [String: JSONValue] = [:]
