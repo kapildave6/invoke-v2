@@ -213,11 +213,11 @@
 | Command modes `view` / `no-view` | ✅ | accepted at discovery |
 | Command mode `menu-bar` | ✅ | accepted at discovery + rendered (`AppController.swift:3001`/`3020`); see §5 |
 | Arguments `text` / `password` / `dropdown` | ✅ | inline search-bar chips |
-| `LaunchProps` (`arguments` / `draftValues` / `launchContext` / `fallbackText`) | 🟡 | `arguments` **and** `launchContext` delivered (`child.ts:140`/`143`); **`LaunchProps` type now exported (Chunk I2, 2026-06-21)**; `draftValues` / `fallbackText` not passed |
+| `LaunchProps` (`arguments` / `draftValues` / `launchContext` / `fallbackText`) | ✅ | `arguments` **and** `launchContext` delivered (`child.ts:140`/`143`); **`LaunchProps` type now exported (Chunk I2, 2026-06-21)**; **`fallbackText` populated (Chunk Fallback, 2026-06-21)** — host `INVOKE_FALLBACK_TEXT` → child `launchProps.fallbackText`; `draftValues` not passed |
 | `LaunchType` enum (`UserInitiated` / `Background`) / `LaunchContext` | ✅ | `LaunchType` exported (§7); **`LaunchContext` type exported (Chunk I-residuals, 2026-06-21)** |
 | Background refresh (`interval`) | 🟡 | scheduled for `no-view` commands (`AppController.swift:3017`, `parseInterval` → timer) |
-| Fallback commands | ⬜ | |
-| `disabledByDefault` | ⬜ | |
+| Fallback commands | ✅ | **user-curated ordered list (Settings → Commands → Fallback Commands); shown in root only on no-match query (no command + no app + no calc); selecting launches command with query as `launchProps.fallbackText` (Chunk Fallback, 2026-06-21)** |
+| `disabledByDefault` | ✅ | **hidden from root until user enables (Commands pane toggle → `enabledCommands` opt-in) (Chunk Fallback, 2026-06-21)** |
 | Preferences `textfield` / `password` / `checkbox` / `dropdown` / `appPicker` (+`required`) | ✅ | `file` / `directory` — ⬜; per-platform `default` — 🟡 |
 | `tools[]` / `ai{}` objects | 🟡 | parsed for the Commands detail panel; not executed |
 
@@ -247,7 +247,7 @@
 - Window Management API (`getActiveWindow` / `getDesktops` / `setWindowBounds` + types) — currently `unsupported()`-throws
 - ~~Full `Icon`/`Color` enum coverage + `Image.Mask` / dynamic light/dark images~~ — **substantially DONE (Chunk I, 2026-06-21):** 102-member `Icon` enum + `IconSymbol` validated fallback; `Color.Dynamic({light,dark})` exported; `Image.Mask` Circle/RoundedRectangle honored; dynamic `{source:{light,dark}}` dispatched by appearance. Residual tail: literal-complete ~250-member `Icon` enum; `Image.tintColor` as a top-level Image-prop API export; appearance-change live re-render
 - ~~`useStreamJSON` true progressive streaming~~ — **DONE (Chunk I-stream, 2026-06-21):** top-level JSON arrays streamed incrementally via `createArrayStreamParser` (memory-incremental parse); load-whole fallback for `dataPath` (nested array), non-array, or malformed JSON. Residuals: `dataPath` nested-array streaming; progressive mid-stream `setData` (currently resolves once with full array); temp-file caching. `useAI` token stream (J/AI item) still pending.
-- Fallback commands; `disabledByDefault`
+- ~~Fallback commands; `disabledByDefault`~~ — **DONE (Chunk Fallback, 2026-06-21):** user-curated ordered fallback list (Settings → Commands → Fallback Commands); shown in root only on no-match; query passed as `launchProps.fallbackText`; `disabledByDefault` commands hidden until user enables via Commands pane (`enabledCommands` opt-in)
 - ~~Real `environment` fields (`appearance` / `textSize` / `extensionName` / `canAccess`)~~ — **DONE (Chunk I2, 2026-06-21):** `appearance` real (NSApp.effectiveAppearance, main-thread-guarded); `textSize` host-provided; `canAccess(AI)` real (AIService.hasStoredKey()). Note: live appearance-change push + non-AI `canAccess` remain. `extensionName` already env-backed.
 - OAuth provider presets
 - ~~Export remaining named types/enums project-wide: `Cache.*` / `Preferences` / `Form.Values` / `KeyModifier` / `Navigation` / `LaunchContext`~~ — **DONE (Chunk I-residuals, 2026-06-21):** `LaunchContext`, `Form.Event` / `Form.Event.Type`, `Image.ImageLike`, `Image.Source` now exported; prior chunk (I2) covered `LaunchProps`, `PreferenceValues`, `Preferences` (augmentable), `Navigation`, `Form.Values`/`FormValues`, `Keyboard.KeyModifier`/`KeyEquivalent`. Cache was already a class. Only `Cache.*` sub-types remain (low priority).
