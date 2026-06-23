@@ -870,6 +870,30 @@ public final class AppController: NSObject, NSApplicationDelegate {
         }
     }
 
+    private func presentCustomWindowForm(editing cmd: AppSettings.CustomWindowCommand? = nil) {
+        let gridValue = cmd.map { "\($0.fx),\($0.fy),\($0.fw),\($0.fh)" } ?? ""
+        let fields = [
+            formField(11, fieldId: "name", type: "form-textfield", title: "Name", placeholder: "e.g. Left Chat Panel", value: cmd?.name ?? ""),
+            formField(12, fieldId: "grid", type: "window-grid-picker", title: "Position", placeholder: "", value: gridValue),
+        ]
+        enterNativeForm(title: cmd == nil ? "Create Window Management Command" : "Edit Window Command", fields: fields) { [weak self] vals in
+            guard let self else { return }
+            let name = (vals["name"] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            let raw = vals["grid"] ?? ""
+            let parts = raw.split(separator: ",", maxSplits: 3).map { Double($0) }
+            guard parts.count == 4, let fx = parts[0], let fy = parts[1], let fw = parts[2], let fh = parts[3] else { return }
+            guard !name.isEmpty, fw > 0, fh > 0 else { return }
+            if let existing = cmd {
+                let updated = AppSettings.CustomWindowCommand(id: existing.id, name: name, fx: fx, fy: fy, fw: fw, fh: fh)
+                AppSettings.shared.updateCustomWindowCommand(updated)
+            } else {
+                AppSettings.shared.addCustomWindowCommand(name: name, fx: fx, fy: fy, fw: fw, fh: fh)
+            }
+            self.commands = self.makeCommands()
+            self.reloadCommandHotkeys()
+        }
+    }
+
     private static func screenshotMetadata(_ shot: ScreenshotIndex.Shot) -> JSONValue {
         var rows: [JSONValue] = [
             .object(["label": .string("Content type"), "value": .string(shot.path.hasSuffix(".mov") ? "Recording" : "Image")]),
@@ -1410,6 +1434,26 @@ public final class AppController: NSObject, NSApplicationDelegate {
                     self?.quicklinkStore.delete(id: qid); self?.selectedIndex = 0; self?.renderQuicklinks(query: self?.lastQuery ?? "")
                 },
             ]
+        }
+        if let cid = node.props["commandId"]?.stringValue, cid.hasPrefix("window.custom."),
+           let wc = AppSettings.shared.customWindowCommands.first(where: { $0.id == cid }) {
+            return [
+                PaletteAction(title: wc.name, shortcut: "↵", icon: "macwindow") { [weak self] in
+                    guard let self else { return }
+                    guard AXIsProcessTrusted() else { Self.promptAccessibility(); self.palette.showToast("Enable Accessibility for Invoke to manage windows"); return }
+                    if let pid = self.pasteTarget?.processIdentifier { self.windowManager.applyRect(fx: wc.fx, fy: wc.fy, fw: wc.fw, fh: wc.fh, pid: pid) }
+                    self.afterLaunch()
+                },
+                PaletteAction(title: "Edit Command", shortcut: "⌘E", icon: "pencil") { [weak self] in self?.presentCustomWindowForm(editing: wc) },
+                PaletteAction(title: "Delete Command", shortcut: "⌃X", icon: "trash") { [weak self] in
+                    guard let self else { return }
+                    AppSettings.shared.removeCustomWindowCommand(id: cid)
+                    self.commands = self.makeCommands()
+                    self.reloadCommandHotkeys()
+                    self.selectedIndex = 0
+                    self.renderRoot(calcCard: nil)
+                },
+            ] + defaultCommandActions(commandId: cid)
         }
         if let cid = node.props["commandId"]?.stringValue, let cmd = commands.first(where: { $0.id == cid }) {
             let primary = PaletteAction(title: cmd.runTitle, shortcut: "↵") { [weak self] in
@@ -4160,6 +4204,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
             RootCommand(id: "quicklink.create", title: "Create Quicklink", subtitle: "Quicklinks", runTitle: "Open", icon: "link.badge.plus", keywords: ["quicklink", "create", "new", "add", "link"], closesPalette: false) { [weak self] in self?.presentQuicklinkForm() },
             RootCommand(id: "app.settings", title: "Open Settings", subtitle: "Invoke", runTitle: "Open", icon: "gearshape", keywords: ["settings", "preferences", "config", "options"], closesPalette: true) { [weak self] in self?.openSettings() },
             RootCommand(id: "ai.chat", title: "AI Chat", subtitle: "AI", runTitle: "Open", icon: "bubble.left.and.bubble.right", keywords: ["ai", "chat", "ask", "claude", "assistant", "gpt"], closesPalette: false, fallbackEligible: true) { [weak self] in self?.enterAIChat(initial: "") },
+            RootCommand(id: "window.custom.create", title: "Create Window Management Command", subtitle: "Window Management", runTitle: "Create", icon: "plus.rectangle", keywords: ["window", "create", "custom", "position", "layout"], closesPalette: false) { [weak self] in self?.presentCustomWindowForm() },
             windowCommand("window.maximize", "Maximize", "macwindow", ["maximize", "full", "fill"], .maximize),
             windowCommand("window.leftHalf", "Left Half", "rectangle.lefthalf.filled", ["left", "half"], .leftHalf),
             windowCommand("window.rightHalf", "Right Half", "rectangle.righthalf.filled", ["right", "half"], .rightHalf),
@@ -4180,7 +4225,13 @@ public final class AppController: NSObject, NSApplicationDelegate {
             RootCommand(id: "folder.documents", title: "Open Documents", subtitle: "Navigation", runTitle: "Open", icon: "doc", keywords: ["documents", "docs", "folder"], closesPalette: true, run: openPath("~/Documents")),
             RootCommand(id: "folder.desktop", title: "Open Desktop", subtitle: "Navigation", runTitle: "Open", icon: "menubar.dock.rectangle", keywords: ["desktop", "folder"], closesPalette: true, run: openPath("~/Desktop")),
             RootCommand(id: "folder.applications", title: "Open Applications", subtitle: "Navigation", runTitle: "Open", icon: "square.grid.2x2", keywords: ["applications", "apps", "folder"], closesPalette: true, run: openPath("/Applications")),
-        ] + discoverExtensionCommands() + settingsTabCommands()
+        ] + AppSettings.shared.customWindowCommands.map { c in
+            RootCommand(id: c.id, title: c.name, subtitle: "Window Management", runTitle: c.name, icon: "macwindow", keywords: ["window"] + c.name.lowercased().split(separator: " ").map(String.init), closesPalette: true) { [weak self] in
+                guard let self else { return }
+                guard AXIsProcessTrusted() else { Self.promptAccessibility(); self.palette.showToast("Enable Accessibility for Invoke to manage windows"); return }
+                if let pid = self.pasteTarget?.processIdentifier { self.windowManager.applyRect(fx: c.fx, fy: c.fy, fw: c.fw, fh: c.fh, pid: pid) }
+            }
+        } + discoverExtensionCommands() + settingsTabCommands()
     }
 
     /// One searchable root command per Settings pane (Raycast parity) — "Extensions — Invoke Settings",
