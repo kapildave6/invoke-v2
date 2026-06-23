@@ -47,6 +47,7 @@ public final class AppSettings: ObservableObject {
             applyLaunchAtLogin()
         }
     }
+    @Published public var windowCyclingEnabled: Bool { didSet { d.set(windowCyclingEnabled, forKey: "windowCyclingEnabled") } }
     /// Favorited command ids (Raycast's Favorites) — pinned to the top of the empty root.
     @Published public var favorites: Set<String> { didSet { d.set(Array(favorites), forKey: "favoriteCommands") } }
     /// Ordered list of command ids to try as fallbacks when a root search has no match.
@@ -108,6 +109,7 @@ public final class AppSettings: ObservableObject {
         trustedExtensions = Set((d.array(forKey: "trustedExtensions") as? [String]) ?? [])
         fallbackCommands = (d.array(forKey: "fallbackCommands") as? [String]) ?? []
         launchAtLogin = d.bool(forKey: "launchAtLogin")
+        windowCyclingEnabled = (d.object(forKey: "windowCyclingEnabled") as? Bool) ?? true
     }
 
     private func persistExtensionPrefs() {

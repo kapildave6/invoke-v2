@@ -78,6 +78,9 @@ struct GeneralPane: View {
     var body: some View {
         Form {
             Toggle("Launch Invoke at login", isOn: $settings.launchAtLogin)
+            Toggle("Enable window cycling", isOn: $settings.windowCyclingEnabled)
+            Text("Repeating a Left/Right Half command cycles the window through ½ → ⅔ → ⅓.")
+                .font(.caption).foregroundStyle(.secondary)
             Section {
                 LabeledContent("Summon Invoke", value: "⌥Space")
             } header: {

@@ -446,7 +446,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
             palette.showToast("Enable Accessibility for Invoke to manage windows")
             return
         }
-        if let pid { windowManager.apply(action, pid: pid) }
+        if let pid { windowManager.applyCycling(action, pid: pid, enabled: AppSettings.shared.windowCyclingEnabled) }
     }
 
     /// Remember the app that had focus when summoned, so we can paste back into it.
@@ -4118,6 +4118,11 @@ public final class AppController: NSObject, NSApplicationDelegate {
             windowCommand("window.topRight", "Top Right Quarter", "rectangle.inset.filled", ["top", "right", "quarter"], .topRight),
             windowCommand("window.bottomLeft", "Bottom Left Quarter", "rectangle.inset.filled", ["bottom", "left", "quarter"], .bottomLeft),
             windowCommand("window.bottomRight", "Bottom Right Quarter", "rectangle.inset.filled", ["bottom", "right", "quarter"], .bottomRight),
+            windowCommand("window.firstThird", "First Third", "rectangle.lefthalf.inset.filled", ["first", "third", "left"], .leftThird),
+            windowCommand("window.centerThird", "Center Third", "rectangle.center.inset.filled", ["center", "centre", "third", "middle"], .centerThird),
+            windowCommand("window.lastThird", "Last Third", "rectangle.righthalf.inset.filled", ["last", "third", "right"], .rightThird),
+            windowCommand("window.firstTwoThirds", "First Two-Thirds", "rectangle.lefthalf.filled", ["first", "two", "thirds", "left"], .leftTwoThirds),
+            windowCommand("window.lastTwoThirds", "Last Two-Thirds", "rectangle.righthalf.filled", ["last", "two", "thirds", "right"], .rightTwoThirds),
             RootCommand(id: "folder.home", title: "Open Home Folder", subtitle: "Navigation", runTitle: "Open", icon: "house", keywords: ["home", "folder", "finder"], closesPalette: true, run: openPath("~")),
             RootCommand(id: "folder.downloads", title: "Open Downloads", subtitle: "Navigation", runTitle: "Open", icon: "arrow.down.circle", keywords: ["downloads", "folder", "finder"], closesPalette: true, run: openPath("~/Downloads")),
             RootCommand(id: "folder.documents", title: "Open Documents", subtitle: "Navigation", runTitle: "Open", icon: "doc", keywords: ["documents", "docs", "folder"], closesPalette: true, run: openPath("~/Documents")),
