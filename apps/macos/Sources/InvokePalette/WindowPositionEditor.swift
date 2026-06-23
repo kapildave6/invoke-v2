@@ -8,6 +8,10 @@ import InvokeServices
 private final class WindowPreviewView: NSView {
     var placement: WindowPlacement = .default { didSet { needsDisplay = true } }
 
+    // Draw in a TOP-LEFT-origin, y-down coordinate space so it matches placementRect (AX coords).
+    // Without this, a top-left placement would render at the bottom of the preview (y-axis inverted).
+    override var isFlipped: Bool { true }
+
     // The representative size used for .auto dimensions (60% of preview bounds).
     private var autoSize: CGSize {
         CGSize(width: bounds.width * 0.6, height: bounds.height * 0.6)
@@ -47,9 +51,8 @@ private final class WindowPreviewView: NSView {
             repSize = CGSize(width: min(CGFloat(w), inner.width * 0.95), height: min(CGFloat(h), inner.height * 0.95))
         }
 
-        // placementRect gives y-down coordinates (AX space); inner is already NSView (y-up, bottom-left origin).
-        // Since both placementRect and our preview use the same coordinate system (the `inner` rect as origin),
-        // we can use placementRect directly — the result coords are relative to inner.minX/minY.
+        // placementRect returns AX (top-left, y-down) coordinates. This view is `isFlipped` (also y-down,
+        // top-left origin), so the result maps directly — a top-left placement draws at the top.
         let pr = WindowEnumerator.placementRect(placement, currentSize: repSize, visibleAX: inner)
 
         // Clamp the rect to fit within inner.
