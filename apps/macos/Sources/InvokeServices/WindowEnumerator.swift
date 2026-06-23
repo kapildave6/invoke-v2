@@ -81,10 +81,6 @@ public final class WindowEnumerator {
         func z(_ s: String) -> Sizing { s.lowercased() == "auto" ? .auto : (Double(s).map { Sizing.points($0) } ?? .auto) }
         return WindowPlacement(anchor: anchor, width: z(parts[1]), height: z(parts[2]), offsetX: Double(parts[3]) ?? 0, offsetY: Double(parts[4]) ?? 0)
     }
-    private func currentSize(_ win: AXUIElement) -> CGSize {
-        if let s = axDouble(win, kAXSizeAttribute as String, .cgSize) { return CGSize(width: s.0, height: s.1) }
-        return .zero
-    }
     @discardableResult
     public func applyPlacement(_ p: WindowPlacement, toWindow win: AXUIElement) -> Bool {
         guard let pos = axDouble(win, kAXPositionAttribute as String, .cgPoint),
@@ -101,6 +97,11 @@ public final class WindowEnumerator {
     @discardableResult
     public func applyPlacementToFocused(_ p: WindowPlacement) -> Bool {
         guard hasAccessibility, let front = NSWorkspace.shared.frontmostApplication, let win = focusedWindow(ofPid: front.processIdentifier) else { return false }
+        return applyPlacement(p, toWindow: win)
+    }
+    @discardableResult
+    public func applyPlacement(_ p: WindowPlacement, toPid pid: pid_t) -> Bool {
+        guard hasAccessibility, let win = focusedWindow(ofPid: pid) else { return false }
         return applyPlacement(p, toWindow: win)
     }
     @discardableResult

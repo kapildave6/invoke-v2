@@ -882,7 +882,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
             guard let self else { return }
             let name = (vals["name"] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             guard !name.isEmpty else { return }
-            let placement = WindowEnumerator.parsePlacement(vals["grid"] ?? "") ?? .default
+            guard let placement = WindowEnumerator.parsePlacement(vals["grid"] ?? "") else { return }
             if let existing = cmd {
                 let updated = AppSettings.CustomWindowCommand(id: existing.id, name: name, placement: placement)
                 AppSettings.shared.updateCustomWindowCommand(updated)
@@ -1441,7 +1441,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 PaletteAction(title: wc.name, shortcut: "↵", icon: "macwindow") { [weak self] in
                     guard let self else { return }
                     guard AXIsProcessTrusted() else { Self.promptAccessibility(); self.palette.showToast("Enable Accessibility for Invoke to manage windows"); return }
-                    self.windowEnumerator.applyPlacementToFocused(wc.placement)
+                    if let pid = self.pasteTarget?.processIdentifier { self.windowEnumerator.applyPlacement(wc.placement, toPid: pid) }
                     self.afterLaunch()
                 },
                 PaletteAction(title: "Edit Command", shortcut: "⌘E", icon: "pencil") { [weak self] in self?.presentCustomWindowForm(editing: wc) },
@@ -4229,7 +4229,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
             RootCommand(id: c.id, title: c.name, subtitle: "Window Management", runTitle: c.name, icon: "macwindow", keywords: ["window"] + c.name.lowercased().split(separator: " ").map(String.init), closesPalette: true) { [weak self] in
                 guard let self else { return }
                 guard AXIsProcessTrusted() else { Self.promptAccessibility(); self.palette.showToast("Enable Accessibility for Invoke to manage windows"); return }
-                self.windowEnumerator.applyPlacementToFocused(c.placement)
+                if let pid = self.pasteTarget?.processIdentifier { self.windowEnumerator.applyPlacement(c.placement, toPid: pid) }
             }
         } + discoverExtensionCommands() + settingsTabCommands()
     }
