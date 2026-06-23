@@ -81,7 +81,7 @@ _Last updated: 2026-06-21_
 | **Calculator** (math · units · live currency) | ✅ | bundled extension, 55 engine tests |
 | Applications launcher | ✅ | see Root search |
 | Clipboard history | ✅ | text/link/file/image; master–detail + metadata; ⌘⇧V; type filter; paste-to-app. In-memory (encryption pending §3.4) |
-| Window management (maximize/halves) | ✅ | AX move/resize; root commands + ⌃⌥←/→/↑ hotkeys (needs Accessibility) |
+| Window management (maximize/halves/quarters/center/thirds + cycling) | ✅ | AX move/resize; maximize, halves, quarters, center, **First/Center/Last Third + First/Last Two-Thirds**, and **½→⅔→⅓ cycling** on Left/Right Half (repeat to cycle; global toggle) — Chunk WM-1 2026-06-23. Root commands + per-command hotkeys (⌃⌥ arrows seeded; needs Accessibility). Full WM parity in progress (WM-1 of 5; next: WM-2 extension API, WM-3 custom commands, WM-4 layouts, WM-5 Stage Manager/presets) |
 | Search Screenshots | ✅ | browse + preview + metadata, paste/copy |
 | Snippets / text expansion | ✅ | create/edit/delete in Settings; "Search Snippets" mode; paste-to-app. (Global keyword auto-expansion deferred) |
 | Quicklinks | ✅ | create/edit/delete; "Search Quicklinks" mode; `{query}` placeholder sub-mode; strict query encoding |
