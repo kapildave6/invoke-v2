@@ -871,12 +871,10 @@ public final class AppController: NSObject, NSApplicationDelegate {
     }
 
     private func presentCustomWindowForm(editing cmd: AppSettings.CustomWindowCommand? = nil) {
-        // The grid picker value is now a WindowPlacement serialized string (anchor;w;h;ox;oy).
-        // The window-grid-picker form element will be updated in a later UI task to speak this format.
         let placementValue = cmd.map { WindowEnumerator.serializePlacement($0.placement) } ?? WindowEnumerator.serializePlacement(.default)
         let fields = [
             formField(11, fieldId: "name", type: "form-textfield", title: "Name", placeholder: "e.g. Left Chat Panel", value: cmd?.name ?? ""),
-            formField(12, fieldId: "grid", type: "window-grid-picker", title: "Position", placeholder: "", value: placementValue),
+            formField(12, fieldId: "grid", type: "window-position-editor", title: "Position", placeholder: "", value: placementValue),
         ]
         enterNativeForm(title: cmd == nil ? "Create Window Management Command" : "Edit Window Command", fields: fields) { [weak self] vals in
             guard let self else { return }

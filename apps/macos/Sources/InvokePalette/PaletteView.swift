@@ -1409,7 +1409,7 @@ public final class PaletteView: NSView {
     /// jump. Returns false if the structure changed (field added/removed/reordered, or an error appeared/
     /// cleared) so the caller falls back to a full rebuild. This is what makes typing smooth.
     private func reconcileFormInPlace(_ form: ViewNode) -> Bool {
-        let fieldTypes: Set<String> = ["form-textfield", "form-textarea", "form-checkbox", "form-dropdown", "form-description", "form-separator", "form-password", "form-datepicker", "window-grid-picker", "window-position-editor"]
+        let fieldTypes: Set<String> = ["form-textfield", "form-textarea", "form-checkbox", "form-dropdown", "form-description", "form-separator", "form-password", "form-datepicker", "window-position-editor"]
         var fields: [ViewNode] = []
         func collect(_ n: ViewNode) {
             if fieldTypes.contains(n.type) { fields.append(n); return }
@@ -1512,7 +1512,7 @@ public final class PaletteView: NSView {
         var fields: [ViewNode] = []
         // Includes form-description / form-separator so they render in document order (they're not
         // interactive fields, but they're part of the form's visual layout — Raycast parity).
-        let fieldTypes: Set<String> = ["form-textfield", "form-textarea", "form-checkbox", "form-dropdown", "form-description", "form-separator", "form-password", "form-datepicker", "window-grid-picker", "window-position-editor"]
+        let fieldTypes: Set<String> = ["form-textfield", "form-textarea", "form-checkbox", "form-dropdown", "form-description", "form-separator", "form-password", "form-datepicker", "window-position-editor"]
         func collect(_ n: ViewNode) {
             // A field owns its own children (e.g. a dropdown's items) — don't treat those as fields.
             if fieldTypes.contains(n.type) { fields.append(n); return }
@@ -1818,46 +1818,6 @@ public final class PaletteView: NSView {
             }
             control = dd
             rowAlignment = .centerY
-        case "window-grid-picker":
-            let gp = WindowGridPicker()
-            gp.translatesAutoresizingMaskIntoConstraints = false
-            // Seed initial selection from value/defaultValue if provided.
-            let handlerId = f.props["onChange"]?.handlerRef
-            if let raw = f.props["value"]?.stringValue ?? f.props["defaultValue"]?.stringValue {
-                let parts = raw.split(separator: ",").compactMap { Double($0) }
-                if parts.count == 4 {
-                    let c0 = Int((parts[0] * Double(WindowGridPicker.cols)).rounded())
-                    let r0 = Int((parts[1] * Double(WindowGridPicker.rows)).rounded())
-                    let c1 = max(0, Int(((parts[0] + parts[2]) * Double(WindowGridPicker.cols)).rounded()) - 1)
-                    let r1 = max(0, Int(((parts[1] + parts[3]) * Double(WindowGridPicker.rows)).rounded()) - 1)
-                    gp.setSelection(c0: c0, r0: r0, c1: c1, r1: r1)
-                }
-            }
-            var gpHandlerId = handlerId
-            gp.onChange = { [weak self] fx, fy, fw, fh in
-                if let h = gpHandlerId { self?.onFormFieldChange?(h, "\(fx),\(fy),\(fw),\(fh)") }
-            }
-            formControls.append((id, { [weak gp] in
-                guard let fr = gp?.fractions else { return "" }
-                return "\(fr.0),\(fr.1),\(fr.2),\(fr.3)"
-            }))
-            formFieldViewById[id] = gp
-            formResponderViews.append(gp)
-            formApply[id] = { [weak gp] n in
-                guard let gp, let raw = n.props["value"]?.stringValue else { return }
-                let parts = raw.split(separator: ",").compactMap { Double($0) }
-                guard parts.count == 4 else { return }
-                let c0 = Int((parts[0] * Double(WindowGridPicker.cols)).rounded())
-                let r0 = Int((parts[1] * Double(WindowGridPicker.rows)).rounded())
-                let c1 = max(0, Int(((parts[0] + parts[2]) * Double(WindowGridPicker.cols)).rounded()) - 1)
-                let r1 = max(0, Int(((parts[1] + parts[3]) * Double(WindowGridPicker.rows)).rounded()) - 1)
-                gp.setSelection(c0: c0, r0: r0, c1: c1, r1: r1)
-            }
-            formRefreshHandler[id] = { n in
-                gpHandlerId = n.props["onChange"]?.handlerRef
-            }
-            rowAlignment = .top
-            control = gp
         case "window-position-editor":
             let editor = WindowPositionEditor()
             editor.translatesAutoresizingMaskIntoConstraints = false
