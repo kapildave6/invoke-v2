@@ -2044,14 +2044,14 @@ public final class AppController: NSObject, NSApplicationDelegate {
             return true
         case "windowManagement.getActiveWindow":
             DispatchQueue.main.async {
-                guard self.windowEnumerator.hasAccessibility else { fail("Accessibility permission is required for window management"); return }
+                guard self.windowEnumerator.hasAccessibility else { Self.promptAccessibility(); fail("Accessibility permission is required for window management — grant it in the dialog (or System Settings → Privacy & Security → Accessibility), then reopen this command"); return }
                 guard let w = self.windowEnumerator.activeWindow() else { fail("No active window"); return }
                 reply(Self.windowJSON(w))
             }
             return true
         case "windowManagement.getWindowsOnActiveDesktop":
             DispatchQueue.main.async {
-                guard self.windowEnumerator.hasAccessibility else { fail("Accessibility permission is required for window management"); return }
+                guard self.windowEnumerator.hasAccessibility else { Self.promptAccessibility(); fail("Accessibility permission is required for window management — grant it in the dialog (or System Settings → Privacy & Security → Accessibility), then reopen this command"); return }
                 reply(.array(self.windowEnumerator.windowsOnActiveDesktop().map(Self.windowJSON)))
             }
             return true
@@ -2060,7 +2060,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
             return true
         case "windowManagement.setWindowBounds":
             DispatchQueue.main.async {
-                guard self.windowEnumerator.hasAccessibility else { fail("Accessibility permission is required for window management"); return }
+                guard self.windowEnumerator.hasAccessibility else { Self.promptAccessibility(); fail("Accessibility permission is required for window management — grant it in the dialog (or System Settings → Privacy & Security → Accessibility), then reopen this command"); return }
                 let id = arg("id")?.stringValue ?? ""
                 let b = { (k: String) -> JSONValue? in if case .object(let o)? = arg("bounds") { return o[k] }; return nil }
                 let pos = { (k: String) -> Double? in if case .object(let o)? = b("position") { return o[k]?.doubleValue }; return nil }
