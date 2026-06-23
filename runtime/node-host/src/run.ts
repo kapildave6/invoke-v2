@@ -203,6 +203,10 @@ function devCapabilities(opts: { preferences: Record<string, unknown>; storePath
         return null;
       case "date.pick":
         return new Date().toISOString();
+      case "windowManagement.getActiveWindow": return { id: "dev", bounds: { position: { x: 0, y: 0 }, size: { width: 0, height: 0 } }, desktopId: "0" };
+      case "windowManagement.getWindowsOnActiveDesktop": return [];
+      case "windowManagement.getDesktops": return [];
+      case "windowManagement.setWindowBounds": return { id: "dev", bounds: { position: { x: 0, y: 0 }, size: { width: 0, height: 0 } }, desktopId: "0" };
       case "ai.ask":
         console.log(`  ✦ ai.ask "${String(params.prompt ?? "").slice(0, 60)}" [dev stub]`);
         return `[dev AI stub] ${params.prompt ?? ""}`;

@@ -83,6 +83,8 @@ public final class ExtensionHost {
         "command.updateMetadata",
         "command.launch", // launchCommand(): launch another command (same or named extension)
         "quicklink.create", "snippet.create", "clipboard.read", "quicklook.preview", "open.with", "date.pick",
+        "windowManagement.getActiveWindow", "windowManagement.getWindowsOnActiveDesktop",
+        "windowManagement.setWindowBounds", "windowManagement.getDesktops",
     ]
 
     private var pid: pid_t = -1

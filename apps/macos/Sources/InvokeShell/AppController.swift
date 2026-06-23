@@ -23,6 +23,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private let frecency = Frecency()
     private let clipboard = ClipboardHistory()
     private let windowManager = WindowManager()
+    private let windowEnumerator = WindowEnumerator()
     private let screenshots = ScreenshotIndex()
     private var screenshotThumbCache: [String: String] = [:] // path → base64 PNG thumb (lazy, async)
     private let snippetStore = SnippetStore.shared
@@ -2041,6 +2042,35 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 if let cb = self?.pendingOAuth.removeValue(forKey: state) { cb(.null) }
             }
             return true
+        case "windowManagement.getActiveWindow":
+            DispatchQueue.main.async {
+                guard self.windowEnumerator.hasAccessibility else { fail("Accessibility permission is required for window management"); return }
+                guard let w = self.windowEnumerator.activeWindow() else { fail("No active window"); return }
+                reply(Self.windowJSON(w))
+            }
+            return true
+        case "windowManagement.getWindowsOnActiveDesktop":
+            DispatchQueue.main.async {
+                guard self.windowEnumerator.hasAccessibility else { fail("Accessibility permission is required for window management"); return }
+                reply(.array(self.windowEnumerator.windowsOnActiveDesktop().map(Self.windowJSON)))
+            }
+            return true
+        case "windowManagement.getDesktops":
+            DispatchQueue.main.async { reply(.array(self.windowEnumerator.desktops().map(Self.desktopJSON))) }
+            return true
+        case "windowManagement.setWindowBounds":
+            DispatchQueue.main.async {
+                guard self.windowEnumerator.hasAccessibility else { fail("Accessibility permission is required for window management"); return }
+                let id = arg("id")?.stringValue ?? ""
+                let b = { (k: String) -> JSONValue? in if case .object(let o)? = arg("bounds") { return o[k] }; return nil }
+                let pos = { (k: String) -> Double? in if case .object(let o)? = b("position") { return o[k]?.doubleValue }; return nil }
+                let size = { (k: String) -> Double? in if case .object(let o)? = b("size") { return o[k]?.doubleValue }; return nil }
+                guard let w = self.windowEnumerator.setBounds(id: id, x: pos("x"), y: pos("y"), width: size("width"), height: size("height")) else {
+                    fail("Window not found: \(id)"); return
+                }
+                reply(Self.windowJSON(w))
+            }
+            return true
         default:
             return false
         }
@@ -2554,6 +2584,28 @@ public final class AppController: NSObject, NSApplicationDelegate {
     }
     private static func base64URL(_ d: Data) -> String {
         d.base64EncodedString().replacingOccurrences(of: "+", with: "-").replacingOccurrences(of: "/", with: "_").replacingOccurrences(of: "=", with: "")
+    }
+
+    private static func windowJSON(_ w: WindowInfo) -> JSONValue {
+        var app: [String: JSONValue] = [:]
+        if let n = w.appName { app["name"] = .string(n) }
+        if let p = w.appPath { app["path"] = .string(p) }
+        if let b = w.bundleId { app["bundleId"] = .string(b) }
+        var obj: [String: JSONValue] = [
+            "id": .string(w.id),
+            "bounds": .object(["position": .object(["x": .number(w.x), "y": .number(w.y)]),
+                               "size": .object(["width": .number(w.width), "height": .number(w.height)])]),
+            "desktopId": .string(w.desktopId),
+            "active": .bool(w.active),
+            "fullScreen": .bool(w.fullScreen),
+        ]
+        if !app.isEmpty { obj["application"] = .object(app) }
+        return .object(obj)
+    }
+    private static func desktopJSON(_ d: DesktopInfo) -> JSONValue {
+        .object(["id": .string(d.id), "screenId": .string(d.screenId),
+                 "size": .object(["width": .number(d.width), "height": .number(d.height)]),
+                 "active": .bool(d.active), "type": .string(d.fullScreen ? "fullScreen" : "user")])
     }
 
     private static func applicationJSON(name: String, path: String, bundleId: String?) -> JSONValue {

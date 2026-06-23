@@ -75,6 +75,10 @@ export const ALLOWED_RPC: ReadonlySet<string> = new Set([
   "quicklook.preview",  // Action.ToggleQuickLook → macOS Quick Look (qlmanage)
   "open.with",          // Action.OpenWith → choose an app and open
   "date.pick",          // Action.PickDate → native NSDatePicker, returns the chosen date
+  "windowManagement.getActiveWindow",
+  "windowManagement.getWindowsOnActiveDesktop",
+  "windowManagement.setWindowBounds",
+  "windowManagement.getDesktops",
 ]);
 
 export function isAllowedRpcMethod(method: string): boolean {
