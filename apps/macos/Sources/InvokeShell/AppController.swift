@@ -871,23 +871,23 @@ public final class AppController: NSObject, NSApplicationDelegate {
     }
 
     private func presentCustomWindowForm(editing cmd: AppSettings.CustomWindowCommand? = nil) {
-        let gridValue = cmd.map { "\($0.fx),\($0.fy),\($0.fw),\($0.fh)" } ?? ""
+        // The grid picker value is now a WindowPlacement serialized string (anchor;w;h;ox;oy).
+        // The window-grid-picker form element will be updated in a later UI task to speak this format.
+        let placementValue = cmd.map { WindowEnumerator.serializePlacement($0.placement) } ?? WindowEnumerator.serializePlacement(.default)
         let fields = [
             formField(11, fieldId: "name", type: "form-textfield", title: "Name", placeholder: "e.g. Left Chat Panel", value: cmd?.name ?? ""),
-            formField(12, fieldId: "grid", type: "window-grid-picker", title: "Position", placeholder: "", value: gridValue),
+            formField(12, fieldId: "grid", type: "window-grid-picker", title: "Position", placeholder: "", value: placementValue),
         ]
         enterNativeForm(title: cmd == nil ? "Create Window Management Command" : "Edit Window Command", fields: fields) { [weak self] vals in
             guard let self else { return }
             let name = (vals["name"] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-            let raw = vals["grid"] ?? ""
-            let parts = raw.split(separator: ",", maxSplits: 3).map { Double($0) }
-            guard parts.count == 4, let fx = parts[0], let fy = parts[1], let fw = parts[2], let fh = parts[3] else { return }
-            guard !name.isEmpty, fw > 0, fh > 0 else { return }
+            guard !name.isEmpty else { return }
+            let placement = WindowEnumerator.parsePlacement(vals["grid"] ?? "") ?? .default
             if let existing = cmd {
-                let updated = AppSettings.CustomWindowCommand(id: existing.id, name: name, fx: fx, fy: fy, fw: fw, fh: fh)
+                let updated = AppSettings.CustomWindowCommand(id: existing.id, name: name, placement: placement)
                 AppSettings.shared.updateCustomWindowCommand(updated)
             } else {
-                AppSettings.shared.addCustomWindowCommand(name: name, fx: fx, fy: fy, fw: fw, fh: fh)
+                AppSettings.shared.addCustomWindowCommand(name: name, placement: placement)
             }
             self.commands = self.makeCommands()
             self.reloadCommandHotkeys()
@@ -1441,7 +1441,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 PaletteAction(title: wc.name, shortcut: "↵", icon: "macwindow") { [weak self] in
                     guard let self else { return }
                     guard AXIsProcessTrusted() else { Self.promptAccessibility(); self.palette.showToast("Enable Accessibility for Invoke to manage windows"); return }
-                    if let pid = self.pasteTarget?.processIdentifier { self.windowManager.applyRect(fx: wc.fx, fy: wc.fy, fw: wc.fw, fh: wc.fh, pid: pid) }
+                    self.windowEnumerator.applyPlacementToFocused(wc.placement)
                     self.afterLaunch()
                 },
                 PaletteAction(title: "Edit Command", shortcut: "⌘E", icon: "pencil") { [weak self] in self?.presentCustomWindowForm(editing: wc) },
@@ -4229,7 +4229,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
             RootCommand(id: c.id, title: c.name, subtitle: "Window Management", runTitle: c.name, icon: "macwindow", keywords: ["window"] + c.name.lowercased().split(separator: " ").map(String.init), closesPalette: true) { [weak self] in
                 guard let self else { return }
                 guard AXIsProcessTrusted() else { Self.promptAccessibility(); self.palette.showToast("Enable Accessibility for Invoke to manage windows"); return }
-                if let pid = self.pasteTarget?.processIdentifier { self.windowManager.applyRect(fx: c.fx, fy: c.fy, fw: c.fw, fh: c.fh, pid: pid) }
+                self.windowEnumerator.applyPlacementToFocused(c.placement)
             }
         } + discoverExtensionCommands() + settingsTabCommands()
     }

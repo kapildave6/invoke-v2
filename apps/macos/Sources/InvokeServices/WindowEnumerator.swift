@@ -43,6 +43,82 @@ public final class WindowEnumerator {
         CGRect(x: f.minX, y: primaryHeight - f.maxY, width: f.width, height: f.height)
     }
 
+    // MARK: Screen helpers (WM-4 spec)
+
+    /// Full pixel height of the primary screen (the one at origin), used for Cocoa↔AX coordinate conversion.
+    public func primaryFullHeight() -> CGFloat {
+        let primary = NSScreen.screens.first { $0.frame.origin == .zero } ?? NSScreen.main
+        return primary?.frame.height ?? NSScreen.screens.first?.frame.height ?? 0
+    }
+
+    /// Returns the AX-space visible frame of the screen that contains `center`, or of the primary screen
+    /// if none matches. AX-space: global top-left origin, y-down.
+    public func visibleAX(forCenter center: CGPoint) -> CGRect? {
+        let h = primaryFullHeight()
+        let screen = NSScreen.screens.first {
+            Self.axRect(cocoaFrame: $0.frame, primaryHeight: h).contains(center)
+        } ?? (NSScreen.screens.first { $0.frame.origin == .zero } ?? NSScreen.main)
+        guard let s = screen else { return nil }
+        return Self.axRect(cocoaFrame: s.visibleFrame, primaryHeight: h)
+    }
+
+    // MARK: Placement engine (pure statics + AX apply)
+
+    public static func placementRect(_ p: WindowPlacement, currentSize cur: CGSize, visibleAX V: CGRect) -> CGRect {
+        let w: CGFloat = { if case .points(let v) = p.width { return CGFloat(v) } else { return cur.width } }()
+        let h: CGFloat = { if case .points(let v) = p.height { return CGFloat(v) } else { return cur.height } }()
+        let xs = [V.minX, V.minX + (V.width - w) / 2, V.maxX - w]
+        let ys = [V.minY, V.minY + (V.height - h) / 2, V.maxY - h]
+        return CGRect(x: xs[p.anchor.col] + CGFloat(p.offsetX), y: ys[p.anchor.row] + CGFloat(p.offsetY), width: w, height: h)
+    }
+    public static func serializePlacement(_ p: WindowPlacement) -> String {
+        func s(_ z: Sizing) -> String { if case .points(let v) = z { return String(v) } else { return "Auto" } }
+        return "\(p.anchor.rawValue);\(s(p.width));\(s(p.height));\(p.offsetX);\(p.offsetY)"
+    }
+    public static func parsePlacement(_ str: String) -> WindowPlacement? {
+        let parts = str.split(separator: ";", omittingEmptySubsequences: false).map(String.init)
+        guard parts.count == 5, let a = Int(parts[0]), let anchor = Anchor(rawValue: a) else { return nil }
+        func z(_ s: String) -> Sizing { s.lowercased() == "auto" ? .auto : (Double(s).map { Sizing.points($0) } ?? .auto) }
+        return WindowPlacement(anchor: anchor, width: z(parts[1]), height: z(parts[2]), offsetX: Double(parts[3]) ?? 0, offsetY: Double(parts[4]) ?? 0)
+    }
+    private func currentSize(_ win: AXUIElement) -> CGSize {
+        if let s = axDouble(win, kAXSizeAttribute as String, .cgSize) { return CGSize(width: s.0, height: s.1) }
+        return .zero
+    }
+    @discardableResult
+    public func applyPlacement(_ p: WindowPlacement, toWindow win: AXUIElement) -> Bool {
+        guard let pos = axDouble(win, kAXPositionAttribute as String, .cgPoint),
+              let sz = axDouble(win, kAXSizeAttribute as String, .cgSize),
+              let sv = visibleAX(forCenter: CGPoint(x: pos.0 + sz.0 / 2, y: pos.1 + sz.1 / 2)) else { return false }
+        let target = Self.placementRect(p, currentSize: CGSize(width: sz.0, height: sz.1), visibleAX: sv)
+        var newSize = CGSize(width: target.width, height: target.height)
+        var newPos = CGPoint(x: target.minX, y: target.minY)
+        if let v = AXValueCreate(.cgSize, &newSize) { AXUIElementSetAttributeValue(win, kAXSizeAttribute as CFString, v) }
+        if let v = AXValueCreate(.cgPoint, &newPos) { AXUIElementSetAttributeValue(win, kAXPositionAttribute as CFString, v) }
+        if let v = AXValueCreate(.cgSize, &newSize) { AXUIElementSetAttributeValue(win, kAXSizeAttribute as CFString, v) }
+        return true
+    }
+    @discardableResult
+    public func applyPlacementToFocused(_ p: WindowPlacement) -> Bool {
+        guard hasAccessibility, let front = NSWorkspace.shared.frontmostApplication, let win = focusedWindow(ofPid: front.processIdentifier) else { return false }
+        return applyPlacement(p, toWindow: win)
+    }
+    @discardableResult
+    public func applyLayout(_ items: [(bundleId: String, placement: WindowPlacement)]) -> Int {
+        guard hasAccessibility else { return 0 }
+        var n = 0
+        for item in items {
+            guard let app = NSWorkspace.shared.runningApplications.first(where: { $0.bundleIdentifier == item.bundleId }) else { continue }
+            let axApp = AXUIElementCreateApplication(app.processIdentifier)
+            var ref: CFTypeRef?
+            var win: AXUIElement?
+            if AXUIElementCopyAttributeValue(axApp, kAXMainWindowAttribute as CFString, &ref) == .success, let r = ref, CFGetTypeID(r) == AXUIElementGetTypeID() { win = (r as! AXUIElement) }
+            else { var ws: CFTypeRef?; if AXUIElementCopyAttributeValue(axApp, kAXWindowsAttribute as CFString, &ws) == .success, let arr = ws as? [AXUIElement], let f = arr.first { win = f } }
+            if let window = win, applyPlacement(item.placement, toWindow: window) { n += 1 }
+        }
+        return n
+    }
+
     // MARK: AX plumbing
     private func axId(_ win: AXUIElement) -> String {
         var wid = CGWindowID(0)

@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import InvokeServices
 import Security
 import ServiceManagement
 
@@ -24,9 +25,27 @@ public final class AppSettings: ObservableObject {
     public struct CustomWindowCommand: Codable, Equatable {
         public let id: String
         public var name: String
-        public var fx: Double, fy: Double, fw: Double, fh: Double
-        public init(id: String = "window.custom.\(UUID().uuidString)", name: String, fx: Double, fy: Double, fw: Double, fh: Double) {
-            self.id = id; self.name = name; self.fx = fx; self.fy = fy; self.fw = fw; self.fh = fh
+        public var placement: WindowPlacement
+        public init(id: String = "window.custom.\(UUID().uuidString)", name: String, placement: WindowPlacement = .default) {
+            self.id = id; self.name = name; self.placement = placement
+        }
+    }
+
+    /// A named window layout: a set of per-app placements applied together.
+    public struct WindowLayout: Codable, Equatable {
+        public struct Item: Codable, Equatable {
+            public var bundleId: String
+            public var appName: String
+            public var placement: WindowPlacement
+            public init(bundleId: String, appName: String, placement: WindowPlacement) {
+                self.bundleId = bundleId; self.appName = appName; self.placement = placement
+            }
+        }
+        public let id: String
+        public var name: String
+        public var items: [Item]
+        public init(id: String = "layout.\(UUID().uuidString)", name: String, items: [Item] = []) {
+            self.id = id; self.name = name; self.items = items
         }
     }
 
@@ -71,17 +90,33 @@ public final class AppSettings: ObservableObject {
         fallbackCommands.swapAt(i, j)
     }
     /// Custom window commands — persisted as JSON-encoded array.
+    /// Migration note: old entries encoded with fx/fy/fw/fh will fail to decode; the `?? []` fallback
+    /// drops them. This is acceptable — the feature was days-old dev-only data with no user exposure.
     @Published public var customWindowCommands: [CustomWindowCommand] {
         didSet { if let data = try? JSONEncoder().encode(customWindowCommands) { d.set(data, forKey: "customWindowCommands") } }
     }
     @discardableResult
-    public func addCustomWindowCommand(name: String, fx: Double, fy: Double, fw: Double, fh: Double) -> CustomWindowCommand {
-        let c = CustomWindowCommand(name: name, fx: fx, fy: fy, fw: fw, fh: fh)
+    public func addCustomWindowCommand(name: String, placement: WindowPlacement = .default) -> CustomWindowCommand {
+        let c = CustomWindowCommand(name: name, placement: placement)
         customWindowCommands.append(c); return c
     }
     public func removeCustomWindowCommand(id: String) { customWindowCommands.removeAll { $0.id == id } }
     public func updateCustomWindowCommand(_ c: CustomWindowCommand) {
         if let i = customWindowCommands.firstIndex(where: { $0.id == c.id }) { customWindowCommands[i] = c }
+    }
+
+    /// Named window layouts — persisted as JSON-encoded array.
+    @Published public var windowLayouts: [WindowLayout] {
+        didSet { if let data = try? JSONEncoder().encode(windowLayouts) { d.set(data, forKey: "windowLayouts") } }
+    }
+    @discardableResult
+    public func addWindowLayout(name: String, items: [WindowLayout.Item] = []) -> WindowLayout {
+        let layout = WindowLayout(name: name, items: items)
+        windowLayouts.append(layout); return layout
+    }
+    public func removeWindowLayout(id: String) { windowLayouts.removeAll { $0.id == id } }
+    public func updateWindowLayout(_ layout: WindowLayout) {
+        if let i = windowLayouts.firstIndex(where: { $0.id == layout.id }) { windowLayouts[i] = layout }
     }
 
     /// Extension ids the user has explicitly allowed to run AppleScript (a powerful OS-automation
@@ -124,6 +159,11 @@ public final class AppSettings: ObservableObject {
         customWindowCommands = {
             guard let data = UserDefaults.standard.data(forKey: "customWindowCommands"),
                   let decoded = try? JSONDecoder().decode([CustomWindowCommand].self, from: data) else { return [] }
+            return decoded
+        }()
+        windowLayouts = {
+            guard let data = UserDefaults.standard.data(forKey: "windowLayouts"),
+                  let decoded = try? JSONDecoder().decode([WindowLayout].self, from: data) else { return [] }
             return decoded
         }()
         extensionSecretKeys = Set((d.array(forKey: "extensionSecretKeys") as? [String]) ?? [])
