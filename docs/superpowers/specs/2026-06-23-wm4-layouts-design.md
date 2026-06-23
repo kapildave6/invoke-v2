@@ -25,16 +25,10 @@ struct WindowLayout.Item: Codable, Equatable { bundleId: String; appName: String
 - Each stored layout → a `RootCommand` (icon `rectangle.3.group`, subtitle "Window Management", run → `applyLayout(items)` Accessibility-guarded) appended in `makeCommands()`, bindable via Settings.
 - ⌘K Edit/Delete on layout commands (mirror WM-3's `window.layout.` branch in `currentActions()`).
 
-## OPEN DECISION — the builder UX (needs the user's call)
-How does the user define a multi-window layout? Three approaches:
+## Builder UX — RESOLVED: (A) Capture-current (user choice, 2026-06-23)
+Arrange windows by hand → run "Create Window Layout Command" → a **checklist of the current on-screen windows** (each row: app name + a human description of its current position, pre-ticked) + a **Name** field → Save. On save, each ticked window's current bounds → **fractions relative to its screen's `visibleFrame`** (so re-applying via `applyRect` round-trips exactly) → stored as the layout's items. Reuses WM-2's `windowsOnActiveDesktop`. The checklist + name fit the native-form system (`form-checkbox` per window + a `form-textfield` name). (Deferred: (B) per-app grid designer / (C) hybrid tweak — future enhancement.)
 
-**(A) Capture-current (snapshot)** — *recommended for v1.* Arrange your windows however you like, run "Create Window Layout Command", name it → it **snapshots the current on-screen windows' bounds** (via WM-2's `windowsOnActiveDesktop`, converted to fractions) as the layout's items. Simplest UI (just a name + a checklist of which captured windows to include), reuses WM-2, very usable. Deviates from Raycast's grid-designer but is a common, slick pattern.
-
-**(B) Per-app grid designer** — *most Raycast-faithful.* A builder that lists layout items; "Add App" → pick a running app → assign a region with the WM-3 `WindowGridPicker` → repeat. Closest to Raycast's layout designer; the largest UI build (a multi-item editor mode).
-
-**(C) Hybrid** — capture-current to seed the items, then tweak each item's region with the grid picker. Best UX, most effort.
-
-(Settled parts above are identical regardless; only the builder differs. The plan's builder task is written once this is chosen.)
+**Capture math (pure, testable):** `boundsToFractions(winAX: CGRect, screenVisibleAX: CGRect) -> (fx,fy,fw,fh)` = `((winX - svX)/svW, (winY - svY)/svH, winW/svW, winH/svH)` — all in AX top-left space; the exact inverse of `rectFromFractions` against `visibleFrame`. `screenVisibleAX` = the window's screen `visibleFrame` converted to AX coords via WM-2's `axRect`.
 
 ## Error handling
 - No Accessibility → the existing prompt path (WM-1/2/3). 
