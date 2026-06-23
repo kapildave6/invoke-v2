@@ -1162,12 +1162,25 @@ export async function clearSearchBar(_options?: { forceScrollToTop?: boolean }):
 export function render(_element: ReactNode): void {}
 // Some extensions import `fetch` from @raycast/api; it's just the platform fetch.
 export const fetch = globalThis.fetch?.bind(globalThis);
-// Window management (Raycast's WindowManagement) — not wired; methods throw only if called.
+// Window management (Raycast's WindowManagement) — AX-backed via the host.
 export const WindowManagement = {
-  getActiveWindow: (): Promise<unknown> => unsupported("WindowManagement.getActiveWindow"),
-  getWindowsOnActiveDesktop: (): Promise<unknown[]> => unsupported("WindowManagement.getWindowsOnActiveDesktop"),
-  setWindowBounds: (_opts?: unknown): Promise<void> => unsupported("WindowManagement.setWindowBounds"),
-  getDesktops: (): Promise<unknown[]> => unsupported("WindowManagement.getDesktops"),
+  DesktopType: { User: "user", FullScreen: "fullScreen" } as const,
+  getActiveWindow: (): Promise<WindowManagement.Window> =>
+    rpc("windowManagement.getActiveWindow", {}) as Promise<WindowManagement.Window>,
+  getWindowsOnActiveDesktop: (): Promise<WindowManagement.Window[]> =>
+    rpc("windowManagement.getWindowsOnActiveDesktop", {}) as Promise<WindowManagement.Window[]>,
+  setWindowBounds: (options: WindowManagement.SetWindowBoundsOptions): Promise<WindowManagement.Window> =>
+    rpc("windowManagement.setWindowBounds", options) as Promise<WindowManagement.Window>,
+  getDesktops: (): Promise<WindowManagement.Desktop[]> =>
+    rpc("windowManagement.getDesktops", {}) as Promise<WindowManagement.Desktop[]>,
 };
+// Namespace merge adds the canonical Raycast types (mirror the Form/Image `export declare namespace` pattern).
+export declare namespace WindowManagement {
+  export type Bounds = { position: { x: number; y: number }; size: { width: number; height: number } };
+  export type DesktopType = "user" | "fullScreen";
+  export type Desktop = { id: string; screenId: string; size: { width: number; height: number }; active: boolean; type: DesktopType };
+  export type Window = { id: string; application?: Application; bounds: Bounds; desktopId: string; active?: boolean; fullScreen?: boolean };
+  export type SetWindowBoundsOptions = { id: string; bounds: Partial<Bounds>; desktopId?: string };
+}
 
 export type { ReactNode };
