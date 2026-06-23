@@ -38,6 +38,10 @@ public final class WindowEnumerator {
                               x: Double?, y: Double?, width: Double?, height: Double?) -> (x: Double, y: Double, w: Double, h: Double) {
         (x ?? current.x, y ?? current.y, width ?? current.w, height ?? current.h)
     }
+    /// Cocoa frame (y-up, bottom-left) → AX rect (y-down, top-left from the primary display's top).
+    public static func axRect(cocoaFrame f: CGRect, primaryHeight: CGFloat) -> CGRect {
+        CGRect(x: f.minX, y: primaryHeight - f.maxY, width: f.width, height: f.height)
+    }
 
     // MARK: AX plumbing
     private func axId(_ win: AXUIElement) -> String {
@@ -47,7 +51,8 @@ public final class WindowEnumerator {
     }
     private func axDouble(_ el: AXUIElement, _ attr: String, _ type: AXValueType) -> (CGFloat, CGFloat)? {
         var ref: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(el, attr as CFString, &ref) == .success, let ref else { return nil }
+        guard AXUIElementCopyAttributeValue(el, attr as CFString, &ref) == .success, let ref,
+              CFGetTypeID(ref) == AXValueGetTypeID() else { return nil }
         if type == .cgPoint { var p = CGPoint.zero; AXValueGetValue(ref as! AXValue, .cgPoint, &p); return (p.x, p.y) }
         var s = CGSize.zero; AXValueGetValue(ref as! AXValue, .cgSize, &s); return (s.width, s.height)
     }
@@ -57,9 +62,11 @@ public final class WindowEnumerator {
         return (ref as? Bool) ?? false
     }
     private func screenTuples() -> [(id: String, frame: CGRect)] {
-        NSScreen.screens.map { s in
+        let primary = NSScreen.screens.first { $0.frame.origin == .zero } ?? NSScreen.screens.first
+        let primaryHeight = primary.map { $0.frame.height } ?? 0
+        return NSScreen.screens.map { s in
             let n = (s.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.stringValue ?? "0"
-            return (id: n, frame: s.frame)
+            return (id: n, frame: Self.axRect(cocoaFrame: s.frame, primaryHeight: primaryHeight))
         }
     }
     private func info(for win: AXUIElement, pid: pid_t, app: NSRunningApplication?, frontFocused: AXUIElement?) -> WindowInfo? {
@@ -117,7 +124,8 @@ public final class WindowEnumerator {
         let mainId = (NSScreen.main?.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.stringValue
         return screenTuples().map { s in
             DesktopInfo(id: s.id, screenId: s.id, width: Double(s.frame.width), height: Double(s.frame.height),
-                        active: s.id == (activeScreenId ?? mainId), fullScreen: false)
+                        active: s.id == (activeScreenId ?? mainId),
+                        fullScreen: false) // intentional: no public per-display fullscreen-state API; per-window fullScreen lives on WindowInfo
         }
     }
     public func setBounds(id: String, x: Double?, y: Double?, width: Double?, height: Double?) -> WindowInfo? {
@@ -131,10 +139,8 @@ public final class WindowEnumerator {
         if let v = AXValueCreate(.cgSize, &newSize) { AXUIElementSetAttributeValue(win, kAXSizeAttribute as CFString, v) }
         if let v = AXValueCreate(.cgPoint, &newPos) { AXUIElementSetAttributeValue(win, kAXPositionAttribute as CFString, v) }
         if let v = AXValueCreate(.cgSize, &newSize) { AXUIElementSetAttributeValue(win, kAXSizeAttribute as CFString, v) }
-        let pid = NSWorkspace.shared.runningApplications.first {
-            let a = AXUIElementCreateApplication($0.processIdentifier); var f: CFTypeRef?
-            return AXUIElementCopyAttributeValue(a, kAXFocusedWindowAttribute as CFString, &f) == .success
-        }?.processIdentifier ?? 0
+        var pid: pid_t = 0
+        AXUIElementGetPid(win, &pid)
         return info(for: win, pid: pid, app: NSRunningApplication(processIdentifier: pid), frontFocused: nil)
     }
 }

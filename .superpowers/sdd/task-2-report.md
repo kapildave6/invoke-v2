@@ -1,122 +1,95 @@
-# Task 2 Report: Fallback persistence + Settings "Fallback Commands" section
+# Task 2 Report: WindowEnumerator
 
-## Status: DONE
+## Status
+COMPLETE
 
-**Commit:** ff5fc94  
-**Build:** `Build complete! (4.89s)` — only pre-existing warnings (Sendable, unused binding), no new warnings or errors.
+## File Created
+`apps/macos/Sources/InvokeServices/WindowEnumerator.swift` — 140 lines, verbatim from brief.
+
+## Module Purity
+Imports ONLY `AppKit` and `ApplicationServices`. No imports of `InvokeShell`, `InvokeIPC`, `AppSettings`, or `JSONValue`. Confirmed by inspection of the file header.
+
+## Pure-Helper Test
+
+**Command:**
+```
+cd <scratch> && swiftc /Users/test/Documents/code/invoke-v2/apps/macos/Sources/InvokeServices/WindowEnumerator.swift main.swift -o wm2test -framework AppKit -framework ApplicationServices && ./wm2test
+```
+
+**Output:**
+```
+ok: center-in-A
+ok: center-in-B
+ok: offscreen→first
+ok: merge-x-only
+ok: merge-size-only
+ALL PASS
+```
+
+All 5 assertions pass (compile exit 0, run exit 0).
+
+## swift build Result
+
+```
+Build complete! (3.46s)
+```
+
+Command: `swift build --package-path apps/macos`
+
+## Commit Hash
+`8774a03`
+
+Full message: `feat(wm): WindowEnumerator — AX window enumeration + id cache + bounds set (InvokeServices)`
+
+## Concerns / Notes
+- `_AXUIElementGetWindow` resolved via `dlsym` is a private API — intentional per brief; included verbatim.
+- `cache` is per-`WindowEnumerator` instance and repopulated on each enumeration call; `setBounds` only works if the target window appeared in a prior enumeration.
+- The `windowsOnActiveDesktop()` method enumerates all `.regular` policy apps, not just those on the active Space — filtering by active Space would require CGSPrivate, which is intentionally out of scope here.
+- AX live parts (`activeWindow`, `windowsOnActiveDesktop`, `desktops`, `setBounds`) are NOT unit-tested (require AX permission + running app); human verification required.
 
 ---
 
-## AppSettings additions (`apps/macos/Sources/InvokeShell/AppSettings.swift`)
+## Review-Fixes Report (post-commit 8774a03)
 
-Added after `trustedExtensions` (line ~54):
+### FIX 1 — axDouble crash guard (Important)
+Added `CFGetTypeID(ref) == AXValueGetTypeID()` type check in `axDouble` before the force-cast `ref as! AXValue`. The guard is appended to the existing `guard` clause so it fails out cleanly returning `nil` instead of trapping. Mirrors the identical `AXUIElementGetTypeID()` pattern already used in `focusedWindow`.
 
-```swift
-@Published public var fallbackCommands: [String] { didSet { d.set(fallbackCommands, forKey: "fallbackCommands") } }
-public func addFallback(_ id: String) { if !fallbackCommands.contains(id) { fallbackCommands.append(id) } }
-public func removeFallback(_ id: String) { fallbackCommands.removeAll { $0 == id } }
-public func moveFallback(_ id: String, up: Bool) {
-    guard let i = fallbackCommands.firstIndex(of: id) else { return }
-    let j = up ? i - 1 : i + 1
-    guard j >= 0, j < fallbackCommands.count else { return }
-    fallbackCommands.swapAt(i, j)
-}
+### FIX 2 — setBounds wrong pid (Important)
+Replaced the "find frontmost focused window's pid" approach with a direct `AXUIElementGetPid(win, &pid)` call on the cached AX element. This correctly returns the owning process for background windows. `NSRunningApplication(processIdentifier:)` returns Optional — accepted by `info(for:pid:app:frontFocused:)` which already takes `NSRunningApplication?`.
+
+### FIX 3 — screenTuples coordinate-space bug (Minor)
+Added `static func axRect(cocoaFrame:primaryHeight:)` pure helper that converts a Cocoa frame (y-up, bottom-left origin) to AX-native space (y-down, top-left of primary). `screenTuples()` now computes `primaryHeight` from the screen with `frame.origin == .zero` (fallback: first screen) and maps all screen frames through `axRect`. Fixes `desktopId` mis-assignment on vertically-stacked multi-monitor setups.
+
+### FIX 4 — fullScreen: false clarity (Minor)
+Added inline comment on the `fullScreen: false` literal in `desktops()`: `// intentional: no public per-display fullscreen-state API; per-window fullScreen lives on WindowInfo`.
+
+### Pure-helper test (re-run after fixes)
+
+**Command:**
+```
+cd <scratch> && swiftc /Users/test/Documents/code/invoke-v2/apps/macos/Sources/InvokeServices/WindowEnumerator.swift main.swift -o wm2test -framework AppKit -framework ApplicationServices && ./wm2test
 ```
 
-Loaded in `init()`:
-```swift
-fallbackCommands = (d.array(forKey: "fallbackCommands") as? [String]) ?? []
+**Output (8 assertions, ALL PASS):**
+```
+ok: center-in-A
+ok: center-in-B
+ok: offscreen→first
+ok: merge-x-only
+ok: merge-size-only
+ok: axRect-primary
+ok: axRect-screen-above
+ok: axRect-screen-below
+ALL PASS
 ```
 
-Persists to `UserDefaults` as an ordered `[String]` array under key `"fallbackCommands"`.
+New assertions added: `axRect-primary`, `axRect-screen-above`, `axRect-screen-below`.
 
----
-
-## Fallback Commands section in `CommandsPane` (`apps/macos/Sources/InvokeShell/SettingsView.swift`)
-
-### Placement
-Below the main command-list/detail `HStack`, separated by a `Divider`, spanning the full pane width. The existing `HStack` is now wrapped in a `VStack` alongside the fallback section. This keeps the table layout untouched and gives the fallback config its own clearly separated zone.
-
-### Command metadata source
-The section reuses `groups: [ExtensionGroup]` passed into `CommandsPane` (populated by `AppController.extensionGroups()` at settings open). Three computed helpers were added to the struct:
-
-- `allCommands: [CommandInfo]` — flattens all groups in display order.
-- `commandInfo(for:) -> CommandInfo?` — id → CommandInfo lookup (title, icon, iconPath).
-- `groupName(for:) -> String` — resolves the owning group name for icon colour keying, matching `CommandTileIcon`'s deterministic djb2 colouring used in the command table.
-
-### Eligible command determination
-```swift
-private var fallbackEligible: [CommandInfo] {
-    let added = Set(settings.fallbackCommands)
-    return allCommands.filter { $0.supportsBinding && !added.contains($0.id) }
-}
+### swift build result
 ```
-
-- `supportsBinding == true` excludes the Calculator (which has `supportsBinding: false`).
-- `extensionGroups()` never emits menu-bar (`menu-bar` mode) or background/interval commands — these are filtered out at discovery time in `AppController`. No additional exclusion needed.
-- Already-added ids are excluded from the picker.
-
-### UI elements
-- Section header: "Fallback Commands" (caption, uppercased, secondary colour) with a one-liner caption: "Shown when a search has no results; the query is passed to the command."
-- "Add Fallback Command…" `Menu` button (borderless, top-right of the header row) listing eligible commands with their SF symbol icon via `Label`. Shows a "All eligible commands already added" placeholder when exhausted.
-- Per-row: drag-handle glyph (visual affordance), `CommandTileIcon` at 18pt (same icon+colour logic as the table), title, Up/Down chevron buttons (`settings.moveFallback`), `xmark.circle.fill` remove button (`settings.removeFallback`).
-- Up button disabled for the first row; Down button disabled for the last row.
-- Empty-state label ("No fallback commands. Add one above.") when the list is empty.
-- Styling: `font(.callout)` for titles, `font(.caption)` for buttons and header, `buttonStyle(.borderless)`, 16pt horizontal padding — consistent with the command table rows.
-
----
-
-## Concerns
-
-None blocking. One note: the `VStack` wrapping means the fallback section is always visible below the command table (not inside the scroll area). On very constrained window heights, users would need to resize the window to see it. This is consistent with how multi-section macOS Settings panes behave.
-
----
-
-## Eligibility-filter fix
-
-### What changed
-
-**`RootCommand` (`AppController.swift`):** Added `var fallbackEligible: Bool = false` (default false) to the private struct. This is distinct from `supportsBinding` — a menu-bar command can legitimately have a hotkey binding but must not appear as a fallback.
-
-**`discoverExtensionCommands` (`AppController.swift`):** Three branches updated:
-- **Menu-bar branch:** `fallbackEligible` left as default `false` — these are toggle-driven, not query-driven.
-- **No-view branch:** Introduced `isIntervalNoView` boolean. When `cmode == "no-view"` and the manifest carries an `interval` key that parses to a valid duration, `isIntervalNoView = true`. `fallbackEligible: !isIntervalNoView` — so user-invoked no-view commands are eligible; timer-driven background ones are not. Interval detection is distinguishable here because `parseInterval()` is called just before the branch.
-- **View branch (else):** `fallbackEligible: true` — always query-driven UI surface.
-- **AI-ask ("Ask \<ext\>") branch:** `fallbackEligible: true` — these accept the user's raw query and pass it to the extension's AI tools.
-
-**`makeCommands` (`AppController.swift`):** `ai.chat` ("AI Chat") built-in set to `fallbackEligible: true`. All other built-ins (window management, folder navigation, system commands, snippet/quicklink, settings tabs) remain `fallbackEligible: false` (default) — they are either action-only or navigational, not query consumers.
-
-**`CommandInfo` (`SettingsView.swift`):** Added `public let fallbackEligible: Bool` field with default `false` in the init. `supportsBinding` is preserved unchanged.
-
-**`extensionGroups()` (`AppController.swift`):** The `CommandInfo(...)` construction now passes `fallbackEligible: c.fallbackEligible`, propagating the flag from `RootCommand` to the Settings UI layer.
-
-**Fallback picker (`SettingsView.swift`):**
-- Renamed `fallbackEligible: [CommandInfo]` computed property to `fallbackEligibleCommands` to avoid name clash.
-- Filter changed from `$0.supportsBinding && !added.contains($0.id)` to `$0.fallbackEligible && !added.contains($0.id)`.
-- `ForEach(Array(settings.fallbackCommands.enumerated()), id: \.element)` changed to `id: \.offset` — prevents a SwiftUI duplicate-id crash if a stale duplicate id ever appears in UserDefaults.
-
-### Command eligibility summary
-
-| Class | `fallbackEligible` | Reason |
-|---|---|---|
-| Extension view commands | `true` | Query-driven UI surface |
-| Extension no-view (user-invoked) | `true` | Accepts query, runs headless |
-| Extension no-view (interval/background) | `false` | Timer-driven, no user query |
-| Extension menu-bar commands | `false` | Toggle-driven (on/off), not query consumers |
-| Extension AI-ask commands | `true` | Accepts raw query, routes to AI tools |
-| Built-in: `ai.chat` | `true` | Query-driven chat UI |
-| Built-in: AI text transforms (ai.improve, ai.grammar, etc.) | `false` | Selection-driven transforms, not search-query consumers |
-| Built-in: window/folder/system/snippet/quicklink/settings | `false` | Action or navigation, not query consumers |
-| Calculator | `false` | `supportsBinding: false`; typed inline fallback, not a command |
-
-### Interval no-view handling
-
-Interval no-view commands are fully distinguishable at discovery time: `isIntervalNoView` is set to `true` inside the `if cmode == "no-view", let iv = c["interval"] as? String, let secs = Self.parseInterval(iv)` block, which runs before the branch that builds the `RootCommand`. No ambiguity remained — interval detection is precise.
-
-### Build tail
-
+Build complete! (1.59s)
 ```
-Build complete! (0.11s)
-```
+Command: `swift build --package-path apps/macos`
 
-No new warnings or errors.
+### Commit
+TBD (committed after this report entry)
