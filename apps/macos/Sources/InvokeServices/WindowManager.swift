@@ -8,6 +8,7 @@ public final class WindowManager {
     public enum Action: String {
         case maximize, leftHalf, rightHalf, topHalf, bottomHalf, center
         case topLeft, topRight, bottomLeft, bottomRight
+        case leftThird, centerThird, rightThird, leftTwoThirds, rightTwoThirds
     }
 
     public init() {}
@@ -66,7 +67,7 @@ public final class WindowManager {
         return NSScreen.screens.first { $0.frame.contains(center) }
     }
 
-    private static func rect(for action: Action, in vf: CGRect) -> CGRect {
+    static func rect(for action: Action, in vf: CGRect) -> CGRect {
         let (x, y, w, h) = (vf.minX, vf.minY, vf.width, vf.height)
         switch action {
         case .maximize: return vf
@@ -79,6 +80,11 @@ public final class WindowManager {
         case .topRight: return CGRect(x: x + w / 2, y: y + h / 2, width: w / 2, height: h / 2)
         case .bottomLeft: return CGRect(x: x, y: y, width: w / 2, height: h / 2)
         case .bottomRight: return CGRect(x: x + w / 2, y: y, width: w / 2, height: h / 2)
+        case .leftThird: return CGRect(x: x, y: y, width: w / 3, height: h)
+        case .centerThird: return CGRect(x: x + w / 3, y: y, width: w / 3, height: h)
+        case .rightThird: return CGRect(x: x + 2 * w / 3, y: y, width: w / 3, height: h)
+        case .leftTwoThirds: return CGRect(x: x, y: y, width: 2 * w / 3, height: h)
+        case .rightTwoThirds: return CGRect(x: x + w / 3, y: y, width: 2 * w / 3, height: h)
         }
     }
 }
