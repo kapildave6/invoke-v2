@@ -16,7 +16,8 @@ export default function Command() {
           `\n\n**Desktops:** ${desks.map((d) => `${d.id}${d.active ? " (active)" : ""}`).join(", ")}`,
       );
     } catch (e) {
-      setMd(`# Window Management\n\nError: ${String(e)}\n\n(Grant Accessibility to Invoke.)`);
+      const msg = e instanceof Error ? e.message : String(e);
+      setMd(`# Window Management\n\n**Error:** ${msg}\n\nGrant Accessibility to Invoke in System Settings → Privacy & Security → Accessibility, then reopen this command.`);
     }
   };
   useEffect(() => { void refresh(); }, []);
