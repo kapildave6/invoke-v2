@@ -21,6 +21,15 @@ public final class AppSettings: ObservableObject {
         }
     }
 
+    public struct CustomWindowCommand: Codable, Equatable {
+        public let id: String
+        public var name: String
+        public var fx: Double, fy: Double, fw: Double, fh: Double
+        public init(id: String = "window.custom.\(UUID().uuidString)", name: String, fx: Double, fy: Double, fw: Double, fh: Double) {
+            self.id = id; self.name = name; self.fx = fx; self.fy = fy; self.fw = fw; self.fh = fh
+        }
+    }
+
     @Published public var clipboardLimit: Int { didSet { d.set(clipboardLimit, forKey: "clipboardLimit") } }
     @Published public var emojiSkinTone: Int { didSet { d.set(emojiSkinTone, forKey: "emojiSkinTone") } } // 0 = default
     @Published public var disabledCommands: Set<String> { didSet { d.set(Array(disabledCommands), forKey: "disabledCommands") } }
@@ -61,6 +70,19 @@ public final class AppSettings: ObservableObject {
         guard j >= 0, j < fallbackCommands.count else { return }
         fallbackCommands.swapAt(i, j)
     }
+    /// Custom window commands — persisted as JSON-encoded array.
+    @Published public var customWindowCommands: [CustomWindowCommand] {
+        didSet { if let data = try? JSONEncoder().encode(customWindowCommands) { d.set(data, forKey: "customWindowCommands") } }
+    }
+    @discardableResult
+    public func addCustomWindowCommand(name: String, fx: Double, fy: Double, fw: Double, fh: Double) -> CustomWindowCommand {
+        let c = CustomWindowCommand(name: name, fx: fx, fy: fy, fw: fw, fh: fh)
+        customWindowCommands.append(c); return c
+    }
+    public func removeCustomWindowCommand(id: String) { customWindowCommands.removeAll { $0.id == id } }
+    public func updateCustomWindowCommand(_ c: CustomWindowCommand) {
+        if let i = customWindowCommands.firstIndex(where: { $0.id == c.id }) { customWindowCommands[i] = c }
+    }
 
     /// Extension ids the user has explicitly allowed to run AppleScript (a powerful OS-automation
     /// capability). Default-deny: an extension must be granted before runAppleScript executes.
@@ -97,6 +119,11 @@ public final class AppSettings: ObservableObject {
         extensionPrefs = {
             guard let data = UserDefaults.standard.data(forKey: "extensionPrefs"),
                   let decoded = try? JSONDecoder().decode([String: [String: String]].self, from: data) else { return [:] }
+            return decoded
+        }()
+        customWindowCommands = {
+            guard let data = UserDefaults.standard.data(forKey: "customWindowCommands"),
+                  let decoded = try? JSONDecoder().decode([CustomWindowCommand].self, from: data) else { return [] }
             return decoded
         }()
         extensionSecretKeys = Set((d.array(forKey: "extensionSecretKeys") as? [String]) ?? [])
