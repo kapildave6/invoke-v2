@@ -63,6 +63,32 @@ public final class WindowManager {
 
     // MARK: - Geometry
 
+    /// Arbitrary fractional rect. fx/fy/fw/fh are 0…1 of the visible frame with a TOP-LEFT origin
+    /// (y grows DOWN, like the grid picker); converted here to the Cocoa (y-up) visibleFrame space.
+    static func rectFromFractions(fx: Double, fy: Double, fw: Double, fh: Double, in vf: CGRect) -> CGRect {
+        CGRect(x: vf.minX + CGFloat(fx) * vf.width,
+               y: vf.minY + CGFloat(1 - fy - fh) * vf.height,
+               width: CGFloat(fw) * vf.width,
+               height: CGFloat(fh) * vf.height)
+    }
+
+    /// Apply a custom fractional rect to `pid`'s focused window (used by custom window commands, WM-3).
+    @discardableResult
+    public func applyRect(fx: Double, fy: Double, fw: Double, fh: Double, pid: pid_t) -> Bool {
+        guard AXIsProcessTrusted() else { return false }
+        let app = AXUIElementCreateApplication(pid)
+        var winRef: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(app, kAXFocusedWindowAttribute as CFString, &winRef) == .success,
+              let win = winRef, CFGetTypeID(win) == AXUIElementGetTypeID() else { return false }
+        let window = win as! AXUIElement
+        guard let primaryHeight = Self.primaryFullHeight() else { return false }
+        let current = frame(of: window, primaryHeight: primaryHeight)
+        let screen = Self.screen(containing: current) ?? NSScreen.main
+        guard let visible = screen?.visibleFrame else { return false }
+        set(window: window, cocoaRect: Self.rectFromFractions(fx: fx, fy: fy, fw: fw, fh: fh, in: visible), primaryHeight: primaryHeight)
+        return true
+    }
+
     private static func primaryFullHeight() -> CGFloat? {
         (NSScreen.screens.first { $0.frame.origin == .zero } ?? NSScreen.screens.first)?.frame.height
     }
