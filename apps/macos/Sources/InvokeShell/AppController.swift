@@ -76,6 +76,13 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private var lastLaunch: LaunchInfo? // the most recent launch, replayed by Trust & Relaunch
     private var nativeFormTitle = ""
     private var nativeFormSubmit: (([String: String]) -> Void)? // called with field values on submit
+    /// Working state for the multi-app layout builder form.
+    /// Each element is (bundleId, appName, placementString). Preserved across re-presents so
+    /// values survive the "Add App" re-render loop.
+    private var layoutBuilderItems: [(bundleId: String, appName: String, placement: String)] = []
+    /// The handler id assigned to the layout form's "Add App" dropdown onChange.
+    /// Detected in palette.onFormFieldChange to trigger a re-present.
+    private var layoutBuilderAddAppHandlerId: String? = nil
     private var repoRoot = ""
     private var selectedIndex = 0
     private var rootTree: ViewTree?
@@ -892,6 +899,162 @@ public final class AppController: NSObject, NSApplicationDelegate {
         }
     }
 
+    /// Layout builder: presents (or re-presents) the multi-app window layout form.
+    ///
+    /// UX approach — preferred re-present:
+    /// `layoutBuilderItems` is a persistent working list on the controller. The form shows
+    /// the existing rows + a trailing "Add App…" form-dropdown. When the "Add App" dropdown
+    /// fires onChange (via palette.onFormFieldChange), we detect the special handler id
+    /// (`layoutBuilderAddAppHandlerId`), append the chosen app to `layoutBuilderItems`, and
+    /// re-call this method — rebuilding the form with the new row already present.
+    ///
+    /// This gives a Raycast-like "each selection appends a row" feel inside the native form
+    /// without requiring any new palette capability.
+    private func presentWindowLayoutForm(editing layout: AppSettings.WindowLayout? = nil) {
+        // On first call (not a re-present after Add), seed from the editing layout or empty.
+        // On re-presents triggered by "Add App", layoutBuilderItems already has the appended item.
+        let isFirstPresent = (layout != nil || layoutBuilderItems.isEmpty) && layoutBuilderAddAppHandlerId == nil
+        if isFirstPresent {
+            layoutBuilderItems = layout?.items.map { (bundleId: $0.bundleId, appName: $0.appName, placement: WindowEnumerator.serializePlacement($0.placement)) } ?? []
+        }
+
+        // Snapshot current placement values from the palette before re-rendering (re-present path).
+        // The first time we render, layoutBuilderItems already has the right placements.
+        // After an "Add App" selection, we harvest placements from the live form before rebuilding.
+        if layoutBuilderAddAppHandlerId != nil {
+            let vals = palette.formValues()
+            for i in layoutBuilderItems.indices {
+                let key = "placement\(i)"
+                if let v = vals[key], !v.isEmpty { layoutBuilderItems[i].placement = v }
+            }
+        }
+
+        // Reset the add-app handler sentinel so we start fresh each re-render.
+        layoutBuilderAddAppHandlerId = nil
+
+        // Build the running regular-app list for the app-picker dropdowns.
+        let runningApps = NSWorkspace.shared.runningApplications
+            .filter { $0.activationPolicy == .regular }
+            .compactMap { app -> (bundleId: String, name: String)? in
+                guard let bid = app.bundleIdentifier, !bid.isEmpty,
+                      let name = app.localizedName, !name.isEmpty else { return nil }
+                return (bundleId: bid, name: name)
+            }
+        // Stable sort: by name.
+        let sortedApps = runningApps.sorted { $0.name < $1.name }
+
+        // Assign stable field IDs.
+        // Field IDs: 11 = name; per item: 100+i*10 = appPicker, 100+i*10+1 = positionEditor; 9000 = add-app dropdown.
+        var fields: [ViewNode] = []
+
+        // Name field.
+        fields.append(formField(11, fieldId: "name", type: "form-textfield",
+                                title: "Name", placeholder: "e.g. Dev Workspace",
+                                value: layout?.name ?? ""))
+
+        // One row per existing item: app picker + position editor.
+        for (i, item) in layoutBuilderItems.enumerated() {
+            let pickerFid = 100 + i * 10
+            let editorFid = 100 + i * 10 + 1
+
+            // App picker dropdown — shows all running regular apps; pre-selects the saved bundle id.
+            let pickerNode = ViewNode(id: pickerFid, type: "form-dropdown",
+                                      props: [
+                                          "id": .string("app\(i)"),
+                                          "title": .string("App \(i + 1)"),
+                                          "value": .string(item.bundleId),
+                                      ])
+            var itemNodeId = pickerFid * 1000
+            for app in sortedApps {
+                itemNodeId += 1
+                pickerNode.children.append(ViewNode(id: itemNodeId, type: "form-dropdown-item",
+                                                     props: ["title": .string(app.name), "value": .string(app.bundleId)]))
+            }
+            fields.append(pickerNode)
+
+            // Position editor.
+            fields.append(formField(editorFid, fieldId: "placement\(i)", type: "window-position-editor",
+                                    title: "Position \(i + 1)", placeholder: "", value: item.placement))
+        }
+
+        // "Add App…" dropdown — a sentinel value triggers the re-present.
+        let addHandlerId = "layout.addApp.\(UUID().uuidString)"
+        layoutBuilderAddAppHandlerId = addHandlerId
+
+        let addNode = ViewNode(id: 9000, type: "form-dropdown",
+                               props: [
+                                   "id": .string("addApp"),
+                                   "title": .string("Add App"),
+                                   "value": .string(""),
+                                   "onChange": .string(addHandlerId),
+                               ])
+        var addItemId = 9000000
+        // Placeholder item so the dropdown shows "Add App…".
+        addItemId += 1
+        addNode.children.append(ViewNode(id: addItemId, type: "form-dropdown-item",
+                                          props: ["title": .string("Select to add…"), "value": .string("")]))
+        for app in sortedApps {
+            addItemId += 1
+            addNode.children.append(ViewNode(id: addItemId, type: "form-dropdown-item",
+                                              props: ["title": .string(app.name), "value": .string(app.bundleId)]))
+        }
+        fields.append(addNode)
+
+        // Wire up the palette's onFormFieldChange to detect the "Add App" selection.
+        // We temporarily override the callback; it is restored after the form is torn down
+        // (either by submit or by the user pressing Escape).
+        let prevFormFieldChange = palette.onFormFieldChange
+        palette.onFormFieldChange = { [weak self] handler, value in
+            guard let self else { return }
+            if handler == self.layoutBuilderAddAppHandlerId, !value.isEmpty {
+                // User selected an app — append it to the working list and re-render.
+                let appName = sortedApps.first(where: { $0.bundleId == value })?.name ?? value
+                self.layoutBuilderItems.append((bundleId: value, appName: appName, placement: WindowEnumerator.serializePlacement(.default)))
+                self.layoutBuilderAddAppHandlerId = nil
+                // Restore before re-presenting so the re-present installs its own hook.
+                self.palette.onFormFieldChange = prevFormFieldChange
+                self.presentWindowLayoutForm(editing: layout)
+                return
+            }
+            // Non-add-app change: route to the extension host (normal path).
+            prevFormFieldChange?(handler, value)
+        }
+
+        let isEditing = layout != nil
+        enterNativeForm(title: isEditing ? "Edit Window Layout" : "Create Window Layout", fields: fields) { [weak self] vals in
+            guard let self else { return }
+            // Restore the default form field change handler.
+            self.palette.onFormFieldChange = prevFormFieldChange
+            self.layoutBuilderAddAppHandlerId = nil
+            self.layoutBuilderItems = []
+
+            let name = (vals["name"] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !name.isEmpty else { return }
+
+            // Collect items from the submitted form values.
+            var items: [AppSettings.WindowLayout.Item] = []
+            var idx = 0
+            while true {
+                guard let bundleId = vals["app\(idx)"], !bundleId.isEmpty else { break }
+                let placementStr = vals["placement\(idx)"] ?? WindowEnumerator.serializePlacement(.default)
+                guard let placement = WindowEnumerator.parsePlacement(placementStr) else { idx += 1; continue }
+                let appName = sortedApps.first(where: { $0.bundleId == bundleId })?.name ?? bundleId
+                items.append(AppSettings.WindowLayout.Item(bundleId: bundleId, appName: appName, placement: placement))
+                idx += 1
+            }
+            guard !items.isEmpty else { return }
+
+            if let existing = layout {
+                let updated = AppSettings.WindowLayout(id: existing.id, name: name, items: items)
+                AppSettings.shared.updateWindowLayout(updated)
+            } else {
+                AppSettings.shared.addWindowLayout(name: name, items: items)
+            }
+            self.commands = self.makeCommands()
+            self.reloadCommandHotkeys()
+        }
+    }
+
     private static func screenshotMetadata(_ shot: ScreenshotIndex.Shot) -> JSONValue {
         var rows: [JSONValue] = [
             .object(["label": .string("Content type"), "value": .string(shot.path.hasSuffix(".mov") ? "Recording" : "Image")]),
@@ -1446,6 +1609,30 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 PaletteAction(title: "Delete Command", shortcut: "⌃X", icon: "trash") { [weak self] in
                     guard let self else { return }
                     AppSettings.shared.removeCustomWindowCommand(id: cid)
+                    self.commands = self.makeCommands()
+                    self.reloadCommandHotkeys()
+                    self.selectedIndex = 0
+                    self.renderRoot(calcCard: nil)
+                },
+            ] + defaultCommandActions(commandId: cid)
+        }
+        // Stored window layout: primary = applyLayout; Edit = open the builder; Delete = remove + rebuild.
+        // Note: `window.layout.create` has id "window.layout.create" which does NOT start with "layout."
+        // so it falls through to the generic command branch below (correct — it has no Edit/Delete).
+        if let cid = node.props["commandId"]?.stringValue, cid.hasPrefix("layout."),
+           let wl = AppSettings.shared.windowLayouts.first(where: { $0.id == cid }) {
+            return [
+                PaletteAction(title: wl.name, shortcut: "↵", icon: "rectangle.3.group") { [weak self] in
+                    guard let self else { return }
+                    guard AXIsProcessTrusted() else { Self.promptAccessibility(); self.palette.showToast("Enable Accessibility for Invoke to manage windows"); return }
+                    let n = self.windowEnumerator.applyLayout(wl.items.map { (bundleId: $0.bundleId, placement: $0.placement) })
+                    if n < wl.items.count { self.palette.showToast("Positioned \(n) of \(wl.items.count) (others not running)") }
+                    self.afterLaunch()
+                },
+                PaletteAction(title: "Edit Layout", shortcut: "⌘E", icon: "pencil") { [weak self] in self?.presentWindowLayoutForm(editing: wl) },
+                PaletteAction(title: "Delete Layout", shortcut: "⌃X", icon: "trash") { [weak self] in
+                    guard let self else { return }
+                    AppSettings.shared.removeWindowLayout(id: cid)
                     self.commands = self.makeCommands()
                     self.reloadCommandHotkeys()
                     self.selectedIndex = 0
@@ -4203,6 +4390,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
             RootCommand(id: "app.settings", title: "Open Settings", subtitle: "Invoke", runTitle: "Open", icon: "gearshape", keywords: ["settings", "preferences", "config", "options"], closesPalette: true) { [weak self] in self?.openSettings() },
             RootCommand(id: "ai.chat", title: "AI Chat", subtitle: "AI", runTitle: "Open", icon: "bubble.left.and.bubble.right", keywords: ["ai", "chat", "ask", "claude", "assistant", "gpt"], closesPalette: false, fallbackEligible: true) { [weak self] in self?.enterAIChat(initial: "") },
             RootCommand(id: "window.custom.create", title: "Create Window Management Command", subtitle: "Window Management", runTitle: "Create", icon: "plus.rectangle", keywords: ["window", "create", "custom", "position", "layout"], closesPalette: false) { [weak self] in self?.presentCustomWindowForm() },
+            RootCommand(id: "window.layout.create", title: "Create Window Layout Command", subtitle: "Window Management", runTitle: "Create", icon: "rectangle.3.group", keywords: ["window", "layout", "create", "arrange", "workspace"], closesPalette: false) { [weak self] in self?.presentWindowLayoutForm() },
             windowCommand("window.maximize", "Maximize", "macwindow", ["maximize", "full", "fill"], .maximize),
             windowCommand("window.leftHalf", "Left Half", "rectangle.lefthalf.filled", ["left", "half"], .leftHalf),
             windowCommand("window.rightHalf", "Right Half", "rectangle.righthalf.filled", ["right", "half"], .rightHalf),
@@ -4228,6 +4416,14 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 guard let self else { return }
                 guard AXIsProcessTrusted() else { Self.promptAccessibility(); self.palette.showToast("Enable Accessibility for Invoke to manage windows"); return }
                 if let pid = self.pasteTarget?.processIdentifier { self.windowEnumerator.applyPlacement(c.placement, toPid: pid) }
+            }
+        } + AppSettings.shared.windowLayouts.map { layout in
+            RootCommand(id: layout.id, title: layout.name, subtitle: "Window Management", runTitle: layout.name, icon: "rectangle.3.group", keywords: ["window", "layout"] + layout.name.lowercased().split(separator: " ").map(String.init), closesPalette: true) { [weak self] in
+                guard let self else { return }
+                guard AXIsProcessTrusted() else { Self.promptAccessibility(); self.palette.showToast("Enable Accessibility for Invoke to manage windows"); return }
+                let n = self.windowEnumerator.applyLayout(layout.items.map { (bundleId: $0.bundleId, placement: $0.placement) })
+                if n < layout.items.count { self.palette.showToast("Positioned \(n) of \(layout.items.count) (others not running)") }
+                self.afterLaunch()
             }
         } + discoverExtensionCommands() + settingsTabCommands()
     }
