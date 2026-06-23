@@ -92,4 +92,4 @@ Build complete! (1.59s)
 Command: `swift build --package-path apps/macos`
 
 ### Commit
-TBD (committed after this report entry)
+`9ccb21b` — `fix(wm): WindowEnumerator review fixes (axDouble guard, setBounds pid, screenTuples AX space, fullScreen comment)`
