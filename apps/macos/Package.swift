@@ -25,7 +25,7 @@ let package = Package(
         // of aborting the app (Swift's try/catch can't catch Obj-C exceptions).
         .target(name: "InvokeObjC"),
         // AppKit UI.
-        .target(name: "InvokePalette", dependencies: ["InvokeRenderer", "InvokeIPC", "InvokeObjC"]),
+        .target(name: "InvokePalette", dependencies: ["InvokeRenderer", "InvokeIPC", "InvokeObjC", "InvokeServices"]),
         .target(
             name: "InvokeShell",
             dependencies: ["InvokePalette", "InvokeIPC", "InvokeRenderer", "InvokeServices", "InvokePersistence"],
