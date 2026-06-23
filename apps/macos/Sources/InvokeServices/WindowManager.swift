@@ -11,6 +11,11 @@ public final class WindowManager {
         case leftThird, centerThird, rightThird, leftTwoThirds, rightTwoThirds
     }
 
+    public struct CycleState { let base: Action; let pid: pid_t; let step: Int
+        public init(base: Action, pid: pid_t, step: Int) { self.base = base; self.pid = pid; self.step = step } }
+    private var cycleState: CycleState?
+    private var lastCommandedRect: CGRect?
+
     public init() {}
 
     /// Apply `action` to `pid`'s focused window. Returns false if Accessibility isn't granted or
@@ -86,5 +91,49 @@ public final class WindowManager {
         case .leftTwoThirds: return CGRect(x: x, y: y, width: 2 * w / 3, height: h)
         case .rightTwoThirds: return CGRect(x: x + w / 3, y: y, width: 2 * w / 3, height: h)
         }
+    }
+
+    /// The ½→⅔→⅓ sequence a directional command cycles through. Non-cycling actions are single-shot.
+    static func cycleSequence(for base: Action) -> [Action] {
+        switch base {
+        case .leftHalf:  return [.leftHalf,  .leftTwoThirds,  .leftThird]
+        case .rightHalf: return [.rightHalf, .rightTwoThirds, .rightThird]
+        default:         return [base]
+        }
+    }
+    /// Next cycle index: advance only when cycling is on AND this repeats the same base on the same app
+    /// AND the window still sits where we last put it; otherwise restart at 0 (½).
+    static func cycleStep(base: Action, last: CycleState?, pid: pid_t, frameMatches: Bool, enabled: Bool) -> Int {
+        guard enabled, let last = last, last.base == base, last.pid == pid, frameMatches else { return 0 }
+        return (last.step + 1) % cycleSequence(for: base).count
+    }
+    /// Componentwise frame equality within `tol` points (absorbs AX rounding; far below the ≥w/6 gap between ½/⅔/⅓).
+    static func rectsMatch(_ a: CGRect, _ b: CGRect, tol: CGFloat = 6) -> Bool {
+        abs(a.minX - b.minX) <= tol && abs(a.minY - b.minY) <= tol && abs(a.width - b.width) <= tol && abs(a.height - b.height) <= tol
+    }
+
+    /// Apply `base` to `pid`'s focused window with ½→⅔→⅓ cycling (when `enabled`). Repeating the same
+    /// command on the same window advances the cycle; moving the window or switching apps restarts at ½.
+    @discardableResult
+    public func applyCycling(_ base: Action, pid: pid_t, enabled: Bool) -> Bool {
+        guard AXIsProcessTrusted() else { cycleState = nil; lastCommandedRect = nil; return false }
+        let app = AXUIElementCreateApplication(pid)
+        var winRef: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(app, kAXFocusedWindowAttribute as CFString, &winRef) == .success,
+              let win = winRef, CFGetTypeID(win) == AXUIElementGetTypeID() else { cycleState = nil; lastCommandedRect = nil; return false }
+        let window = win as! AXUIElement
+        guard let primaryHeight = Self.primaryFullHeight() else { cycleState = nil; lastCommandedRect = nil; return false }
+        let current = frame(of: window, primaryHeight: primaryHeight)
+        let screen = Self.screen(containing: current) ?? NSScreen.main
+        guard let visible = screen?.visibleFrame else { cycleState = nil; lastCommandedRect = nil; return false }
+
+        let matches = lastCommandedRect.map { Self.rectsMatch(current, $0) } ?? false
+        let step = Self.cycleStep(base: base, last: cycleState, pid: pid, frameMatches: matches, enabled: enabled)
+        let concrete = Self.cycleSequence(for: base)[step]
+        let target = Self.rect(for: concrete, in: visible)
+        set(window: window, cocoaRect: target, primaryHeight: primaryHeight)
+        cycleState = CycleState(base: base, pid: pid, step: step)
+        lastCommandedRect = target
+        return true
     }
 }
