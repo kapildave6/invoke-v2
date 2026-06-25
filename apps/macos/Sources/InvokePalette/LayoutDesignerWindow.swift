@@ -292,8 +292,17 @@ public final class LayoutDesignerWindow: NSObject {
     // MARK: - Show / Dismiss
 
     private func show() {
+        // Force an explicit centered frame — size-lock alone wasn't holding (window rendered as a thin
+        // full-width strip). setFrame sets the WHOLE window frame (incl. titlebar).
+        let w: CGFloat = 900, h: CGFloat = 588 // 560 content + ~28 titlebar
+        if let vis = NSScreen.main?.visibleFrame {
+            let x = vis.minX + (vis.width - w) / 2
+            let y = vis.minY + (vis.height - h) / 2
+            panel.setFrame(NSRect(x: x, y: y, width: w, height: h), display: true)
+        }
         panel.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+        NSLog("[invoke:designer] after show: panel.frame=\(NSStringFromRect(panel.frame)) content=\(NSStringFromRect(panel.contentView?.frame ?? .zero)) preview=\(NSStringFromRect(preview?.frame ?? .zero)) inspector=\(NSStringFromRect(inspector?.frame ?? .zero)) screen=\(NSStringFromRect(NSScreen.main?.frame ?? .zero))")
     }
 
     private func dismiss(save: Bool) {
