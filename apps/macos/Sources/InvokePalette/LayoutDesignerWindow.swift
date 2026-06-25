@@ -222,6 +222,11 @@ public final class LayoutDesignerWindow: NSObject {
             preview.trailingAnchor.constraint(equalTo: separator.leadingAnchor),
             preview.topAnchor.constraint(equalTo: contentView.topAnchor),
             preview.bottomAnchor.constraint(equalTo: bottomBar.topAnchor),
+
+            // DEFINITE pane height — without this the panes have no min height, collapse to ~1px, and the
+            // window auto-fits to its (tiny) content fitting size (observed: content 900×49). This forces
+            // the pane region to 512pt → content 560 → the window is the intended ~900×588.
+            preview.heightAnchor.constraint(equalToConstant: 512),
         ])
 
         // Center on screen
@@ -302,7 +307,6 @@ public final class LayoutDesignerWindow: NSObject {
         }
         panel.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
-        NSLog("[invoke:designer] after show: panel.frame=\(NSStringFromRect(panel.frame)) content=\(NSStringFromRect(panel.contentView?.frame ?? .zero)) preview=\(NSStringFromRect(preview?.frame ?? .zero)) inspector=\(NSStringFromRect(inspector?.frame ?? .zero)) screen=\(NSStringFromRect(NSScreen.main?.frame ?? .zero))")
     }
 
     private func dismiss(save: Bool) {
