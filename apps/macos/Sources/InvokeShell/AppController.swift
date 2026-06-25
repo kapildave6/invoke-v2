@@ -1004,7 +1004,10 @@ public final class AppController: NSObject, NSApplicationDelegate {
                                    "id": .string("addApp"),
                                    "title": .string("Add App"),
                                    "value": .string(""),
-                                   "onChange": .string(addHandlerId),
+                                   // Canonical onChange shape — PaletteView reads it via JSONValue.handlerRef,
+                                   // which ONLY resolves {"__handler": id}; a bare .string(id) is dropped (the
+                                   // selection would never fire → no app could ever be added).
+                                   "onChange": .object(["__handler": .string(addHandlerId)]),
                                ])
         var addItemId = 9000000
         // Placeholder item so the dropdown shows "Add App…".
@@ -1045,6 +1048,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
             self.palette.onFormFieldChange = prevFormFieldChange
             self.layoutBuilderAddAppHandlerId = nil
             self.layoutBuilderItems = []
+            self.layoutBuilderName = ""
 
             let name = (vals["name"] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             guard !name.isEmpty else { return }
