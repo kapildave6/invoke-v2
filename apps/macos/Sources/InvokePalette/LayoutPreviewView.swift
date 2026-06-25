@@ -31,6 +31,13 @@ public final class LayoutPreviewView: NSView {
     public var selected: Int = 0        { didSet { needsDisplay = true } }
     public var onSelect: ((Int) -> Void)?
     public var onAdd: (() -> Void)?
+    /// Set to false to hide the "+ Add" button (e.g. `.singleWindow` mode).
+    public var showsAddButton: Bool = true {
+        didSet {
+            addButton.isHidden = !showsAddButton
+            needsLayout = true
+        }
+    }
 
     // MARK: Init
     public override init(frame: NSRect) {
