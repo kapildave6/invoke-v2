@@ -16,6 +16,19 @@ public final class WindowManager {
     private var cycleState: CycleState?
     private var lastCommandedRect: CGRect?
 
+    public var respectStageManager: Bool = false
+    public static let stageManagerStripWidth: CGFloat = 64
+    /// Best-effort: Stage Manager has no public reserved-strip API; inset the LEFT by a heuristic strip.
+    public static func insetForStageManager(_ vf: CGRect) -> CGRect {
+        CGRect(x: vf.minX + stageManagerStripWidth, y: vf.minY, width: max(0, vf.width - stageManagerStripWidth), height: vf.height)
+    }
+    public static func stageManagerEnabled() -> Bool {
+        UserDefaults(suiteName: "com.apple.WindowManager")?.bool(forKey: "GloballyEnabled") ?? false
+    }
+    public static func effectiveVisibleFrame(_ vf: CGRect, respectStageManager: Bool) -> CGRect {
+        (respectStageManager && stageManagerEnabled()) ? insetForStageManager(vf) : vf
+    }
+
     public init() {}
 
     /// Apply `action` to `pid`'s focused window. Returns false if Accessibility isn't granted or
@@ -32,7 +45,8 @@ public final class WindowManager {
         guard let primaryHeight = Self.primaryFullHeight() else { return false }
         let current = frame(of: window, primaryHeight: primaryHeight)
         let screen = Self.screen(containing: current) ?? NSScreen.main
-        guard let visible = screen?.visibleFrame else { return false }
+        guard let rawVisible = screen?.visibleFrame else { return false }
+        let visible = Self.effectiveVisibleFrame(rawVisible, respectStageManager: respectStageManager)
         set(window: window, cocoaRect: Self.rect(for: action, in: visible), primaryHeight: primaryHeight)
         return true
     }
@@ -84,7 +98,8 @@ public final class WindowManager {
         guard let primaryHeight = Self.primaryFullHeight() else { return false }
         let current = frame(of: window, primaryHeight: primaryHeight)
         let screen = Self.screen(containing: current) ?? NSScreen.main
-        guard let visible = screen?.visibleFrame else { return false }
+        guard let rawVisible = screen?.visibleFrame else { return false }
+        let visible = Self.effectiveVisibleFrame(rawVisible, respectStageManager: respectStageManager)
         set(window: window, cocoaRect: Self.rectFromFractions(fx: fx, fy: fy, fw: fw, fh: fh, in: visible), primaryHeight: primaryHeight)
         return true
     }
@@ -151,7 +166,8 @@ public final class WindowManager {
         guard let primaryHeight = Self.primaryFullHeight() else { cycleState = nil; lastCommandedRect = nil; return false }
         let current = frame(of: window, primaryHeight: primaryHeight)
         let screen = Self.screen(containing: current) ?? NSScreen.main
-        guard let visible = screen?.visibleFrame else { cycleState = nil; lastCommandedRect = nil; return false }
+        guard let rawVisible = screen?.visibleFrame else { cycleState = nil; lastCommandedRect = nil; return false }
+        let visible = Self.effectiveVisibleFrame(rawVisible, respectStageManager: respectStageManager)
 
         let matches = lastCommandedRect.map { Self.rectsMatch(current, $0) } ?? false
         let step = Self.cycleStep(base: base, last: cycleState, pid: pid, frameMatches: matches, enabled: enabled)

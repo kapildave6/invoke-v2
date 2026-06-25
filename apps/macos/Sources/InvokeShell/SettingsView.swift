@@ -81,6 +81,9 @@ struct GeneralPane: View {
             Toggle("Enable window cycling", isOn: $settings.windowCyclingEnabled)
             Text("Repeating a Left/Right Half command cycles the window through ½ → ⅔ → ⅓.")
                 .font(.caption).foregroundStyle(.secondary)
+            Toggle("Respect Stage Manager", isOn: $settings.respectWindowStageManager)
+            Text("Leaves room for the Stage Manager strip when positioning windows (best-effort).")
+                .font(.caption).foregroundStyle(.secondary)
             Section {
                 LabeledContent("Summon Invoke", value: "⌥Space")
             } header: {

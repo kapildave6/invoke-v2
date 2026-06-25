@@ -448,7 +448,10 @@ public final class AppController: NSObject, NSApplicationDelegate {
             palette.showToast("Enable Accessibility for Invoke to manage windows")
             return
         }
-        if let pid { windowManager.applyCycling(action, pid: pid, enabled: AppSettings.shared.windowCyclingEnabled) }
+        if let pid {
+            windowManager.respectStageManager = AppSettings.shared.respectWindowStageManager
+            windowManager.applyCycling(action, pid: pid, enabled: AppSettings.shared.windowCyclingEnabled)
+        }
     }
 
     /// Remember the app that had focus when summoned, so we can paste back into it.
@@ -1491,6 +1494,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 PaletteAction(title: wc.name, shortcut: "↵", icon: "macwindow") { [weak self] in
                     guard let self else { return }
                     guard AXIsProcessTrusted() else { Self.promptAccessibility(); self.palette.showToast("Enable Accessibility for Invoke to manage windows"); return }
+                    self.windowEnumerator.respectStageManager = AppSettings.shared.respectWindowStageManager
                     if let pid = self.pasteTarget?.processIdentifier { self.windowEnumerator.applyPlacement(wc.placement, toPid: pid) }
                     self.afterLaunch()
                 },
@@ -1514,6 +1518,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 PaletteAction(title: wl.name, shortcut: "↵", icon: "rectangle.3.group") { [weak self] in
                     guard let self else { return }
                     guard AXIsProcessTrusted() else { Self.promptAccessibility(); self.palette.showToast("Enable Accessibility for Invoke to manage windows"); return }
+                    self.windowEnumerator.respectStageManager = AppSettings.shared.respectWindowStageManager
                     let n = self.windowEnumerator.applyLayout(wl.items.map { (bundleId: $0.bundleId, placement: $0.placement) })
                     if n < wl.items.count { self.palette.showToast("Positioned \(n) of \(wl.items.count) (others not running)") }
                     self.afterLaunch()
@@ -4304,12 +4309,14 @@ public final class AppController: NSObject, NSApplicationDelegate {
             RootCommand(id: c.id, title: c.name, subtitle: "Window Management", runTitle: c.name, icon: "macwindow", keywords: ["window"] + c.name.lowercased().split(separator: " ").map(String.init), closesPalette: true) { [weak self] in
                 guard let self else { return }
                 guard AXIsProcessTrusted() else { Self.promptAccessibility(); self.palette.showToast("Enable Accessibility for Invoke to manage windows"); return }
+                self.windowEnumerator.respectStageManager = AppSettings.shared.respectWindowStageManager
                 if let pid = self.pasteTarget?.processIdentifier { self.windowEnumerator.applyPlacement(c.placement, toPid: pid) }
             }
         } + AppSettings.shared.windowLayouts.map { layout in
             RootCommand(id: layout.id, title: layout.name, subtitle: "Window Management", runTitle: layout.name, icon: "rectangle.3.group", keywords: ["window", "layout"] + layout.name.lowercased().split(separator: " ").map(String.init), closesPalette: true) { [weak self] in
                 guard let self else { return }
                 guard AXIsProcessTrusted() else { Self.promptAccessibility(); self.palette.showToast("Enable Accessibility for Invoke to manage windows"); return }
+                self.windowEnumerator.respectStageManager = AppSettings.shared.respectWindowStageManager
                 let n = self.windowEnumerator.applyLayout(layout.items.map { (bundleId: $0.bundleId, placement: $0.placement) })
                 if n < layout.items.count { self.palette.showToast("Positioned \(n) of \(layout.items.count) (others not running)") }
                 self.afterLaunch()

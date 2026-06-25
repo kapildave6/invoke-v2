@@ -20,6 +20,7 @@ public struct DesktopInfo {
 public final class WindowEnumerator {
     public init() {}
     public var hasAccessibility: Bool { AXIsProcessTrusted() }
+    public var respectStageManager: Bool = false
 
     // _AXUIElementGetWindow(element, &cgWindowID) — private but the standard, stable window-id source.
     // Resolved once; nil → fall back to a per-element UUID (ids then stable only within a getWindows call).
@@ -59,7 +60,7 @@ public final class WindowEnumerator {
             Self.axRect(cocoaFrame: $0.frame, primaryHeight: h).contains(center)
         } ?? (NSScreen.screens.first { $0.frame.origin == .zero } ?? NSScreen.main)
         guard let s = screen else { return nil }
-        return Self.axRect(cocoaFrame: s.visibleFrame, primaryHeight: h)
+        return WindowManager.effectiveVisibleFrame(Self.axRect(cocoaFrame: s.visibleFrame, primaryHeight: h), respectStageManager: respectStageManager)
     }
 
     // MARK: Placement engine (pure statics + AX apply)
