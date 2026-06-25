@@ -1409,7 +1409,7 @@ public final class PaletteView: NSView {
     /// jump. Returns false if the structure changed (field added/removed/reordered, or an error appeared/
     /// cleared) so the caller falls back to a full rebuild. This is what makes typing smooth.
     private func reconcileFormInPlace(_ form: ViewNode) -> Bool {
-        let fieldTypes: Set<String> = ["form-textfield", "form-textarea", "form-checkbox", "form-dropdown", "form-description", "form-separator", "form-password", "form-datepicker", "window-position-editor"]
+        let fieldTypes: Set<String> = ["form-textfield", "form-textarea", "form-checkbox", "form-dropdown", "form-description", "form-separator", "form-password", "form-datepicker"]
         var fields: [ViewNode] = []
         func collect(_ n: ViewNode) {
             if fieldTypes.contains(n.type) { fields.append(n); return }
@@ -1512,7 +1512,7 @@ public final class PaletteView: NSView {
         var fields: [ViewNode] = []
         // Includes form-description / form-separator so they render in document order (they're not
         // interactive fields, but they're part of the form's visual layout — Raycast parity).
-        let fieldTypes: Set<String> = ["form-textfield", "form-textarea", "form-checkbox", "form-dropdown", "form-description", "form-separator", "form-password", "form-datepicker", "window-position-editor"]
+        let fieldTypes: Set<String> = ["form-textfield", "form-textarea", "form-checkbox", "form-dropdown", "form-description", "form-separator", "form-password", "form-datepicker"]
         func collect(_ n: ViewNode) {
             // A field owns its own children (e.g. a dropdown's items) — don't treat those as fields.
             if fieldTypes.contains(n.type) { fields.append(n); return }
@@ -1818,30 +1818,6 @@ public final class PaletteView: NSView {
             }
             control = dd
             rowAlignment = .centerY
-        case "window-position-editor":
-            let editor = WindowPositionEditor()
-            editor.translatesAutoresizingMaskIntoConstraints = false
-            // Seed initial placement from value/defaultValue if provided.
-            let wpeHandlerRef = f.props["onChange"]?.handlerRef
-            if let raw = f.props["value"]?.stringValue ?? f.props["defaultValue"]?.stringValue {
-                editor.placementString = raw
-            }
-            var wpeHandlerId = wpeHandlerRef
-            editor.onChange = { [weak self] placementStr in
-                if let h = wpeHandlerId { self?.onFormFieldChange?(h, placementStr) }
-            }
-            formControls.append((id, { [weak editor] in editor?.placementString ?? "" }))
-            formFieldViewById[id] = editor
-            formResponderViews.append(editor)
-            formApply[id] = { [weak editor] n in
-                guard let editor else { return }
-                if let raw = n.props["value"]?.stringValue { editor.placementString = raw }
-            }
-            formRefreshHandler[id] = { n in
-                wpeHandlerId = n.props["onChange"]?.handlerRef
-            }
-            rowAlignment = .top
-            control = editor
         default:
             return nil
         }
