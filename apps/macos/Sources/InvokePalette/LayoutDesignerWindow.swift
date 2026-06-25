@@ -120,20 +120,21 @@ public final class LayoutDesignerWindow: NSObject {
         let panelW: CGFloat = 900
         let panelH: CGFloat = 560
 
+        // Plain titled panel, SIZE-LOCKED. (Earlier flags — .fullSizeContentView + .nonactivatingPanel
+        // + no size lock — collapsed the window into a thin full-width strip and blocked keyboard focus.)
         let panel = NSPanel(
             contentRect:  NSRect(x: 0, y: 0, width: panelW, height: panelH),
-            styleMask:    [.titled, .fullSizeContentView, .nonactivatingPanel],
+            styleMask:    [.titled],
             backing:      .buffered,
             defer:        false
         )
         panel.title             = title
-        panel.titlebarAppearsTransparent = false
         panel.level             = .modalPanel
         panel.isMovableByWindowBackground = true
-        panel.isFloatingPanel   = true
-        panel.becomesKeyOnlyIfNeeded = false
         panel.hidesOnDeactivate = false
-        panel.collectionBehavior = [.moveToActiveSpace, .fullScreenAuxiliary]
+        panel.setContentSize(NSSize(width: panelW, height: panelH))
+        panel.minSize           = NSSize(width: panelW, height: panelH)
+        panel.maxSize           = NSSize(width: panelW, height: panelH)
         self.panel = panel
 
         let contentView = panel.contentView!
