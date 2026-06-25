@@ -874,6 +874,55 @@ public final class AppController: NSObject, NSApplicationDelegate {
         }
     }
 
+    // MARK: - Window Hotkey Presets
+
+    private static let windowHotkeyPresets: [(name: String, bindings: [(id: String, keyCode: UInt32, modifiers: UInt32, display: String)])] = {
+        let ctrlOpt = UInt32(controlKey | optionKey)
+        return [
+            ("Arrows (⌃⌥)", [
+                ("window.leftHalf", UInt32(kVK_LeftArrow), ctrlOpt, "⌃⌥←"),
+                ("window.rightHalf", UInt32(kVK_RightArrow), ctrlOpt, "⌃⌥→"),
+                ("window.topHalf", UInt32(kVK_UpArrow), ctrlOpt, "⌃⌥↑"),
+                ("window.bottomHalf", UInt32(kVK_DownArrow), ctrlOpt, "⌃⌥↓"),
+                ("window.maximize", UInt32(kVK_Return), ctrlOpt, "⌃⌥↩"),
+            ]),
+            ("Vim (⌃⌥ HJKL)", [
+                ("window.leftHalf", UInt32(kVK_ANSI_H), ctrlOpt, "⌃⌥H"),
+                ("window.bottomHalf", UInt32(kVK_ANSI_J), ctrlOpt, "⌃⌥J"),
+                ("window.topHalf", UInt32(kVK_ANSI_K), ctrlOpt, "⌃⌥K"),
+                ("window.rightHalf", UInt32(kVK_ANSI_L), ctrlOpt, "⌃⌥L"),
+                ("window.maximize", UInt32(kVK_Return), ctrlOpt, "⌃⌥↩"),
+            ]),
+        ]
+    }()
+
+    private func applyWindowHotkeyPreset(_ name: String) {
+        guard let preset = Self.windowHotkeyPresets.first(where: { $0.name == name }) else { return }
+        for b in preset.bindings {
+            AppSettings.shared.setHotkey(b.id, AppSettings.KeyCombo(keyCode: b.keyCode, modifiers: b.modifiers, display: b.display))
+        }
+        reloadCommandHotkeys()
+        palette.showToast("Applied \u{201c}\(name)\u{201d} window hotkeys")
+    }
+
+    private func presentWindowPresetForm() {
+        let presetNames = Self.windowHotkeyPresets.map { $0.name }
+        let defaultName = presetNames.first ?? ""
+        let node = ViewNode(id: 10, type: "form-dropdown",
+                            props: ["id": .string("preset"), "title": .string("Preset"), "value": .string(defaultName)])
+        var itemId = 10000
+        node.children = presetNames.map { pname in
+            itemId += 1
+            return ViewNode(id: itemId, type: "form-dropdown-item",
+                            props: ["title": .string(pname), "value": .string(pname)])
+        }
+        enterNativeForm(title: "Apply Window Hotkey Preset", fields: [node]) { [weak self] vals in
+            guard let self else { return }
+            let selected = vals["preset"] ?? defaultName
+            self.applyWindowHotkeyPreset(selected)
+        }
+    }
+
     private func presentCustomWindowForm(editing cmd: AppSettings.CustomWindowCommand? = nil) {
         let runningApps = Self.buildRunningApps()
         // Seed a single item from the existing command's placement, or default.
@@ -4285,6 +4334,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
             RootCommand(id: "ai.chat", title: "AI Chat", subtitle: "AI", runTitle: "Open", icon: "bubble.left.and.bubble.right", keywords: ["ai", "chat", "ask", "claude", "assistant", "gpt"], closesPalette: false, fallbackEligible: true) { [weak self] in self?.enterAIChat(initial: "") },
             RootCommand(id: "window.custom.create", title: "Create Window Management Command", subtitle: "Window Management", runTitle: "Create", icon: "plus.rectangle", keywords: ["window", "create", "custom", "position", "layout"], closesPalette: false) { [weak self] in self?.presentCustomWindowForm() },
             RootCommand(id: "window.layout.create", title: "Create Window Layout Command", subtitle: "Window Management", runTitle: "Create", icon: "rectangle.3.group", keywords: ["window", "layout", "create", "arrange", "workspace"], closesPalette: false) { [weak self] in self?.presentWindowLayoutForm() },
+            RootCommand(id: "window.presets", title: "Apply Window Hotkey Preset", subtitle: "Window Management", runTitle: "Choose", icon: "keyboard", keywords: ["window", "preset", "hotkey", "shortcut", "binding"], closesPalette: false) { [weak self] in self?.presentWindowPresetForm() },
             windowCommand("window.maximize", "Maximize", "macwindow", ["maximize", "full", "fill"], .maximize),
             windowCommand("window.leftHalf", "Left Half", "rectangle.lefthalf.filled", ["left", "half"], .leftHalf),
             windowCommand("window.rightHalf", "Right Half", "rectangle.righthalf.filled", ["right", "half"], .rightHalf),
