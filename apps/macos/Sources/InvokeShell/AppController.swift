@@ -83,6 +83,13 @@ public final class AppController: NSObject, NSApplicationDelegate {
     /// The handler id assigned to the layout form's "Add App" dropdown onChange.
     /// Detected in palette.onFormFieldChange to trigger a re-present.
     private var layoutBuilderAddAppHandlerId: String? = nil
+    /// The layout name typed so far, preserved across "Add App" re-presents (so typing a name then
+    /// adding an app doesn't lose it).
+    private var layoutBuilderName: String = ""
+    /// The default form-field-change handler (routes to the extension host). The Window-Layout builder
+    /// temporarily overrides palette.onFormFieldChange; exitToRoot restores this so a stale override /
+    /// add-app handler id can never hijack a later form.
+    private var defaultFormFieldChange: ((String, String) -> Void)? = nil
     private var repoRoot = ""
     private var selectedIndex = 0
     private var rootTree: ViewTree?
@@ -230,7 +237,9 @@ public final class AppController: NSObject, NSApplicationDelegate {
         }
         palette.onSelectRow = { [weak self] i in self?.setSelection(i) }
         palette.onActivateRow = { [weak self] i in self?.clickActivate(i) }
-        palette.onFormFieldChange = { [weak self] handler, value in self?.extHost?.invoke(handler: handler, args: [.string(value)]) }
+        let dfltFormFieldChange: (String, String) -> Void = { [weak self] handler, value in self?.extHost?.invoke(handler: handler, args: [.string(value)]) }
+        defaultFormFieldChange = dfltFormFieldChange
+        palette.onFormFieldChange = dfltFormFieldChange
         palette.onFormCheckboxChange = { [weak self] handler, on in self?.extHost?.invoke(handler: handler, args: [.bool(on)]) }
         palette.onInvokeHandler = { [weak self] handler in self?.extHost?.invoke(handler: handler) }
         palette.onReachedEnd = { [weak self] in self?.handleReachedEnd() }
@@ -476,6 +485,13 @@ public final class AppController: NSObject, NSApplicationDelegate {
 
     private func exitToRoot() {
         palette.suppressAutoHide = false
+        // Tear down the Window-Layout builder's transient onFormFieldChange override + state on ANY exit
+        // (incl. Escape, which never runs the submit closure). Without this, a stale add-app handler id
+        // could later collide with another form's field id and hijack it.
+        if let d = defaultFormFieldChange { palette.onFormFieldChange = d }
+        layoutBuilderAddAppHandlerId = nil
+        layoutBuilderItems = []
+        layoutBuilderName = ""
         suspendedExtAt = nil
         palette.dismissToast() // clear any persistent actionable toast before the surface changes
         teardownExtension()
@@ -916,6 +932,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         let isFirstPresent = (layout != nil || layoutBuilderItems.isEmpty) && layoutBuilderAddAppHandlerId == nil
         if isFirstPresent {
             layoutBuilderItems = layout?.items.map { (bundleId: $0.bundleId, appName: $0.appName, placement: WindowEnumerator.serializePlacement($0.placement)) } ?? []
+            layoutBuilderName = layout?.name ?? ""
         }
 
         // Snapshot current placement values from the palette before re-rendering (re-present path).
@@ -923,6 +940,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         // After an "Add App" selection, we harvest placements from the live form before rebuilding.
         if layoutBuilderAddAppHandlerId != nil {
             let vals = palette.formValues()
+            if let n = vals["name"] { layoutBuilderName = n } // preserve the typed name across the re-present
             for i in layoutBuilderItems.indices {
                 let key = "placement\(i)"
                 if let v = vals[key], !v.isEmpty { layoutBuilderItems[i].placement = v }
@@ -950,7 +968,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         // Name field.
         fields.append(formField(11, fieldId: "name", type: "form-textfield",
                                 title: "Name", placeholder: "e.g. Dev Workspace",
-                                value: layout?.name ?? ""))
+                                value: layoutBuilderName))
 
         // One row per existing item: app picker + position editor.
         for (i, item) in layoutBuilderItems.enumerated() {
