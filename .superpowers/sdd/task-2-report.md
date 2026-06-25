@@ -1,95 +1,109 @@
-# Task 2 Report: WindowEnumerator
-
-## Status
-COMPLETE
+# Task 2 Report — LayoutInspectorView
 
 ## File Created
-`apps/macos/Sources/InvokeServices/WindowEnumerator.swift` — 140 lines, verbatim from brief.
+`apps/macos/Sources/InvokePalette/LayoutInspectorView.swift`
 
-## Module Purity
-Imports ONLY `AppKit` and `ApplicationServices`. No imports of `InvokeShell`, `InvokeIPC`, `AppSettings`, or `JSONValue`. Confirmed by inspection of the file header.
+---
 
-## Pure-Helper Test
+## Control Layout (top-to-bottom)
 
-**Command:**
-```
-cd <scratch> && swiftc /Users/test/Documents/code/invoke-v2/apps/macos/Sources/InvokeServices/WindowEnumerator.swift main.swift -o wm2test -framework AppKit -framework ApplicationServices && ./wm2test
-```
+| Section | Controls |
+|---|---|
+| **Name** | "Name" label (secondary, 11pt medium) then `NSTextField` (rounded bezel, full width) |
+| **App row** | `NSPopUpButton` (icons + names) + trash `NSButton` (SF Symbol `trash`, red tint); hidden when `mode == .singleWindow` or `item == nil` |
+| **Size** | "SIZE" section header (10pt semibold, tertiary) · W: row (label, field, "pt" label) · H: row |
+| **Position** | "POSITION" header · 3x3 grid of 9 `NSButton`s (28x28 pt each, 3 pt gap) |
+| **Offset** | "OFFSET" header · X: row · Y: row |
 
-**Output:**
-```
-ok: center-in-A
-ok: center-in-B
-ok: offscreen→first
-ok: merge-x-only
-ok: merge-size-only
-ALL PASS
-```
+All subviews are stored as instance vars (allocated once in init closures / `setup()`). `layout()` only frames them — no subview creation on layout passes.
 
-All 5 assertions pass (compile exit 0, run exit 0).
+---
+
+## load / Seed-without-refire Mechanism
+
+`load(name:item:runningApps:)` sets `isSeeding = true` at entry and `defer { isSeeding = false }` at exit.
+
+Every callback path (NSTextFieldDelegate `controlTextDidChange`/`controlTextDidEndEditing`, `anchorTapped`, `appPopupChanged`, `deleteTapped`) begins with `guard !isSeeding else { return }`. This makes callback suppression unconditional during any seeding call.
+
+---
+
+## Size Parsing — Auto / pt
+
+`parseSizing(_ text: String) -> Sizing`:
+- Empty string or case-insensitive "auto" -> `.auto`
+- A parseable `Double` -> `.points(Double)`
+- Anything else -> `.auto` (safe fallback)
+
+On `controlTextDidEndEditing`, if the parsed result is `.auto` the field is normalised back to `""` (clean display). This fires only when `!isSeeding`.
+
+---
+
+## 9-Anchor Mapping + Highlight
+
+`Anchor.rawValue` = `row * 3 + col` (0 = topLeft … 8 = bottomRight). SF Symbols assigned row-major:
+
+| idx | Anchor | Symbol |
+|---|---|---|
+| 0 | topLeft | `arrow.up.left` |
+| 1 | top | `arrow.up` |
+| 2 | topRight | `arrow.up.right` |
+| 3 | left | `arrow.left` |
+| 4 | center | `smallcircle.filled.circle` |
+| 5 | right | `arrow.right` |
+| 6 | bottomLeft | `arrow.down.left` |
+| 7 | bottom | `arrow.down` |
+| 8 | bottomRight | `arrow.down.right` |
+
+`highlightAnchorButton(_ anchor: Anchor)`:
+- Selected: `contentTintColor = .controlAccentColor`, `layer.borderWidth = 1.5`, `layer.borderColor = controlAccentColor.cgColor`, `cornerRadius = 4`.
+- Others: `contentTintColor = .secondaryLabelColor`, `layer.borderWidth = 0`.
+- Default highlight seeded to `.center` at init.
+- All anchor buttons have `wantsLayer = true` for layer-property support.
+
+---
+
+## Callbacks
+
+| Callback | Trigger |
+|---|---|
+| `onNameChange(String)` | `controlTextDidChange` on `nameField` |
+| `onAppChange(bundleId: String)` | `appPopupChanged` — emits `currentRunningApps[selectedIndex].bundleId` |
+| `onPlacementChange(WindowPlacement)` | Width/height text change (mutates `currentPlacement.width/.height`), anchor tap (sets `.anchor`), offset text change (sets `.offsetX/.offsetY`); always passes the full mutated struct |
+| `onDelete()` | Trash button tap |
+
+---
 
 ## swift build Result
 
 ```
-Build complete! (3.46s)
+Build complete! (1.59s)
 ```
 
-Command: `swift build --package-path apps/macos`
-
-## Commit Hash
-`8774a03`
-
-Full message: `feat(wm): WindowEnumerator — AX window enumeration + id cache + bounds set (InvokeServices)`
-
-## Concerns / Notes
-- `_AXUIElementGetWindow` resolved via `dlsym` is a private API — intentional per brief; included verbatim.
-- `cache` is per-`WindowEnumerator` instance and repopulated on each enumeration call; `setBounds` only works if the target window appeared in a prior enumeration.
-- The `windowsOnActiveDesktop()` method enumerates all `.regular` policy apps, not just those on the active Space — filtering by active Space would require CGSPrivate, which is intentionally out of scope here.
-- AX live parts (`activeWindow`, `windowsOnActiveDesktop`, `desktops`, `setBounds`) are NOT unit-tested (require AX permission + running app); human verification required.
+No errors. Pre-existing warnings (`@Sendable` captures in AppController) are unrelated.
 
 ---
 
-## Review-Fixes Report (post-commit 8774a03)
+## Commit Hash
 
-### FIX 1 — axDouble crash guard (Important)
-Added `CFGetTypeID(ref) == AXValueGetTypeID()` type check in `axDouble` before the force-cast `ref as! AXValue`. The guard is appended to the existing `guard` clause so it fails out cleanly returning `nil` instead of trapping. Mirrors the identical `AXUIElementGetTypeID()` pattern already used in `focusedWindow`.
+(populated after commit)
 
-### FIX 2 — setBounds wrong pid (Important)
-Replaced the "find frontmost focused window's pid" approach with a direct `AXUIElementGetPid(win, &pid)` call on the cached AX element. This correctly returns the owning process for background windows. `NSRunningApplication(processIdentifier:)` returns Optional — accepted by `info(for:pid:app:frontFocused:)` which already takes `NSRunningApplication?`.
+---
 
-### FIX 3 — screenTuples coordinate-space bug (Minor)
-Added `static func axRect(cocoaFrame:primaryHeight:)` pure helper that converts a Cocoa frame (y-up, bottom-left origin) to AX-native space (y-down, top-left of primary). `screenTuples()` now computes `primaryHeight` from the screen with `frame.origin == .zero` (fallback: first screen) and maps all screen frames through `axRect`. Fixes `desktopId` mis-assignment on vertically-stacked multi-monitor setups.
+## HUMAN-REQUIRED Visual Items
 
-### FIX 4 — fullScreen: false clarity (Minor)
-Added inline comment on the `fullScreen: false` literal in `desktops()`: `// intentional: no public per-display fullscreen-state API; per-window fullScreen lives on WindowInfo`.
+1. **App row visibility** — verify it hides correctly in `.singleWindow` mode and when `item == nil`; re-appears when an item is loaded in `.layout` mode.
+2. **Anchor grid highlight** — selected anchor button shows accent-colored 1.5pt border; deselected buttons are muted (secondaryLabelColor tint).
+3. **Size placeholder behaviour** — "Auto" placeholder shows when field is empty; typing a number updates placement in real-time; blurring normalises "auto" text back to empty.
+4. **Popup icon size** — 16x16 app icons should render cleanly inside the NSPopUpButton menu items.
+5. **Section header spacing** — 16pt gaps between sections should feel spacious but not wasteful at the designed panel width (~340 pt).
+6. **Offset negative values** — verify that negative doubles (e.g. `-20`) parse and round-trip correctly through `parseOffset`.
+7. **App row y-advance** — confirm the Size section renders immediately below the App row (not leaving a blank gap when app row is hidden).
 
-### Pure-helper test (re-run after fixes)
+---
 
-**Command:**
-```
-cd <scratch> && swiftc /Users/test/Documents/code/invoke-v2/apps/macos/Sources/InvokeServices/WindowEnumerator.swift main.swift -o wm2test -framework AppKit -framework ApplicationServices && ./wm2test
-```
+## Concerns / Notes
 
-**Output (8 assertions, ALL PASS):**
-```
-ok: center-in-A
-ok: center-in-B
-ok: offscreen→first
-ok: merge-x-only
-ok: merge-size-only
-ok: axRect-primary
-ok: axRect-screen-above
-ok: axRect-screen-below
-ALL PASS
-```
-
-New assertions added: `axRect-primary`, `axRect-screen-above`, `axRect-screen-below`.
-
-### swift build result
-```
-Build complete! (1.59s)
-```
-Command: `swift build --package-path apps/macos`
-
-### Commit
-`9ccb21b` — `fix(wm): WindowEnumerator review fixes (axDouble guard, setBounds pid, screenTuples AX space, fullScreen comment)`
+- `NSButton.contentTintColor` + SF Symbols require macOS 11+ (Big Sur) for full fidelity; macOS 10.14 degrades gracefully to a plain icon.
+- `appRowContainer` layout always frames the popup/delete even when hidden; the `y` advance is guarded by `if !appRowContainer.isHidden` so sections stack correctly.
+- Offset fields display `""` (not "0") when offset is exactly 0, matching the "Auto" convention for size fields and keeping the form clean. Typing "0" is accepted and round-trips to `0.0`.
+- The `currentPlacement` struct is held as mutable internal state. Each callback passes a copy, so callers receive a fully consistent snapshot with no shared-mutable aliasing.
